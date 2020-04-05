@@ -57,7 +57,6 @@ protected:
     HRESULT AddMatchToList            (CFileInfo * pwfd, CDirectoryInfo * pdi);
     void    Scroll                    (CDirectoryInfo * pdi);
     void    DisplayResults            (CDirectoryInfo * pdi);
-    void    DisplayLine               (void);
     void    DisplayResultsWide        (CDirectoryInfo * pdi);
     HRESULT GetColumnInfo             (CDirectoryInfo * pdi, UINT * pcColumns, UINT * pcxColumnWidth);
     HRESULT AddEmptyMatches           (CDirectoryInfo * pdi, size_t cColumns);

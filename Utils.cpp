@@ -1,4 +1,4 @@
-#include "StdAfx.h"
+﻿#include "StdAfx.h"
 #include "utils.h"
 
 
@@ -144,6 +144,10 @@ CUtils::CUtils(void)
 {
     m_hStdOut = GetStdHandle (STD_OUTPUT_HANDLE);   
 
+    ZeroMemory (&m_consoleScreenBufferInfoEx, sizeof (m_consoleScreenBufferInfoEx));
+    m_consoleScreenBufferInfoEx.cbSize = sizeof (m_consoleScreenBufferInfoEx);
+    GetConsoleScreenBufferInfoEx (m_hStdOut, &m_consoleScreenBufferInfoEx);
+
     InitializeTextAttrs();
 }
 
@@ -178,7 +182,7 @@ CUtils::~CUtils(void)
 
 void CUtils::ResetTextAttr (void)
 {
-    SetTextAttr (m_wDefaultTextAttr);
+    SetTextAttr (m_consoleScreenBufferInfoEx.wAttributes);
 }
 
 
@@ -195,21 +199,6 @@ void CUtils::ResetTextAttr (void)
 
 void CUtils::InitializeTextAttrs (void)
 {
-    BOOL                       fSuccess;       
-    CONSOLE_SCREEN_BUFFER_INFO csbi;           
-
-
-    
-    fSuccess = GetConsoleScreenBufferInfo (m_hStdOut, &csbi);
-    if (fSuccess)
-    {
-        m_wDefaultTextAttr = csbi.wAttributes;
-    }
-    else
-    {
-        m_wDefaultTextAttr = FC_LightGrey | BC_Black;
-    }
-
     m_wDateAttr                 = FC_Red;
     m_wTimeAttr                 = FC_Brown;
     m_wAttributePresentAttr     = FC_Cyan;
@@ -218,6 +207,7 @@ void CUtils::InitializeTextAttrs (void)
     m_wInformationHighlightAttr = FC_White;
     m_wSizeAttr                 = FC_Yellow;
     m_wDirAttr                  = FC_LightBlue;
+    m_wSeparatorLineAttr        = FC_LightBlue;
     
     
     InitializeExtensionToTextAttrMap();
@@ -329,6 +319,44 @@ Error:
 
 ////////////////////////////////////////////////////////////////////////////////
 //
+//  CUtils::DisplayLine
+//
+//  Draws a line across the console at the current cursor position
+// 
+////////////////////////////////////////////////////////////////////////////////
+
+void CUtils::ConsoleDrawSeparator (void)
+{
+    DWORD written = 0;
+    CONSOLE_SCREEN_BUFFER_INFOEX csbi = { 0 };
+
+
+
+    csbi.cbSize = sizeof (csbi);
+    GetConsoleScreenBufferInfoEx (m_hStdOut, &csbi);
+
+
+    FillConsoleOutputAttribute (m_hStdOut,
+                                m_wSeparatorLineAttr,
+                                csbi.srWindow.Right - csbi.srWindow.Left + 1,
+                                csbi.dwCursorPosition,
+                                &written);
+
+    FillConsoleOutputCharacter (m_hStdOut,
+                                L'═',
+                                csbi.srWindow.Right - csbi.srWindow.Left + 1,
+                                csbi.dwCursorPosition,
+                                &written);
+
+    ++csbi.dwCursorPosition.Y;
+    SetConsoleCursorPosition (m_hStdOut, csbi.dwCursorPosition);
+}
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
 //  CUtils::IsDots
 //
 //  
@@ -377,7 +405,7 @@ BOOL CUtils::IsDots (LPCWSTR pszFileName)
 WORD CUtils::GetTextAttrForFile (const WIN32_FIND_DATA * pwfd)
 {
     HRESULT hr    = S_OK;
-    WORD    wAttr = m_wDefaultTextAttr;
+    WORD    wAttr = m_consoleScreenBufferInfoEx.wAttributes;
     errno_t err   = 0;
 
 
@@ -415,7 +443,7 @@ WORD CUtils::GetTextAttrForFile (const WIN32_FIND_DATA * pwfd)
         wAttr = iter->second;
         if ((wAttr & BC_Mask) == 0)
         {
-            wAttr |= m_wDefaultTextAttr & BC_Mask;
+            wAttr |= m_consoleScreenBufferInfoEx.wAttributes & BC_Mask;
         }
     }    
 
@@ -556,6 +584,23 @@ WORD CUtils::GetSizeAttr (void)
 WORD CUtils::GetDirAttr (void)
 {
     return m_wDirAttr;
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CUtils::GetDirAttr
+//
+//  
+//
+////////////////////////////////////////////////////////////////////////////////
+
+WORD CUtils::GetSeparatorLineAttr (void)
+{
+    return m_wSeparatorLineAttr;
 }
 
 
