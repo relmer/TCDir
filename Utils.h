@@ -63,6 +63,7 @@ public:
     //
 
     int  ConsolePrintf               (LPCWSTR pszFormat, ...);
+    void ConsoleDrawSeparator        (void);
     BOOL IsDots                      (LPCWSTR pszFileName);
     WORD GetTextAttrForFile          (const WIN32_FIND_DATA * pwfd);
     WORD GetDateAttr                 (void);
@@ -71,6 +72,7 @@ public:
     WORD GetAttributeNotPresentAttr  (void);
     WORD GetSizeAttr                 (void);
     WORD GetDirAttr                  (void);
+    WORD GetSeparatorLineAttr        (void);
     WORD GetInformationStandardAttr  (void);
     WORD GetInformationHighlightAttr (void);    
     void SetTextAttr                 (WORD wAttr);
@@ -81,11 +83,11 @@ public:
     // Public members
     //
 
-    HANDLE m_hStdOut; 
-    WORD   m_wDefaultTextAttr;
-    
+    HANDLE                       m_hStdOut; 
+    CONSOLE_SCREEN_BUFFER_INFOEX m_consoleScreenBufferInfoEx;
 
-    
+
+
 protected:
 
     typedef unordered_map<wstring, WORD> TextAttrMap;
@@ -126,6 +128,7 @@ protected:
     WORD                   m_wInformationHighlightAttr;
     WORD                   m_wSizeAttr;
     WORD                   m_wDirAttr;
+    WORD                   m_wSeparatorLineAttr;
     TextAttrMap            m_mapExtensionToTextAttr;   
 };               
 

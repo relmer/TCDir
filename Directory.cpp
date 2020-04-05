@@ -1,4 +1,4 @@
-#include "StdAfx.h"
+﻿#include "StdAfx.h"
 #include "Directory.h"
 #include "CommandLine.h"
 #include "Utils.h"
@@ -129,7 +129,6 @@ bool CDirectory::CFileInfo::operator< (const CFileInfo & rhs) const
     
     return comesBeforeRhs;
 }
-
 
 
 
@@ -683,7 +682,7 @@ void CDirectory::Scroll (CDirectoryInfo * pdi)
     // Fill the bottom row with green blanks. 
     //
     
-    chiFill.Attributes       = g_util.m_wDefaultTextAttr; 
+    chiFill.Attributes       = g_util.m_consoleScreenBufferInfoEx.wAttributes;
     chiFill.Char.UnicodeChar = L' '; 
 
      
@@ -737,7 +736,7 @@ void CDirectory::DisplayResults (CDirectoryInfo * pdi)
 
     Scroll (pdi);
     
-    DisplayLine ();
+    g_util.ConsoleDrawSeparator();
 
     DisplayDriveHeader (pdi->m_pszPath); 
 
@@ -760,8 +759,8 @@ void CDirectory::DisplayResults (CDirectoryInfo * pdi)
     {
         DisplayFooter (pdi);    
     }
-
-    DisplayLine ();
+        
+    g_util.ConsoleDrawSeparator ();
 }
 
 
@@ -1069,23 +1068,6 @@ void CDirectory::DisplayResultsNormal (CDirectoryInfo * pdi)
 
 
 
- 
-
-////////////////////////////////////////////////////////////////////////////////
-//
-//  CDirectory::DisplayLine
-//
-//  Draws a line across the console at the current cursor position
-// 
-////////////////////////////////////////////////////////////////////////////////
-
-void CDirectory::DisplayLine ()
-{
-    g_util.SetTextAttr (g_util.GetInformationStandardAttr ());
-    g_util.ConsolePrintf (TEXT ("\n Volume "));
-}
-
-
 
 
 
@@ -1165,7 +1147,7 @@ void CDirectory::DisplayDriveHeader (LPCWSTR pszPath)
                           szFileSystemName, ARRAYSIZE (szFileSystemName));
 
     g_util.SetTextAttr (g_util.GetInformationStandardAttr());
-    g_util.ConsolePrintf (TEXT ("\n Volume "));
+    g_util.ConsolePrintf (TEXT (" Volume "));
 
     if (fUncPath)
     {
@@ -1340,8 +1322,6 @@ void CDirectory::DisplayFooter (CDirectoryInfo * pdi)
     {
         DisplayFooterQuotaInfo (&uliFreeBytesAvailable);
     }
-
-    g_util.ConsolePrintf (L"\n\n");
     
 
 Error:
