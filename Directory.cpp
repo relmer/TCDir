@@ -56,11 +56,28 @@ CDirectory::CFileInfo::CFileInfo (void)
 bool CDirectory::CFileInfo::operator< (const CFileInfo & rhs) const
 {
     bool                       comesBeforeRhs = false;
+    bool                       isDirectory    = false;
+    bool                       isDirectoryRhs = false;
     CCommandLine::ESortOrder * pSortAttribute;
     CCommandLine::ESortOrder * pLastAttribute = &s_pCmdLine->m_rgSortPreference[ARRAYSIZE(s_pCmdLine->m_rgSortPreference)];
     LONGLONG                   cmp            = 0;
 
 
+    //
+    // If only one of the operands is a directory, it should be sorted first
+    //
+
+    isDirectory    = !!(dwFileAttributes     & FILE_ATTRIBUTE_DIRECTORY);
+    isDirectoryRhs = !!(rhs.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY);
+
+    if (isDirectory ^ isDirectoryRhs)
+    {
+        return isDirectory;
+    }
+
+    //
+    // Compare based on requested sort attribute with fallbacks
+    //
 
     for (pSortAttribute = s_pCmdLine->m_rgSortPreference; 
          pSortAttribute < pLastAttribute; 
