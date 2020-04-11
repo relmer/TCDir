@@ -30,7 +30,6 @@
 #define STRSAFE_NO_DEPRECATE
 #include <strsafe.h>
 
-#include <tchar.h>
 
 
 

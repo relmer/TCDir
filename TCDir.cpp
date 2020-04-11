@@ -11,6 +11,45 @@
 
 
 
+/*
+void Test ()
+{
+    static LPCWSTR s_kpszColors[] =
+    {
+        L"Black",
+        L"Blue",
+        L"Green",
+        L"Cyan",
+        L"Red",
+        L"Magenta",
+        L"Brown",
+        L"Light grey",
+        L"Dark grey",
+        L"Light blue",
+        L"Light green",
+        L"Light cyan",
+        L"Light red",
+        L"Light magenta",
+        L"Yellow",
+        L"White",
+    };
+
+    for (WORD back = 0; back < 16; ++back)
+    {
+        for (WORD fore = 0; fore < 16; ++fore)
+        {
+            g_util.SetTextAttr ((back << 4) | fore);
+            g_util.ConsolePrintf (s_kpszColors[fore]);
+            g_util.ConsolePrintf (L"    ");
+        }
+
+        g_util.ConsolePrintf (L"\n");
+    }
+}
+*/
+
+
+
 
 ////////////////////////////////////////////////////////////////////////////////
 //
@@ -25,7 +64,7 @@ int wmain (int argc, WCHAR* argv[])
     HRESULT      hr;      
     CCommandLine cmdline; 
 
-
+    //Test (); return 0;
 
     //
     // Process the commandline

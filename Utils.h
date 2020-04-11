@@ -96,7 +96,7 @@ protected:
 
     struct STextAttr
     {
-        LPCTSTR m_pszExtension; 
+        LPCWSTR m_pszExtension; 
         WORD    m_wAttr;        
     };                        
     
