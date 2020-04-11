@@ -226,9 +226,9 @@ void CDirectory::operator() (LPCWSTR pszMask)
     HRESULT hr                          = S_OK;
     int     nDrive;    
     BOOL    fSuccess;                   
-    TCHAR   szWellFormedPath[MAX_PATH]; 
-    TCHAR   szPath[MAX_PATH];           
-    TCHAR   szFileSpec[MAX_PATH];       
+    WCHAR   szWellFormedPath[MAX_PATH]; 
+    WCHAR   szPath[MAX_PATH];           
+    WCHAR   szFileSpec[MAX_PATH];       
 
 
 
@@ -247,7 +247,7 @@ void CDirectory::operator() (LPCWSTR pszMask)
         // We'll prepend only the drive letter, colon, and root dir to it.
         //
         
-        if (*pszMask == TEXT ('\\'))
+        if (*pszMask == L'\\')
         {
             PathStripToRoot (szWellFormedPath);
         }             
@@ -310,7 +310,7 @@ HRESULT CDirectory::ProcessDirectory (LPCWSTR pszPath, LPCWSTR pszFileSpec)
 {
     HRESULT         hr = S_OK;
     BOOL            fSuccess;                    
-    TCHAR           szPathAndFileSpec[MAX_PATH]; 
+    WCHAR           szPathAndFileSpec[MAX_PATH]; 
     HANDLE          hFind = INVALID_HANDLE_VALUE;
     CFileInfo       fileInfo;                         
     CDirectoryInfo  di;
@@ -410,7 +410,7 @@ HRESULT CDirectory::RecurseIntoSubdirectories (LPCWSTR pszPath, LPCWSTR pszFileS
 {
     HRESULT         hr                           = S_OK;
     BOOL            fSuccess;                    
-    TCHAR           szPathAndFileSpec[MAX_PATH]; 
+    WCHAR           szPathAndFileSpec[MAX_PATH]; 
     HANDLE          hFind                        = INVALID_HANDLE_VALUE;
     WIN32_FIND_DATA wfd;                         
 
@@ -421,7 +421,7 @@ HRESULT CDirectory::RecurseIntoSubdirectories (LPCWSTR pszPath, LPCWSTR pszFileS
     //
 
     StringCchCopy (szPathAndFileSpec, ARRAYSIZE (szPathAndFileSpec), pszPath);
-    fSuccess = PathAppend (szPathAndFileSpec, TEXT ("*"));
+    fSuccess = PathAppend (szPathAndFileSpec, L"*");
     CBRA (fSuccess);
     
 
@@ -443,7 +443,7 @@ HRESULT CDirectory::RecurseIntoSubdirectories (LPCWSTR pszPath, LPCWSTR pszFileS
         {
             if (CFlag::IsSet (wfd.dwFileAttributes, FILE_ATTRIBUTE_DIRECTORY))
             {
-                TCHAR szSubdirPath[MAX_PATH];
+                WCHAR szSubdirPath[MAX_PATH];
             
             
                 StringCchCopy (szSubdirPath, ARRAYSIZE (szSubdirPath), pszPath);
@@ -488,7 +488,7 @@ HRESULT CDirectory::AddMatchToList (CFileInfo * pwfd, CDirectoryInfo * pdi)
 
     if (m_pCmdLine->m_fWideListing)
     {
-        cchFileName = _tcslen (pwfd->cFileName);
+        cchFileName = wcslen (pwfd->cFileName);
     }
     
     if (CFlag::IsSet (pwfd->dwFileAttributes, FILE_ATTRIBUTE_DIRECTORY))
@@ -628,7 +628,7 @@ void CDirectory::Scroll (CDirectoryInfo * pdi)
     // No need to scroll
     //
 
-    CBREx ((cRowsTotal + csbiInfo.dwCursorPosition.Y) <= cWindowRows, S_OK);
+    BAIL_OUT_IF ((cRowsTotal + csbiInfo.dwCursorPosition.Y) <= cWindowRows, S_OK);
 
     //
     // Scenario 2:  Console contents + cRowsTotal is less than the entire buffer
@@ -778,6 +778,7 @@ void CDirectory::DisplayResults (CDirectoryInfo * pdi)
     }
         
     g_util.ConsoleDrawSeparator ();
+    g_util.ConsolePrintf (L"\n");
 }
 
 
@@ -821,27 +822,27 @@ void CDirectory::DisplayResultsWide (CDirectoryInfo * pdi)
     {
         for (nCol = 0; nCol < cColumns; ++nCol)
         {                   
-            LPTSTR            pszName;    
+            LPWSTR            pszName;    
             int               cchPrinted; 
             WIN32_FIND_DATA * pwfd;       
             WORD              wAttr;      
 
 
 
-            pwfd = &pdi->m_vMatches[nRow + (nCol * cRows)];
+            pwfd = &pdi->m_vMatches[nRow + ((size_t) nCol * (size_t) cRows)];
             hr = GetWideFormattedName (pwfd, &pszName);
             CHR (hr);
 
             wAttr = g_util.GetTextAttrForFile (pwfd);
             g_util.SetTextAttr (wAttr);
             
-            cchPrinted = g_util.ConsolePrintf (TEXT ("%s"), pszName);
+            cchPrinted = g_util.ConsolePrintf (L"%s", pszName);
 
             g_util.ResetTextAttr();
-            g_util.ConsolePrintf (TEXT ("%*s"), cxColumnWidth - cchPrinted, TEXT (""));
+            g_util.ConsolePrintf (L"%*s", cxColumnWidth - cchPrinted, L"");
         }
 
-        g_util.ConsolePrintf (TEXT ("\n"));
+        g_util.ConsolePrintf (L"\n");
     }
 
 Error:
@@ -923,10 +924,10 @@ HRESULT CDirectory::AddEmptyMatches (CDirectoryInfo * pdi, size_t cColumns)
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-HRESULT CDirectory::GetWideFormattedName (WIN32_FIND_DATA * pwfd, LPTSTR * ppszName)
+HRESULT CDirectory::GetWideFormattedName (WIN32_FIND_DATA * pwfd, LPWSTR * ppszName)
 {
     HRESULT      hr                  = S_OK;
-    static TCHAR szDirName[MAX_PATH] = TEXT ("[");
+    static WCHAR szDirName[MAX_PATH] = L"[";
 
 
     
@@ -937,7 +938,7 @@ HRESULT CDirectory::GetWideFormattedName (WIN32_FIND_DATA * pwfd, LPTSTR * ppszN
 
         
         StringCchCopyEx (szDirName + 1, ARRAYSIZE (szDirName) - 1, pwfd->cFileName, ppszName, &cchRemaining, 0);
-        StringCchCat    (*ppszName,  cchRemaining, TEXT ("]"));
+        StringCchCat    (*ppszName,  cchRemaining, L"]");
 
         *ppszName = szDirName;
     }
@@ -966,31 +967,31 @@ void CDirectory::DisplayResultsNormal (CDirectoryInfo * pdi)
 {
     UINT               cchMaxSize;
     BOOL               fSuccess;   
-    TCHAR              szDate[11]; // "12/34/5678" + null = 11 characters
-    TCHAR              szTime[9];  // "12:34 PM"   + null = 9 characters
-    FileInfoVectorIter      iter;       
-    static const TCHAR kchHyphen    = TEXT ('-');
-    static const TCHAR kszDirSize[] = TEXT ("<DIR>");
+    WCHAR              szDate[11]; // "12/34/5678" + null = 11 characters
+    WCHAR              szTime[9];  // "12:34 PM"   + null = 9 characters
+    FileInfoVectorIter iter;       
+    static const WCHAR kchHyphen    = L'-';
+    static const WCHAR kszDirSize[] = L"<DIR>";
     static const UINT  kcchDirSize  = ARRAYSIZE (kszDirSize) - 1;
     
     struct SAttrMap
     {
         DWORD m_dwAttr;
-        TCHAR m_chAttr;
+        WCHAR m_chAttr;
     };
     
     static const SAttrMap attrmap[] =
     {
-        {  FILE_ATTRIBUTE_READONLY,      TEXT ('R') },
-        {  FILE_ATTRIBUTE_HIDDEN,        TEXT ('H') },
-        {  FILE_ATTRIBUTE_SYSTEM,        TEXT ('S') },
-        {  FILE_ATTRIBUTE_ARCHIVE,       TEXT ('A') },
-        {  FILE_ATTRIBUTE_TEMPORARY,     TEXT ('T') },
-        {  FILE_ATTRIBUTE_ENCRYPTED,     TEXT ('E') },
-        {  FILE_ATTRIBUTE_COMPRESSED,    TEXT ('C') },
-        {  FILE_ATTRIBUTE_REPARSE_POINT, TEXT ('P') },
-        {  FILE_ATTRIBUTE_SPARSE_FILE,   TEXT ('0') },
-        {  0,                            0          }
+        {  FILE_ATTRIBUTE_READONLY,      L'R' },
+        {  FILE_ATTRIBUTE_HIDDEN,        L'H' },
+        {  FILE_ATTRIBUTE_SYSTEM,        L'S' },
+        {  FILE_ATTRIBUTE_ARCHIVE,       L'A' },
+        {  FILE_ATTRIBUTE_TEMPORARY,     L'T' },
+        {  FILE_ATTRIBUTE_ENCRYPTED,     L'E' },
+        {  FILE_ATTRIBUTE_COMPRESSED,    L'C' },
+        {  FILE_ATTRIBUTE_REPARSE_POINT, L'P' },
+        {  FILE_ATTRIBUTE_SPARSE_FILE,   L'0' },
+        {  0,                            0    }
     };      
     
     
@@ -1015,8 +1016,8 @@ void CDirectory::DisplayResultsNormal (CDirectoryInfo * pdi)
         fSuccess = SystemTimeToTzSpecificLocalTime (NULL, &st, &stLocal);
         assert (fSuccess);
 
-        GetDateFormat (LOCALE_USER_DEFAULT, 0, &stLocal, TEXT ("MM/dd/yyyy"), szDate, ARRAYSIZE (szDate));
-        GetTimeFormat (LOCALE_USER_DEFAULT, 0, &stLocal, TEXT ("hh:mm tt"),   szTime, ARRAYSIZE (szTime));
+        GetDateFormat (LOCALE_USER_DEFAULT, 0, &stLocal, L"MM/dd/yyyy", szDate, ARRAYSIZE (szDate));
+        GetTimeFormat (LOCALE_USER_DEFAULT, 0, &stLocal, L"hh:mm tt",   szTime, ARRAYSIZE (szTime));
 
 
         //
@@ -1027,18 +1028,18 @@ void CDirectory::DisplayResultsNormal (CDirectoryInfo * pdi)
         uliFileSize.HighPart = iter->nFileSizeHigh;
 
         g_util.SetTextAttr (g_util.GetDateAttr());
-        g_util.ConsolePrintf (TEXT ("%s"), szDate);
+        g_util.ConsolePrintf (L"%s", szDate);
         g_util.ResetTextAttr();        
-        g_util.ConsolePrintf (TEXT ("  "));
+        g_util.ConsolePrintf (L"  ");
         
         g_util.SetTextAttr (g_util.GetTimeAttr());
-        g_util.ConsolePrintf (TEXT ("%s"), szTime);
+        g_util.ConsolePrintf (L"%s", szTime);
         g_util.ResetTextAttr();        
-        g_util.ConsolePrintf (TEXT (" "));
+        g_util.ConsolePrintf (L" ");
 
         while (pAttrMap->m_dwAttr != 0)
         {
-            TCHAR chDisplay;
+            WCHAR chDisplay;
             
             if (iter->dwFileAttributes & pAttrMap->m_dwAttr)
             {
@@ -1051,7 +1052,7 @@ void CDirectory::DisplayResultsNormal (CDirectoryInfo * pdi)
                 chDisplay = kchHyphen;
             }
 
-            g_util.ConsolePrintf (TEXT ("%c"), chDisplay);
+            g_util.ConsolePrintf (L"%c", chDisplay);
             g_util.ResetTextAttr();
 
             ++pAttrMap;
@@ -1061,7 +1062,7 @@ void CDirectory::DisplayResultsNormal (CDirectoryInfo * pdi)
         if ((iter->dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) == 0)
         {
             g_util.SetTextAttr (g_util.GetSizeAttr());
-            g_util.ConsolePrintf (TEXT (" %*s "), cchMaxSize, FormatFileSize (uliFileSize));
+            g_util.ConsolePrintf (L" %*s ", cchMaxSize, FormatFileSize (uliFileSize));
         }
         else
         {
@@ -1070,14 +1071,14 @@ void CDirectory::DisplayResultsNormal (CDirectoryInfo * pdi)
             cchLeftSidePadding = (cchMaxSize - kcchDirSize) / 2;            
             
             g_util.SetTextAttr (g_util.GetDirAttr());
-            g_util.ConsolePrintf (TEXT (" %*s"), cchLeftSidePadding, TEXT (""));
-            g_util.ConsolePrintf (TEXT ("%-*s "), cchMaxSize - cchLeftSidePadding, kszDirSize);
+            g_util.ConsolePrintf (L" %*s", cchLeftSidePadding, L"");
+            g_util.ConsolePrintf (L"%-*s ", cchMaxSize - cchLeftSidePadding, kszDirSize);
          }        
 
         g_util.SetTextAttr (g_util.GetTextAttrForFile (&(*iter)));
-        g_util.ConsolePrintf (TEXT ("%s"), iter->cFileName);
+        g_util.ConsolePrintf (L"%s", iter->cFileName);
         g_util.ResetTextAttr();        
-        g_util.ConsolePrintf (TEXT ("\n"));
+        g_util.ConsolePrintf (L"\n");
         
         ++iter;
     }
@@ -1103,32 +1104,32 @@ void CDirectory::DisplayDriveHeader (LPCWSTR pszPath)
 {
     static const LPCWSTR s_krgszVolumeDescription[] = 
     {
-        TEXT ("an unknown type"),
-        TEXT ("an unknown type"),
-        TEXT ("a removable disk"),
-        TEXT ("a hard drive"),
-        TEXT ("a network drive"),
-        TEXT ("a CD/DVD"),
-        TEXT ("a RAM disk"),
+        L"an unknown type",
+        L"an unknown type",
+        L"a removable disk",
+        L"a hard drive",
+        L"a network drive",
+        L"a CD/DVD",
+        L"a RAM disk",
     };
 
-    static TCHAR s_szPreviousDriveRoot[MAX_PATH] = { TEXT ('\0') };
+    static WCHAR s_szPreviousDriveRoot[MAX_PATH] = { L'\0' };
 
     HRESULT hr                          = S_OK;;                         
     int     nDrive;                     
-    TCHAR   szDriveRoot[MAX_PATH];      
+    WCHAR   szDriveRoot[MAX_PATH];      
     UINT    uiDriveType;                
     BOOL    fUncPath                    = FALSE;
-    TCHAR   szVolumeName[MAX_PATH];     
-    TCHAR   szFileSystemName[MAX_PATH]; 
+    WCHAR   szVolumeName[MAX_PATH];     
+    WCHAR   szFileSystemName[MAX_PATH]; 
 
 
     
     nDrive = PathGetDriveNumber (pszPath);
     if (nDrive >= 0)
     {
-        StringCchCopy (szDriveRoot, ARRAYSIZE (szDriveRoot), TEXT (" :\\"));
-        szDriveRoot[0] = (TCHAR) ((int) TEXT ('A') + nDrive);
+        StringCchCopy (szDriveRoot, ARRAYSIZE (szDriveRoot), L" :\\");
+        szDriveRoot[0] = (WCHAR) ((int) L'A' + nDrive);
         uiDriveType = GetDriveType (szDriveRoot);
     }
     else
@@ -1151,7 +1152,7 @@ void CDirectory::DisplayDriveHeader (LPCWSTR pszPath)
     // (prevents wasted screen real estate in /s listings)
     //
     
-    CBREx (_tcscmp (s_szPreviousDriveRoot, szDriveRoot) != 0, S_OK);
+    CBREx (wcscmp (s_szPreviousDriveRoot, szDriveRoot) != 0, S_OK);
 
     StringCchCopy (s_szPreviousDriveRoot, ARRAYSIZE (s_szPreviousDriveRoot), szDriveRoot);
 
@@ -1164,26 +1165,26 @@ void CDirectory::DisplayDriveHeader (LPCWSTR pszPath)
                           szFileSystemName, ARRAYSIZE (szFileSystemName));
 
     g_util.SetTextAttr (g_util.GetInformationStandardAttr());
-    g_util.ConsolePrintf (TEXT (" Volume "));
+    g_util.ConsolePrintf (L" Volume ");
 
     if (fUncPath)
     {
         g_util.SetTextAttr (g_util.GetInformationHighlightAttr());
-        g_util.ConsolePrintf (TEXT ("%s"), pszPath);
+        g_util.ConsolePrintf (L"%s", pszPath);
     }
     else
     {
-        g_util.ConsolePrintf (TEXT ("in drive "));
+        g_util.ConsolePrintf (L"in drive ");
         
         g_util.SetTextAttr (g_util.GetInformationHighlightAttr());
-        g_util.ConsolePrintf (TEXT ("%c"), szDriveRoot[0]);        
+        g_util.ConsolePrintf (L"%c", szDriveRoot[0]);        
     }        
 
     g_util.SetTextAttr (g_util.GetInformationStandardAttr());
-    g_util.ConsolePrintf (TEXT (" is "));
+    g_util.ConsolePrintf (L" is ");
 
     g_util.SetTextAttr (g_util.GetInformationHighlightAttr());
-    g_util.ConsolePrintf (TEXT ("%s"), s_krgszVolumeDescription[uiDriveType]);
+    g_util.ConsolePrintf (L"%s", s_krgszVolumeDescription[uiDriveType]);
 
 
     //
@@ -1192,57 +1193,57 @@ void CDirectory::DisplayDriveHeader (LPCWSTR pszPath)
     
     if ((fUncPath == FALSE) && (uiDriveType == DRIVE_REMOTE))
     {
-        LPTSTR psz;                    
-        TCHAR  szRemoteName[MAX_PATH]; 
+        LPWSTR psz;                    
+        WCHAR  szRemoteName[MAX_PATH]; 
         DWORD  cchRemoteName           = ARRAYSIZE (szRemoteName); 
         DWORD  dwResult;               
     
     
         
-        psz = szDriveRoot + _tcslen (szDriveRoot) - 1;
-        if (*psz == TEXT ('\\'))
+        psz = szDriveRoot + wcslen (szDriveRoot) - 1;
+        if (*psz == L'\\')
         {
-            *psz = TEXT ('\0');
+            *psz = L'\0';
         }
         
         dwResult = WNetGetConnection (szDriveRoot, szRemoteName, &cchRemoteName);              
         if (dwResult == NOERROR)
         {
             g_util.SetTextAttr (g_util.GetInformationStandardAttr());
-            g_util.ConsolePrintf (TEXT (" mapped to "));
+            g_util.ConsolePrintf (L" mapped to ");
             
             g_util.SetTextAttr (g_util.GetInformationHighlightAttr());
-            g_util.ConsolePrintf (TEXT ("%s"), szRemoteName);
+            g_util.ConsolePrintf (L"%s", szRemoteName);
         }
     }
 
 
     g_util.SetTextAttr (g_util.GetInformationStandardAttr());
-    g_util.ConsolePrintf (TEXT (" ("));
+    g_util.ConsolePrintf (L" (");
     
     g_util.SetTextAttr (g_util.GetInformationHighlightAttr());
-    g_util.ConsolePrintf (TEXT ("%s"), szFileSystemName);
+    g_util.ConsolePrintf (L"%s", szFileSystemName);
     
     g_util.SetTextAttr (g_util.GetInformationStandardAttr());
-    g_util.ConsolePrintf (TEXT (")\n"));
+    g_util.ConsolePrintf (L")\n");
 
     
 
-    if (szVolumeName[0] != TEXT ('\0'))
+    if (szVolumeName[0] != L'\0')
     {
         g_util.SetTextAttr (g_util.GetInformationStandardAttr());
-        g_util.ConsolePrintf (TEXT (" Volume name is \""));
+        g_util.ConsolePrintf (L" Volume name is \"");
 
         g_util.SetTextAttr (g_util.GetInformationHighlightAttr());
-        g_util.ConsolePrintf (TEXT ("%s"), szVolumeName);
+        g_util.ConsolePrintf (L"%s", szVolumeName);
 
         g_util.SetTextAttr (g_util.GetInformationStandardAttr());
-        g_util.ConsolePrintf (TEXT ("\"\n\n"));
+        g_util.ConsolePrintf (L"\"\n\n");
     }
     else
     {
         g_util.SetTextAttr (g_util.GetInformationStandardAttr());
-        g_util.ConsolePrintf (TEXT (" Volume has no name\n\n"), szVolumeName);
+        g_util.ConsolePrintf (L" Volume has no name\n\n", szVolumeName);
     }
 
 Error:
@@ -1264,13 +1265,13 @@ Error:
 void CDirectory::DisplayPathHeader (LPCWSTR pszPath)
 {
     g_util.SetTextAttr (g_util.GetInformationStandardAttr());
-    g_util.ConsolePrintf (TEXT (" Directory of "));
+    g_util.ConsolePrintf (L" Directory of ");
 
     g_util.SetTextAttr (g_util.GetInformationHighlightAttr());
-    g_util.ConsolePrintf (TEXT ("%s"), pszPath);
+    g_util.ConsolePrintf (L"%s", pszPath);
         
     g_util.SetTextAttr (g_util.GetInformationStandardAttr());
-    g_util.ConsolePrintf (TEXT ("\n\n"));
+    g_util.ConsolePrintf (L"\n\n");
 }
 
 
@@ -1418,8 +1419,8 @@ UINT CDirectory::GetMaxSize (ULARGE_INTEGER * puli)
 
 LPCWSTR CDirectory::FormatFileSize (ULARGE_INTEGER uli)
 {
-    static TCHAR szFileSize[27];  // 2^64 = 1.84467440737096E+19 = 18,446,744,073,709,600,000 = 18 chars + 6 commas + 1 null
-    LPTSTR       pszSize;
+    static WCHAR szFileSize[27];  // 2^64 = 1.84467440737096E+19 = 18,446,744,073,709,600,000 = 18 chars + 6 commas + 1 null
+    LPWSTR       pszSize;
     UINT         nDigitPosition = 0;
 
 
@@ -1429,7 +1430,7 @@ LPCWSTR CDirectory::FormatFileSize (ULARGE_INTEGER uli)
     // 
     
     pszSize = szFileSize + ARRAYSIZE (szFileSize) - 1;
-    *pszSize = TEXT ('\0');
+    *pszSize = L'\0';
     
 
 
@@ -1464,7 +1465,7 @@ LPCWSTR CDirectory::FormatFileSize (ULARGE_INTEGER uli)
         ++nDigitPosition;
         if ((nDigitPosition % 4) == 0)
         {
-            *pszSize = TEXT (',');
+            *pszSize = L',';
             ++nDigitPosition;
             --pszSize;
             assert (pszSize >= szFileSize);
@@ -1474,7 +1475,7 @@ LPCWSTR CDirectory::FormatFileSize (ULARGE_INTEGER uli)
         // Write the digit to the buffer
         // 
         
-        *pszSize = (TCHAR) (uiDigit + (UINT) TEXT ('0'));
+        *pszSize = (WCHAR) (uiDigit + (UINT) L'0');
     }             
 	while (uli.QuadPart > 0);
 
