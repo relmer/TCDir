@@ -60,7 +60,7 @@ protected:
     void    DisplayResultsWide        (CDirectoryInfo * pdi);
     HRESULT GetColumnInfo             (CDirectoryInfo * pdi, UINT * pcColumns, UINT * pcxColumnWidth);
     HRESULT AddEmptyMatches           (CDirectoryInfo * pdi, size_t cColumns);
-    HRESULT GetWideFormattedName      (WIN32_FIND_DATA * pwfd, LPTSTR * ppszName);
+    HRESULT GetWideFormattedName      (WIN32_FIND_DATA * pwfd, LPWSTR * ppszName);
     void    DisplayResultsNormal      (CDirectoryInfo * pdi);
     void    DisplayDriveHeader        (LPCWSTR pszPath);
     void    DisplayPathHeader         (LPCWSTR pszPath);

@@ -10,8 +10,8 @@ HANDLE hStdOut;
 
 
 
-int  _tmain        (int argc, _TCHAR* argv[]);
-int  ConsolePrintf (LPCTSTR pszFormat, ...);
+int  wmain         (int argc, WCHAR* argv[]);
+int  ConsolePrintf (LPCWSTR pszFormat, ...);
 void Usage         (void);
 
 

@@ -229,7 +229,7 @@ void CUtils::InitializeExtensionToTextAttrMap (void)
 {
     HRESULT           hr = S_OK;
     const STextAttr * pTextAttr;
-    TCHAR             szExtension[MAX_PATH]; 
+    WCHAR             szExtension[MAX_PATH]; 
     errno_t           err = 0;
 
 
