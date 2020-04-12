@@ -375,8 +375,7 @@ HRESULT CDirectory::ProcessDirectory (LPCWSTR pszPath, LPCWSTR pszFileSpec)
     // Show the directory contents
     //
     
-    DisplayResults (&di);        
-    
+    DisplayResults (&di);           
 
     //
     // Recurse into subdirectories 
@@ -555,23 +554,14 @@ HRESULT CDirectory::AddMatchToList (CFileInfo * pwfd, CDirectoryInfo * pdi)
 
 void CDirectory::Scroll (CDirectoryInfo * pdi)
 {
-    static const int s_cDriveHeaderRows = 4;
-    static const int s_cPathHeaderRows  = 2;
-    static const int s_cFooterRows      = 6;
-    
-    HRESULT                    hr             = S_OK;
-    BOOL                       fSuccess;      
-    CONSOLE_SCREEN_BUFFER_INFO csbiInfo;  
-    UINT                       cWindowRows;
-    UINT                       cBufferRows;
-    UINT                       cRowsTotal;
-    UINT                       cRowsToScroll;
-    SMALL_RECT                 srcScrollRect; 
-    SMALL_RECT                 srcClipRect;   
-    CHAR_INFO                  chiFill;       
-    COORD                      coordDest; 
-    COORD                      coordCursorPos;
-     
+    HRESULT                    hr                    = S_OK;
+    BOOL                       fSuccess              = FALSE;
+    CONSOLE_SCREEN_BUFFER_INFO csbiInfo              = { 0 };
+    UINT                       cWindowLinesTotal     = 0;
+    UINT                       cBufferLinesTotal     = 0;
+    UINT                       cBufferLinesRemaining = 0;
+    UINT                       cLinesNeeded          = 0;
+
 
 
     //
@@ -581,154 +571,140 @@ void CDirectory::Scroll (CDirectoryInfo * pdi)
     fSuccess = GetConsoleScreenBufferInfo (g_util.m_hStdOut, &csbiInfo); 
     CBRA (fSuccess);
 
-    cWindowRows = csbiInfo.srWindow.Bottom - csbiInfo.srWindow.Top + 1;
-    cBufferRows = csbiInfo.dwSize.Y;
-    
+    cWindowLinesTotal = csbiInfo.srWindow.Bottom - csbiInfo.srWindow.Top + 1;
+    cBufferLinesTotal = csbiInfo.dwSize.Y;    
 
     //
     // Calculate the number of rows to scroll
     //
 
-    cRowsTotal =  s_cDriveHeaderRows;
+    hr = CalculateLinesNeeded (pdi, &cLinesNeeded);
+    CHR (hr);
 
-    if (pdi->m_cFiles > 0)
+    //
+    // If there are enough lines left in the current window, no need to scroll
+    //
+
+    BAIL_OUT_IF ((cLinesNeeded + csbiInfo.dwCursorPosition.Y) <= cWindowLinesTotal, S_OK);
+
+    //
+    // If we need more lines than are free in the buffer, scroll the buffer up to make room
+    //
+
+    cBufferLinesRemaining = cBufferLinesTotal - csbiInfo.dwCursorPosition.Y;
+    if (cLinesNeeded > cBufferLinesRemaining)
     {
-        cRowsTotal += s_cPathHeaderRows;
+        SMALL_RECT srcScrollRect  = { 0 };
+        CHAR_INFO  chiFill        = { 0 };
+        COORD      coordDest      = { 0 };
+        COORD      coordCursorPos = { 0 };
+
+        srcScrollRect.Top    = (short) cLinesNeeded - (short) cBufferLinesRemaining;
+        srcScrollRect.Bottom = csbiInfo.dwSize.Y - 1;
+        srcScrollRect.Left   = 0;
+        srcScrollRect.Right  = csbiInfo.dwSize.X - 1;
+
+        chiFill.Attributes       = csbiInfo.wAttributes;
+        chiFill.Char.UnicodeChar = L' ';
+
+        fSuccess = ScrollConsoleScreenBuffer (g_util.m_hStdOut, &srcScrollRect, NULL, coordDest, &chiFill);
+        CWRA (fSuccess);
+
+        coordCursorPos.X = 0;
+        coordCursorPos.Y = srcScrollRect.Top;
+        fSuccess = SetConsoleCursorPosition (g_util.m_hStdOut, coordCursorPos);
+        CWRA (fSuccess);
     }
 
-    
-    if (m_pCmdLine->m_fWideListing)
-    {
-        UINT cColumns;      
-        UINT cxColumnWidth; 
+    //
+    // If we're going to write past the bottom of the window, reposition the window 
+    // to the bottom of the area we need
+    //
         
-        
-        
-        assert (pdi->m_cchLargestFileName > 0);
-        
-        hr = GetColumnInfo (pdi, &cColumns, &cxColumnWidth);
-        CHR (hr);    
-        
-        cRowsTotal += ((UINT) pdi->m_vMatches.size() + (cColumns - 1)) / cColumns;
-    }
-    else
+    if (csbiInfo.dwCursorPosition.Y + cLinesNeeded > (UINT) csbiInfo.srWindow.Bottom)
     {
-        cRowsTotal += pdi->m_cFiles;
+        SHORT      cLinesToMoveWindow = 0;
+        SMALL_RECT srcWindow          = { 0 };
+
+
+
+        cLinesToMoveWindow = (SHORT) csbiInfo.dwCursorPosition.Y + (SHORT) cLinesNeeded - csbiInfo.srWindow.Bottom;
+
+        // relative coords
+        srcWindow.Top    += cLinesToMoveWindow;
+        srcWindow.Bottom += cLinesToMoveWindow;
+
+        fSuccess = SetConsoleWindowInfo (g_util.m_hStdOut, FALSE, &srcWindow);
+        CWRA (fSuccess);
     }
+  
 
-    if (pdi->m_cFiles > 0)
-    {
-        cRowsTotal += s_cFooterRows;
-    }
-
-
-    //
-    // Scenario 1:  Console contents + cRowsTotal is less than one page
-    //
-    // No need to scroll
-    //
-
-    BAIL_OUT_IF ((cRowsTotal + csbiInfo.dwCursorPosition.Y) <= cWindowRows, S_OK);
-
-    //
-    // Scenario 2:  Console contents + cRowsTotal is less than the entire buffer
-    //
-
-    if ((cRowsTotal + csbiInfo.dwCursorPosition.Y) < cBufferRows)
-    {
-        UINT cEmptyRowsInThisWindow;
-
-
-        cEmptyRowsInThisWindow = csbiInfo.srWindow.Bottom - csbiInfo.dwCursorPosition.Y + 1;        
-        cRowsToScroll          = cRowsTotal - cEmptyRowsInThisWindow;
-    }                        
-
-
-
-    //
-    // Scenario 3:  Console contents + cRowsTotal exceeds the screen buffer
-    //
-    
-    else
-    {
-        // TODO:  Remember wtf I was doing here :)
-
-        //cRowsToScroll = 
-    }
-
-    //
-    // If we've got more than one page of text, we want
-    // to scroll so that the bottom page of text shows
-    // exactly.  We don't want the console to have to
-    // scroll as we display each line.
-    //
-
-    if (cRowsTotal > (UINT) (csbiInfo.srWindow.Bottom - csbiInfo.srWindow.Top + 1))
-    {
-    }
-    
-    
-    //
-    // The scrolling rectangle is the bottom cRowsTotal of the 
-    // screen buffer. 
-    //
-    
-    srcScrollRect.Top    = csbiInfo.dwCursorPosition.Y - (SHORT) cRowsTotal; 
-    srcScrollRect.Bottom = csbiInfo.dwCursorPosition.Y - 1; 
-    srcScrollRect.Left   = 0; 
-    srcScrollRect.Right  = csbiInfo.dwSize.X - 1; 
-
-     
-    //
-    // The destination for the scroll rectangle is one row up. 
-    //
-    
-    coordDest.X = 0; 
-    coordDest.Y = csbiInfo.dwCursorPosition.Y - (2 * (SHORT) cRowsTotal); 
-     
-
-    //
-    // The clipping rectangle is the same as the scrolling rectangle. 
-    // The destination row is left unchanged. 
-    //
-    
-    srcClipRect = srcScrollRect; 
-
-     
-    //
-    // Fill the bottom row with green blanks. 
-    //
-    
-    chiFill.Attributes       = g_util.m_consoleScreenBufferInfoEx.wAttributes;
-    chiFill.Char.UnicodeChar = L' '; 
-
-     
-    //
-    // Scroll up
-    //
-    
-    fSuccess = ScrollConsoleScreenBuffer (g_util.m_hStdOut,     // screen buffer handle 
-                                          &srcScrollRect,       // scrolling rectangle 
-                                          &srcClipRect,         // clipping rectangle 
-                                          coordDest,            // top left destination cell 
-                                          &chiFill);            // fill character and color    
-    CBRA (fSuccess);
-    
-
-
-    //
-    // Move the cursor to the beginning of the newly cleared area
-    //
-
-    coordCursorPos.X = 0;
-    coordCursorPos.Y = srcScrollRect.Top;
-
-    SetConsoleCursorPosition (g_util.m_hStdOut, coordCursorPos);
 
 Error:
     return;    
 }
 
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CDirectory::CalculateLinesNeeded
+//
+//  
+//
+////////////////////////////////////////////////////////////////////////////////
+
+HRESULT CDirectory::CalculateLinesNeeded (__in CDirectoryInfo * pdi, __out UINT * pcLinesNeeded)
+{
+    HRESULT hr           = S_OK;
+    UINT    cLinesNeeded = 0;
+
+
+
+    ++cLinesNeeded;     // Top separator line
+    ++cLinesNeeded;     // Volume in drive _ is _____
+    ++cLinesNeeded;     // Volume name is ______
+    ++cLinesNeeded;     // Blank line
+
+    if (pdi->m_cFiles > 0)
+    {
+        ++cLinesNeeded;     // Directory of ___________________
+        ++cLinesNeeded;     // Blank line
+
+        if (m_pCmdLine->m_fWideListing)
+        {
+            UINT cColumns;
+            UINT cxColumnWidth;
+
+
+
+            assert (pdi->m_cchLargestFileName > 0);
+
+            hr = GetColumnInfo (pdi, &cColumns, &cxColumnWidth);
+            CHR (hr);
+
+            cLinesNeeded += ((UINT) pdi->m_vMatches.size() + (cColumns - 1)) / cColumns;
+        }
+        else
+        {
+            cLinesNeeded += (UINT) pdi->m_vMatches.size();
+        }
+
+        ++cLinesNeeded;     // Blank line
+        ++cLinesNeeded;     // __ dirs, __ files using ____ bytes
+        ++cLinesNeeded;     // _____________ bytes free on volume
+    }
+
+    ++cLinesNeeded;     // Bottom separator line
+    ++cLinesNeeded;     // Blank line
+
+    *pcLinesNeeded = cLinesNeeded;
+
+Error:
+    return hr;
+}
 
 
 
