@@ -146,7 +146,11 @@ CUtils::CUtils(void)
 
     ZeroMemory (&m_consoleScreenBufferInfoEx, sizeof (m_consoleScreenBufferInfoEx));
     m_consoleScreenBufferInfoEx.cbSize = sizeof (m_consoleScreenBufferInfoEx);
+
     GetConsoleScreenBufferInfoEx (m_hStdOut, &m_consoleScreenBufferInfoEx);
+
+
+    m_coord = m_consoleScreenBufferInfoEx.dwCursorPosition;
 
     InitializeTextAttrs();
 }
@@ -165,24 +169,11 @@ CUtils::CUtils(void)
 
 CUtils::~CUtils(void)
 {
-    ResetTextAttr();
-}
+    //
+    // Update the console cursor position with our final internal cursor position
+    //
 
-
-
-
-
-////////////////////////////////////////////////////////////////////////////////
-//
-//  CUtils::ResetTextAttribute
-//
-//  
-//
-////////////////////////////////////////////////////////////////////////////////
-
-void CUtils::ResetTextAttr (void)
-{
-    SetTextAttr (m_consoleScreenBufferInfoEx.wAttributes);
+    SetConsoleCursorPosition (m_hStdOut, m_coord);
 }
 
 
@@ -199,16 +190,16 @@ void CUtils::ResetTextAttr (void)
 
 void CUtils::InitializeTextAttrs (void)
 {
-    m_wDateAttr                 = FC_Red;
-    m_wTimeAttr                 = FC_Brown;
-    m_wAttributePresentAttr     = FC_Cyan;
-    m_wAttributeNotPresentAttr  = FC_DarkGrey;
-    m_wInformationStandardAttr  = FC_Cyan;
-    m_wInformationHighlightAttr = FC_White;
-    m_wSizeAttr                 = FC_Yellow;
-    m_wDirAttr                  = FC_LightBlue;
-    m_wSeparatorLineAttr        = FC_LightBlue;
-    
+    m_rgAttributes[EAttribute::Default]                 = m_consoleScreenBufferInfoEx.wAttributes;
+    m_rgAttributes[EAttribute::Date]                    = FC_Red;
+    m_rgAttributes[EAttribute::Time]                    = FC_Brown;
+    m_rgAttributes[EAttribute::FileAttributePresent]    = FC_Cyan;
+    m_rgAttributes[EAttribute::FileAttributeNotPresent] = FC_DarkGrey;
+    m_rgAttributes[EAttribute::Information]             = FC_Cyan;
+    m_rgAttributes[EAttribute::InformationHighlight]    = FC_White;
+    m_rgAttributes[EAttribute::Size]                    = FC_Yellow;
+    m_rgAttributes[EAttribute::Directory]               = FC_LightBlue;
+    m_rgAttributes[EAttribute::SeparatorLine]           = FC_LightBlue;
     
     InitializeExtensionToTextAttrMap();
 }
@@ -282,16 +273,17 @@ Error:
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-int CUtils::ConsolePrintf (LPCWSTR pszFormat, ...)
+int CUtils::ConsolePrintf (WORD attr, LPCWSTR pszFormat, ...)
 {
-    HRESULT       hr            = S_OK;
-    va_list       vaArgs        = 0;  
-    int           cchRequired   = 0;
-    int           cchFormatted  = 0; 
-    static int    s_cchBuf      = 256;
-    static LPWSTR s_pszBuf      = (LPWSTR) HeapAlloc (GetProcessHeap(), 0, s_cchBuf);     
-    DWORD         cchWritten    = 0;   
-
+    HRESULT          hr              = S_OK;
+    va_list          vaArgs          = 0;  
+    int              cchRequired     = 0;
+    int              cchFormatted    = 0; 
+    static  int      s_cchBuf        = 256;
+    static  LPWSTR   s_pszBuf        = (LPWSTR) HeapAlloc (GetProcessHeap(), HEAP_ZERO_MEMORY, s_cchBuf);
+    WCHAR          * p               = NULL;
+    WCHAR          * pStart          = NULL;
+    WCHAR          * pEnd            = NULL;
 
     
     va_start (vaArgs, pszFormat);
@@ -299,7 +291,7 @@ int CUtils::ConsolePrintf (LPCWSTR pszFormat, ...)
     cchRequired = _vscwprintf (pszFormat, vaArgs) + 1;   // _vscprintf doesn't count the terminating '\0'
     if (cchRequired > s_cchBuf)
     {
-        HeapReAlloc (GetProcessHeap(), 0, s_pszBuf, cchRequired);
+        HeapReAlloc (GetProcessHeap(), HEAP_ZERO_MEMORY, s_pszBuf, cchRequired);
 		s_cchBuf = cchRequired;
     }
 
@@ -307,7 +299,36 @@ int CUtils::ConsolePrintf (LPCWSTR pszFormat, ...)
     CBRA (cchFormatted >= 0);
     CBRA (cchFormatted <= s_cchBuf);
 
-    WriteConsole (m_hStdOut, s_pszBuf, cchFormatted, &cchWritten, NULL);
+    //
+    // WriteConsoleOutputCharacter does not support newline characters, so
+    // we'll have to handle those manually
+    //
+
+    pStart = s_pszBuf;
+    pEnd = s_pszBuf + cchFormatted;
+
+    p = pStart;
+
+    while (p < pEnd)
+    {
+        if (*p == L'\n')
+        {
+            hr = WriteConsoleString (attr, pStart, p - pStart);
+            CHR (hr);
+
+            pStart = p + 1;
+
+            // Handle the newline
+            m_coord.X = 0;
+            ++m_coord.Y;
+        }
+
+        ++p;
+    }
+
+    hr = WriteConsoleString (attr, pStart, p - pStart);
+    CHR (hr);
+
 
 Error:
     return cchFormatted;
@@ -319,37 +340,68 @@ Error:
 
 ////////////////////////////////////////////////////////////////////////////////
 //
-//  CUtils::DisplayLine
+//  CUtils::WriteConsoleString
 //
-//  Draws a line across the console at the current cursor position
+//  Writes a string to the console using the given attributes at the location 
+//  specified by the internal m_coord member and updates the interal cursor 
+//  position.  This low-level function writes directly to the console buffer 
+//  and does not interpret newline characters or scroll the window.
 // 
 ////////////////////////////////////////////////////////////////////////////////
 
-void CUtils::ConsoleDrawSeparator (void)
+HRESULT CUtils::WriteConsoleString (WORD attr, __in_ecount(cch) WCHAR * p, size_t cch)
 {
-    DWORD written = 0;
-    CONSOLE_SCREEN_BUFFER_INFOEX csbi = { 0 };
+    HRESULT hr       = S_OK;
+    BOOL    fSuccess = FALSE;
+    DWORD   cWritten = 0;
+
+
+    fSuccess = FillConsoleOutputAttribute (m_hStdOut, attr, (DWORD) cch, m_coord, &cWritten);
+    CWRA (fSuccess);
+
+    fSuccess = WriteConsoleOutputCharacter (m_hStdOut, p, (DWORD) cch, m_coord, &cWritten);
+    CWRA (fSuccess);
+
+    m_coord.Y += (m_coord.X + (SHORT) cWritten) / m_consoleScreenBufferInfoEx.dwSize.X;
+    m_coord.X += cWritten % m_consoleScreenBufferInfoEx.dwSize.X;
+
+Error:
+    return hr;
+}
 
 
 
-    csbi.cbSize = sizeof (csbi);
-    GetConsoleScreenBufferInfoEx (m_hStdOut, &csbi);
 
 
-    FillConsoleOutputAttribute (m_hStdOut,
-                                m_wSeparatorLineAttr,
-                                csbi.srWindow.Right - csbi.srWindow.Left + 1,
-                                csbi.dwCursorPosition,
-                                &written);
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CUtils::WriteConsoleLine
+//
+//  Draws a line across the console at the current internal cursor position
+//  and moves to the next line
+// 
+////////////////////////////////////////////////////////////////////////////////
 
-    FillConsoleOutputCharacter (m_hStdOut,
-                                L'═',
-                                csbi.srWindow.Right - csbi.srWindow.Left + 1,
-                                csbi.dwCursorPosition,
-                                &written);
+HRESULT CUtils::WriteConsoleSeparatorLine (void)
+{
+    HRESULT hr          = S_OK;
+    BOOL    fSuccess    = FALSE;
+    DWORD   bufferWidth = m_consoleScreenBufferInfoEx.dwSize.X;
+    DWORD   cWritten    = 0;
 
-    ++csbi.dwCursorPosition.Y;
-    SetConsoleCursorPosition (m_hStdOut, csbi.dwCursorPosition);
+
+    assert (m_coord.X == 0);
+
+    fSuccess = FillConsoleOutputAttribute (m_hStdOut, m_rgAttributes[EAttribute::SeparatorLine], bufferWidth, m_coord, &cWritten);
+    CWRA (fSuccess);
+
+    fSuccess = FillConsoleOutputCharacter (m_hStdOut, L'═', bufferWidth, m_coord, &cWritten);
+    CWRA (fSuccess);
+
+    ++m_coord.Y;
+
+Error:
+    return hr;
 }
 
 
@@ -412,7 +464,7 @@ WORD CUtils::GetTextAttrForFile (const WIN32_FIND_DATA * pwfd)
 
     if (pwfd->dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
     {
-        wAttr = GetDirAttr();
+        wAttr = m_rgAttributes[EAttribute::Directory];
     }
     else
     {       
@@ -450,177 +502,6 @@ WORD CUtils::GetTextAttrForFile (const WIN32_FIND_DATA * pwfd)
 Error:
     return wAttr;    
 }
-
-
-
-
-
-////////////////////////////////////////////////////////////////////////////////
-//
-//  CUtils::GetDateAttr
-//
-//  
-//
-////////////////////////////////////////////////////////////////////////////////
-
-WORD CUtils::GetDateAttr (void)
-{
-    return m_wDateAttr;
-}
-
-
-
-
-
-////////////////////////////////////////////////////////////////////////////////
-//
-//  CUtils::GetTimeAttr
-//
-//  
-//
-////////////////////////////////////////////////////////////////////////////////
-
-WORD CUtils::GetTimeAttr (void)
-{
-    return m_wTimeAttr;
-}
-
-
-
-
-
-////////////////////////////////////////////////////////////////////////////////
-//
-//  CUtils::GetAttributePresentAttr
-//
-//  
-//
-////////////////////////////////////////////////////////////////////////////////
-
-WORD CUtils::GetAttributePresentAttr (void)
-{
-    return m_wAttributePresentAttr;    
-}
-
-
-
-
-////////////////////////////////////////////////////////////////////////////////
-//
-//  CUtils::GetAttributeNotPresentAttr
-//
-//  
-//
-////////////////////////////////////////////////////////////////////////////////
-
-WORD CUtils::GetAttributeNotPresentAttr (void)
-{
-    return m_wAttributeNotPresentAttr;
-}
-
-
-
-
-
-////////////////////////////////////////////////////////////////////////////////
-//
-//  CUtils::GetAttributeNotPresentAttr
-//
-//  
-//
-////////////////////////////////////////////////////////////////////////////////
-
-WORD CUtils::GetInformationStandardAttr (void)
-{
-    return m_wInformationStandardAttr;
-}
-
-
-
-
-
-////////////////////////////////////////////////////////////////////////////////
-//
-//  CUtils::GetAttributeNotPresentAttr
-//
-//  
-//
-////////////////////////////////////////////////////////////////////////////////
-
-WORD CUtils::GetInformationHighlightAttr (void)
-{
-    return m_wInformationHighlightAttr;
-}
-
-
-
-
-
-////////////////////////////////////////////////////////////////////////////////
-//
-//  CUtils::GetSizeAttr
-//
-//  
-//
-////////////////////////////////////////////////////////////////////////////////
-
-WORD CUtils::GetSizeAttr (void)
-{
-    return m_wSizeAttr;
-}
-
-
-
-
-
-////////////////////////////////////////////////////////////////////////////////
-//
-//  CUtils::GetDirAttr
-//
-//  
-//
-////////////////////////////////////////////////////////////////////////////////
-
-WORD CUtils::GetDirAttr (void)
-{
-    return m_wDirAttr;
-}
-
-
-
-
-
-////////////////////////////////////////////////////////////////////////////////
-//
-//  CUtils::GetDirAttr
-//
-//  
-//
-////////////////////////////////////////////////////////////////////////////////
-
-WORD CUtils::GetSeparatorLineAttr (void)
-{
-    return m_wSeparatorLineAttr;
-}
-
-
-
-
-
-////////////////////////////////////////////////////////////////////////////////
-//
-//  CUtils::SetTextAttribute
-//
-//  
-//
-////////////////////////////////////////////////////////////////////////////////
-
-void CUtils::SetTextAttr (WORD wAttr)
-{
-    SetConsoleTextAttribute (m_hStdOut, wAttr);
-}
-
-
 
 
 
