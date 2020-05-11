@@ -149,7 +149,6 @@ CUtils::CUtils(void)
 
     GetConsoleScreenBufferInfoEx (m_hStdOut, &m_consoleScreenBufferInfoEx);
 
-
     m_coord = m_consoleScreenBufferInfoEx.dwCursorPosition;
 
     InitializeTextAttrs();
@@ -174,6 +173,10 @@ CUtils::~CUtils(void)
     //
 
     SetConsoleCursorPosition (m_hStdOut, m_coord);
+
+#ifdef USE_SCREEN_BUFFER
+    HeapFree (GetProcessHeap (), 0, m_prgScreenBuffer);
+#endif
 }
 
 
@@ -267,6 +270,95 @@ Error:
 
 ////////////////////////////////////////////////////////////////////////////////
 //
+//  CUtils::InitializeBuffer
+//
+//  
+//
+////////////////////////////////////////////////////////////////////////////////
+
+HRESULT CUtils::InitializeBuffer (void)
+{
+    HRESULT hr = S_OK;
+
+#ifdef USE_SCREEN_BUFFER
+
+    COORD      coordDestination = { 0, 0 };
+    SMALL_RECT srRead = { 0 };
+
+    //
+    // Allocate an off-screen buffer
+    //
+
+    m_cScreenBuffer = m_consoleScreenBufferInfoEx.dwSize.X * m_consoleScreenBufferInfoEx.dwSize.Y;
+    m_prgScreenBuffer = (CHAR_INFO *) HeapAlloc (GetProcessHeap (), HEAP_ZERO_MEMORY, m_cScreenBuffer * sizeof (*m_prgScreenBuffer));
+
+    //
+    // Initialize it with the current screen buffer's contents
+    //
+
+    srRead.Top    = 0;
+    srRead.Left   = 0;
+    srRead.Bottom = m_consoleScreenBufferInfoEx.dwSize.Y;
+    srRead.Right  = m_consoleScreenBufferInfoEx.dwSize.X;
+
+    ReadConsoleOutput (m_hStdOut, m_prgScreenBuffer, m_consoleScreenBufferInfoEx.dwSize, coordDestination, &srRead);
+
+#endif
+
+//Error:
+
+    return hr;
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CUtils::FlushBuffer
+//
+//  
+//
+////////////////////////////////////////////////////////////////////////////////
+
+HRESULT CUtils::FlushBuffer (void)
+{
+    HRESULT hr = S_OK;
+
+#ifdef USE_SCREEN_BUFFER
+
+    COORD      coordDestination = { 0, 0 };
+    SMALL_RECT srWrite = { 0 };
+
+    //
+    // Write the screen buffer to the console
+    //
+
+    srWrite.Top    = 0;
+    srWrite.Left   = 0;
+    srWrite.Bottom = m_consoleScreenBufferInfoEx.dwSize.Y;
+    srWrite.Right  = m_consoleScreenBufferInfoEx.dwSize.X;
+
+    WriteConsoleOutput (m_hStdOut, m_prgScreenBuffer, m_consoleScreenBufferInfoEx.dwSize, coordDestination, &srWrite);
+
+    HeapFree (GetProcessHeap (), 0, m_prgScreenBuffer);
+    m_prgScreenBuffer = NULL;
+    m_cScreenBuffer = 0;
+
+#endif
+
+//Error:
+
+    return hr;
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
 //  CUtils::ConsolePrintf
 //
 //  
@@ -275,15 +367,16 @@ Error:
 
 int CUtils::ConsolePrintf (WORD attr, LPCWSTR pszFormat, ...)
 {
-    HRESULT          hr              = S_OK;
-    va_list          vaArgs          = 0;  
-    int              cchRequired     = 0;
-    int              cchFormatted    = 0; 
-    static  int      s_cchBuf        = 256;
-    static  LPWSTR   s_pszBuf        = (LPWSTR) HeapAlloc (GetProcessHeap(), HEAP_ZERO_MEMORY, s_cchBuf);
-    WCHAR          * p               = NULL;
-    WCHAR          * pStart          = NULL;
-    WCHAR          * pEnd            = NULL;
+    static  int      s_cchBuf = 256;
+    static  LPWSTR   s_pszBuf = (LPWSTR) HeapAlloc (GetProcessHeap (), HEAP_ZERO_MEMORY, s_cchBuf);
+
+    HRESULT   hr              = S_OK;
+    va_list   vaArgs          = 0;  
+    int       cchRequired     = 0;
+    int       cchFormatted    = 0; 
+    WCHAR   * p               = NULL;
+    WCHAR   * pStart          = NULL;
+    WCHAR   * pEnd            = NULL;
 
     
     va_start (vaArgs, pszFormat);
@@ -351,9 +444,39 @@ Error:
 
 HRESULT CUtils::WriteConsoleString (WORD attr, __in_ecount(cch) WCHAR * p, size_t cch)
 {
-    HRESULT hr       = S_OK;
+    HRESULT   hr   = S_OK;
+
+
+#ifdef USE_SCREEN_BUFFER
+
+    WCHAR     * pEnd         = p + cch;
+    CHAR_INFO * pciBuffer    = m_prgScreenBuffer + ((size_t) m_coord.Y * m_consoleScreenBufferInfoEx.dwSize.X) + m_coord.X;
+    CHAR_INFO * pciBufferEnd = m_prgScreenBuffer + m_cScreenBuffer;
+    size_t      idx          = 0;
+
+
+
+    while (p < pEnd)
+    {
+        pciBuffer->Attributes       = attr;
+        pciBuffer->Char.UnicodeChar = *p;
+
+        ++p;
+        ++pciBuffer;
+
+        CBRAEx (pciBuffer < pciBufferEnd, E_NOT_SUFFICIENT_BUFFER)
+    }
+
+    idx = pciBuffer - m_prgScreenBuffer;
+
+    m_coord.Y = (short) (idx / m_consoleScreenBufferInfoEx.dwSize.X);
+    m_coord.X = (short) (idx % m_consoleScreenBufferInfoEx.dwSize.X);
+
+#else
+
     BOOL    fSuccess = FALSE;
     DWORD   cWritten = 0;
+
 
 
     fSuccess = FillConsoleOutputAttribute (m_hStdOut, attr, (DWORD) cch, m_coord, &cWritten);
@@ -365,7 +488,10 @@ HRESULT CUtils::WriteConsoleString (WORD attr, __in_ecount(cch) WCHAR * p, size_
     m_coord.Y += (m_coord.X + (SHORT) cWritten) / m_consoleScreenBufferInfoEx.dwSize.X;
     m_coord.X += cWritten % m_consoleScreenBufferInfoEx.dwSize.X;
 
+#endif
+
 Error:
+
     return hr;
 }
 
@@ -384,7 +510,25 @@ Error:
 
 HRESULT CUtils::WriteConsoleSeparatorLine (void)
 {
-    HRESULT hr          = S_OK;
+    HRESULT hr     = S_OK;
+
+#ifdef USE_SCREEN_BUFFER
+
+    size_t  idx    = m_coord.Y * m_consoleScreenBufferInfoEx.dwSize.X;
+    size_t  idxEnd = idx + m_consoleScreenBufferInfoEx.dwSize.X;
+
+
+
+    while (idx < idxEnd)
+    {
+        m_prgScreenBuffer[idx].Attributes       = m_rgAttributes[EAttribute::SeparatorLine];
+        m_prgScreenBuffer[idx].Char.UnicodeChar = L'═';
+
+        ++idx;
+    }
+
+#else 
+
     BOOL    fSuccess    = FALSE;
     DWORD   bufferWidth = m_consoleScreenBufferInfoEx.dwSize.X;
     DWORD   cWritten    = 0;
@@ -398,9 +542,13 @@ HRESULT CUtils::WriteConsoleSeparatorLine (void)
     fSuccess = FillConsoleOutputCharacter (m_hStdOut, L'═', bufferWidth, m_coord, &cWritten);
     CWRA (fSuccess);
 
+#endif
+
     ++m_coord.Y;
 
+#ifndef USE_SCREEN_BUFFER
 Error:
+#endif
     return hr;
 }
 
@@ -506,3 +654,65 @@ Error:
 
 
 
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CUtils::ScrollBuffer
+//
+//  
+//
+////////////////////////////////////////////////////////////////////////////////
+
+HRESULT CUtils::ScrollBuffer (UINT cLines)
+{
+    HRESULT    hr = S_OK;
+    CHAR_INFO  ciFill = { 0 };
+
+    ciFill.Attributes = m_rgAttributes[CUtils::EAttribute::Default];
+    ciFill.Char.UnicodeChar = L' ';
+
+#ifdef USE_SCREEN_BUFFER
+
+    size_t      idx           = (short) cLines * m_consoleScreenBufferInfoEx.dwSize.X;
+    size_t      cb            = (m_consoleScreenBufferInfoEx.dwSize.Y - (short) cLines) * m_consoleScreenBufferInfoEx.dwSize.X;
+    CHAR_INFO * pNewEmptyArea = m_prgScreenBuffer + ((m_consoleScreenBufferInfoEx.dwSize.Y - (short) cLines) * m_consoleScreenBufferInfoEx.dwSize.X);
+    CHAR_INFO * pEnd          = m_prgScreenBuffer + (m_consoleScreenBufferInfoEx.dwSize.Y * m_consoleScreenBufferInfoEx.dwSize.X);
+   
+    MoveMemory (m_prgScreenBuffer, m_prgScreenBuffer + idx, cb);
+    
+    while (pNewEmptyArea < pEnd)
+    {
+        *pNewEmptyArea = ciFill;
+        ++pNewEmptyArea;
+    }
+
+    m_coord.Y = (short) (idx / m_consoleScreenBufferInfoEx.dwSize.X);
+    m_coord.X = (short) (idx % m_consoleScreenBufferInfoEx.dwSize.X);
+
+#else
+
+    BOOL       fSuccess       = FALSE;
+    SMALL_RECT srcScrollRect  = { 0 };
+    COORD      coordDest      = { 0 };
+    COORD      coordCursorPos = { 0 };
+
+    srcScrollRect.Top    = (short) cLines;
+    srcScrollRect.Bottom = m_consoleScreenBufferInfoEx.dwSize.Y - 1;
+    srcScrollRect.Left   = 0;
+    srcScrollRect.Right  = m_consoleScreenBufferInfoEx.dwSize.X - 1;
+
+    fSuccess = ScrollConsoleScreenBuffer (m_hStdOut, &srcScrollRect, NULL, coordDest, &ciFill);
+    CWRA (fSuccess);
+
+    // this looks wrong...
+    //m_coord.Y = srcScrollRect.Top;
+
+#endif
+
+    m_coord.Y -= (short) cLines;
+
+#ifndef USE_SCREEN_BUFFER
+Error:
+#endif
+    return hr;
+}

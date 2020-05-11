@@ -2,6 +2,8 @@
 
 
 
+#define USE_SCREEN_BUFFER
+
 
 
 class CUtils
@@ -83,6 +85,9 @@ public:
     HRESULT WriteConsoleSeparatorLine   (void);
     BOOL    IsDots                      (LPCWSTR pszFileName);
     WORD    GetTextAttrForFile          (const WIN32_FIND_DATA * pwfd);
+    HRESULT ScrollBuffer                (UINT cLines);
+    HRESULT InitializeBuffer            (void);
+    HRESULT FlushBuffer                 (void);
 
     //
     // Public members
@@ -118,18 +123,22 @@ protected:
     //
     // Protected methods
     //
-
+     
     void InitializeTextAttrs              (void);
     void InitializeExtensionToTextAttrMap (void);
-
+    
     //
     // Protected members
     //
 
     static const STextAttr s_rgTextAttrs[];
 
-    TextAttrMap            m_mapExtensionToTextAttr;   
-    DWORD                  m_consoleMode;
+#ifdef USE_SCREEN_BUFFER
+    DWORD         m_cScreenBuffer;
+    CHAR_INFO   * m_prgScreenBuffer;
+#endif
+    TextAttrMap   m_mapExtensionToTextAttr;   
+    DWORD         m_consoleMode;
 };               
 
 

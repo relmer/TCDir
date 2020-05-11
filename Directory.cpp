@@ -554,21 +554,13 @@ HRESULT CDirectory::AddMatchToList (CFileInfo * pwfd, CDirectoryInfo * pdi)
 
 void CDirectory::Scroll (CDirectoryInfo * pdi)
 {
-    HRESULT                    hr                    = S_OK;
-    BOOL                       fSuccess              = FALSE;
-    CONSOLE_SCREEN_BUFFER_INFO csbiInfo              = { 0 };
-    UINT                       cWindowLinesTotal     = 0;
-    UINT                       cBufferLinesRemaining = 0;
-    UINT                       cLinesNeeded          = 0;
+    HRESULT hr                    = S_OK;
+    BOOL    fSuccess              = FALSE;
+    UINT    cWindowLinesTotal     = 0;
+    UINT    cBufferLinesRemaining = 0;
+    UINT    cLinesNeeded          = 0;
 
 
-
-    //
-    // Get the screen buffer size. 
-    //
-    
-    fSuccess = GetConsoleScreenBufferInfo (g_util.m_hStdOut, &csbiInfo); 
-    CBRA (fSuccess);
 
     //
     // Calculate the number of rows to scroll
@@ -581,39 +573,17 @@ void CDirectory::Scroll (CDirectoryInfo * pdi)
     // If there are enough lines left in the current window, no need to scroll
     //
 
-    cWindowLinesTotal = csbiInfo.srWindow.Bottom - csbiInfo.srWindow.Top + 1;
-    BAIL_OUT_IF ((cLinesNeeded + csbiInfo.dwCursorPosition.Y) <= cWindowLinesTotal, S_OK);
+    cWindowLinesTotal = g_util.m_consoleScreenBufferInfoEx.srWindow.Bottom - g_util.m_consoleScreenBufferInfoEx.srWindow.Top + 1;
+    BAIL_OUT_IF ((cLinesNeeded + g_util.m_coord.Y) <= cWindowLinesTotal, S_OK);
 
     //
     // If we need more lines than are free in the buffer, scroll the buffer up to make room
     //
 
-    cBufferLinesRemaining = csbiInfo.dwSize.Y - csbiInfo.dwCursorPosition.Y;
+    cBufferLinesRemaining = g_util.m_consoleScreenBufferInfoEx.dwSize.Y - g_util.m_coord.Y;
     if (cLinesNeeded > cBufferLinesRemaining)
     {
-        SMALL_RECT srcScrollRect  = { 0 };
-        CHAR_INFO  chiFill        = { 0 };
-        COORD      coordDest      = { 0 };
-        COORD      coordCursorPos = { 0 };
-
-        srcScrollRect.Top    = (short) cLinesNeeded - (short) cBufferLinesRemaining;
-        srcScrollRect.Bottom = csbiInfo.dwSize.Y - 1;
-        srcScrollRect.Left   = 0;
-        srcScrollRect.Right  = csbiInfo.dwSize.X - 1;
-
-        chiFill.Attributes       = csbiInfo.wAttributes;
-        chiFill.Char.UnicodeChar = L' ';
-
-        fSuccess = ScrollConsoleScreenBuffer (g_util.m_hStdOut, &srcScrollRect, NULL, coordDest, &chiFill);
-        CWRA (fSuccess);
-
-        coordCursorPos.X = 0;
-        coordCursorPos.Y = srcScrollRect.Top;
-        fSuccess = SetConsoleCursorPosition (g_util.m_hStdOut, coordCursorPos);
-        CWRA (fSuccess);
-
-        g_util.m_coord.Y            = coordCursorPos.Y;
-        csbiInfo.dwCursorPosition.Y = coordCursorPos.Y;
+        g_util.ScrollBuffer (cLinesNeeded - cBufferLinesRemaining);
     }
 
     //
@@ -621,14 +591,14 @@ void CDirectory::Scroll (CDirectoryInfo * pdi)
     // to the bottom of the area we need
     //
         
-    if (csbiInfo.dwCursorPosition.Y + cLinesNeeded > (UINT) csbiInfo.srWindow.Bottom)
+    if (g_util.m_coord.Y + cLinesNeeded > (UINT) g_util.m_consoleScreenBufferInfoEx.srWindow.Bottom)
     {
         SHORT      cLinesToMoveWindow = 0;
         SMALL_RECT srcWindow          = { 0 };
 
 
 
-        cLinesToMoveWindow = (SHORT) csbiInfo.dwCursorPosition.Y + (SHORT) cLinesNeeded - csbiInfo.srWindow.Bottom;
+        cLinesToMoveWindow = (SHORT) g_util.m_coord.Y + (SHORT) cLinesNeeded - g_util.m_consoleScreenBufferInfoEx.srWindow.Bottom;
 
         // relative coords
         srcWindow.Top    += cLinesToMoveWindow;
@@ -727,6 +697,8 @@ void CDirectory::DisplayResults (CDirectoryInfo * pdi)
     }
 #endif
 
+    g_util.InitializeBuffer ();
+
     Scroll (pdi);
     
     g_util.WriteConsoleSeparatorLine();
@@ -755,6 +727,8 @@ void CDirectory::DisplayResults (CDirectoryInfo * pdi)
         
     g_util.WriteConsoleSeparatorLine ();
     g_util.ConsolePrintf (CUtils::EAttribute::Default, L"\n");
+
+    g_util.FlushBuffer ();
 }
 
 
