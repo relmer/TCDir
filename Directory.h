@@ -56,6 +56,7 @@ protected:
     HRESULT RecurseIntoSubdirectories (LPCWSTR pszPath, LPCWSTR pszFileSpec);
     HRESULT AddMatchToList            (CFileInfo * pwfd, CDirectoryInfo * pdi);
     void    Scroll                    (CDirectoryInfo * pdi);
+    HRESULT CalculateLinesNeeded      (__in CDirectoryInfo * pdi, __out UINT * pcLinesNeeded);
     void    DisplayResults            (CDirectoryInfo * pdi);
     void    DisplayResultsWide        (CDirectoryInfo * pdi);
     HRESULT GetColumnInfo             (CDirectoryInfo * pdi, UINT * pcColumns, UINT * pcxColumnWidth);

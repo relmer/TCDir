@@ -40,7 +40,29 @@
                                                                                             \
         goto ErrorLabel;                                                                    \
     }                                                                                       \
-}                                                                                   
+}                             
+
+#define __CWRAExHelper(__arg_fSuccess, __arg_fAssert, __arg_fReplaceHr, __arg_hrReplaceHr)  \
+{                                                                                           \
+    if (!fSuccess)                                                                          \
+    {                                                                                       \
+        if (__arg_fAssert)                                                                  \
+        {                                                                                   \
+            assert (FALSE);                                                                 \
+        }                                                                                   \
+                                                                                            \
+        if (__arg_fReplaceHr)                                                               \
+        {                                                                                   \
+            hr = __arg_hrReplaceHr;                                                         \
+        }                                                                                   \
+        else                                                                                \
+        {                                                                                   \
+            hr = HRESULT_FROM_WIN32 (::GetLastError());                                     \
+        }                                                                                   \
+                                                                                            \
+        goto ErrorLabel;                                                                    \
+    }                                                                                       \
+}  
 
 #define __CBRAExHelper(__arg_brTest, __arg_fAssert, __arg_hrReplaceHr)                      \
 {                                                                                           \
@@ -101,6 +123,34 @@
 #define CHR(__arg_hrTest)                                                                   \
 {                                                                                           \
     __CHRAExHelper (__arg_hrTest, __EHM_NO_ASSERT, FALSE, 0)                                \
+}                                                                                           
+
+
+
+
+
+//
+// CWR variants
+//
+
+#define CWRAEx(__arg_fSuccess, __arg_hrReplaceHr)                                           \
+{                                                                                           \
+    __CWRAExHelper (__arg_fSuccess, __EHM_ASSERT, TRUE, __arg_hrReplaceHr)                  \
+}
+
+#define CWREx(__arg_fSuccess, __arg_hrReplaceHr)                                            \
+{                                                                                           \
+    __CWRAExHelper (__arg_fSuccess, __EHM_NO_ASSERT, TRUE, __arg_hrReplaceHr)               \
+}                                                                                           \
+
+#define CWRA(__arg_fSuccess)                                                                \
+{                                                                                           \
+    __CWRAExHelper (__arg_fSuccess, __EHM_ASSERT, FALSE, 0)                                 \
+}                                                                                   
+
+#define CWR(__arg_fSuccess)                                                                 \
+{                                                                                           \
+    __CWRAExHelper (__arg_fSuccess, __EHM_NO_ASSERT, FALSE, 0)                              \
 }                                                                                           
 
 

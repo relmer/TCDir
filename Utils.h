@@ -2,6 +2,8 @@
 
 
 
+#define USE_SCREEN_BUFFER
+
 
 
 class CUtils
@@ -49,6 +51,22 @@ public:
         BC_Mask         = BC_White,
     };                
 
+    enum EAttribute
+    {
+        Default,
+        Date,
+        Time,
+        FileAttributePresent,
+        FileAttributeNotPresent,
+        Size,
+        Directory,
+        Information,
+        InformationHighlight,
+        SeparatorLine,
+
+        __count
+    };
+
 
     
     //
@@ -62,22 +80,14 @@ public:
     // Public Methods
     //
 
-    int  ConsolePrintf               (LPCWSTR pszFormat, ...);
-    void ConsoleDrawSeparator        (void);
-    BOOL IsDots                      (LPCWSTR pszFileName);
-    WORD GetTextAttrForFile          (const WIN32_FIND_DATA * pwfd);
-    WORD GetDateAttr                 (void);
-    WORD GetTimeAttr                 (void);
-    WORD GetAttributePresentAttr     (void);
-    WORD GetAttributeNotPresentAttr  (void);
-    WORD GetSizeAttr                 (void);
-    WORD GetDirAttr                  (void);
-    WORD GetSeparatorLineAttr        (void);
-    WORD GetInformationStandardAttr  (void);
-    WORD GetInformationHighlightAttr (void);    
-    void SetTextAttr                 (WORD wAttr);
-    void ResetTextAttr               (void);
-
+    int     ConsolePrintf               (WORD attr, LPCWSTR pszFormat, ...);
+    HRESULT WriteConsoleString          (WORD attr, __in_ecount(cch) WCHAR * p, size_t cch);
+    HRESULT WriteConsoleSeparatorLine   (void);
+    BOOL    IsDots                      (LPCWSTR pszFileName);
+    WORD    GetTextAttrForFile          (const WIN32_FIND_DATA * pwfd);
+    HRESULT ScrollBuffer                (UINT cLines);
+    HRESULT InitializeBuffer            (void);
+    HRESULT FlushBuffer                 (void);
 
     //
     // Public members
@@ -85,6 +95,8 @@ public:
 
     HANDLE                       m_hStdOut; 
     CONSOLE_SCREEN_BUFFER_INFOEX m_consoleScreenBufferInfoEx;
+    COORD                        m_coord;
+    WORD                         m_rgAttributes[EAttribute::__count];
 
 
 
@@ -111,25 +123,22 @@ protected:
     //
     // Protected methods
     //
-
+     
     void InitializeTextAttrs              (void);
     void InitializeExtensionToTextAttrMap (void);
-
+    
     //
     // Protected members
     //
 
     static const STextAttr s_rgTextAttrs[];
-    WORD                   m_wDateAttr;
-    WORD                   m_wTimeAttr;
-    WORD                   m_wAttributePresentAttr;
-    WORD                   m_wAttributeNotPresentAttr;
-    WORD                   m_wInformationStandardAttr;
-    WORD                   m_wInformationHighlightAttr;
-    WORD                   m_wSizeAttr;
-    WORD                   m_wDirAttr;
-    WORD                   m_wSeparatorLineAttr;
-    TextAttrMap            m_mapExtensionToTextAttr;   
+
+#ifdef USE_SCREEN_BUFFER
+    DWORD         m_cScreenBuffer;
+    CHAR_INFO   * m_prgScreenBuffer;
+#endif
+    TextAttrMap   m_mapExtensionToTextAttr;   
+    DWORD         m_consoleMode;
 };               
 
 

@@ -19,7 +19,7 @@ public:
     
     enum class ESortOrder 
     {                       // Preface with '-' to reverse the order
-        SO_DEFAULT = -1,    // Unsorted (order returned by FindFirstFile)
+        SO_DEFAULT,         // Unsorted (use the order returned by FindFirstFile)
         SO_NAME,            // N  By name (alphabetic)
         SO_EXTENSION,       // E  By extension (alphabetic)
         SO_SIZE,            // S  By size (smallest first)

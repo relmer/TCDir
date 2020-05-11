@@ -375,8 +375,7 @@ HRESULT CDirectory::ProcessDirectory (LPCWSTR pszPath, LPCWSTR pszFileSpec)
     // Show the directory contents
     //
     
-    DisplayResults (&di);        
-    
+    DisplayResults (&di);           
 
     //
     // Recurse into subdirectories 
@@ -555,180 +554,127 @@ HRESULT CDirectory::AddMatchToList (CFileInfo * pwfd, CDirectoryInfo * pdi)
 
 void CDirectory::Scroll (CDirectoryInfo * pdi)
 {
-    static const int s_cDriveHeaderRows = 4;
-    static const int s_cPathHeaderRows  = 2;
-    static const int s_cFooterRows      = 6;
-    
-    HRESULT                    hr             = S_OK;
-    BOOL                       fSuccess;      
-    CONSOLE_SCREEN_BUFFER_INFO csbiInfo;  
-    UINT                       cWindowRows;
-    UINT                       cBufferRows;
-    UINT                       cRowsTotal;
-    UINT                       cRowsToScroll;
-    SMALL_RECT                 srcScrollRect; 
-    SMALL_RECT                 srcClipRect;   
-    CHAR_INFO                  chiFill;       
-    COORD                      coordDest; 
-    COORD                      coordCursorPos;
-     
+    HRESULT hr                    = S_OK;
+    BOOL    fSuccess              = FALSE;
+    UINT    cWindowLinesTotal     = 0;
+    UINT    cBufferLinesRemaining = 0;
+    UINT    cLinesNeeded          = 0;
 
 
-    //
-    // Get the screen buffer size. 
-    //
-    
-    fSuccess = GetConsoleScreenBufferInfo (g_util.m_hStdOut, &csbiInfo); 
-    CBRA (fSuccess);
-
-    cWindowRows = csbiInfo.srWindow.Bottom - csbiInfo.srWindow.Top + 1;
-    cBufferRows = csbiInfo.dwSize.Y;
-    
 
     //
     // Calculate the number of rows to scroll
     //
 
-    cRowsTotal =  s_cDriveHeaderRows;
+    hr = CalculateLinesNeeded (pdi, &cLinesNeeded);
+    CHR (hr);
 
-    if (pdi->m_cFiles > 0)
+    //
+    // If there are enough lines left in the current window, no need to scroll
+    //
+
+    cWindowLinesTotal = g_util.m_consoleScreenBufferInfoEx.srWindow.Bottom - g_util.m_consoleScreenBufferInfoEx.srWindow.Top + 1;
+    BAIL_OUT_IF ((cLinesNeeded + g_util.m_coord.Y) <= cWindowLinesTotal, S_OK);
+
+    //
+    // If we need more lines than are free in the buffer, scroll the buffer up to make room
+    //
+
+    cBufferLinesRemaining = g_util.m_consoleScreenBufferInfoEx.dwSize.Y - g_util.m_coord.Y;
+    if (cLinesNeeded > cBufferLinesRemaining)
     {
-        cRowsTotal += s_cPathHeaderRows;
+        g_util.ScrollBuffer (cLinesNeeded - cBufferLinesRemaining);
     }
 
-    
-    if (m_pCmdLine->m_fWideListing)
-    {
-        UINT cColumns;      
-        UINT cxColumnWidth; 
+    //
+    // If we're going to write past the bottom of the window, reposition the window 
+    // to the bottom of the area we need
+    //
         
-        
-        
-        assert (pdi->m_cchLargestFileName > 0);
-        
-        hr = GetColumnInfo (pdi, &cColumns, &cxColumnWidth);
-        CHR (hr);    
-        
-        cRowsTotal += ((UINT) pdi->m_vMatches.size() + (cColumns - 1)) / cColumns;
-    }
-    else
+    if (g_util.m_coord.Y + cLinesNeeded > (UINT) g_util.m_consoleScreenBufferInfoEx.srWindow.Bottom)
     {
-        cRowsTotal += pdi->m_cFiles;
+        SHORT      cLinesToMoveWindow = 0;
+        SMALL_RECT srcWindow          = { 0 };
+
+
+
+        cLinesToMoveWindow = (SHORT) g_util.m_coord.Y + (SHORT) cLinesNeeded - g_util.m_consoleScreenBufferInfoEx.srWindow.Bottom;
+
+        // relative coords
+        srcWindow.Top    += cLinesToMoveWindow;
+        srcWindow.Bottom += cLinesToMoveWindow;
+
+        fSuccess = SetConsoleWindowInfo (g_util.m_hStdOut, FALSE, &srcWindow);
+        CWRA (fSuccess);
     }
+  
 
-    if (pdi->m_cFiles > 0)
-    {
-        cRowsTotal += s_cFooterRows;
-    }
-
-
-    //
-    // Scenario 1:  Console contents + cRowsTotal is less than one page
-    //
-    // No need to scroll
-    //
-
-    BAIL_OUT_IF ((cRowsTotal + csbiInfo.dwCursorPosition.Y) <= cWindowRows, S_OK);
-
-    //
-    // Scenario 2:  Console contents + cRowsTotal is less than the entire buffer
-    //
-
-    if ((cRowsTotal + csbiInfo.dwCursorPosition.Y) < cBufferRows)
-    {
-        UINT cEmptyRowsInThisWindow;
-
-
-        cEmptyRowsInThisWindow = csbiInfo.srWindow.Bottom - csbiInfo.dwCursorPosition.Y + 1;        
-        cRowsToScroll          = cRowsTotal - cEmptyRowsInThisWindow;
-    }                        
-
-
-
-    //
-    // Scenario 3:  Console contents + cRowsTotal exceeds the screen buffer
-    //
-    
-    else
-    {
-        // TODO:  Remember wtf I was doing here :)
-
-        //cRowsToScroll = 
-    }
-
-    //
-    // If we've got more than one page of text, we want
-    // to scroll so that the bottom page of text shows
-    // exactly.  We don't want the console to have to
-    // scroll as we display each line.
-    //
-
-    if (cRowsTotal > (UINT) (csbiInfo.srWindow.Bottom - csbiInfo.srWindow.Top + 1))
-    {
-    }
-    
-    
-    //
-    // The scrolling rectangle is the bottom cRowsTotal of the 
-    // screen buffer. 
-    //
-    
-    srcScrollRect.Top    = csbiInfo.dwCursorPosition.Y - (SHORT) cRowsTotal; 
-    srcScrollRect.Bottom = csbiInfo.dwCursorPosition.Y - 1; 
-    srcScrollRect.Left   = 0; 
-    srcScrollRect.Right  = csbiInfo.dwSize.X - 1; 
-
-     
-    //
-    // The destination for the scroll rectangle is one row up. 
-    //
-    
-    coordDest.X = 0; 
-    coordDest.Y = csbiInfo.dwCursorPosition.Y - (2 * (SHORT) cRowsTotal); 
-     
-
-    //
-    // The clipping rectangle is the same as the scrolling rectangle. 
-    // The destination row is left unchanged. 
-    //
-    
-    srcClipRect = srcScrollRect; 
-
-     
-    //
-    // Fill the bottom row with green blanks. 
-    //
-    
-    chiFill.Attributes       = g_util.m_consoleScreenBufferInfoEx.wAttributes;
-    chiFill.Char.UnicodeChar = L' '; 
-
-     
-    //
-    // Scroll up
-    //
-    
-    fSuccess = ScrollConsoleScreenBuffer (g_util.m_hStdOut,     // screen buffer handle 
-                                          &srcScrollRect,       // scrolling rectangle 
-                                          &srcClipRect,         // clipping rectangle 
-                                          coordDest,            // top left destination cell 
-                                          &chiFill);            // fill character and color    
-    CBRA (fSuccess);
-    
-
-
-    //
-    // Move the cursor to the beginning of the newly cleared area
-    //
-
-    coordCursorPos.X = 0;
-    coordCursorPos.Y = srcScrollRect.Top;
-
-    SetConsoleCursorPosition (g_util.m_hStdOut, coordCursorPos);
 
 Error:
     return;    
 }
 
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CDirectory::CalculateLinesNeeded
+//
+//  
+//
+////////////////////////////////////////////////////////////////////////////////
+
+HRESULT CDirectory::CalculateLinesNeeded (__in CDirectoryInfo * pdi, __out UINT * pcLinesNeeded)
+{
+    HRESULT hr           = S_OK;
+    UINT    cLinesNeeded = 0;
+
+
+
+    ++cLinesNeeded;     // Top separator line
+    ++cLinesNeeded;     // Volume in drive _ is _____
+    ++cLinesNeeded;     // Volume name is ______
+    ++cLinesNeeded;     // Blank line
+
+    if (pdi->m_cFiles > 0)
+    {
+        ++cLinesNeeded;     // Directory of ___________________
+        ++cLinesNeeded;     // Blank line
+
+        if (m_pCmdLine->m_fWideListing)
+        {
+            UINT cColumns;
+            UINT cxColumnWidth;
+
+
+
+            assert (pdi->m_cchLargestFileName > 0);
+
+            hr = GetColumnInfo (pdi, &cColumns, &cxColumnWidth);
+            CHR (hr);
+
+            cLinesNeeded += ((UINT) pdi->m_vMatches.size() + (cColumns - 1)) / cColumns;
+        }
+        else
+        {
+            cLinesNeeded += (UINT) pdi->m_vMatches.size();
+        }
+
+        ++cLinesNeeded;     // Blank line
+        ++cLinesNeeded;     // __ dirs, __ files using ____ bytes
+        ++cLinesNeeded;     // _____________ bytes free on volume
+    }
+
+    ++cLinesNeeded;     // Bottom separator line
+    ++cLinesNeeded;     // Blank line
+
+    *pcLinesNeeded = cLinesNeeded;
+
+Error:
+    return hr;
+}
 
 
 
@@ -751,9 +697,11 @@ void CDirectory::DisplayResults (CDirectoryInfo * pdi)
     }
 #endif
 
+    g_util.InitializeBuffer ();
+
     Scroll (pdi);
     
-    g_util.ConsoleDrawSeparator();
+    g_util.WriteConsoleSeparatorLine();
 
     DisplayDriveHeader (pdi->m_pszPath); 
 
@@ -777,8 +725,10 @@ void CDirectory::DisplayResults (CDirectoryInfo * pdi)
         DisplayFooter (pdi);    
     }
         
-    g_util.ConsoleDrawSeparator ();
-    g_util.ConsolePrintf (L"\n");
+    g_util.WriteConsoleSeparatorLine ();
+    g_util.ConsolePrintf (CUtils::EAttribute::Default, L"\n");
+
+    g_util.FlushBuffer ();
 }
 
 
@@ -834,15 +784,12 @@ void CDirectory::DisplayResultsWide (CDirectoryInfo * pdi)
             CHR (hr);
 
             wAttr = g_util.GetTextAttrForFile (pwfd);
-            g_util.SetTextAttr (wAttr);
-            
-            cchPrinted = g_util.ConsolePrintf (L"%s", pszName);
+            cchPrinted = g_util.ConsolePrintf (wAttr, L"%s", pszName);
 
-            g_util.ResetTextAttr();
-            g_util.ConsolePrintf (L"%*s", cxColumnWidth - cchPrinted, L"");
+            g_util.ConsolePrintf (g_util.m_rgAttributes[CUtils::EAttribute::Default], L"%*s", cxColumnWidth - cchPrinted, L"");
         }
 
-        g_util.ConsolePrintf (L"\n");
+        g_util.ConsolePrintf (g_util.m_rgAttributes[CUtils::EAttribute::Default], L"\n");
     }
 
 Error:
@@ -1003,10 +950,11 @@ void CDirectory::DisplayResultsNormal (CDirectoryInfo * pdi)
     iter = pdi->m_vMatches.begin();
     while (iter != pdi->m_vMatches.end())
     {                           
-        SYSTEMTIME       st;          
-        SYSTEMTIME       stLocal;     
-        ULARGE_INTEGER   uliFileSize; 
+        SYSTEMTIME       st           = { 0 };
+        SYSTEMTIME       stLocal      = { 0 };
+        ULARGE_INTEGER   uliFileSize  = { 0 };
         const SAttrMap * pAttrMap     = attrmap;
+        WORD             attr         = 0;
 
 
 
@@ -1027,15 +975,11 @@ void CDirectory::DisplayResultsNormal (CDirectoryInfo * pdi)
         uliFileSize.LowPart  = iter->nFileSizeLow;
         uliFileSize.HighPart = iter->nFileSizeHigh;
 
-        g_util.SetTextAttr (g_util.GetDateAttr());
-        g_util.ConsolePrintf (L"%s", szDate);
-        g_util.ResetTextAttr();        
-        g_util.ConsolePrintf (L"  ");
+        g_util.ConsolePrintf (g_util.m_rgAttributes[CUtils::EAttribute::Date],    L"%s", szDate);
+        g_util.ConsolePrintf (g_util.m_rgAttributes[CUtils::EAttribute::Default], L"  ");
         
-        g_util.SetTextAttr (g_util.GetTimeAttr());
-        g_util.ConsolePrintf (L"%s", szTime);
-        g_util.ResetTextAttr();        
-        g_util.ConsolePrintf (L" ");
+        g_util.ConsolePrintf (g_util.m_rgAttributes[CUtils::EAttribute::Time],    L"%s", szTime);
+        g_util.ConsolePrintf (g_util.m_rgAttributes[CUtils::EAttribute::Default], L" ");
 
         while (pAttrMap->m_dwAttr != 0)
         {
@@ -1043,17 +987,16 @@ void CDirectory::DisplayResultsNormal (CDirectoryInfo * pdi)
             
             if (iter->dwFileAttributes & pAttrMap->m_dwAttr)
             {
-                g_util.SetTextAttr (g_util.GetAttributePresentAttr());
+                attr = g_util.m_rgAttributes[CUtils::EAttribute::FileAttributePresent];
                 chDisplay = pAttrMap->m_chAttr;
             }
             else
             {
-                g_util.SetTextAttr (g_util.GetAttributeNotPresentAttr());
+                attr = g_util.m_rgAttributes[CUtils::EAttribute::FileAttributeNotPresent];
                 chDisplay = kchHyphen;
             }
 
-            g_util.ConsolePrintf (L"%c", chDisplay);
-            g_util.ResetTextAttr();
+            g_util.ConsolePrintf (attr, L"%c", chDisplay);
 
             ++pAttrMap;
         }
@@ -1061,8 +1004,7 @@ void CDirectory::DisplayResultsNormal (CDirectoryInfo * pdi)
         
         if ((iter->dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) == 0)
         {
-            g_util.SetTextAttr (g_util.GetSizeAttr());
-            g_util.ConsolePrintf (L" %*s ", cchMaxSize, FormatFileSize (uliFileSize));
+            g_util.ConsolePrintf (g_util.m_rgAttributes[CUtils::EAttribute::Size], L" %*s ", cchMaxSize, FormatFileSize (uliFileSize));
         }
         else
         {
@@ -1070,15 +1012,11 @@ void CDirectory::DisplayResultsNormal (CDirectoryInfo * pdi)
 
             cchLeftSidePadding = (cchMaxSize - kcchDirSize) / 2;            
             
-            g_util.SetTextAttr (g_util.GetDirAttr());
-            g_util.ConsolePrintf (L" %*s", cchLeftSidePadding, L"");
-            g_util.ConsolePrintf (L"%-*s ", cchMaxSize - cchLeftSidePadding, kszDirSize);
+            g_util.ConsolePrintf (g_util.m_rgAttributes[CUtils::EAttribute::Directory], L" %*s%-*s ", cchLeftSidePadding, L"", cchMaxSize - cchLeftSidePadding, kszDirSize);
          }        
 
-        g_util.SetTextAttr (g_util.GetTextAttrForFile (&(*iter)));
-        g_util.ConsolePrintf (L"%s", iter->cFileName);
-        g_util.ResetTextAttr();        
-        g_util.ConsolePrintf (L"\n");
+        attr = (g_util.GetTextAttrForFile (&(*iter)));
+        g_util.ConsolePrintf (attr, L"%s\n", iter->cFileName);
         
         ++iter;
     }
@@ -1164,27 +1102,20 @@ void CDirectory::DisplayDriveHeader (LPCWSTR pszPath)
                           NULL, 
                           szFileSystemName, ARRAYSIZE (szFileSystemName));
 
-    g_util.SetTextAttr (g_util.GetInformationStandardAttr());
-    g_util.ConsolePrintf (L" Volume ");
+    g_util.ConsolePrintf (g_util.m_rgAttributes[CUtils::EAttribute::Information], L" Volume ");
 
     if (fUncPath)
     {
-        g_util.SetTextAttr (g_util.GetInformationHighlightAttr());
-        g_util.ConsolePrintf (L"%s", pszPath);
+        g_util.ConsolePrintf (g_util.m_rgAttributes[CUtils::EAttribute::InformationHighlight], L"%s", pszPath);
     }
     else
     {
-        g_util.ConsolePrintf (L"in drive ");
-        
-        g_util.SetTextAttr (g_util.GetInformationHighlightAttr());
-        g_util.ConsolePrintf (L"%c", szDriveRoot[0]);        
+        g_util.ConsolePrintf (g_util.m_rgAttributes[CUtils::EAttribute::Information],          L"in drive ");        
+        g_util.ConsolePrintf (g_util.m_rgAttributes[CUtils::EAttribute::InformationHighlight], L"%c", szDriveRoot[0]);
     }        
 
-    g_util.SetTextAttr (g_util.GetInformationStandardAttr());
-    g_util.ConsolePrintf (L" is ");
-
-    g_util.SetTextAttr (g_util.GetInformationHighlightAttr());
-    g_util.ConsolePrintf (L"%s", s_krgszVolumeDescription[uiDriveType]);
+    g_util.ConsolePrintf (g_util.m_rgAttributes[CUtils::EAttribute::Information],          L" is ");
+    g_util.ConsolePrintf (g_util.m_rgAttributes[CUtils::EAttribute::InformationHighlight], L"%s", s_krgszVolumeDescription[uiDriveType]);
 
 
     //
@@ -1209,41 +1140,24 @@ void CDirectory::DisplayDriveHeader (LPCWSTR pszPath)
         dwResult = WNetGetConnection (szDriveRoot, szRemoteName, &cchRemoteName);              
         if (dwResult == NOERROR)
         {
-            g_util.SetTextAttr (g_util.GetInformationStandardAttr());
-            g_util.ConsolePrintf (L" mapped to ");
-            
-            g_util.SetTextAttr (g_util.GetInformationHighlightAttr());
-            g_util.ConsolePrintf (L"%s", szRemoteName);
+            g_util.ConsolePrintf (g_util.m_rgAttributes[CUtils::EAttribute::Information],          L" mapped to ");
+            g_util.ConsolePrintf (g_util.m_rgAttributes[CUtils::EAttribute::InformationHighlight], L"%s", szRemoteName);
         }
     }
 
-
-    g_util.SetTextAttr (g_util.GetInformationStandardAttr());
-    g_util.ConsolePrintf (L" (");
-    
-    g_util.SetTextAttr (g_util.GetInformationHighlightAttr());
-    g_util.ConsolePrintf (L"%s", szFileSystemName);
-    
-    g_util.SetTextAttr (g_util.GetInformationStandardAttr());
-    g_util.ConsolePrintf (L")\n");
-
-    
+    g_util.ConsolePrintf (g_util.m_rgAttributes[CUtils::EAttribute::Information],          L" (");
+    g_util.ConsolePrintf (g_util.m_rgAttributes[CUtils::EAttribute::InformationHighlight], L"%s", szFileSystemName);
+    g_util.ConsolePrintf (g_util.m_rgAttributes[CUtils::EAttribute::Information],          L")\n");
 
     if (szVolumeName[0] != L'\0')
     {
-        g_util.SetTextAttr (g_util.GetInformationStandardAttr());
-        g_util.ConsolePrintf (L" Volume name is \"");
-
-        g_util.SetTextAttr (g_util.GetInformationHighlightAttr());
-        g_util.ConsolePrintf (L"%s", szVolumeName);
-
-        g_util.SetTextAttr (g_util.GetInformationStandardAttr());
-        g_util.ConsolePrintf (L"\"\n\n");
+        g_util.ConsolePrintf (g_util.m_rgAttributes[CUtils::EAttribute::Information],          L" Volume name is \"");
+        g_util.ConsolePrintf (g_util.m_rgAttributes[CUtils::EAttribute::InformationHighlight], L"%s", szVolumeName);
+        g_util.ConsolePrintf (g_util.m_rgAttributes[CUtils::EAttribute::Information],          L"\"\n\n");
     }
     else
     {
-        g_util.SetTextAttr (g_util.GetInformationStandardAttr());
-        g_util.ConsolePrintf (L" Volume has no name\n\n", szVolumeName);
+        g_util.ConsolePrintf (g_util.m_rgAttributes[CUtils::EAttribute::Information], L" Volume has no name\n\n", szVolumeName);
     }
 
 Error:
@@ -1264,14 +1178,9 @@ Error:
 
 void CDirectory::DisplayPathHeader (LPCWSTR pszPath)
 {
-    g_util.SetTextAttr (g_util.GetInformationStandardAttr());
-    g_util.ConsolePrintf (L" Directory of ");
-
-    g_util.SetTextAttr (g_util.GetInformationHighlightAttr());
-    g_util.ConsolePrintf (L"%s", pszPath);
-        
-    g_util.SetTextAttr (g_util.GetInformationStandardAttr());
-    g_util.ConsolePrintf (L"\n\n");
+    g_util.ConsolePrintf (g_util.m_rgAttributes[CUtils::EAttribute::Information],          L" Directory of ");
+    g_util.ConsolePrintf (g_util.m_rgAttributes[CUtils::EAttribute::InformationHighlight], L"%s", pszPath);
+    g_util.ConsolePrintf (g_util.m_rgAttributes[CUtils::EAttribute::Information],          L"\n\n");
 }
 
 
@@ -1298,43 +1207,23 @@ void CDirectory::DisplayFooter (CDirectoryInfo * pdi)
     ULARGE_INTEGER uliTotalBytes;         
     ULARGE_INTEGER uliTotalFreeBytes;     
 
+
     
     fSuccess = GetDiskFreeSpaceEx (pdi->m_pszPath, &uliFreeBytesAvailable, &uliTotalBytes, &uliTotalFreeBytes);
     CBRA (fSuccess);
 
+    g_util.ConsolePrintf (g_util.m_rgAttributes[CUtils::EAttribute::Information],          L"\n ");
 
-    g_util.SetTextAttr (g_util.GetInformationStandardAttr());
-    g_util.ConsolePrintf (L"\n ");
+    g_util.ConsolePrintf (g_util.m_rgAttributes[CUtils::EAttribute::InformationHighlight], L"%d", pdi->m_cSubDirectories);
+    g_util.ConsolePrintf (g_util.m_rgAttributes[CUtils::EAttribute::Information],          L" dir%s, ",pdi->m_cSubDirectories == 1 ? L"" : L"s");
 
-    g_util.SetTextAttr (g_util.GetInformationHighlightAttr());
-    g_util.ConsolePrintf (L"%d", pdi->m_cSubDirectories);
+    g_util.ConsolePrintf (g_util.m_rgAttributes[CUtils::EAttribute::InformationHighlight], L"%d", pdi->m_cFiles);    
+    g_util.ConsolePrintf (g_util.m_rgAttributes[CUtils::EAttribute::Information],          L" file%s using ", pdi->m_cFiles == 1 ? L"" : L"s");    
+    g_util.ConsolePrintf (g_util.m_rgAttributes[CUtils::EAttribute::InformationHighlight], L"%s", FormatFileSize (pdi->m_uliBytesUsed));
 
-    g_util.SetTextAttr (g_util.GetInformationStandardAttr());
-    g_util.ConsolePrintf (L" dir%s, ",pdi->m_cSubDirectories == 1 ? L"" : L"s");
-
-    g_util.SetTextAttr (g_util.GetInformationHighlightAttr());
-    g_util.ConsolePrintf (L"%d", pdi->m_cFiles);
-    
-    g_util.SetTextAttr (g_util.GetInformationStandardAttr());
-    g_util.ConsolePrintf (L" file%s using ", pdi->m_cFiles == 1 ? L"" : L"s");
-    
-    g_util.SetTextAttr (g_util.GetInformationHighlightAttr());
-    g_util.ConsolePrintf (L"%s", FormatFileSize (pdi->m_uliBytesUsed));
-
-    g_util.SetTextAttr (g_util.GetInformationStandardAttr());
-    g_util.ConsolePrintf (L" byte%s\n", pdi->m_uliBytesUsed.QuadPart == 1 ? L"" : L"s");
-
-
-
-    g_util.SetTextAttr (g_util.GetInformationStandardAttr());
-    g_util.ConsolePrintf (L" ");
-
-    g_util.SetTextAttr (g_util.GetInformationHighlightAttr());
-    g_util.ConsolePrintf (L"%s", FormatFileSize (uliTotalFreeBytes));
-
-    g_util.SetTextAttr (g_util.GetInformationStandardAttr());
-    g_util.ConsolePrintf (L" byte%s free on volume\n", uliTotalFreeBytes.QuadPart == 1 ? L"" : L"s");
-
+    g_util.ConsolePrintf (g_util.m_rgAttributes[CUtils::EAttribute::Information],          L" byte%s\n ", pdi->m_uliBytesUsed.QuadPart == 1 ? L"" : L"s");
+    g_util.ConsolePrintf (g_util.m_rgAttributes[CUtils::EAttribute::InformationHighlight], L"%s", FormatFileSize (uliTotalFreeBytes));
+    g_util.ConsolePrintf (g_util.m_rgAttributes[CUtils::EAttribute::Information],          L" byte%s free on volume\n", uliTotalFreeBytes.QuadPart == 1 ? L"" : L"s");
 
     if (uliFreeBytesAvailable.QuadPart != uliTotalFreeBytes.QuadPart)
     {
@@ -1360,20 +1249,11 @@ void CDirectory::DisplayFooterQuotaInfo (const ULARGE_INTEGER * puliFreeBytesAva
     GetEnvironmentVariable (L"username", pszUsername, cchMaxUsername);
 
 
-    g_util.SetTextAttr (g_util.GetInformationStandardAttr ());
-    g_util.ConsolePrintf (L" ");
-
-    g_util.SetTextAttr (g_util.GetInformationHighlightAttr ());
-    g_util.ConsolePrintf (L"%s", FormatFileSize (*puliFreeBytesAvailable));
-
-    g_util.SetTextAttr (g_util.GetInformationStandardAttr ());
-    g_util.ConsolePrintf (L" byte%s available to ", puliFreeBytesAvailable->QuadPart == 1 ? L"" : L"s");
-
-    g_util.SetTextAttr (g_util.GetInformationHighlightAttr ());
-    g_util.ConsolePrintf (L"%s", pszUsername);
-
-    g_util.SetTextAttr (g_util.GetInformationStandardAttr ());
-    g_util.ConsolePrintf (L" due to quota\n");
+    g_util.ConsolePrintf (g_util.m_rgAttributes[CUtils::EAttribute::Information],          L" ");
+    g_util.ConsolePrintf (g_util.m_rgAttributes[CUtils::EAttribute::InformationHighlight], L"%s", FormatFileSize (*puliFreeBytesAvailable));
+    g_util.ConsolePrintf (g_util.m_rgAttributes[CUtils::EAttribute::Information],          L" byte%s available to ", puliFreeBytesAvailable->QuadPart == 1 ? L"" : L"s");
+    g_util.ConsolePrintf (g_util.m_rgAttributes[CUtils::EAttribute::InformationHighlight], L"%s", pszUsername);
+    g_util.ConsolePrintf (g_util.m_rgAttributes[CUtils::EAttribute::Information],          L" due to quota\n");
 }
 
 
