@@ -116,31 +116,31 @@ Error:
 
 void Usage (void)
 {
-    g_util.ConsolePrintf (g_util.m_rgAttributes[CUtils::EAttribute::Default], L"\n");
-    g_util.ConsolePrintf (g_util.m_rgAttributes[CUtils::EAttribute::Default], L"Relmerator's Technicolor Directory (C)2004 by Robert Elmer\n");
-    g_util.ConsolePrintf (g_util.m_rgAttributes[CUtils::EAttribute::Default], L"\n");
-    g_util.ConsolePrintf (g_util.m_rgAttributes[CUtils::EAttribute::Default], L"TCDIR [drive:][path][filename] [/A[[:]attributes]] [/O[[:]sortorder]] [/S]\n");
-    g_util.ConsolePrintf (g_util.m_rgAttributes[CUtils::EAttribute::Default], L"\n");
-    g_util.ConsolePrintf (g_util.m_rgAttributes[CUtils::EAttribute::Default], L"  [drive:][path][filename]\n");
-    g_util.ConsolePrintf (g_util.m_rgAttributes[CUtils::EAttribute::Default], L"              Specifies drive, directory, and/or files to list.\n");
-    g_util.ConsolePrintf (g_util.m_rgAttributes[CUtils::EAttribute::Default], L"\n");
-    g_util.ConsolePrintf (g_util.m_rgAttributes[CUtils::EAttribute::Default], L"  /A          Displays files with specified attributes.\n");
-    g_util.ConsolePrintf (g_util.m_rgAttributes[CUtils::EAttribute::Default], L"  attributes   D  Directories                R  Read-only files\n");
-    g_util.ConsolePrintf (g_util.m_rgAttributes[CUtils::EAttribute::Default], L"               H  Hidden files               A  Files ready for archiving\n");
-    g_util.ConsolePrintf (g_util.m_rgAttributes[CUtils::EAttribute::Default], L"               S  System files               T  Temporary files\n");
-    g_util.ConsolePrintf (g_util.m_rgAttributes[CUtils::EAttribute::Default], L"               E  Encrypted files            C  Compressed files\n");
-    g_util.ConsolePrintf (g_util.m_rgAttributes[CUtils::EAttribute::Default], L"               P  Reparse points             0  Sparse files\n");
-    g_util.ConsolePrintf (g_util.m_rgAttributes[CUtils::EAttribute::Default], L"               -  Prefix meaning not\n");
-    g_util.ConsolePrintf (g_util.m_rgAttributes[CUtils::EAttribute::Default], L"\n");
-    g_util.ConsolePrintf (g_util.m_rgAttributes[CUtils::EAttribute::Default], L"  /O          List by files in sorted order.\n");
-    g_util.ConsolePrintf (g_util.m_rgAttributes[CUtils::EAttribute::Default], L"  sortorder    N  By name (alphabetic)       S  By size (smallest first)\n");
-    g_util.ConsolePrintf (g_util.m_rgAttributes[CUtils::EAttribute::Default], L"               E  By extension (alphabetic)  D  By date/time (oldest first)\n");
-    g_util.ConsolePrintf (g_util.m_rgAttributes[CUtils::EAttribute::Default], L"               -  Prefix to reverse order\n");
-    g_util.ConsolePrintf (g_util.m_rgAttributes[CUtils::EAttribute::Default], L"\n");
-    g_util.ConsolePrintf (g_util.m_rgAttributes[CUtils::EAttribute::Default], L"  /S          Displays files in specified directory and all subdirectories.\n");
-    g_util.ConsolePrintf (g_util.m_rgAttributes[CUtils::EAttribute::Default], L"\n");
-    g_util.ConsolePrintf (g_util.m_rgAttributes[CUtils::EAttribute::Default], L"\n");
-    g_util.ConsolePrintf (g_util.m_rgAttributes[CUtils::EAttribute::Default], L"\n");
+    g_util.ConsolePuts (g_util.m_rgAttributes[CUtils::EAttribute::Default], L"\n");
+    g_util.ConsolePuts (g_util.m_rgAttributes[CUtils::EAttribute::Default], L"Relmerator's Technicolor Directory (C)2004 by Robert Elmer\n");
+    g_util.ConsolePuts (g_util.m_rgAttributes[CUtils::EAttribute::Default], L"\n");
+    g_util.ConsolePuts (g_util.m_rgAttributes[CUtils::EAttribute::Default], L"TCDIR [drive:][path][filename] [/A[[:]attributes]] [/O[[:]sortorder]] [/S]\n");
+    g_util.ConsolePuts (g_util.m_rgAttributes[CUtils::EAttribute::Default], L"\n");
+    g_util.ConsolePuts (g_util.m_rgAttributes[CUtils::EAttribute::Default], L"  [drive:][path][filename]\n");
+    g_util.ConsolePuts (g_util.m_rgAttributes[CUtils::EAttribute::Default], L"              Specifies drive, directory, and/or files to list.\n");
+    g_util.ConsolePuts (g_util.m_rgAttributes[CUtils::EAttribute::Default], L"\n");
+    g_util.ConsolePuts (g_util.m_rgAttributes[CUtils::EAttribute::Default], L"  /A          Displays files with specified attributes.\n");
+    g_util.ConsolePuts (g_util.m_rgAttributes[CUtils::EAttribute::Default], L"  attributes   D  Directories                R  Read-only files\n");
+    g_util.ConsolePuts (g_util.m_rgAttributes[CUtils::EAttribute::Default], L"               H  Hidden files               A  Files ready for archiving\n");
+    g_util.ConsolePuts (g_util.m_rgAttributes[CUtils::EAttribute::Default], L"               S  System files               T  Temporary files\n");
+    g_util.ConsolePuts (g_util.m_rgAttributes[CUtils::EAttribute::Default], L"               E  Encrypted files            C  Compressed files\n");
+    g_util.ConsolePuts (g_util.m_rgAttributes[CUtils::EAttribute::Default], L"               P  Reparse points             0  Sparse files\n");
+    g_util.ConsolePuts (g_util.m_rgAttributes[CUtils::EAttribute::Default], L"               -  Prefix meaning not\n");
+    g_util.ConsolePuts (g_util.m_rgAttributes[CUtils::EAttribute::Default], L"\n");
+    g_util.ConsolePuts (g_util.m_rgAttributes[CUtils::EAttribute::Default], L"  /O          List by files in sorted order.\n");
+    g_util.ConsolePuts (g_util.m_rgAttributes[CUtils::EAttribute::Default], L"  sortorder    N  By name (alphabetic)       S  By size (smallest first)\n");
+    g_util.ConsolePuts (g_util.m_rgAttributes[CUtils::EAttribute::Default], L"               E  By extension (alphabetic)  D  By date/time (oldest first)\n");
+    g_util.ConsolePuts (g_util.m_rgAttributes[CUtils::EAttribute::Default], L"               -  Prefix to reverse order\n");
+    g_util.ConsolePuts (g_util.m_rgAttributes[CUtils::EAttribute::Default], L"\n");
+    g_util.ConsolePuts (g_util.m_rgAttributes[CUtils::EAttribute::Default], L"  /S          Displays files in specified directory and all subdirectories.\n");
+    g_util.ConsolePuts (g_util.m_rgAttributes[CUtils::EAttribute::Default], L"\n");
+    g_util.ConsolePuts (g_util.m_rgAttributes[CUtils::EAttribute::Default], L"\n");
+    g_util.ConsolePuts (g_util.m_rgAttributes[CUtils::EAttribute::Default], L"\n");
 }
 
 

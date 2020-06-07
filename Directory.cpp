@@ -726,7 +726,7 @@ void CDirectory::DisplayResults (CDirectoryInfo * pdi)
     }
         
     g_util.WriteConsoleSeparatorLine ();
-    g_util.ConsolePrintf (CUtils::EAttribute::Default, L"\n");
+    g_util.ConsolePuts (CUtils::EAttribute::Default, L"\n");
 
     g_util.FlushBuffer ();
 }
@@ -773,9 +773,9 @@ void CDirectory::DisplayResultsWide (CDirectoryInfo * pdi)
         for (nCol = 0; nCol < cColumns; ++nCol)
         {                   
             LPWSTR            pszName;    
-            int               cchPrinted; 
             WIN32_FIND_DATA * pwfd;       
             WORD              wAttr;      
+            size_t            cSpacesNeeded;
 
 
 
@@ -784,12 +784,16 @@ void CDirectory::DisplayResultsWide (CDirectoryInfo * pdi)
             CHR (hr);
 
             wAttr = g_util.GetTextAttrForFile (pwfd);
-            cchPrinted = g_util.ConsolePrintf (wAttr, L"%s", pszName);
+            hr = g_util.ConsolePuts (wAttr, pszName);
+            CHR (hr);
 
-            g_util.ConsolePrintf (g_util.m_rgAttributes[CUtils::EAttribute::Default], L"%*s", cxColumnWidth - cchPrinted, L"");
+            for (cSpacesNeeded = cxColumnWidth - wcslen (pszName); cSpacesNeeded > 0; cSpacesNeeded--)
+            {
+                g_util.ConsolePuts (g_util.m_rgAttributes[CUtils::EAttribute::Default], L" ");
+            }
         }
 
-        g_util.ConsolePrintf (g_util.m_rgAttributes[CUtils::EAttribute::Default], L"\n");
+        g_util.ConsolePuts (g_util.m_rgAttributes[CUtils::EAttribute::Default], L"\n");
     }
 
 Error:
@@ -975,11 +979,11 @@ void CDirectory::DisplayResultsNormal (CDirectoryInfo * pdi)
         uliFileSize.LowPart  = iter->nFileSizeLow;
         uliFileSize.HighPart = iter->nFileSizeHigh;
 
-        g_util.ConsolePrintf (g_util.m_rgAttributes[CUtils::EAttribute::Date],    L"%s", szDate);
-        g_util.ConsolePrintf (g_util.m_rgAttributes[CUtils::EAttribute::Default], L"  ");
+        g_util.ConsolePuts (g_util.m_rgAttributes[CUtils::EAttribute::Date],    szDate);
+        g_util.ConsolePuts (g_util.m_rgAttributes[CUtils::EAttribute::Default], L"  ");
         
-        g_util.ConsolePrintf (g_util.m_rgAttributes[CUtils::EAttribute::Time],    L"%s", szTime);
-        g_util.ConsolePrintf (g_util.m_rgAttributes[CUtils::EAttribute::Default], L" ");
+        g_util.ConsolePuts (g_util.m_rgAttributes[CUtils::EAttribute::Time],    szTime);
+        g_util.ConsolePuts (g_util.m_rgAttributes[CUtils::EAttribute::Default], L" ");
 
         while (pAttrMap->m_dwAttr != 0)
         {
@@ -1016,7 +1020,8 @@ void CDirectory::DisplayResultsNormal (CDirectoryInfo * pdi)
          }        
 
         attr = (g_util.GetTextAttrForFile (&(*iter)));
-        g_util.ConsolePrintf (attr, L"%s\n", iter->cFileName);
+        g_util.ConsolePuts (attr, iter->cFileName);
+        g_util.ConsolePuts (attr, L"\n");
         
         ++iter;
     }
@@ -1102,20 +1107,20 @@ void CDirectory::DisplayDriveHeader (LPCWSTR pszPath)
                           NULL, 
                           szFileSystemName, ARRAYSIZE (szFileSystemName));
 
-    g_util.ConsolePrintf (g_util.m_rgAttributes[CUtils::EAttribute::Information], L" Volume ");
+    g_util.ConsolePuts (g_util.m_rgAttributes[CUtils::EAttribute::Information], L" Volume ");
 
     if (fUncPath)
     {
-        g_util.ConsolePrintf (g_util.m_rgAttributes[CUtils::EAttribute::InformationHighlight], L"%s", pszPath);
+        g_util.ConsolePuts (g_util.m_rgAttributes[CUtils::EAttribute::InformationHighlight], pszPath);
     }
     else
     {
-        g_util.ConsolePrintf (g_util.m_rgAttributes[CUtils::EAttribute::Information],          L"in drive ");        
+        g_util.ConsolePuts   (g_util.m_rgAttributes[CUtils::EAttribute::Information],          L"in drive ");
         g_util.ConsolePrintf (g_util.m_rgAttributes[CUtils::EAttribute::InformationHighlight], L"%c", szDriveRoot[0]);
     }        
 
-    g_util.ConsolePrintf (g_util.m_rgAttributes[CUtils::EAttribute::Information],          L" is ");
-    g_util.ConsolePrintf (g_util.m_rgAttributes[CUtils::EAttribute::InformationHighlight], L"%s", s_krgszVolumeDescription[uiDriveType]);
+    g_util.ConsolePuts (g_util.m_rgAttributes[CUtils::EAttribute::Information],          L" is ");
+    g_util.ConsolePuts (g_util.m_rgAttributes[CUtils::EAttribute::InformationHighlight], s_krgszVolumeDescription[uiDriveType]);
 
 
     //
@@ -1140,24 +1145,24 @@ void CDirectory::DisplayDriveHeader (LPCWSTR pszPath)
         dwResult = WNetGetConnection (szDriveRoot, szRemoteName, &cchRemoteName);              
         if (dwResult == NOERROR)
         {
-            g_util.ConsolePrintf (g_util.m_rgAttributes[CUtils::EAttribute::Information],          L" mapped to ");
-            g_util.ConsolePrintf (g_util.m_rgAttributes[CUtils::EAttribute::InformationHighlight], L"%s", szRemoteName);
+            g_util.ConsolePuts (g_util.m_rgAttributes[CUtils::EAttribute::Information],          L" mapped to ");
+            g_util.ConsolePuts (g_util.m_rgAttributes[CUtils::EAttribute::InformationHighlight], szRemoteName);
         }
     }
 
-    g_util.ConsolePrintf (g_util.m_rgAttributes[CUtils::EAttribute::Information],          L" (");
-    g_util.ConsolePrintf (g_util.m_rgAttributes[CUtils::EAttribute::InformationHighlight], L"%s", szFileSystemName);
-    g_util.ConsolePrintf (g_util.m_rgAttributes[CUtils::EAttribute::Information],          L")\n");
+    g_util.ConsolePuts (g_util.m_rgAttributes[CUtils::EAttribute::Information],          L" (");
+    g_util.ConsolePuts (g_util.m_rgAttributes[CUtils::EAttribute::InformationHighlight], szFileSystemName);
+    g_util.ConsolePuts (g_util.m_rgAttributes[CUtils::EAttribute::Information],          L")\n");
 
     if (szVolumeName[0] != L'\0')
     {
-        g_util.ConsolePrintf (g_util.m_rgAttributes[CUtils::EAttribute::Information],          L" Volume name is \"");
-        g_util.ConsolePrintf (g_util.m_rgAttributes[CUtils::EAttribute::InformationHighlight], L"%s", szVolumeName);
-        g_util.ConsolePrintf (g_util.m_rgAttributes[CUtils::EAttribute::Information],          L"\"\n\n");
+        g_util.ConsolePuts (g_util.m_rgAttributes[CUtils::EAttribute::Information],          L" Volume name is \"");
+        g_util.ConsolePuts (g_util.m_rgAttributes[CUtils::EAttribute::InformationHighlight], szVolumeName);
+        g_util.ConsolePuts (g_util.m_rgAttributes[CUtils::EAttribute::Information],          L"\"\n\n");
     }
     else
     {
-        g_util.ConsolePrintf (g_util.m_rgAttributes[CUtils::EAttribute::Information], L" Volume has no name\n\n", szVolumeName);
+        g_util.ConsolePuts (g_util.m_rgAttributes[CUtils::EAttribute::Information], L" Volume has no name\n\n");
     }
 
 Error:
@@ -1178,9 +1183,9 @@ Error:
 
 void CDirectory::DisplayPathHeader (LPCWSTR pszPath)
 {
-    g_util.ConsolePrintf (g_util.m_rgAttributes[CUtils::EAttribute::Information],          L" Directory of ");
-    g_util.ConsolePrintf (g_util.m_rgAttributes[CUtils::EAttribute::InformationHighlight], L"%s", pszPath);
-    g_util.ConsolePrintf (g_util.m_rgAttributes[CUtils::EAttribute::Information],          L"\n\n");
+    g_util.ConsolePuts (g_util.m_rgAttributes[CUtils::EAttribute::Information],          L" Directory of ");
+    g_util.ConsolePuts (g_util.m_rgAttributes[CUtils::EAttribute::InformationHighlight], pszPath);
+    g_util.ConsolePuts (g_util.m_rgAttributes[CUtils::EAttribute::Information],          L"\n\n");
 }
 
 
@@ -1212,18 +1217,18 @@ void CDirectory::DisplayFooter (CDirectoryInfo * pdi)
     fSuccess = GetDiskFreeSpaceEx (pdi->m_pszPath, &uliFreeBytesAvailable, &uliTotalBytes, &uliTotalFreeBytes);
     CBRA (fSuccess);
 
-    g_util.ConsolePrintf (g_util.m_rgAttributes[CUtils::EAttribute::Information],          L"\n ");
+    g_util.ConsolePuts   (g_util.m_rgAttributes[CUtils::EAttribute::Information],          L"\n ");
 
     g_util.ConsolePrintf (g_util.m_rgAttributes[CUtils::EAttribute::InformationHighlight], L"%d", pdi->m_cSubDirectories);
-    g_util.ConsolePrintf (g_util.m_rgAttributes[CUtils::EAttribute::Information],          L" dir%s, ",pdi->m_cSubDirectories == 1 ? L"" : L"s");
+    g_util.ConsolePuts   (g_util.m_rgAttributes[CUtils::EAttribute::Information],          pdi->m_cSubDirectories == 1 ? L" dir, " : L" dirs, ");
 
     g_util.ConsolePrintf (g_util.m_rgAttributes[CUtils::EAttribute::InformationHighlight], L"%d", pdi->m_cFiles);    
-    g_util.ConsolePrintf (g_util.m_rgAttributes[CUtils::EAttribute::Information],          L" file%s using ", pdi->m_cFiles == 1 ? L"" : L"s");    
-    g_util.ConsolePrintf (g_util.m_rgAttributes[CUtils::EAttribute::InformationHighlight], L"%s", FormatFileSize (pdi->m_uliBytesUsed));
+    g_util.ConsolePrintf (g_util.m_rgAttributes[CUtils::EAttribute::Information],          pdi->m_cFiles == 1 ? L" file using " : L" files using ");    
+    g_util.ConsolePuts   (g_util.m_rgAttributes[CUtils::EAttribute::InformationHighlight], FormatFileSize (pdi->m_uliBytesUsed));
 
-    g_util.ConsolePrintf (g_util.m_rgAttributes[CUtils::EAttribute::Information],          L" byte%s\n ", pdi->m_uliBytesUsed.QuadPart == 1 ? L"" : L"s");
-    g_util.ConsolePrintf (g_util.m_rgAttributes[CUtils::EAttribute::InformationHighlight], L"%s", FormatFileSize (uliTotalFreeBytes));
-    g_util.ConsolePrintf (g_util.m_rgAttributes[CUtils::EAttribute::Information],          L" byte%s free on volume\n", uliTotalFreeBytes.QuadPart == 1 ? L"" : L"s");
+    g_util.ConsolePrintf (g_util.m_rgAttributes[CUtils::EAttribute::Information],          pdi->m_uliBytesUsed.QuadPart == 1 ? L" byte\n " : L" bytes\n ");
+    g_util.ConsolePuts   (g_util.m_rgAttributes[CUtils::EAttribute::InformationHighlight], FormatFileSize (uliTotalFreeBytes));
+    g_util.ConsolePrintf (g_util.m_rgAttributes[CUtils::EAttribute::Information],          uliTotalFreeBytes.QuadPart == 1 ? L" byte free on volume\n" : L" bytes free on volume\n");
 
     if (uliFreeBytesAvailable.QuadPart != uliTotalFreeBytes.QuadPart)
     {
@@ -1249,11 +1254,11 @@ void CDirectory::DisplayFooterQuotaInfo (const ULARGE_INTEGER * puliFreeBytesAva
     GetEnvironmentVariable (L"username", pszUsername, cchMaxUsername);
 
 
-    g_util.ConsolePrintf (g_util.m_rgAttributes[CUtils::EAttribute::Information],          L" ");
-    g_util.ConsolePrintf (g_util.m_rgAttributes[CUtils::EAttribute::InformationHighlight], L"%s", FormatFileSize (*puliFreeBytesAvailable));
-    g_util.ConsolePrintf (g_util.m_rgAttributes[CUtils::EAttribute::Information],          L" byte%s available to ", puliFreeBytesAvailable->QuadPart == 1 ? L"" : L"s");
-    g_util.ConsolePrintf (g_util.m_rgAttributes[CUtils::EAttribute::InformationHighlight], L"%s", pszUsername);
-    g_util.ConsolePrintf (g_util.m_rgAttributes[CUtils::EAttribute::Information],          L" due to quota\n");
+    g_util.ConsolePuts (g_util.m_rgAttributes[CUtils::EAttribute::Information],          L" ");
+    g_util.ConsolePuts (g_util.m_rgAttributes[CUtils::EAttribute::InformationHighlight], FormatFileSize (*puliFreeBytesAvailable));
+    g_util.ConsolePuts (g_util.m_rgAttributes[CUtils::EAttribute::Information],          puliFreeBytesAvailable->QuadPart == 1 ? L" byte available to " : L" bytes available to ");
+    g_util.ConsolePuts (g_util.m_rgAttributes[CUtils::EAttribute::InformationHighlight], pszUsername);
+    g_util.ConsolePuts (g_util.m_rgAttributes[CUtils::EAttribute::Information],          L" due to quota\n");
 }
 
 

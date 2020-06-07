@@ -291,6 +291,7 @@ HRESULT CUtils::InitializeBuffer (void)
 
     m_cScreenBuffer = m_consoleScreenBufferInfoEx.dwSize.X * m_consoleScreenBufferInfoEx.dwSize.Y;
     m_prgScreenBuffer = (CHAR_INFO *) HeapAlloc (GetProcessHeap (), HEAP_ZERO_MEMORY, m_cScreenBuffer * sizeof (*m_prgScreenBuffer));
+    CPR (m_prgScreenBuffer);
 
     //
     // Initialize it with the current screen buffer's contents
@@ -305,7 +306,7 @@ HRESULT CUtils::InitializeBuffer (void)
 
 #endif
 
-//Error:
+Error:
 
     return hr;
 }
@@ -359,54 +360,30 @@ HRESULT CUtils::FlushBuffer (void)
 
 ////////////////////////////////////////////////////////////////////////////////
 //
-//  CUtils::ConsolePrintf
+//  CUtils::ConsolePuts
 //
-//  
+//  Write a simple string to the console
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-int CUtils::ConsolePrintf (WORD attr, LPCWSTR pszFormat, ...)
+HRESULT CUtils::ConsolePuts (WORD attr, LPCWSTR psz)
 {
-    static  int      s_cchBuf = 256;
-    static  LPWSTR   s_pszBuf = (LPWSTR) HeapAlloc (GetProcessHeap (), HEAP_ZERO_MEMORY, s_cchBuf);
+    HRESULT       hr = S_OK;
+    const WCHAR * pStart = psz;
+    const WCHAR * pEnd = psz + wcslen(psz);
+    const WCHAR * p = pStart;
 
-    HRESULT   hr              = S_OK;
-    va_list   vaArgs          = 0;  
-    int       cchRequired     = 0;
-    int       cchFormatted    = 0; 
-    WCHAR   * p               = NULL;
-    WCHAR   * pStart          = NULL;
-    WCHAR   * pEnd            = NULL;
 
-    
-    va_start (vaArgs, pszFormat);
-    
-    cchRequired = _vscwprintf (pszFormat, vaArgs) + 1;   // _vscprintf doesn't count the terminating '\0'
-    if (cchRequired > s_cchBuf)
-    {
-        HeapReAlloc (GetProcessHeap(), HEAP_ZERO_MEMORY, s_pszBuf, cchRequired);
-		s_cchBuf = cchRequired;
-    }
-
-    cchFormatted = vswprintf_s (s_pszBuf, s_cchBuf, pszFormat, vaArgs);
-    CBRA (cchFormatted >= 0);
-    CBRA (cchFormatted <= s_cchBuf);
 
     //
     // WriteConsoleOutputCharacter does not support newline characters, so
     // we'll have to handle those manually
     //
-
-    pStart = s_pszBuf;
-    pEnd = s_pszBuf + cchFormatted;
-
-    p = pStart;
-
     while (p < pEnd)
     {
         if (*p == L'\n')
         {
-            hr = WriteConsoleString (attr, pStart, p - pStart);
+            hr = WriteConsoleString (attr, (LPWSTR) pStart, p - pStart);
             CHR (hr);
 
             pStart = p + 1;
@@ -419,12 +396,50 @@ int CUtils::ConsolePrintf (WORD attr, LPCWSTR pszFormat, ...)
         ++p;
     }
 
-    hr = WriteConsoleString (attr, pStart, p - pStart);
+    hr = WriteConsoleString (attr, (LPWSTR) pStart, p - pStart);
     CHR (hr);
 
 
 Error:
-    return cchFormatted;
+    return hr;
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CUtils::ConsolePrintf
+//
+//  
+//
+////////////////////////////////////////////////////////////////////////////////
+
+int CUtils::ConsolePrintf (WORD attr, LPCWSTR pszFormat, ...)
+{
+    static const int   s_cchBuf          = 9999;  // Max console buffer width
+    static  WCHAR      s_szBuf[s_cchBuf] = { L'\0' };
+
+    HRESULT   hr              = S_OK;
+    va_list   vaArgs          = 0;  
+    int       cchFormatted    = 0; 
+
+
+
+    va_start (vaArgs, pszFormat);
+    
+    cchFormatted = vswprintf_s (s_szBuf, s_cchBuf, pszFormat, vaArgs);
+    CBRA (cchFormatted >= 0);
+    CBRA (cchFormatted <= s_cchBuf);
+
+    hr = ConsolePuts (attr, s_szBuf);
+    CHR (hr);
+
+
+
+Error:
+    return SUCCEEDED (hr) ? cchFormatted : 0;
 }
 
 
@@ -514,7 +529,7 @@ HRESULT CUtils::WriteConsoleSeparatorLine (void)
 
 #ifdef USE_SCREEN_BUFFER
 
-    size_t  idx    = m_coord.Y * m_consoleScreenBufferInfoEx.dwSize.X;
+    size_t  idx    = (size_t) m_coord.Y * (size_t) m_consoleScreenBufferInfoEx.dwSize.X;
     size_t  idxEnd = idx + m_consoleScreenBufferInfoEx.dwSize.X;
 
 
@@ -673,10 +688,10 @@ HRESULT CUtils::ScrollBuffer (UINT cLines)
 
 #ifdef USE_SCREEN_BUFFER
 
-    size_t      idx           = (short) cLines * m_consoleScreenBufferInfoEx.dwSize.X;
-    size_t      cb            = (m_consoleScreenBufferInfoEx.dwSize.Y - (short) cLines) * m_consoleScreenBufferInfoEx.dwSize.X;
-    CHAR_INFO * pNewEmptyArea = m_prgScreenBuffer + ((m_consoleScreenBufferInfoEx.dwSize.Y - (short) cLines) * m_consoleScreenBufferInfoEx.dwSize.X);
-    CHAR_INFO * pEnd          = m_prgScreenBuffer + (m_consoleScreenBufferInfoEx.dwSize.Y * m_consoleScreenBufferInfoEx.dwSize.X);
+    size_t      idx           = cLines * (size_t) m_consoleScreenBufferInfoEx.dwSize.X;
+    size_t      cb            = ((size_t) m_consoleScreenBufferInfoEx.dwSize.Y - cLines) * (size_t) m_consoleScreenBufferInfoEx.dwSize.X;
+    CHAR_INFO * pNewEmptyArea = m_prgScreenBuffer + (((size_t) m_consoleScreenBufferInfoEx.dwSize.Y - cLines) * (size_t) m_consoleScreenBufferInfoEx.dwSize.X);
+    CHAR_INFO * pEnd          = m_prgScreenBuffer + ((size_t) m_consoleScreenBufferInfoEx.dwSize.Y * (size_t) m_consoleScreenBufferInfoEx.dwSize.X);
    
     MoveMemory (m_prgScreenBuffer, m_prgScreenBuffer + idx, cb);
     

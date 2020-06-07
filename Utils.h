@@ -80,6 +80,7 @@ public:
     // Public Methods
     //
 
+    HRESULT ConsolePuts                 (WORD attr, LPCWSTR psz);
     int     ConsolePrintf               (WORD attr, LPCWSTR pszFormat, ...);
     HRESULT WriteConsoleString          (WORD attr, __in_ecount(cch) WCHAR * p, size_t cch);
     HRESULT WriteConsoleSeparatorLine   (void);
