@@ -8,29 +8,6 @@
 
 
 
-////////////////////////////////////////////////////////////////////////////////
-//
-//  CDirectoryLister::CDirectoryInfo::CDirectoryInfo
-//
-//  
-//
-////////////////////////////////////////////////////////////////////////////////
-
-CDirectoryLister::CDirectoryInfo::CDirectoryInfo (void) :
-    m_pszPath            (NULL), 
-    m_pszFileSpec        (NULL), 
-    m_cchLargestFileName (0),    
-    m_cFiles             (0),    
-    m_cSubDirectories    (0)     
-
-{    
-    m_uliLargestFileSize.QuadPart = 0;
-    m_uliBytesUsed.QuadPart       = 0;
-}                               
-
-
-
-
 
 ////////////////////////////////////////////////////////////////////////////////
 //
@@ -41,8 +18,8 @@ CDirectoryLister::CDirectoryInfo::CDirectoryInfo (void) :
 ////////////////////////////////////////////////////////////////////////////////
 
 CDirectoryLister::CDirectoryLister (CCommandLine * pCmdLine) :
-    m_pCmdLine (pCmdLine),
-    m_cFilesFound (0),
+    m_pCmdLine          (pCmdLine),
+    m_cFilesFound       (0),
     m_cDirectoriesFound (0)
 {
     m_uliSizeOfAllFilesFound.QuadPart = 0;
@@ -81,11 +58,11 @@ CDirectoryLister::~CDirectoryLister (void)
 void CDirectoryLister::operator() (LPCWSTR pszMask)
 {
     HRESULT hr                          = S_OK;
-    int     nDrive;    
-    BOOL    fSuccess;                   
-    WCHAR   szWellFormedPath[MAX_PATH]; 
-    WCHAR   szPath[MAX_PATH];           
-    WCHAR   szFileSpec[MAX_PATH];       
+    int     nDrive                      = 0;    
+    BOOL    fSuccess                    = TRUE;                   
+    WCHAR   szWellFormedPath[MAX_PATH]  = { 0 };
+    WCHAR   szPath[MAX_PATH]            = { 0 };           
+    WCHAR   szFileSpec[MAX_PATH]        = { 0 };       
 
 
 

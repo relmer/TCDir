@@ -9,7 +9,16 @@
 class CDirectoryInfo
 {
 public:
-    CDirectoryInfo(void);
+    CDirectoryInfo(void) :
+        m_pszPath               (NULL),
+        m_pszFileSpec           (NULL),
+        m_cchLargestFileName    (0),
+        m_cFiles                (0),
+        m_cSubDirectories       (0)
+    {
+        m_uliLargestFileSize.QuadPart   = 0;
+        m_uliBytesUsed.QuadPart         = 0;
+    }
 
     FileInfoVector m_vMatches;
     LPCWSTR        m_pszPath;
