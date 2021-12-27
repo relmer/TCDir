@@ -1,11 +1,7 @@
 ﻿#include "StdAfx.h"
-#include "utils.h"
+#include "ConsoleBuffer.h"
 
-
-
-
-
-CUtils & g_util = CUtils::GetSingleInstance();
+#include "Config.h"
 
 
 
@@ -13,13 +9,13 @@ CUtils & g_util = CUtils::GetSingleInstance();
 
 ////////////////////////////////////////////////////////////////////////////////
 //
-//  CUtils::CUtils
+//  CConsoleBuffer::CConsoleBuffer
 //
 //  
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-CUtils::CUtils(void)
+CConsoleBuffer::CConsoleBuffer(void)
 {
     m_hStdOut = GetStdHandle (STD_OUTPUT_HANDLE);   
 
@@ -37,13 +33,13 @@ CUtils::CUtils(void)
 
 ////////////////////////////////////////////////////////////////////////////////
 //
-//  CUtils::~CUtils
+//  CConsoleBuffer::~CConsoleBuffer
 //
 //  
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-CUtils::~CUtils(void)
+CConsoleBuffer::~CConsoleBuffer(void)
 {
     //
     // Update the console cursor position with our final internal cursor position
@@ -51,9 +47,7 @@ CUtils::~CUtils(void)
 
     SetConsoleCursorPosition (m_hStdOut, m_coord);
 
-#ifdef USE_SCREEN_BUFFER
     HeapFree (GetProcessHeap (), 0, m_prgScreenBuffer);
-#endif
 }
 
 
@@ -62,37 +56,15 @@ CUtils::~CUtils(void)
 
 ////////////////////////////////////////////////////////////////////////////////
 //
-//  CUtils::GetSingleInstance
+//  CConsoleBuffer::InitializeBuffer
 //
 //  
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-/* static */ CUtils & CUtils::GetSingleInstance (void)
-{
-    static CUtils util;
-
-    return util;
-}
-
-
-
-
-
-////////////////////////////////////////////////////////////////////////////////
-//
-//  CUtils::InitializeBuffer
-//
-//  
-//
-////////////////////////////////////////////////////////////////////////////////
-
-HRESULT CUtils::InitializeBuffer (void)
+HRESULT CConsoleBuffer::InitializeBuffer (void)
 {
     HRESULT hr = S_OK;
-
-#ifdef USE_SCREEN_BUFFER
-
     COORD      coordDestination = { 0, 0 };
     SMALL_RECT srRead = { 0 };
 
@@ -115,10 +87,7 @@ HRESULT CUtils::InitializeBuffer (void)
 
     ReadConsoleOutput (m_hStdOut, m_prgScreenBuffer, m_consoleScreenBufferInfoEx.dwSize, coordDestination, &srRead);
 
-#endif
-
 Error:
-
     return hr;
 }
 
@@ -128,18 +97,15 @@ Error:
 
 ////////////////////////////////////////////////////////////////////////////////
 //
-//  CUtils::FlushBuffer
+//  CConsoleBuffer::FlushBuffer
 //
 //  
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-HRESULT CUtils::FlushBuffer (void)
+HRESULT CConsoleBuffer::FlushBuffer (void)
 {
     HRESULT hr = S_OK;
-
-#ifdef USE_SCREEN_BUFFER
-
     COORD      coordDestination = { 0, 0 };
     SMALL_RECT srWrite = { 0 };
 
@@ -158,10 +124,8 @@ HRESULT CUtils::FlushBuffer (void)
     m_prgScreenBuffer = NULL;
     m_cScreenBuffer = 0;
 
-#endif
 
 //Error:
-
     return hr;
 }
 
@@ -171,13 +135,13 @@ HRESULT CUtils::FlushBuffer (void)
 
 ////////////////////////////////////////////////////////////////////////////////
 //
-//  CUtils::ConsolePuts
+//  CConsoleBuffer::Puts
 //
 //  Write a simple string to the console
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-HRESULT CUtils::Puts (WORD attr, LPCWSTR psz)
+HRESULT CConsoleBuffer::Puts (WORD attr, LPCWSTR psz)
 {
     HRESULT       hr = S_OK;
     const WCHAR * pStart = psz;
@@ -221,13 +185,13 @@ Error:
 
 ////////////////////////////////////////////////////////////////////////////////
 //
-//  CUtils::ConsolePrintf
+//  CConsoleBuffer::Printf
 //
 //  
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-int CUtils::Printf (WORD attr, LPCWSTR pszFormat, ...)
+int CConsoleBuffer::Printf (WORD attr, LPCWSTR pszFormat, ...)
 {
     static const int   s_cchBuf          = 9999;  // Max console buffer width
     static  WCHAR      s_szBuf[s_cchBuf] = { L'\0' };
@@ -259,7 +223,7 @@ Error:
 
 ////////////////////////////////////////////////////////////////////////////////
 //
-//  CUtils::WriteString
+//  CConsoleBuffer::WriteString
 //
 //  Writes a string to the console using the given attributes at the location 
 //  specified by the internal m_coord member and updates the interal cursor 
@@ -268,17 +232,13 @@ Error:
 // 
 ////////////////////////////////////////////////////////////////////////////////
 
-HRESULT CUtils::WriteString (WORD attr, __in_ecount(cch) WCHAR * p, size_t cch)
+HRESULT CConsoleBuffer::WriteString (WORD attr, __in_ecount(cch) WCHAR * p, size_t cch)
 {
-    HRESULT   hr   = S_OK;
-
-
-#ifdef USE_SCREEN_BUFFER
-
-    WCHAR     * pEnd         = p + cch;
-    CHAR_INFO * pciBuffer    = m_prgScreenBuffer + ((size_t) m_coord.Y * m_consoleScreenBufferInfoEx.dwSize.X) + m_coord.X;
-    CHAR_INFO * pciBufferEnd = m_prgScreenBuffer + m_cScreenBuffer;
-    size_t      idx          = 0;
+    HRESULT     hr              = S_OK;
+    WCHAR     * pEnd            = p + cch;
+    CHAR_INFO * pciBuffer       = m_prgScreenBuffer + ((size_t) m_coord.Y * m_consoleScreenBufferInfoEx.dwSize.X) + m_coord.X;
+    CHAR_INFO * pciBufferEnd    = m_prgScreenBuffer + m_cScreenBuffer;
+    size_t      idx             = 0;
 
 
 
@@ -298,26 +258,8 @@ HRESULT CUtils::WriteString (WORD attr, __in_ecount(cch) WCHAR * p, size_t cch)
     m_coord.Y = (short) (idx / m_consoleScreenBufferInfoEx.dwSize.X);
     m_coord.X = (short) (idx % m_consoleScreenBufferInfoEx.dwSize.X);
 
-#else
-
-    BOOL    fSuccess = FALSE;
-    DWORD   cWritten = 0;
-
-
-
-    fSuccess = FillConsoleOutputAttribute (m_hStdOut, attr, (DWORD) cch, m_coord, &cWritten);
-    CWRA (fSuccess);
-
-    fSuccess = WriteConsoleOutputCharacter (m_hStdOut, p, (DWORD) cch, m_coord, &cWritten);
-    CWRA (fSuccess);
-
-    m_coord.Y += (m_coord.X + (SHORT) cWritten) / m_consoleScreenBufferInfoEx.dwSize.X;
-    m_coord.X += cWritten % m_consoleScreenBufferInfoEx.dwSize.X;
-
-#endif
 
 Error:
-
     return hr;
 }
 
@@ -327,19 +269,16 @@ Error:
 
 ////////////////////////////////////////////////////////////////////////////////
 //
-//  CUtils::WriteConsoleLine
+//  CConsoleBuffer::WriteSeparatorLine
 //
 //  Draws a line across the console at the current internal cursor position
 //  and moves to the next line
 // 
 ////////////////////////////////////////////////////////////////////////////////
 
-HRESULT CUtils::WriteSeparatorLine (void)
+HRESULT CConsoleBuffer::WriteSeparatorLine (void)
 {
     HRESULT hr     = S_OK;
-
-#ifdef USE_SCREEN_BUFFER
-
     size_t  idx    = (size_t) m_coord.Y * (size_t) m_consoleScreenBufferInfoEx.dwSize.X;
     size_t  idxEnd = idx + m_consoleScreenBufferInfoEx.dwSize.X;
 
@@ -347,34 +286,15 @@ HRESULT CUtils::WriteSeparatorLine (void)
 
     while (idx < idxEnd)
     {
-        m_prgScreenBuffer[idx].Attributes       = m_rgAttributes[EAttribute::SeparatorLine];
+        m_prgScreenBuffer[idx].Attributes       = m_rgAttributes[CConfig::EAttribute::SeparatorLine];
         m_prgScreenBuffer[idx].Char.UnicodeChar = L'═';
 
         ++idx;
     }
 
-#else 
-
-    BOOL    fSuccess    = FALSE;
-    DWORD   bufferWidth = m_consoleScreenBufferInfoEx.dwSize.X;
-    DWORD   cWritten    = 0;
-
-
-    assert (m_coord.X == 0);
-
-    fSuccess = FillConsoleOutputAttribute (m_hStdOut, m_rgAttributes[EAttribute::SeparatorLine], bufferWidth, m_coord, &cWritten);
-    CWRA (fSuccess);
-
-    fSuccess = FillConsoleOutputCharacter (m_hStdOut, L'═', bufferWidth, m_coord, &cWritten);
-    CWRA (fSuccess);
-
-#endif
-
     ++m_coord.Y;
 
-#ifndef USE_SCREEN_BUFFER
-Error:
-#endif
+//Error:
     return hr;
 }
 
@@ -384,29 +304,27 @@ Error:
 
 ////////////////////////////////////////////////////////////////////////////////
 //
-//  CUtils::ScrollBuffer
+//  CConsoleBuffer::ScrollBuffer
 //
 //  
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-HRESULT CUtils::ScrollBuffer (UINT cLinesToScroll)
+HRESULT CConsoleBuffer::ScrollBuffer (UINT cLinesToScroll)
 {
-    HRESULT    hr = S_OK;
-    CHAR_INFO  ciFill = { 0 };
+    HRESULT     hr                  = S_OK;
+    CHAR_INFO   ciFill              = { 0 };
+    size_t      cbScreenBuffer      = sizeof(*m_prgScreenBuffer) * (size_t)m_consoleScreenBufferInfoEx.dwSize.Y * (size_t)m_consoleScreenBufferInfoEx.dwSize.X;
+    size_t      idxNewTopOfBuffer   = cLinesToScroll * (size_t) m_consoleScreenBufferInfoEx.dwSize.X;
+    size_t      cUsedBufferLines    = (size_t)m_consoleScreenBufferInfoEx.dwSize.Y - cLinesToScroll;
+    size_t      cci                 = cUsedBufferLines * (size_t) m_consoleScreenBufferInfoEx.dwSize.X;
+    CHAR_INFO * pNewEmptyArea       = m_prgScreenBuffer + (cUsedBufferLines * (size_t) m_consoleScreenBufferInfoEx.dwSize.X);
+    CHAR_INFO * pEnd                = m_prgScreenBuffer + ((size_t) m_consoleScreenBufferInfoEx.dwSize.Y * (size_t) m_consoleScreenBufferInfoEx.dwSize.X);
 
-    ciFill.Attributes = m_rgAttributes[CUtils::EAttribute::Default];
+
+    ciFill.Attributes = m_rgAttributes[CConfig::EAttribute::Default];
     ciFill.Char.UnicodeChar = L'-';
 
-#ifdef USE_SCREEN_BUFFER
-
-    size_t      cbScreenBuffer     = sizeof(*m_prgScreenBuffer) * (size_t)m_consoleScreenBufferInfoEx.dwSize.Y * (size_t)m_consoleScreenBufferInfoEx.dwSize.X;
-    size_t      idxNewTopOfBuffer  = cLinesToScroll * (size_t) m_consoleScreenBufferInfoEx.dwSize.X;
-    size_t      cUsedBufferLines   = (size_t)m_consoleScreenBufferInfoEx.dwSize.Y - cLinesToScroll;
-    size_t      cci                = cUsedBufferLines * (size_t) m_consoleScreenBufferInfoEx.dwSize.X;
-    CHAR_INFO * pNewEmptyArea      = m_prgScreenBuffer + (cUsedBufferLines * (size_t) m_consoleScreenBufferInfoEx.dwSize.X);
-    CHAR_INFO * pEnd               = m_prgScreenBuffer + ((size_t) m_consoleScreenBufferInfoEx.dwSize.Y * (size_t) m_consoleScreenBufferInfoEx.dwSize.X);
-   
     memmove_s (m_prgScreenBuffer, cbScreenBuffer, m_prgScreenBuffer + idxNewTopOfBuffer, cci * sizeof(*m_prgScreenBuffer));
     
     while (pNewEmptyArea < pEnd)
@@ -418,30 +336,8 @@ HRESULT CUtils::ScrollBuffer (UINT cLinesToScroll)
     m_coord.Y = (short) (idxNewTopOfBuffer / m_consoleScreenBufferInfoEx.dwSize.X);
     m_coord.X = (short) (idxNewTopOfBuffer % m_consoleScreenBufferInfoEx.dwSize.X);
 
-#else
-
-    BOOL       fSuccess       = FALSE;
-    SMALL_RECT srcScrollRect  = { 0 };
-    COORD      coordDest      = { 0 };
-    COORD      coordCursorPos = { 0 };
-
-    srcScrollRect.Top    = (short) cLines;
-    srcScrollRect.Bottom = m_consoleScreenBufferInfoEx.dwSize.Y - 1;
-    srcScrollRect.Left   = 0;
-    srcScrollRect.Right  = m_consoleScreenBufferInfoEx.dwSize.X - 1;
-
-    fSuccess = ScrollConsoleScreenBuffer (m_hStdOut, &srcScrollRect, NULL, coordDest, &ciFill);
-    CWRA (fSuccess);
-
-    // this looks wrong...
-    //m_coord.Y = srcScrollRect.Top;
-
-#endif
-
     m_coord.Y -= (short) cLinesToScroll;
 
-#ifndef USE_SCREEN_BUFFER
-Error:
-#endif
+//Error:
     return hr;
 }

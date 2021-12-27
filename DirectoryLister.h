@@ -10,11 +10,11 @@ class CCommandLine;
 
 
 
-class CDirectory
+class CDirectoryLister
 {
 public:
-    CDirectory  (CCommandLine * pCmdLine); 
-    ~CDirectory (void); 
+    CDirectoryLister  (CCommandLine * pCmdLine);
+    ~CDirectoryLister (void); 
 
     void operator() (LPCWSTR pszMask);
 
@@ -69,6 +69,7 @@ protected:
     void    DisplayFooterQuotaInfo    (const ULARGE_INTEGER * puliFreeBytesAvailable);
     UINT    GetMaxSize                (ULARGE_INTEGER * puli);
     LPCWSTR FormatFileSize            (ULARGE_INTEGER uli);
+    BOOL    IsDots                    (LPCWSTR pszFileName);
 
 
     

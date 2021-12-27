@@ -1,6 +1,8 @@
 ﻿#include "StdAfx.h"
-#include "Directory.h"
+#include "DirectoryLister.h"
+
 #include "CommandLine.h"
+#include "Config.h"
 #include "Utils.h"
 
 
@@ -12,7 +14,7 @@
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-CCommandLine * CDirectory::CFileInfo::s_pCmdLine = NULL;
+CCommandLine * CDirectoryLister::CFileInfo::s_pCmdLine = NULL;
 
 
 
@@ -20,13 +22,13 @@ CCommandLine * CDirectory::CFileInfo::s_pCmdLine = NULL;
 
 ////////////////////////////////////////////////////////////////////////////////
 //
-//  CDirectory::CFileInfo::operator< 
+//  CDirectoryLister::CFileInfo::operator< 
 //
 //  Define a compoarison operator for use by std::sort
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-CDirectory::CFileInfo::CFileInfo (void)
+CDirectoryLister::CFileInfo::CFileInfo (void)
 {
     cAlternateFileName[0] = L'\0';
     cFileName[0] = L'\0';
@@ -47,13 +49,13 @@ CDirectory::CFileInfo::CFileInfo (void)
 
 ////////////////////////////////////////////////////////////////////////////////
 //
-//  CDirectory::CFileInfo::operator< 
+//  CDirectoryLister::CFileInfo::operator< 
 //
 //  Define a compoarison operator for use by std::sort
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-bool CDirectory::CFileInfo::operator< (const CFileInfo & rhs) const
+bool CDirectoryLister::CFileInfo::operator< (const CFileInfo & rhs) const
 {
     bool                       comesBeforeRhs = false;
     bool                       isDirectory    = false;
@@ -153,13 +155,13 @@ bool CDirectory::CFileInfo::operator< (const CFileInfo & rhs) const
 
 ////////////////////////////////////////////////////////////////////////////////
 //
-//  CDirectory::CDirectoryInfo::CDirectoryInfo
+//  CDirectoryLister::CDirectoryInfo::CDirectoryInfo
 //
 //  
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-CDirectory::CDirectoryInfo::CDirectoryInfo (void) :
+CDirectoryLister::CDirectoryInfo::CDirectoryInfo (void) :
     m_pszPath            (NULL), 
     m_pszFileSpec        (NULL), 
     m_cchLargestFileName (0),    
@@ -177,13 +179,13 @@ CDirectory::CDirectoryInfo::CDirectoryInfo (void) :
 
 ////////////////////////////////////////////////////////////////////////////////
 //
-//  CDirectory::CDirectory
+//  CDirectoryLister::CDirectoryLister
 //
 //  
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-CDirectory::CDirectory (CCommandLine * pCmdLine) :
+CDirectoryLister::CDirectoryLister (CCommandLine * pCmdLine) :
     m_pCmdLine (pCmdLine),
     m_cFilesFound (0),
     m_cDirectoriesFound (0)
@@ -199,13 +201,13 @@ CDirectory::CDirectory (CCommandLine * pCmdLine) :
 
 ////////////////////////////////////////////////////////////////////////////////
 //
-//  CDirectory::~CDirectory
+//  CDirectoryLister::~CDirectoryLister
 //
 //  
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-CDirectory::~CDirectory (void)
+CDirectoryLister::~CDirectoryLister (void)
 {
 }
 
@@ -215,13 +217,13 @@ CDirectory::~CDirectory (void)
 
 ////////////////////////////////////////////////////////////////////////////////
 //
-//  CDirectory::operator()
+//  CDirectoryLister::operator()
 //
 //  
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-void CDirectory::operator() (LPCWSTR pszMask)
+void CDirectoryLister::operator() (LPCWSTR pszMask)
 {
     HRESULT hr                          = S_OK;
     int     nDrive;    
@@ -300,13 +302,13 @@ Error:
 
 ////////////////////////////////////////////////////////////////////////////////
 //
-//  CDirectory::CollectDirectoryFiles
+//  CDirectoryLister::CollectDirectoryFiles
 //
 //  
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-HRESULT CDirectory::ProcessDirectory (LPCWSTR pszPath, LPCWSTR pszFileSpec)
+HRESULT CDirectoryLister::ProcessDirectory (LPCWSTR pszPath, LPCWSTR pszFileSpec)
 {
     HRESULT         hr = S_OK;
     BOOL            fSuccess;                    
@@ -345,7 +347,7 @@ HRESULT CDirectory::ProcessDirectory (LPCWSTR pszPath, LPCWSTR pszFileSpec)
     {
         do 
         {
-            if (!g_util.IsDots (fileInfo.cFileName))
+            if (!IsDots (fileInfo.cFileName))
             {
                 //
                 // If the required attributes are present and the excluded attributes are not 
@@ -399,13 +401,13 @@ Error:
 
 ////////////////////////////////////////////////////////////////////////////////
 //
-//  CDirectory::RecurseIntoSubdirectories
+//  CDirectoryLister::RecurseIntoSubdirectories
 //
 //  
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-HRESULT CDirectory::RecurseIntoSubdirectories (LPCWSTR pszPath, LPCWSTR pszFileSpec)
+HRESULT CDirectoryLister::RecurseIntoSubdirectories (LPCWSTR pszPath, LPCWSTR pszFileSpec)
 {
     HRESULT         hr                           = S_OK;
     BOOL            fSuccess;                    
@@ -438,7 +440,7 @@ HRESULT CDirectory::RecurseIntoSubdirectories (LPCWSTR pszPath, LPCWSTR pszFileS
         // of subdirectories we'll recurse into
         //
                 
-        if (!g_util.IsDots (wfd.cFileName))
+        if (!IsDots (wfd.cFileName))
         {
             if (CFlag::IsSet (wfd.dwFileAttributes, FILE_ATTRIBUTE_DIRECTORY))
             {
@@ -472,13 +474,13 @@ Error:
 
 ////////////////////////////////////////////////////////////////////////////////
 //
-//  CDirectory::AddMatchToList
+//  CDirectoryLister::AddMatchToList
 //
 //  
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-HRESULT CDirectory::AddMatchToList (CFileInfo * pwfd, CDirectoryInfo * pdi)
+HRESULT CDirectoryLister::AddMatchToList (CFileInfo * pwfd, CDirectoryInfo * pdi)
 {
     HRESULT hr           = S_OK;
     size_t  cchFileName  = 0; 
@@ -546,13 +548,13 @@ HRESULT CDirectory::AddMatchToList (CFileInfo * pwfd, CDirectoryInfo * pdi)
 
 ////////////////////////////////////////////////////////////////////////////////
 //
-//  CDirectory::Scroll
+//  CDirectoryLister::Scroll
 //
 //  
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-void CDirectory::Scroll (CDirectoryInfo * pdi)
+void CDirectoryLister::Scroll (CDirectoryInfo * pdi)
 {
     HRESULT hr                    = S_OK;
     BOOL    fSuccess              = FALSE;
@@ -620,13 +622,13 @@ Error:
 
 ////////////////////////////////////////////////////////////////////////////////
 //
-//  CDirectory::CalculateLinesNeeded
+//  CDirectoryLister::CalculateLinesNeeded
 //
 //  
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-HRESULT CDirectory::CalculateLinesNeeded (__in CDirectoryInfo * pdi, __out UINT * pcLinesNeeded)
+HRESULT CDirectoryLister::CalculateLinesNeeded (__in CDirectoryInfo * pdi, __out UINT * pcLinesNeeded)
 {
     HRESULT hr           = S_OK;
     UINT    cLinesNeeded = 0;
@@ -681,27 +683,19 @@ Error:
 
 ////////////////////////////////////////////////////////////////////////////////
 //
-//  CDirectory::DisplayResults
+//  CDirectoryLister::DisplayResults
 //
 //  
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-void CDirectory::DisplayResults (CDirectoryInfo * pdi)
+void CDirectoryLister::DisplayResults (CDirectoryInfo * pdi)
 {
-#ifdef _DEBUG
-    int i;
-    for (i = 1; i <= 100; ++i)
-    {
-        //g_util.ConsolePrintf (L"%d\n", i);
-    }
-#endif
-
     g_util.InitializeBuffer ();
 
     Scroll (pdi);
     
-    g_util.WriteConsoleSeparatorLine();
+    g_util.WriteSeparatorLine();
 
     DisplayDriveHeader (pdi->m_pszPath); 
 
@@ -725,8 +719,8 @@ void CDirectory::DisplayResults (CDirectoryInfo * pdi)
         DisplayFooter (pdi);    
     }
         
-    g_util.WriteConsoleSeparatorLine ();
-    g_util.ConsolePuts (CUtils::EAttribute::Default, L"\n");
+    g_util.WriteSeparatorLine ();
+    g_util.Puts (CConfig::EAttribute::Default, L"\n");
 
     g_util.FlushBuffer ();
 }
@@ -737,13 +731,13 @@ void CDirectory::DisplayResults (CDirectoryInfo * pdi)
 
 ////////////////////////////////////////////////////////////////////////////////
 //
-//  CDirectory::DisplayResultsWide
+//  CDirectoryLister::DisplayResultsWide
 //
 //  
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-void CDirectory::DisplayResultsWide (CDirectoryInfo * pdi)
+void CDirectoryLister::DisplayResultsWide (CDirectoryInfo * pdi)
 {                                 
     HRESULT hr             = S_OK;
     UINT    cColumns;
@@ -784,16 +778,16 @@ void CDirectory::DisplayResultsWide (CDirectoryInfo * pdi)
             CHR (hr);
 
             wAttr = g_util.GetTextAttrForFile (pwfd);
-            hr = g_util.ConsolePuts (wAttr, pszName);
+            hr = g_util.Puts (wAttr, pszName);
             CHR (hr);
 
             for (cSpacesNeeded = cxColumnWidth - wcslen (pszName); cSpacesNeeded > 0; cSpacesNeeded--)
             {
-                g_util.ConsolePuts (g_util.m_rgAttributes[CUtils::EAttribute::Default], L" ");
+                g_util.Puts (g_util.m_rgAttributes[CConfig::EAttribute::Default], L" ");
             }
         }
 
-        g_util.ConsolePuts (g_util.m_rgAttributes[CUtils::EAttribute::Default], L"\n");
+        g_util.Puts (g_util.m_rgAttributes[CConfig::EAttribute::Default], L"\n");
     }
 
 Error:
@@ -807,13 +801,13 @@ Error:
 
 ////////////////////////////////////////////////////////////////////////////////
 //
-//  CDirectory::GetColumnCount
+//  CDirectoryLister::GetColumnCount
 //
 //  Figure out how many columns fit on the screen
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-HRESULT CDirectory::GetColumnInfo (CDirectoryInfo * pdi, UINT * pcColumns, UINT * pcxColumnWidth)
+HRESULT CDirectoryLister::GetColumnInfo (CDirectoryInfo * pdi, UINT * pcColumns, UINT * pcxColumnWidth)
 {
     HRESULT                    hr              = S_OK;
     BOOL                       fSuccess;       
@@ -839,14 +833,14 @@ Error:
 
 ////////////////////////////////////////////////////////////////////////////////
 //
-//  CDirectory::AddEmptyMatches
+//  CDirectoryLister::AddEmptyMatches
 //
 //  Add empty matches to the end of the match list
 //  to ensure that there are an exact multiple of cColumns.
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-HRESULT CDirectory::AddEmptyMatches (CDirectoryInfo * pdi, size_t cColumns)
+HRESULT CDirectoryLister::AddEmptyMatches (CDirectoryInfo * pdi, size_t cColumns)
 {
 	HRESULT   hr = S_OK;
     size_t    i;       
@@ -869,13 +863,13 @@ HRESULT CDirectory::AddEmptyMatches (CDirectoryInfo * pdi, size_t cColumns)
 
 ////////////////////////////////////////////////////////////////////////////////
 //
-//  CDirectory::GetWideFormattedName
+//  CDirectoryLister::GetWideFormattedName
 //
 //  
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-HRESULT CDirectory::GetWideFormattedName (WIN32_FIND_DATA * pwfd, LPWSTR * ppszName)
+HRESULT CDirectoryLister::GetWideFormattedName (WIN32_FIND_DATA * pwfd, LPWSTR * ppszName)
 {
     HRESULT      hr                  = S_OK;
     static WCHAR szDirName[MAX_PATH] = L"[";
@@ -908,13 +902,13 @@ HRESULT CDirectory::GetWideFormattedName (WIN32_FIND_DATA * pwfd, LPWSTR * ppszN
 
 ////////////////////////////////////////////////////////////////////////////////
 //
-//  CDirectory::DisplayResultsNormal
+//  CDirectoryLister::DisplayResultsNormal
 //
 //  
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-void CDirectory::DisplayResultsNormal (CDirectoryInfo * pdi)
+void CDirectoryLister::DisplayResultsNormal (CDirectoryInfo * pdi)
 {
     UINT               cchMaxSize;
     BOOL               fSuccess;   
@@ -979,11 +973,11 @@ void CDirectory::DisplayResultsNormal (CDirectoryInfo * pdi)
         uliFileSize.LowPart  = iter->nFileSizeLow;
         uliFileSize.HighPart = iter->nFileSizeHigh;
 
-        g_util.ConsolePuts (g_util.m_rgAttributes[CUtils::EAttribute::Date],    szDate);
-        g_util.ConsolePuts (g_util.m_rgAttributes[CUtils::EAttribute::Default], L"  ");
+        g_util.Puts (g_util.m_rgAttributes[CConfig::EAttribute::Date],    szDate);
+        g_util.Puts (g_util.m_rgAttributes[CConfig::EAttribute::Default], L"  ");
         
-        g_util.ConsolePuts (g_util.m_rgAttributes[CUtils::EAttribute::Time],    szTime);
-        g_util.ConsolePuts (g_util.m_rgAttributes[CUtils::EAttribute::Default], L" ");
+        g_util.Puts (g_util.m_rgAttributes[CConfig::EAttribute::Time],    szTime);
+        g_util.Puts (g_util.m_rgAttributes[CConfig::EAttribute::Default], L" ");
 
         while (pAttrMap->m_dwAttr != 0)
         {
@@ -991,16 +985,16 @@ void CDirectory::DisplayResultsNormal (CDirectoryInfo * pdi)
             
             if (iter->dwFileAttributes & pAttrMap->m_dwAttr)
             {
-                attr = g_util.m_rgAttributes[CUtils::EAttribute::FileAttributePresent];
+                attr = g_util.m_rgAttributes[CConfig::EAttribute::FileAttributePresent];
                 chDisplay = pAttrMap->m_chAttr;
             }
             else
             {
-                attr = g_util.m_rgAttributes[CUtils::EAttribute::FileAttributeNotPresent];
+                attr = g_util.m_rgAttributes[CConfig::EAttribute::FileAttributeNotPresent];
                 chDisplay = kchHyphen;
             }
 
-            g_util.ConsolePrintf (attr, L"%c", chDisplay);
+            g_util.Printf (attr, L"%c", chDisplay);
 
             ++pAttrMap;
         }
@@ -1008,7 +1002,7 @@ void CDirectory::DisplayResultsNormal (CDirectoryInfo * pdi)
         
         if ((iter->dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) == 0)
         {
-            g_util.ConsolePrintf (g_util.m_rgAttributes[CUtils::EAttribute::Size], L" %*s ", cchMaxSize, FormatFileSize (uliFileSize));
+            g_util.Printf (g_util.m_rgAttributes[CConfig::EAttribute::Size], L" %*s ", cchMaxSize, FormatFileSize (uliFileSize));
         }
         else
         {
@@ -1016,12 +1010,12 @@ void CDirectory::DisplayResultsNormal (CDirectoryInfo * pdi)
 
             cchLeftSidePadding = (cchMaxSize - kcchDirSize) / 2;            
             
-            g_util.ConsolePrintf (g_util.m_rgAttributes[CUtils::EAttribute::Directory], L" %*s%-*s ", cchLeftSidePadding, L"", cchMaxSize - cchLeftSidePadding, kszDirSize);
+            g_util.Printf (g_util.m_rgAttributes[CConfig::EAttribute::Directory], L" %*s%-*s ", cchLeftSidePadding, L"", cchMaxSize - cchLeftSidePadding, kszDirSize);
          }        
 
         attr = (g_util.GetTextAttrForFile (&(*iter)));
-        g_util.ConsolePuts (attr, iter->cFileName);
-        g_util.ConsolePuts (attr, L"\n");
+        g_util.Puts (attr, iter->cFileName);
+        g_util.Puts (attr, L"\n");
         
         ++iter;
     }
@@ -1034,7 +1028,7 @@ void CDirectory::DisplayResultsNormal (CDirectoryInfo * pdi)
 
 ////////////////////////////////////////////////////////////////////////////////
 //
-//  CDirectory::DisplayDriveHeader
+//  CDirectoryLister::DisplayDriveHeader
 //
 //  Displays information about the drive, eg: 
 // 
@@ -1043,7 +1037,7 @@ void CDirectory::DisplayResultsNormal (CDirectoryInfo * pdi)
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-void CDirectory::DisplayDriveHeader (LPCWSTR pszPath)
+void CDirectoryLister::DisplayDriveHeader (LPCWSTR pszPath)
 {
     static const LPCWSTR s_krgszVolumeDescription[] = 
     {
@@ -1107,20 +1101,20 @@ void CDirectory::DisplayDriveHeader (LPCWSTR pszPath)
                           NULL, 
                           szFileSystemName, ARRAYSIZE (szFileSystemName));
 
-    g_util.ConsolePuts (g_util.m_rgAttributes[CUtils::EAttribute::Information], L" Volume ");
+    g_util.Puts (g_util.m_rgAttributes[CConfig::EAttribute::Information], L" Volume ");
 
     if (fUncPath)
     {
-        g_util.ConsolePuts (g_util.m_rgAttributes[CUtils::EAttribute::InformationHighlight], pszPath);
+        g_util.Puts (g_util.m_rgAttributes[CConfig::EAttribute::InformationHighlight], pszPath);
     }
     else
     {
-        g_util.ConsolePuts   (g_util.m_rgAttributes[CUtils::EAttribute::Information],          L"in drive ");
-        g_util.ConsolePrintf (g_util.m_rgAttributes[CUtils::EAttribute::InformationHighlight], L"%c", szDriveRoot[0]);
+        g_util.Puts   (g_util.m_rgAttributes[CConfig::EAttribute::Information],          L"in drive ");
+        g_util.Printf (g_util.m_rgAttributes[CConfig::EAttribute::InformationHighlight], L"%c", szDriveRoot[0]);
     }        
 
-    g_util.ConsolePuts (g_util.m_rgAttributes[CUtils::EAttribute::Information],          L" is ");
-    g_util.ConsolePuts (g_util.m_rgAttributes[CUtils::EAttribute::InformationHighlight], s_krgszVolumeDescription[uiDriveType]);
+    g_util.Puts (g_util.m_rgAttributes[CConfig::EAttribute::Information],          L" is ");
+    g_util.Puts (g_util.m_rgAttributes[CConfig::EAttribute::InformationHighlight], s_krgszVolumeDescription[uiDriveType]);
 
 
     //
@@ -1145,24 +1139,24 @@ void CDirectory::DisplayDriveHeader (LPCWSTR pszPath)
         dwResult = WNetGetConnection (szDriveRoot, szRemoteName, &cchRemoteName);              
         if (dwResult == NOERROR)
         {
-            g_util.ConsolePuts (g_util.m_rgAttributes[CUtils::EAttribute::Information],          L" mapped to ");
-            g_util.ConsolePuts (g_util.m_rgAttributes[CUtils::EAttribute::InformationHighlight], szRemoteName);
+            g_util.Puts (g_util.m_rgAttributes[CConfig::EAttribute::Information],          L" mapped to ");
+            g_util.Puts (g_util.m_rgAttributes[CConfig::EAttribute::InformationHighlight], szRemoteName);
         }
     }
 
-    g_util.ConsolePuts (g_util.m_rgAttributes[CUtils::EAttribute::Information],          L" (");
-    g_util.ConsolePuts (g_util.m_rgAttributes[CUtils::EAttribute::InformationHighlight], szFileSystemName);
-    g_util.ConsolePuts (g_util.m_rgAttributes[CUtils::EAttribute::Information],          L")\n");
+    g_util.Puts (g_util.m_rgAttributes[CConfig::EAttribute::Information],          L" (");
+    g_util.Puts (g_util.m_rgAttributes[CConfig::EAttribute::InformationHighlight], szFileSystemName);
+    g_util.Puts (g_util.m_rgAttributes[CConfig::EAttribute::Information],          L")\n");
 
     if (szVolumeName[0] != L'\0')
     {
-        g_util.ConsolePuts (g_util.m_rgAttributes[CUtils::EAttribute::Information],          L" Volume name is \"");
-        g_util.ConsolePuts (g_util.m_rgAttributes[CUtils::EAttribute::InformationHighlight], szVolumeName);
-        g_util.ConsolePuts (g_util.m_rgAttributes[CUtils::EAttribute::Information],          L"\"\n\n");
+        g_util.Puts (g_util.m_rgAttributes[CConfig::EAttribute::Information],          L" Volume name is \"");
+        g_util.Puts (g_util.m_rgAttributes[CConfig::EAttribute::InformationHighlight], szVolumeName);
+        g_util.Puts (g_util.m_rgAttributes[CConfig::EAttribute::Information],          L"\"\n\n");
     }
     else
     {
-        g_util.ConsolePuts (g_util.m_rgAttributes[CUtils::EAttribute::Information], L" Volume has no name\n\n");
+        g_util.Puts (g_util.m_rgAttributes[CConfig::EAttribute::Information], L" Volume has no name\n\n");
     }
 
 Error:
@@ -1175,17 +1169,17 @@ Error:
 
 ////////////////////////////////////////////////////////////////////////////////
 //
-//  CDirectory::DisplayPathHeader
+//  CDirectoryLister::DisplayPathHeader
 //
 //  
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-void CDirectory::DisplayPathHeader (LPCWSTR pszPath)
+void CDirectoryLister::DisplayPathHeader (LPCWSTR pszPath)
 {
-    g_util.ConsolePuts (g_util.m_rgAttributes[CUtils::EAttribute::Information],          L" Directory of ");
-    g_util.ConsolePuts (g_util.m_rgAttributes[CUtils::EAttribute::InformationHighlight], pszPath);
-    g_util.ConsolePuts (g_util.m_rgAttributes[CUtils::EAttribute::Information],          L"\n\n");
+    g_util.Puts (g_util.m_rgAttributes[CConfig::EAttribute::Information],          L" Directory of ");
+    g_util.Puts (g_util.m_rgAttributes[CConfig::EAttribute::InformationHighlight], pszPath);
+    g_util.Puts (g_util.m_rgAttributes[CConfig::EAttribute::Information],          L"\n\n");
 }
 
 
@@ -1194,7 +1188,7 @@ void CDirectory::DisplayPathHeader (LPCWSTR pszPath)
 
 ////////////////////////////////////////////////////////////////////////////////
 //
-//  CDirectory::DisplayFooter
+//  CDirectoryLister::DisplayFooter
 //
 //  Display summary information for the directory:
 //
@@ -1204,7 +1198,7 @@ void CDirectory::DisplayPathHeader (LPCWSTR pszPath)
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-void CDirectory::DisplayFooter (CDirectoryInfo * pdi)
+void CDirectoryLister::DisplayFooter (CDirectoryInfo * pdi)
 {
     HRESULT        hr                     = S_OK;
     BOOL           fSuccess;              
@@ -1217,18 +1211,18 @@ void CDirectory::DisplayFooter (CDirectoryInfo * pdi)
     fSuccess = GetDiskFreeSpaceEx (pdi->m_pszPath, &uliFreeBytesAvailable, &uliTotalBytes, &uliTotalFreeBytes);
     CBRA (fSuccess);
 
-    g_util.ConsolePuts   (g_util.m_rgAttributes[CUtils::EAttribute::Information],          L"\n ");
+    g_util.Puts   (g_util.m_rgAttributes[CConfig::EAttribute::Information],          L"\n ");
 
-    g_util.ConsolePrintf (g_util.m_rgAttributes[CUtils::EAttribute::InformationHighlight], L"%d", pdi->m_cSubDirectories);
-    g_util.ConsolePuts   (g_util.m_rgAttributes[CUtils::EAttribute::Information],          pdi->m_cSubDirectories == 1 ? L" dir, " : L" dirs, ");
+    g_util.Printf (g_util.m_rgAttributes[CConfig::EAttribute::InformationHighlight], L"%d", pdi->m_cSubDirectories);
+    g_util.Puts   (g_util.m_rgAttributes[CConfig::EAttribute::Information],          pdi->m_cSubDirectories == 1 ? L" dir, " : L" dirs, ");
 
-    g_util.ConsolePrintf (g_util.m_rgAttributes[CUtils::EAttribute::InformationHighlight], L"%d", pdi->m_cFiles);    
-    g_util.ConsolePrintf (g_util.m_rgAttributes[CUtils::EAttribute::Information],          pdi->m_cFiles == 1 ? L" file using " : L" files using ");    
-    g_util.ConsolePuts   (g_util.m_rgAttributes[CUtils::EAttribute::InformationHighlight], FormatFileSize (pdi->m_uliBytesUsed));
+    g_util.Printf (g_util.m_rgAttributes[CConfig::EAttribute::InformationHighlight], L"%d", pdi->m_cFiles);    
+    g_util.Printf (g_util.m_rgAttributes[CConfig::EAttribute::Information],          pdi->m_cFiles == 1 ? L" file using " : L" files using ");    
+    g_util.Puts   (g_util.m_rgAttributes[CConfig::EAttribute::InformationHighlight], FormatFileSize (pdi->m_uliBytesUsed));
 
-    g_util.ConsolePrintf (g_util.m_rgAttributes[CUtils::EAttribute::Information],          pdi->m_uliBytesUsed.QuadPart == 1 ? L" byte\n " : L" bytes\n ");
-    g_util.ConsolePuts   (g_util.m_rgAttributes[CUtils::EAttribute::InformationHighlight], FormatFileSize (uliTotalFreeBytes));
-    g_util.ConsolePrintf (g_util.m_rgAttributes[CUtils::EAttribute::Information],          uliTotalFreeBytes.QuadPart == 1 ? L" byte free on volume\n" : L" bytes free on volume\n");
+    g_util.Printf (g_util.m_rgAttributes[CConfig::EAttribute::Information],          pdi->m_uliBytesUsed.QuadPart == 1 ? L" byte\n " : L" bytes\n ");
+    g_util.Puts   (g_util.m_rgAttributes[CConfig::EAttribute::InformationHighlight], FormatFileSize (uliTotalFreeBytes));
+    g_util.Printf (g_util.m_rgAttributes[CConfig::EAttribute::Information],          uliTotalFreeBytes.QuadPart == 1 ? L" byte free on volume\n" : L" bytes free on volume\n");
 
     if (uliFreeBytesAvailable.QuadPart != uliTotalFreeBytes.QuadPart)
     {
@@ -1244,7 +1238,7 @@ Error:
 
 
 
-void CDirectory::DisplayFooterQuotaInfo (const ULARGE_INTEGER * puliFreeBytesAvailable)
+void CDirectoryLister::DisplayFooterQuotaInfo (const ULARGE_INTEGER * puliFreeBytesAvailable)
 {
     DWORD cchMaxUsername = 1 << 15;
     LPWSTR pszUsername = new WCHAR[cchMaxUsername];   // Max size for an environment variable is 32k
@@ -1254,11 +1248,11 @@ void CDirectory::DisplayFooterQuotaInfo (const ULARGE_INTEGER * puliFreeBytesAva
     GetEnvironmentVariable (L"username", pszUsername, cchMaxUsername);
 
 
-    g_util.ConsolePuts (g_util.m_rgAttributes[CUtils::EAttribute::Information],          L" ");
-    g_util.ConsolePuts (g_util.m_rgAttributes[CUtils::EAttribute::InformationHighlight], FormatFileSize (*puliFreeBytesAvailable));
-    g_util.ConsolePuts (g_util.m_rgAttributes[CUtils::EAttribute::Information],          puliFreeBytesAvailable->QuadPart == 1 ? L" byte available to " : L" bytes available to ");
-    g_util.ConsolePuts (g_util.m_rgAttributes[CUtils::EAttribute::InformationHighlight], pszUsername);
-    g_util.ConsolePuts (g_util.m_rgAttributes[CUtils::EAttribute::Information],          L" due to quota\n");
+    g_util.Puts (g_util.m_rgAttributes[CConfig::EAttribute::Information],          L" ");
+    g_util.Puts (g_util.m_rgAttributes[CConfig::EAttribute::InformationHighlight], FormatFileSize (*puliFreeBytesAvailable));
+    g_util.Puts (g_util.m_rgAttributes[CConfig::EAttribute::Information],          puliFreeBytesAvailable->QuadPart == 1 ? L" byte available to " : L" bytes available to ");
+    g_util.Puts (g_util.m_rgAttributes[CConfig::EAttribute::InformationHighlight], pszUsername);
+    g_util.Puts (g_util.m_rgAttributes[CConfig::EAttribute::Information],          L" due to quota\n");
 }
 
 
@@ -1267,24 +1261,20 @@ void CDirectory::DisplayFooterQuotaInfo (const ULARGE_INTEGER * puliFreeBytesAva
 
 ////////////////////////////////////////////////////////////////////////////////
 //
-//  CDirectory::GetMaxSize
+//  CDirectoryLister::GetMaxSize
 //
 //  
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-UINT CDirectory::GetMaxSize (ULARGE_INTEGER * puli)
+UINT CDirectoryLister::GetMaxSize (ULARGE_INTEGER * puli)
 {
-    UINT cchDigits;
+    UINT cchDigits = 0;
 
 
 	if (puli->QuadPart != 0)
 	{
 		cchDigits = (UINT) log10 ((float) puli->QuadPart);
-	}
-	else
-	{
-		cchDigits = 0;
 	}
 
     return cchDigits + (cchDigits / 3) + 1;
@@ -1296,13 +1286,13 @@ UINT CDirectory::GetMaxSize (ULARGE_INTEGER * puli)
 
 ////////////////////////////////////////////////////////////////////////////////
 //
-//  CDirectory::FormatFileSize
+//  CDirectoryLister::FormatFileSize
 //
 //  
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-LPCWSTR CDirectory::FormatFileSize (ULARGE_INTEGER uli)
+LPCWSTR CDirectoryLister::FormatFileSize (ULARGE_INTEGER uli)
 {
     static WCHAR szFileSize[27];  // 2^64 = 1.84467440737096E+19 = 18,446,744,073,709,600,000 = 18 chars + 6 commas + 1 null
     LPWSTR       pszSize;
@@ -1371,4 +1361,37 @@ LPCWSTR CDirectory::FormatFileSize (ULARGE_INTEGER uli)
 
 
 
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CUtils::IsDots
+//
+//  
+//
+////////////////////////////////////////////////////////////////////////////////
 
+BOOL CDirectoryLister::IsDots(LPCWSTR pszFileName)
+{
+    static const WCHAR kchDot = L'.';
+    static const WCHAR kchNull = L'\0';
+    BOOL               fDots = FALSE;
+
+
+
+    if (pszFileName[0] == kchDot)
+    {
+        if (pszFileName[1] == kchNull)
+        {
+            fDots = TRUE;
+        }
+        else if (pszFileName[1] == kchDot)
+        {
+            if (pszFileName[2] == kchNull)
+            {
+                fDots = TRUE;
+            }
+        }
+    }
+
+
+    return fDots;
+}
