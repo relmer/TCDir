@@ -1,5 +1,7 @@
 #pragma once
 
+#include "FileInfo.h"
+
 
 
 
@@ -20,38 +22,6 @@ public:
 
 
 protected:    
-
-    class CFileInfo : public WIN32_FIND_DATA
-    {
-    public:
-        CFileInfo (void);
-        bool operator< (const CFileInfo & rhs) const;
-
-        static CCommandLine * s_pCmdLine;
-    };
-
-    typedef vector<CFileInfo>        FileInfoVector;
-    typedef FileInfoVector::iterator FileInfoVectorIter;
-
-
-
-    class CDirectoryInfo
-    {
-    public:
-        CDirectoryInfo (void);
-        
-        FileInfoVector m_vMatches;      
-        LPCWSTR        m_pszPath;            
-        LPCWSTR        m_pszFileSpec;        
-        ULARGE_INTEGER m_uliLargestFileSize; 
-        size_t         m_cchLargestFileName;
-        UINT           m_cFiles;             
-        UINT           m_cSubDirectories;    
-        ULARGE_INTEGER m_uliBytesUsed;       
-    };                                 
-
-
-
     HRESULT ProcessDirectory          (LPCWSTR pszPath, LPCWSTR pszFileSpec);
     HRESULT RecurseIntoSubdirectories (LPCWSTR pszPath, LPCWSTR pszFileSpec);
     HRESULT AddMatchToList            (CFileInfo * pwfd, CDirectoryInfo * pdi);
