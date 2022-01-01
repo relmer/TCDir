@@ -15,16 +15,8 @@
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-CConsoleApi::CConsoleApi(void)
+CConsoleApi::CConsoleApi (void)
 {
-    m_hStdOut = GetStdHandle (STD_OUTPUT_HANDLE);   
-
-    ZeroMemory (&m_consoleScreenBufferInfoEx, sizeof (m_consoleScreenBufferInfoEx));
-    m_consoleScreenBufferInfoEx.cbSize = sizeof (m_consoleScreenBufferInfoEx);
-
-    GetConsoleScreenBufferInfoEx (m_hStdOut, &m_consoleScreenBufferInfoEx);
-
-    m_coord = m_consoleScreenBufferInfoEx.dwCursorPosition;
 }
 
 
@@ -39,13 +31,8 @@ CConsoleApi::CConsoleApi(void)
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-CConsoleApi::~CConsoleApi(void)
+CConsoleApi::~CConsoleApi (void)
 {
-    //
-    // Update the console cursor position with our final internal cursor position
-    //
-
-    SetConsoleCursorPosition (m_hStdOut, m_coord);
 }
 
 
@@ -153,21 +140,48 @@ Error:
 
 HRESULT CConsoleApi::WriteString (WORD attr, __in_ecount(cch) WCHAR * p, size_t cch)
 {
-    HRESULT hr       = S_OK;
-    BOOL    fSuccess = FALSE;
-    DWORD   cWritten = 0;
+    HRESULT hr        = S_OK;
+    BOOL    fSuccess  = FALSE;
+    BOOL    fClipped  = FALSE;
+    DWORD   cWritten  = 0;
 
 
 
-    fSuccess = FillConsoleOutputAttribute (m_hStdOut, attr, (DWORD) cch, m_coord, &cWritten);
-    CWRA (fSuccess);
+    //
+    // If we're already past the buffer's width, there's no room to write anything
+    //
 
-    fSuccess = WriteConsoleOutputCharacter (m_hStdOut, p, (DWORD) cch, m_coord, &cWritten);
-    CWRA (fSuccess);
+    BAIL_OUT_IF (m_coord.X >= m_consoleScreenBufferInfoEx.dwSize.X, S_OK);
 
-    m_coord.Y += (m_coord.X + (SHORT) cWritten) / m_consoleScreenBufferInfoEx.dwSize.X;
+    //
+    // If we're clipping text that would otherwise cause wrapping, 
+    // set cch to the max count to actually write.
+    //
+
+    if (m_wrapMode == EWrapMode::Clip)
+    {
+        assert (m_coord.X <= m_consoleScreenBufferInfoEx.dwSize.X);
+        if (m_coord.X + cch >= m_consoleScreenBufferInfoEx.dwSize.X)
+        {
+            cch = m_consoleScreenBufferInfoEx.dwSize.X - m_coord.X;
+            assert (cch > 0);            
+
+            fClipped = TRUE;
+        }
+    }
+
+    fSuccess = FillConsoleOutputAttribute(m_hStdOut, attr, (DWORD)cch, m_coord, &cWritten);
+    CWRA(fSuccess);
+
+    fSuccess = WriteConsoleOutputCharacter(m_hStdOut, p, (DWORD)cch, m_coord, &cWritten);
+    CWRA(fSuccess);
+
+    if (!fClipped)
+    {
+        m_coord.Y += (m_coord.X + (SHORT)cWritten) / m_consoleScreenBufferInfoEx.dwSize.X;
+    }
+
     m_coord.X += cWritten % m_consoleScreenBufferInfoEx.dwSize.X;
-
 
 
 Error:
@@ -187,7 +201,7 @@ Error:
 // 
 ////////////////////////////////////////////////////////////////////////////////
 
-HRESULT CConsoleApi::WriteSeparatorLine (void)
+HRESULT CConsoleApi::WriteSeparatorLine (WORD attr)
 {
     HRESULT hr          = S_OK;
     BOOL    fSuccess    = FALSE;
@@ -197,13 +211,80 @@ HRESULT CConsoleApi::WriteSeparatorLine (void)
 
     assert (m_coord.X == 0);
 
-    fSuccess = FillConsoleOutputAttribute (m_hStdOut, m_rgAttributes[CConfig::EAttribute::SeparatorLine], bufferWidth, m_coord, &cWritten);
+    fSuccess = FillConsoleOutputAttribute (m_hStdOut, attr, bufferWidth, m_coord, &cWritten);
     CWRA (fSuccess);
 
     fSuccess = FillConsoleOutputCharacter (m_hStdOut, L'═', bufferWidth, m_coord, &cWritten);
     CWRA (fSuccess);
 
     ++m_coord.Y;
+
+Error:
+    return hr;
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CConsoleApi::ReserveLines
+//
+//  
+//
+////////////////////////////////////////////////////////////////////////////////
+
+HRESULT CConsoleApi::ReserveLines (UINT cLines)
+{
+    HRESULT hr                      = S_OK;
+    BOOL    fSuccess                = FALSE;
+    UINT    cWindowLinesTotal       = 0;
+    UINT    cBufferLinesRemaining   = 0;
+
+
+    //
+    // If there are enough lines left in the current window, no need to scroll
+    //
+
+    cWindowLinesTotal = m_consoleScreenBufferInfoEx.srWindow.Bottom - m_consoleScreenBufferInfoEx.srWindow.Top + 1;
+    BAIL_OUT_IF((cLines + m_coord.Y) <= cWindowLinesTotal, S_OK);
+
+    //
+    // If we need more lines than are free in the buffer, scroll the buffer up to make room
+    //
+
+    cBufferLinesRemaining = m_consoleScreenBufferInfoEx.dwSize.Y - m_coord.Y;
+    if (cLines > cBufferLinesRemaining)
+    {
+        ScrollBuffer(cLines - cBufferLinesRemaining);
+    }
+
+    //
+    // If we're going to write past the bottom of the window, reposition the window 
+    // to the bottom of the area we need
+    //
+
+    if (m_coord.Y + cLines > (UINT) m_consoleScreenBufferInfoEx.srWindow.Bottom)
+    {
+        SHORT      cLinesToMoveWindow = 0;
+        SMALL_RECT srWindow = m_consoleScreenBufferInfoEx.srWindow;
+
+
+
+        cLinesToMoveWindow = (SHORT) m_coord.Y + (SHORT)cLines - m_consoleScreenBufferInfoEx.srWindow.Bottom;
+
+        // relative coords
+        srWindow.Top    += cLinesToMoveWindow;
+        srWindow.Bottom += cLinesToMoveWindow;
+
+        fSuccess = SetConsoleWindowInfo(m_hStdOut, TRUE, &srWindow);
+        CWRA(fSuccess);
+
+        m_consoleScreenBufferInfoEx.srWindow = srWindow;
+    }
+
+
 
 Error:
     return hr;
@@ -226,25 +307,25 @@ HRESULT CConsoleApi::ScrollBuffer (UINT cLinesToScroll)
     HRESULT    hr               = S_OK;
     CHAR_INFO  ciFill           = { 0 };
     BOOL       fSuccess         = FALSE;
-    SMALL_RECT srcScrollRect    = { 0 };
+    SMALL_RECT srScrollRect     = { 0 };
     COORD      coordDest        = { 0 };
     COORD      coordCursorPos   = { 0 };
 
 
 
-    ciFill.Attributes       = m_rgAttributes[CConfig::EAttribute::Default];
-    ciFill.Char.UnicodeChar = L'-';
+    ciFill.Attributes       = m_attrDefault;
+    ciFill.Char.UnicodeChar = L' ';
 
-    srcScrollRect.Top    = (short) cLinesToScroll;
-    srcScrollRect.Bottom = m_consoleScreenBufferInfoEx.dwSize.Y - 1;
-    srcScrollRect.Left   = 0;
-    srcScrollRect.Right  = m_consoleScreenBufferInfoEx.dwSize.X - 1;
+    srScrollRect.Top    = m_consoleScreenBufferInfoEx.dwSize.Y - (short) cLinesToScroll - 1;
+    srScrollRect.Bottom = m_consoleScreenBufferInfoEx.dwSize.Y - 1;
+    srScrollRect.Left   = 0;
+    srScrollRect.Right  = m_consoleScreenBufferInfoEx.dwSize.X - 1;
 
-    fSuccess = ScrollConsoleScreenBuffer (m_hStdOut, &srcScrollRect, NULL, coordDest, &ciFill);
+    fSuccess = ScrollConsoleScreenBuffer (m_hStdOut, &srScrollRect, NULL, coordDest, &ciFill);
     CWRA (fSuccess);
 
     // this looks wrong...
-    //m_coord.Y = srcScrollRect.Top;
+    //m_coord.Y = srScrollRect.Top;
 
     m_coord.Y -= (short) cLinesToScroll;
 

@@ -391,9 +391,6 @@ HRESULT CDirectoryLister::AddMatchToList (CFileInfo * pwfd, CDirectoryInfo * pdi
 void CDirectoryLister::Scroll (CDirectoryInfo * pdi)
 {
     HRESULT hr                    = S_OK;
-    BOOL    fSuccess              = FALSE;
-    UINT    cWindowLinesTotal     = 0;
-    UINT    cBufferLinesRemaining = 0;
     UINT    cLinesNeeded          = 0;
 
 
@@ -405,46 +402,8 @@ void CDirectoryLister::Scroll (CDirectoryInfo * pdi)
     hr = CalculateLinesNeeded (pdi, &cLinesNeeded);
     CHR (hr);
 
-    //
-    // If there are enough lines left in the current window, no need to scroll
-    //
-
-    cWindowLinesTotal = m_pConsole->m_consoleScreenBufferInfoEx.srWindow.Bottom - m_pConsole->m_consoleScreenBufferInfoEx.srWindow.Top + 1;
-    BAIL_OUT_IF ((cLinesNeeded + m_pConsole->m_coord.Y) <= cWindowLinesTotal, S_OK);
-
-    //
-    // If we need more lines than are free in the buffer, scroll the buffer up to make room
-    //
-
-    cBufferLinesRemaining = m_pConsole->m_consoleScreenBufferInfoEx.dwSize.Y - m_pConsole->m_coord.Y;
-    if (cLinesNeeded > cBufferLinesRemaining)
-    {
-        m_pConsole->ScrollBuffer (cLinesNeeded - cBufferLinesRemaining);
-    }
-
-    //
-    // If we're going to write past the bottom of the window, reposition the window 
-    // to the bottom of the area we need
-    //
-        
-    if (m_pConsole->m_coord.Y + cLinesNeeded > (UINT) m_pConsole->m_consoleScreenBufferInfoEx.srWindow.Bottom)
-    {
-        SHORT      cLinesToMoveWindow = 0;
-        SMALL_RECT srcWindow          = { 0 };
-
-
-
-        cLinesToMoveWindow = (SHORT) m_pConsole->m_coord.Y + (SHORT) cLinesNeeded - m_pConsole->m_consoleScreenBufferInfoEx.srWindow.Bottom;
-
-        // relative coords
-        srcWindow.Top    += cLinesToMoveWindow;
-        srcWindow.Bottom += cLinesToMoveWindow;
-
-        fSuccess = SetConsoleWindowInfo (m_pConsole->m_hStdOut, FALSE, &srcWindow);
-        CWRA (fSuccess);
-    }
-  
-
+    hr = m_pConsole->ReserveLines (cLinesNeeded);
+    CHR (hr);
 
 Error:
     return;    
@@ -527,7 +486,7 @@ void CDirectoryLister::DisplayResults (CDirectoryInfo * pdi)
 {
     Scroll (pdi);
     
-    m_pConsole->WriteSeparatorLine();
+    m_pConsole->WriteSeparatorLine(m_pConfig->m_rgAttributes[CConfig::EAttribute::SeparatorLine]);
 
     DisplayDriveHeader (pdi->m_pszPath); 
 
@@ -551,7 +510,7 @@ void CDirectoryLister::DisplayResults (CDirectoryInfo * pdi)
         DisplayFooter (pdi);    
     }
         
-    m_pConsole->WriteSeparatorLine ();
+    m_pConsole->WriteSeparatorLine (m_pConfig->m_rgAttributes[CConfig::EAttribute::SeparatorLine]);
     m_pConsole->Puts (CConfig::EAttribute::Default, L"\n");
 }
 
@@ -778,12 +737,11 @@ void CDirectoryLister::DisplayResultsNormal (CDirectoryInfo * pdi)
     iter = pdi->m_vMatches.begin();
     while (iter != pdi->m_vMatches.end())
     {                           
-        SYSTEMTIME       st           = { 0 };
-        SYSTEMTIME       stLocal      = { 0 };
-        ULARGE_INTEGER   uliFileSize  = { 0 };
-        const SAttrMap * pAttrMap     = attrmap;
-        WORD             attr         = 0;
-
+        SYSTEMTIME       st             = { 0 };
+        SYSTEMTIME       stLocal        = { 0 };
+        ULARGE_INTEGER   uliFileSize    = { 0 };
+        const SAttrMap * pAttrMap       = attrmap;
+        WORD             attr           = 0;
 
 
         fSuccess = FileTimeToSystemTime (&iter->ftLastWriteTime, &st);

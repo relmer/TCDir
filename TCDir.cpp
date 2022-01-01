@@ -70,12 +70,6 @@ int wmain (int argc, WCHAR * argv[])
 
  
 
-#ifdef _DEBUG
-    //ReadConsole (GetStdHandle(STD_INPUT_HANDLE), &szBuf, 1, )
-
-    //TestColors (); return 0;
-#endif
-
     //
     // Initialize the console and configuration
     //
@@ -84,8 +78,15 @@ int wmain (int argc, WCHAR * argv[])
     //pConsole = new CConsoleBuffer();
     CBR (pConsole != NULL);
 
+    hr = pConsole->SetWrapMode(CConsole::EWrapMode::Clip);
+    CHR (hr);
+
     pConfig = new CConfig (pConsole->m_consoleScreenBufferInfoEx.wAttributes);
     CBR (pConfig != NULL);
+
+#ifdef _DEBUG
+    pConsole->Test();
+#endif
 
     //
     // Process the commandline

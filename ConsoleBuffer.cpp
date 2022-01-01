@@ -15,16 +15,8 @@
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-CConsoleBuffer::CConsoleBuffer(void)
+CConsoleBuffer::CConsoleBuffer (void)
 {
-    m_hStdOut = GetStdHandle (STD_OUTPUT_HANDLE);   
-
-    ZeroMemory (&m_consoleScreenBufferInfoEx, sizeof (m_consoleScreenBufferInfoEx));
-    m_consoleScreenBufferInfoEx.cbSize = sizeof (m_consoleScreenBufferInfoEx);
-
-    GetConsoleScreenBufferInfoEx (m_hStdOut, &m_consoleScreenBufferInfoEx);
-
-    m_coord = m_consoleScreenBufferInfoEx.dwCursorPosition;
 }
 
 
@@ -39,14 +31,8 @@ CConsoleBuffer::CConsoleBuffer(void)
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-CConsoleBuffer::~CConsoleBuffer(void)
+CConsoleBuffer::~CConsoleBuffer (void)
 {
-    //
-    // Update the console cursor position with our final internal cursor position
-    //
-
-    SetConsoleCursorPosition (m_hStdOut, m_coord);
-
     HeapFree (GetProcessHeap (), 0, m_prgScreenBuffer);
 }
 
@@ -276,7 +262,7 @@ Error:
 // 
 ////////////////////////////////////////////////////////////////////////////////
 
-HRESULT CConsoleBuffer::WriteSeparatorLine (void)
+HRESULT CConsoleBuffer::WriteSeparatorLine (WORD attr)
 {
     HRESULT hr     = S_OK;
     size_t  idx    = (size_t) m_coord.Y * (size_t) m_consoleScreenBufferInfoEx.dwSize.X;
@@ -286,7 +272,7 @@ HRESULT CConsoleBuffer::WriteSeparatorLine (void)
 
     while (idx < idxEnd)
     {
-        m_prgScreenBuffer[idx].Attributes       = m_rgAttributes[CConfig::EAttribute::SeparatorLine];
+        m_prgScreenBuffer[idx].Attributes       = attr;
         m_prgScreenBuffer[idx].Char.UnicodeChar = L'═';
 
         ++idx;
@@ -295,6 +281,72 @@ HRESULT CConsoleBuffer::WriteSeparatorLine (void)
     ++m_coord.Y;
 
 //Error:
+    return hr;
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CConsoleApi::ReserveLines
+//
+//  
+//
+////////////////////////////////////////////////////////////////////////////////
+
+HRESULT CConsoleBuffer::ReserveLines(UINT cLines)
+{
+    HRESULT hr                      = S_OK;
+    BOOL    fSuccess                = FALSE;
+    UINT    cWindowLinesTotal       = 0;
+    UINT    cBufferLinesRemaining   = 0;
+
+
+
+    //
+    // If there are enough lines left in the current window, no need to scroll
+    //
+
+    cWindowLinesTotal = m_consoleScreenBufferInfoEx.srWindow.Bottom - m_consoleScreenBufferInfoEx.srWindow.Top + 1;
+    BAIL_OUT_IF((cLines + m_coord.Y) <= cWindowLinesTotal, S_OK);
+
+    //
+    // If we need more lines than are free in the buffer, scroll the buffer up to make room
+    //
+
+    cBufferLinesRemaining = m_consoleScreenBufferInfoEx.dwSize.Y - m_coord.Y;
+    if (cLines > cBufferLinesRemaining)
+    {
+        ScrollBuffer(cLines - cBufferLinesRemaining);
+    }
+
+    //
+    // If we're going to write past the bottom of the window, reposition the window 
+    // to the bottom of the area we need
+    //
+
+    if (m_coord.Y + cLines > (UINT)m_consoleScreenBufferInfoEx.srWindow.Bottom)
+    {
+        SHORT      cLinesToMoveWindow = 0;
+        SMALL_RECT srcWindow = { 0 };
+
+
+
+        cLinesToMoveWindow = (SHORT)m_coord.Y + (SHORT)cLines - m_consoleScreenBufferInfoEx.srWindow.Bottom;
+
+        // relative coords
+        srcWindow.Top += cLinesToMoveWindow;
+        srcWindow.Bottom += cLinesToMoveWindow;
+
+        fSuccess = SetConsoleWindowInfo(m_hStdOut, FALSE, &srcWindow);
+        CWRA(fSuccess);
+    }
+
+
+
+Error:
     return hr;
 }
 
@@ -322,7 +374,7 @@ HRESULT CConsoleBuffer::ScrollBuffer (UINT cLinesToScroll)
     CHAR_INFO * pEnd                = m_prgScreenBuffer + ((size_t) m_consoleScreenBufferInfoEx.dwSize.Y * (size_t) m_consoleScreenBufferInfoEx.dwSize.X);
 
 
-    ciFill.Attributes = m_rgAttributes[CConfig::EAttribute::Default];
+    ciFill.Attributes = m_attrDefault;
     ciFill.Char.UnicodeChar = L'-';
 
     memmove_s (m_prgScreenBuffer, cbScreenBuffer, m_prgScreenBuffer + idxNewTopOfBuffer, cci * sizeof(*m_prgScreenBuffer));

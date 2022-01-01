@@ -7,6 +7,13 @@
 class CConsole
 {
 public:
+    enum EWrapMode
+    {
+        Clip = 0,
+        Wrap = 1,
+
+        __count
+    };
 
     CConsole(void);
     virtual ~CConsole(void);
@@ -15,12 +22,21 @@ public:
     // Public Methods
     //
 
+    HRESULT         SetWrapMode          (EWrapMode mode);
+
     virtual HRESULT Puts                 (WORD attr, LPCWSTR psz)                               PURE;
     virtual int     Printf               (WORD attr, LPCWSTR pszFormat, ...)                    PURE;
     virtual HRESULT WriteString          (WORD attr, __in_ecount(cch) WCHAR * p, size_t cch)    PURE;
-    virtual HRESULT WriteSeparatorLine   (void)                                                 PURE;
+    virtual HRESULT WriteSeparatorLine   (WORD attr)                                            PURE;
 
+    virtual HRESULT ReserveLines         (UINT cLines)                                          PURE;
     virtual HRESULT ScrollBuffer         (UINT cLines)                                          PURE;
+
+#ifdef _DEBUG
+    void Test                                (void);
+    void TestCanWriteMoreLinesThanWindowSize (void);
+    void TestCanScrollWindow                 (void);
+#endif 
 
     //
     // Public members
@@ -36,5 +52,7 @@ protected:
     // Protected members
     //
 
-    DWORD m_consoleMode;
+    EWrapMode m_wrapMode;
+    WORD      m_attrDefault;
+    DWORD     m_consoleMode;
 };               
