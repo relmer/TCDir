@@ -2,7 +2,7 @@
 #include "Config.h"
 
 #include "Color.h"
-#include "IConsole.h"
+#include "Console.h"
 
 
 
@@ -132,8 +132,9 @@ const CConfig::STextAttr CConfig::s_rgTextAttrs[] =
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-CConfig::CConfig()
+CConfig::CConfig (WORD wDefaultAttr)
 {
+    InitializeTextAttrs (wDefaultAttr);
 }
 
 
@@ -164,9 +165,9 @@ CConfig::~CConfig()
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-void CConfig::InitializeTextAttrs(void)
+void CConfig::InitializeTextAttrs (WORD wDefaultAttr)
 {
-    m_rgAttributes[EAttribute::Default]                 = m_consoleScreenBufferInfoEx.wAttributes;
+    m_rgAttributes[EAttribute::Default]                 = wDefaultAttr;
     m_rgAttributes[EAttribute::Date]                    = FC_Red;
     m_rgAttributes[EAttribute::Time]                    = FC_Brown;
     m_rgAttributes[EAttribute::FileAttributePresent]    = FC_Cyan;
@@ -233,7 +234,7 @@ Error:
 WORD CConfig::GetTextAttrForFile(const WIN32_FIND_DATA * pwfd)
 {
     HRESULT hr = S_OK;
-    WORD    wAttr = m_consoleScreenBufferInfoEx.wAttributes;
+    WORD    wAttr = m_rgAttributes[EAttribute::Default];
     errno_t err = 0;
 
 
@@ -264,14 +265,14 @@ WORD CConfig::GetTextAttrForFile(const WIN32_FIND_DATA * pwfd)
         CBR(iter != m_mapExtensionToTextAttr.end());
 
         //
-        // Need to investigate... looks like if the extension specified a 
+        // Need to investigate... looks like if the extension specified only a 
         // background color, make sure we OR in the default foreground text color ?
         //
 
         wAttr = iter->second;
         if ((wAttr & BC_Mask) == 0)
         {
-            wAttr |= m_consoleScreenBufferInfoEx.wAttributes & BC_Mask;
+            wAttr |= m_rgAttributes[EAttribute::Default] & BC_Mask;
         }
     }
 

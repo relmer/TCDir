@@ -27,7 +27,7 @@
     <ClCompile Include="TCDir.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Utils.cpp">
+    <ClCompile Include="Console.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="ConsoleApi.cpp">
@@ -62,16 +62,13 @@
     <ClInclude Include="TCDir.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="IConsole.h">
+    <ClInclude Include="Console.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="ConsoleApi.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="ConsoleBuffer.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Utils.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Config.h">

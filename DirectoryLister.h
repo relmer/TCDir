@@ -8,6 +8,8 @@
 
 
 class CCommandLine;
+class CConfig;
+class CConsole;
 
 
 
@@ -16,7 +18,7 @@ class CCommandLine;
 class CDirectoryLister
 {
 public:
-    CDirectoryLister  (CCommandLine * pCmdLine);
+    CDirectoryLister  (__in CCommandLine * pCmdLine, __in CConsole * pConsole, __in CConfig * pConfig);
     ~CDirectoryLister (void); 
 
     void operator() (LPCWSTR pszMask);
@@ -45,6 +47,8 @@ protected:
 
     
     CCommandLine   * m_pCmdLine; 
+    CConsole       * m_pConsole;
+    CConfig        * m_pConfig;
     ULARGE_INTEGER   m_uliSizeOfAllFilesFound;
     UINT             m_cFilesFound;
     UINT             m_cDirectoriesFound;

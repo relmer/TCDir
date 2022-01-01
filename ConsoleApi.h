@@ -1,13 +1,13 @@
 #pragma once
 
-#include "IConsole.h"
+#include "Console.h"
 #include "Config.h"
 
 
 
 
 
-class CConsoleApi : IConsole
+class CConsoleApi : public CConsole
 {
 public:
     CConsoleApi  (void); 

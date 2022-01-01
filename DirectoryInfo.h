@@ -6,6 +6,13 @@
 
 
 
+typedef vector<CFileInfo>        FileInfoVector;
+typedef FileInfoVector::iterator FileInfoVectorIter;
+
+
+
+
+
 class CDirectoryInfo
 {
 public:
@@ -30,5 +37,3 @@ public:
     ULARGE_INTEGER m_uliBytesUsed;
 };
 
-typedef vector<CFileInfo>        FileInfoVector;
-typedef FileInfoVector::iterator FileInfoVectorIter;

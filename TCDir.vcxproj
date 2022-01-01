@@ -184,7 +184,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="TCDir.cpp" />
-    <ClCompile Include="Utils.cpp" />
+    <ClCompile Include="Console.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Color.h" />
@@ -199,8 +199,7 @@
     <ClInclude Include="Flag.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="TCDir.h" />
-    <ClInclude Include="IConsole.h" />
-    <ClInclude Include="Utils.h" />
+    <ClInclude Include="Console.h" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="ReadMe.txt" />

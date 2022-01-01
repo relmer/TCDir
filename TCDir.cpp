@@ -5,11 +5,10 @@
 #include "TCDir.h"
 
 #include "CommandLine.h"
+#include "Console.h"
 #include "ConsoleApi.h"
 #include "ConsoleBuffer.h"
 #include "DirectoryLister.h"
-#include "IConsole.h"
-#include "Utils.h"
 
 
 
@@ -64,11 +63,13 @@ void TestColors ()
 
 int wmain (int argc, WCHAR * argv[])
 {
-    HRESULT         hr;      
+    HRESULT        hr;      
     CCommandLine   cmdline; 
-    IConsole     * pConsole = NULL;
+    CConsole     * pConsole = NULL;
+    CConfig      * pConfig  = NULL;
 
  
+
 #ifdef _DEBUG
     //ReadConsole (GetStdHandle(STD_INPUT_HANDLE), &szBuf, 1, )
 
@@ -76,12 +77,15 @@ int wmain (int argc, WCHAR * argv[])
 #endif
 
     //
-    // Initialize the console
+    // Initialize the console and configuration
     //
 
     pConsole = new CConsoleApi();
     //pConsole = new CConsoleBuffer();
-    CBR(pConsole != NULL);
+    CBR (pConsole != NULL);
+
+    pConfig = new CConfig (pConsole->m_consoleScreenBufferInfoEx.wAttributes);
+    CBR (pConfig != NULL);
 
     //
     // Process the commandline
@@ -90,7 +94,7 @@ int wmain (int argc, WCHAR * argv[])
     hr = cmdline.Parse (argc - 1, argv + 1);
     if (FAILED (hr))
     {
-        Usage();
+        Usage (pConsole, pConfig);
     }
     CHR (hr);
 
@@ -111,7 +115,7 @@ int wmain (int argc, WCHAR * argv[])
     // For each mask, show a directory listing
     //
 
-    for_each (cmdline.m_listMask.begin(), cmdline.m_listMask.end(), CDirectoryLister (&cmdline));
+    for_each (cmdline.m_listMask.begin(), cmdline.m_listMask.end(), CDirectoryLister (&cmdline, pConsole, pConfig));
 
 
 Error:      
@@ -130,33 +134,33 @@ Error:
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-void Usage (void)
+void Usage (__in CConsole * pConsole, __in CConfig * pConfig)
 {
-    g_util.Puts (g_util.m_rgAttributes[CUtils::EAttribute::Default], L"\n");
-    g_util.Puts (g_util.m_rgAttributes[CUtils::EAttribute::Default], L"Relmerator's Technicolor Directory (C)2004 by Robert Elmer\n");
-    g_util.Puts (g_util.m_rgAttributes[CUtils::EAttribute::Default], L"\n");
-    g_util.Puts (g_util.m_rgAttributes[CUtils::EAttribute::Default], L"TCDIR [drive:][path][filename] [/A[[:]attributes]] [/O[[:]sortorder]] [/S]\n");
-    g_util.Puts (g_util.m_rgAttributes[CUtils::EAttribute::Default], L"\n");
-    g_util.Puts (g_util.m_rgAttributes[CUtils::EAttribute::Default], L"  [drive:][path][filename]\n");
-    g_util.Puts (g_util.m_rgAttributes[CUtils::EAttribute::Default], L"              Specifies drive, directory, and/or files to list.\n");
-    g_util.Puts (g_util.m_rgAttributes[CUtils::EAttribute::Default], L"\n");
-    g_util.Puts (g_util.m_rgAttributes[CUtils::EAttribute::Default], L"  /A          Displays files with specified attributes.\n");
-    g_util.Puts (g_util.m_rgAttributes[CUtils::EAttribute::Default], L"  attributes   D  Directories                R  Read-only files\n");
-    g_util.Puts (g_util.m_rgAttributes[CUtils::EAttribute::Default], L"               H  Hidden files               A  Files ready for archiving\n");
-    g_util.Puts (g_util.m_rgAttributes[CUtils::EAttribute::Default], L"               S  System files               T  Temporary files\n");
-    g_util.Puts (g_util.m_rgAttributes[CUtils::EAttribute::Default], L"               E  Encrypted files            C  Compressed files\n");
-    g_util.Puts (g_util.m_rgAttributes[CUtils::EAttribute::Default], L"               P  Reparse points             0  Sparse files\n");
-    g_util.Puts (g_util.m_rgAttributes[CUtils::EAttribute::Default], L"               -  Prefix meaning not\n");
-    g_util.Puts (g_util.m_rgAttributes[CUtils::EAttribute::Default], L"\n");
-    g_util.Puts (g_util.m_rgAttributes[CUtils::EAttribute::Default], L"  /O          List by files in sorted order.\n");
-    g_util.Puts (g_util.m_rgAttributes[CUtils::EAttribute::Default], L"  sortorder    N  By name (alphabetic)       S  By size (smallest first)\n");
-    g_util.Puts (g_util.m_rgAttributes[CUtils::EAttribute::Default], L"               E  By extension (alphabetic)  D  By date/time (oldest first)\n");
-    g_util.Puts (g_util.m_rgAttributes[CUtils::EAttribute::Default], L"               -  Prefix to reverse order\n");
-    g_util.Puts (g_util.m_rgAttributes[CUtils::EAttribute::Default], L"\n");
-    g_util.Puts (g_util.m_rgAttributes[CUtils::EAttribute::Default], L"  /S          Displays files in specified directory and all subdirectories.\n");
-    g_util.Puts (g_util.m_rgAttributes[CUtils::EAttribute::Default], L"\n");
-    g_util.Puts (g_util.m_rgAttributes[CUtils::EAttribute::Default], L"\n");
-    g_util.Puts (g_util.m_rgAttributes[CUtils::EAttribute::Default], L"\n");
+    pConsole->Puts (pConfig->m_rgAttributes[CConfig::EAttribute::Default], L"\n");
+    pConsole->Puts (pConfig->m_rgAttributes[CConfig::EAttribute::Default], L"Relmerator's Technicolor Directory (C)2004 by Robert Elmer\n");
+    pConsole->Puts (pConfig->m_rgAttributes[CConfig::EAttribute::Default], L"\n");
+    pConsole->Puts (pConfig->m_rgAttributes[CConfig::EAttribute::Default], L"TCDIR [drive:][path][filename] [/A[[:]attributes]] [/O[[:]sortorder]] [/S]\n");
+    pConsole->Puts (pConfig->m_rgAttributes[CConfig::EAttribute::Default], L"\n");
+    pConsole->Puts (pConfig->m_rgAttributes[CConfig::EAttribute::Default], L"  [drive:][path][filename]\n");
+    pConsole->Puts (pConfig->m_rgAttributes[CConfig::EAttribute::Default], L"              Specifies drive, directory, and/or files to list.\n");
+    pConsole->Puts (pConfig->m_rgAttributes[CConfig::EAttribute::Default], L"\n");
+    pConsole->Puts (pConfig->m_rgAttributes[CConfig::EAttribute::Default], L"  /A          Displays files with specified attributes.\n");
+    pConsole->Puts (pConfig->m_rgAttributes[CConfig::EAttribute::Default], L"  attributes   D  Directories                R  Read-only files\n");
+    pConsole->Puts (pConfig->m_rgAttributes[CConfig::EAttribute::Default], L"               H  Hidden files               A  Files ready for archiving\n");
+    pConsole->Puts (pConfig->m_rgAttributes[CConfig::EAttribute::Default], L"               S  System files               T  Temporary files\n");
+    pConsole->Puts (pConfig->m_rgAttributes[CConfig::EAttribute::Default], L"               E  Encrypted files            C  Compressed files\n");
+    pConsole->Puts (pConfig->m_rgAttributes[CConfig::EAttribute::Default], L"               P  Reparse points             0  Sparse files\n");
+    pConsole->Puts (pConfig->m_rgAttributes[CConfig::EAttribute::Default], L"               -  Prefix meaning not\n");
+    pConsole->Puts (pConfig->m_rgAttributes[CConfig::EAttribute::Default], L"\n");
+    pConsole->Puts (pConfig->m_rgAttributes[CConfig::EAttribute::Default], L"  /O          List by files in sorted order.\n");
+    pConsole->Puts (pConfig->m_rgAttributes[CConfig::EAttribute::Default], L"  sortorder    N  By name (alphabetic)       S  By size (smallest first)\n");
+    pConsole->Puts (pConfig->m_rgAttributes[CConfig::EAttribute::Default], L"               E  By extension (alphabetic)  D  By date/time (oldest first)\n");
+    pConsole->Puts (pConfig->m_rgAttributes[CConfig::EAttribute::Default], L"               -  Prefix to reverse order\n");
+    pConsole->Puts (pConfig->m_rgAttributes[CConfig::EAttribute::Default], L"\n");
+    pConsole->Puts (pConfig->m_rgAttributes[CConfig::EAttribute::Default], L"  /S          Displays files in specified directory and all subdirectories.\n");
+    pConsole->Puts (pConfig->m_rgAttributes[CConfig::EAttribute::Default], L"\n");
+    pConsole->Puts (pConfig->m_rgAttributes[CConfig::EAttribute::Default], L"\n");
+    pConsole->Puts (pConfig->m_rgAttributes[CConfig::EAttribute::Default], L"\n");
 }
 
 

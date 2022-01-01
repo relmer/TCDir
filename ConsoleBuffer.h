@@ -1,11 +1,11 @@
 #pragma once
 #include <Windows.h>
 
-#include "IConsole.h"
+#include "Console.h"
 
 
 
-class CConsoleBuffer : IConsole
+class CConsoleBuffer : CConsole
 {
 public:
     //

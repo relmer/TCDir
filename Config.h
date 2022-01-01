@@ -36,8 +36,8 @@ public:
     };
 
     
-    CConfig();
-    ~CConfig();
+    CConfig  (WORD wDefaultAttr);
+    ~CConfig ();
         
     WORD GetTextAttrForFile (const WIN32_FIND_DATA * pwfd);
 
@@ -46,7 +46,7 @@ public:
 
 
 protected:
-    void InitializeTextAttrs              (void);
+    void InitializeTextAttrs              (WORD wDefaultAttr);
     void InitializeExtensionToTextAttrMap (void);
 
     static const STextAttr s_rgTextAttrs[];
