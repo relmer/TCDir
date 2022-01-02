@@ -136,7 +136,7 @@ Error:
 
 ////////////////////////////////////////////////////////////////////////////////
 //
-//  CDirectoryLister::CollectDirectoryFiles
+//  CDirectoryLister::ProcessDirectory
 //
 //  
 //
@@ -390,8 +390,8 @@ HRESULT CDirectoryLister::AddMatchToList (CFileInfo * pwfd, CDirectoryInfo * pdi
 
 void CDirectoryLister::Scroll (CDirectoryInfo * pdi)
 {
-    HRESULT hr                    = S_OK;
-    UINT    cLinesNeeded          = 0;
+    HRESULT hr              = S_OK;
+    int     cLinesNeeded    = 0;
 
 
 
@@ -401,6 +401,14 @@ void CDirectoryLister::Scroll (CDirectoryInfo * pdi)
 
     hr = CalculateLinesNeeded (pdi, &cLinesNeeded);
     CHR (hr);
+
+    DbgPrintf (L"%s (%d files, %d subdirs).  Current cursor pos = %d, lines needed = %d\n",
+        pdi->m_pszPath,
+        pdi->m_cFiles,
+        pdi->m_cSubDirectories,
+        m_pConsole->m_coord.Y,
+        cLinesNeeded
+    );
 
     hr = m_pConsole->ReserveLines (cLinesNeeded);
     CHR (hr);
@@ -421,19 +429,35 @@ Error:
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-HRESULT CDirectoryLister::CalculateLinesNeeded (__in CDirectoryInfo * pdi, __out UINT * pcLinesNeeded)
+HRESULT CDirectoryLister::CalculateLinesNeeded (__in CDirectoryInfo * pdi, __out int * pcLinesNeeded)
 {
-    HRESULT hr           = S_OK;
-    UINT    cLinesNeeded = 0;
+    static BOOL s_firstCall  = TRUE;
+
+    HRESULT     hr           = S_OK;
+    int         cLinesNeeded = 0;
 
 
 
     ++cLinesNeeded;     // Top separator line
-    ++cLinesNeeded;     // Volume in drive _ is _____
-    ++cLinesNeeded;     // Volume name is ______
-    ++cLinesNeeded;     // Blank line
 
-    if (pdi->m_cFiles > 0)
+
+    //
+    // We only print the volume info once.  If we're recursing into subdirectories, we
+    // don't repeat this info, so we won't account for these lines on subsequent calls.
+    //
+
+    if (s_firstCall)
+    {
+        ++cLinesNeeded;     // Volume in drive _ is _____
+        ++cLinesNeeded;     // Volume name is ______
+        ++cLinesNeeded;     // Blank line
+
+        s_firstCall = FALSE;
+    }
+
+
+
+    if (pdi->m_vMatches.size() > 0)
     {
         ++cLinesNeeded;     // Directory of ___________________
         ++cLinesNeeded;     // Blank line
@@ -450,11 +474,11 @@ HRESULT CDirectoryLister::CalculateLinesNeeded (__in CDirectoryInfo * pdi, __out
             hr = GetColumnInfo (pdi, &cColumns, &cxColumnWidth);
             CHR (hr);
 
-            cLinesNeeded += ((UINT) pdi->m_vMatches.size() + (cColumns - 1)) / cColumns;
+            cLinesNeeded += (int) (pdi->m_vMatches.size() + (cColumns - 1)) / cColumns;
         }
         else
         {
-            cLinesNeeded += (UINT) pdi->m_vMatches.size();
+            cLinesNeeded += (int) pdi->m_vMatches.size();
         }
 
         ++cLinesNeeded;     // Blank line
@@ -512,6 +536,12 @@ void CDirectoryLister::DisplayResults (CDirectoryInfo * pdi)
         
     m_pConsole->WriteSeparatorLine (m_pConfig->m_rgAttributes[CConfig::EAttribute::SeparatorLine]);
     m_pConsole->Puts (CConfig::EAttribute::Default, L"\n");
+
+    DbgPrintf(L"%s complete, new cursor pos = %d\n",
+        pdi->m_pszPath,
+        m_pConsole->m_coord.Y
+    );
+
 }
 
 

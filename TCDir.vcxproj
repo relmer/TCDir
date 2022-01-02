@@ -175,6 +175,7 @@
     <ClCompile Include="CommandLine.cpp" />
     <ClCompile Include="ConsoleApi.cpp" />
     <ClCompile Include="ConsoleBuffer.cpp" />
+    <ClCompile Include="Debug.cpp" />
     <ClCompile Include="DirectoryLister.cpp" />
     <ClCompile Include="FileInfo.cpp" />
     <ClCompile Include="stdafx.cpp">

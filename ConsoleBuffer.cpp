@@ -296,12 +296,12 @@ HRESULT CConsoleBuffer::WriteSeparatorLine (WORD attr)
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-HRESULT CConsoleBuffer::ReserveLines(UINT cLines)
+HRESULT CConsoleBuffer::ReserveLines (int cLines)
 {
     HRESULT hr                      = S_OK;
     BOOL    fSuccess                = FALSE;
-    UINT    cWindowLinesTotal       = 0;
-    UINT    cBufferLinesRemaining   = 0;
+    int     cWindowLinesTotal       = 0;
+    int     cBufferLinesRemaining   = 0;
 
 
 
@@ -327,7 +327,7 @@ HRESULT CConsoleBuffer::ReserveLines(UINT cLines)
     // to the bottom of the area we need
     //
 
-    if (m_coord.Y + cLines > (UINT)m_consoleScreenBufferInfoEx.srWindow.Bottom)
+    if (m_coord.Y + cLines > m_consoleScreenBufferInfoEx.srWindow.Bottom)
     {
         SHORT      cLinesToMoveWindow = 0;
         SMALL_RECT srcWindow = { 0 };
@@ -362,7 +362,7 @@ Error:
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-HRESULT CConsoleBuffer::ScrollBuffer (UINT cLinesToScroll)
+HRESULT CConsoleBuffer::ScrollBuffer (int cLinesToScroll)
 {
     HRESULT     hr                  = S_OK;
     CHAR_INFO   ciFill              = { 0 };

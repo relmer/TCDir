@@ -11,6 +11,14 @@
 
 
 
+//
+// Forward declarations
+//
+
+int DbgPrintf (LPCWSTR pszFormat, ...);
+
+
+
 
 
 //
@@ -217,21 +225,4 @@
 {                                                                                           \
     __CPRAExHelper (__arg_prTest, FALSE, E_OUTOFMEMORY)                                     \
 }                                                                                   
-
-
-
-
-
-#ifdef DEBUG
-        
-
-#else // DEBUG
-
-
-#endif // DEBUG
-
-
-
-
-
 

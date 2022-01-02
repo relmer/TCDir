@@ -235,20 +235,31 @@ Error:
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-HRESULT CConsoleApi::ReserveLines (UINT cLines)
+HRESULT CConsoleApi::ReserveLines (int cLines)
 {
     HRESULT hr                      = S_OK;
     BOOL    fSuccess                = FALSE;
-    UINT    cWindowLinesTotal       = 0;
-    UINT    cBufferLinesRemaining   = 0;
+    int     cBufferLinesRemaining   = 0;
 
 
     //
     // If there are enough lines left in the current window, no need to scroll
     //
 
-    cWindowLinesTotal = m_consoleScreenBufferInfoEx.srWindow.Bottom - m_consoleScreenBufferInfoEx.srWindow.Top + 1;
-    BAIL_OUT_IF((cLines + m_coord.Y) <= cWindowLinesTotal, S_OK);
+    BAIL_OUT_IF ((cLines + m_coord.Y) <= m_consoleScreenBufferInfoEx.srWindow.Bottom, S_OK);
+
+    //
+    // If we need more lines than the total buffer size, scroll the entire buffer
+    // and let the caller know that they should just skip the first n lines of output
+    //
+
+    if (cLines > m_consoleScreenBufferInfoEx.dwSize.Y)
+    {
+        ScrollBuffer (m_consoleScreenBufferInfoEx.dwSize.Y);
+        assert (FALSE);
+        // Let the caller know to skip cLines - m_consoleScreenBufferInfoEx.dwSize.Y lines of output
+        // bail out here.
+    }
 
     //
     // If we need more lines than are free in the buffer, scroll the buffer up to make room
@@ -257,7 +268,7 @@ HRESULT CConsoleApi::ReserveLines (UINT cLines)
     cBufferLinesRemaining = m_consoleScreenBufferInfoEx.dwSize.Y - m_coord.Y;
     if (cLines > cBufferLinesRemaining)
     {
-        ScrollBuffer(cLines - cBufferLinesRemaining);
+        ScrollBuffer (cLines - cBufferLinesRemaining);
     }
 
     //
@@ -265,18 +276,14 @@ HRESULT CConsoleApi::ReserveLines (UINT cLines)
     // to the bottom of the area we need
     //
 
-    if (m_coord.Y + cLines > (UINT) m_consoleScreenBufferInfoEx.srWindow.Bottom)
+    if (m_coord.Y + cLines > m_consoleScreenBufferInfoEx.srWindow.Bottom)
     {
-        SHORT      cLinesToMoveWindow = 0;
-        SMALL_RECT srWindow = m_consoleScreenBufferInfoEx.srWindow;
+        SHORT      windowHeight = m_consoleScreenBufferInfoEx.srWindow.Bottom - m_consoleScreenBufferInfoEx.srWindow.Top;
+        SMALL_RECT srWindow     = m_consoleScreenBufferInfoEx.srWindow;
 
-
-
-        cLinesToMoveWindow = (SHORT) m_coord.Y + (SHORT)cLines - m_consoleScreenBufferInfoEx.srWindow.Bottom;
-
-        // relative coords
-        srWindow.Top    += cLinesToMoveWindow;
-        srWindow.Bottom += cLinesToMoveWindow;
+        // absolute coords
+        srWindow.Bottom = (SHORT) m_coord.Y + (SHORT) cLines;
+        srWindow.Top    = srWindow.Bottom - windowHeight;
 
         fSuccess = SetConsoleWindowInfo(m_hStdOut, TRUE, &srWindow);
         CWRA(fSuccess);
@@ -302,7 +309,7 @@ Error:
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-HRESULT CConsoleApi::ScrollBuffer (UINT cLinesToScroll)
+HRESULT CConsoleApi::ScrollBuffer (int cLinesToScroll)
 {
     HRESULT    hr               = S_OK;
     CHAR_INFO  ciFill           = { 0 };
@@ -316,7 +323,7 @@ HRESULT CConsoleApi::ScrollBuffer (UINT cLinesToScroll)
     ciFill.Attributes       = m_attrDefault;
     ciFill.Char.UnicodeChar = L' ';
 
-    srScrollRect.Top    = m_consoleScreenBufferInfoEx.dwSize.Y - (short) cLinesToScroll - 1;
+    srScrollRect.Top    = (SHORT) cLinesToScroll - 1;
     srScrollRect.Bottom = m_consoleScreenBufferInfoEx.dwSize.Y - 1;
     srScrollRect.Left   = 0;
     srScrollRect.Right  = m_consoleScreenBufferInfoEx.dwSize.X - 1;

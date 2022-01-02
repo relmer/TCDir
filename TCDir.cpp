@@ -85,7 +85,7 @@ int wmain (int argc, WCHAR * argv[])
     CBR (pConfig != NULL);
 
 #ifdef _DEBUG
-    pConsole->Test();
+    //pConsole->Test();
 #endif
 
     //
@@ -120,6 +120,9 @@ int wmain (int argc, WCHAR * argv[])
 
 
 Error:      
+    delete pConfig;
+    delete pConsole;
+
 	return 0;
 }
 

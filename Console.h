@@ -29,8 +29,8 @@ public:
     virtual HRESULT WriteString          (WORD attr, __in_ecount(cch) WCHAR * p, size_t cch)    PURE;
     virtual HRESULT WriteSeparatorLine   (WORD attr)                                            PURE;
 
-    virtual HRESULT ReserveLines         (UINT cLines)                                          PURE;
-    virtual HRESULT ScrollBuffer         (UINT cLines)                                          PURE;
+    virtual HRESULT ReserveLines         (int cLines)                                           PURE;
+    virtual HRESULT ScrollBuffer         (int cLines)                                           PURE;
 
 #ifdef _DEBUG
     void Test                                (void);

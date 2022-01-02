@@ -84,9 +84,9 @@ HRESULT CConsole::SetWrapMode (EWrapMode mode)
 void CConsole::Test(void)
 {
     //TestCanWriteMoreLinesThanWindowSize();
-    TestCanScrollWindow();
+    //TestCanScrollWindow();
 
-    exit (0);
+    //exit (0);
 }
 
 #endif _DEBUG
