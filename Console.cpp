@@ -42,11 +42,22 @@ CConsole::CConsole(void)
 
 CConsole::~CConsole(void)
 {
+    HRESULT hr       = S_OK;
+    BOOL    fSuccess = FALSE;
+
+
+
     //
     // Update the console cursor position with our final internal cursor position
     //
 
-    SetConsoleCursorPosition (m_hStdOut, m_coord);
+    --m_coord.Y;
+
+    fSuccess = SetConsoleCursorPosition (m_hStdOut, m_coord);
+    CWRA (fSuccess);
+
+Error:
+    return;
 }
 
 

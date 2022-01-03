@@ -123,8 +123,9 @@ void CDirectoryLister::operator() (LPCWSTR pszMask)
     // Process a directory
     //
 
-    hr = ProcessDirectory (szPath, szFileSpec);
+    hr = ProcessDirectory (szPath, szFileSpec, EDirectoryLevel::Initial);
     CHR (hr);
+
 
 Error:
     return;
@@ -142,7 +143,7 @@ Error:
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-HRESULT CDirectoryLister::ProcessDirectory (LPCWSTR pszPath, LPCWSTR pszFileSpec)
+HRESULT CDirectoryLister::ProcessDirectory (LPCWSTR pszPath, LPCWSTR pszFileSpec, EDirectoryLevel level)
 {
     HRESULT         hr = S_OK;
     BOOL            fSuccess;                    
@@ -211,7 +212,7 @@ HRESULT CDirectoryLister::ProcessDirectory (LPCWSTR pszPath, LPCWSTR pszFileSpec
     // Show the directory contents
     //
     
-    DisplayResults (&di);           
+    DisplayResults (&di, level);           
 
     //
     // Recurse into subdirectories 
@@ -221,7 +222,17 @@ HRESULT CDirectoryLister::ProcessDirectory (LPCWSTR pszPath, LPCWSTR pszFileSpec
     {
         hr = RecurseIntoSubdirectories (pszPath, pszFileSpec);
         CHR (hr);
+
+        //
+        // If this is the end of the initial directory, show the summary too
+        //
+
+        if (level == EDirectoryLevel::Initial)
+        {
+            DisplayListingSummary (&di);
+        }
     }
+
 
 
 Error:    
@@ -286,7 +297,7 @@ HRESULT CDirectoryLister::RecurseIntoSubdirectories (LPCWSTR pszPath, LPCWSTR ps
                 fSuccess = PathAppend (szSubdirPath, wfd.cFileName);
                 CBRA (fSuccess);
             
-                ProcessDirectory (szSubdirPath, pszFileSpec);
+                ProcessDirectory (szSubdirPath, pszFileSpec, EDirectoryLevel::Subdirectory);
             }
         }
             
@@ -314,7 +325,7 @@ Error:
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-HRESULT CDirectoryLister::AddMatchToList (CFileInfo * pwfd, CDirectoryInfo * pdi)
+HRESULT CDirectoryLister::AddMatchToList (__in CFileInfo * pwfd, __in CDirectoryInfo * pdi)
 {
     HRESULT hr           = S_OK;
     size_t  cchFileName  = 0; 
@@ -338,10 +349,11 @@ HRESULT CDirectoryLister::AddMatchToList (CFileInfo * pwfd, CDirectoryInfo * pdi
         }
         
         ++pdi->m_cSubDirectories;
+        ++m_cDirectoriesFound;
     }
     else
     {
-        ULARGE_INTEGER uliFileSize;            
+        ULARGE_INTEGER uliFileSize = { 0 };
         
         //
         // Get the two 32-bit halves into a convenient 64-bit type
@@ -355,9 +367,11 @@ HRESULT CDirectoryLister::AddMatchToList (CFileInfo * pwfd, CDirectoryInfo * pdi
             pdi->m_uliLargestFileSize = uliFileSize;
         }
         
-        pdi->m_uliBytesUsed.QuadPart += uliFileSize.QuadPart;
-        
+        pdi->m_uliBytesUsed.QuadPart += uliFileSize.QuadPart;        
         ++pdi->m_cFiles;
+
+        m_uliSizeOfAllFilesFound.QuadPart += uliFileSize.QuadPart;
+        ++m_cFilesFound;
     }            
 
 
@@ -388,7 +402,7 @@ HRESULT CDirectoryLister::AddMatchToList (CFileInfo * pwfd, CDirectoryInfo * pdi
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-void CDirectoryLister::Scroll (CDirectoryInfo * pdi)
+void CDirectoryLister::Scroll (__in CDirectoryInfo * pdi, EDirectoryLevel level)
 {
     HRESULT hr              = S_OK;
     int     cLinesNeeded    = 0;
@@ -399,7 +413,7 @@ void CDirectoryLister::Scroll (CDirectoryInfo * pdi)
     // Calculate the number of rows to scroll
     //
 
-    hr = CalculateLinesNeeded (pdi, &cLinesNeeded);
+    hr = CalculateLinesNeeded (pdi, &cLinesNeeded, level);
     CHR (hr);
 
     DbgPrintf (L"%s (%d files, %d subdirs).  Current cursor pos = %d, lines needed = %d\n",
@@ -429,46 +443,53 @@ Error:
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-HRESULT CDirectoryLister::CalculateLinesNeeded (__in CDirectoryInfo * pdi, __out int * pcLinesNeeded)
+HRESULT CDirectoryLister::CalculateLinesNeeded (__in CDirectoryInfo * pdi, __out int * pcLinesNeeded, EDirectoryLevel level)
 {
-    static BOOL s_firstCall  = TRUE;
-
     HRESULT     hr           = S_OK;
     int         cLinesNeeded = 0;
 
 
-
-    ++cLinesNeeded;     // Top separator line
-
-
     //
-    // We only print the volume info once.  If we're recursing into subdirectories, we
-    // don't repeat this info, so we won't account for these lines on subsequent calls.
-    //
+    // For the initial directory, we'll add the top separator.  
+    // For recursed directories, we'll just add the bottom so that there's
+    // only one separator between each subdirectory.
+    // 
 
-    if (s_firstCall)
+    if (level == EDirectoryLevel::Initial)
     {
+        ++cLinesNeeded;     // Top separator line
+    }
+
+    //
+    // We only print the volume header info once on the initial directory 
+    // we're listing.  If we're recursing, we don't repeat it with each subdirectory.
+    //
+
+    if (level == EDirectoryLevel::Initial)
+    {
+        // DisplayDriveHeader
         ++cLinesNeeded;     // Volume in drive _ is _____
         ++cLinesNeeded;     // Volume name is ______
         ++cLinesNeeded;     // Blank line
-
-        s_firstCall = FALSE;
     }
 
+    // DisplayPathHeader
+    ++cLinesNeeded;     // Directory of ___________________
+    ++cLinesNeeded;     // Blank line
 
-
-    if (pdi->m_vMatches.size() > 0)
+    if (pdi->m_vMatches.size() == 0)
     {
-        ++cLinesNeeded;     // Directory of ___________________
-        ++cLinesNeeded;     // Blank line
-
+        ++cLinesNeeded;     // Directory is empty
+    }
+    else
+    {
         if (m_pCmdLine->m_fWideListing)
         {
             UINT cColumns;
             UINT cxColumnWidth;
 
 
-
+            // DisplayResultsWide
             assert (pdi->m_cchLargestFileName > 0);
 
             hr = GetColumnInfo (pdi, &cColumns, &cxColumnWidth);
@@ -478,12 +499,21 @@ HRESULT CDirectoryLister::CalculateLinesNeeded (__in CDirectoryInfo * pdi, __out
         }
         else
         {
+            // DisplayResultsNormal
             cLinesNeeded += (int) pdi->m_vMatches.size();
         }
 
+        // DisplayDirectorySummary
         ++cLinesNeeded;     // Blank line
         ++cLinesNeeded;     // __ dirs, __ files using ____ bytes
-        ++cLinesNeeded;     // _____________ bytes free on volume
+
+        if (!m_pCmdLine->m_fRecurse)
+        {
+            // DisplayVolumeFooter
+            ++cLinesNeeded;     // _____________ bytes free on volume
+            ++cLinesNeeded;     // _____________ bytes available to user %s (only if a quota is active)
+ 
+        }
     }
 
     ++cLinesNeeded;     // Bottom separator line
@@ -506,32 +536,57 @@ Error:
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-void CDirectoryLister::DisplayResults (CDirectoryInfo * pdi)
+void CDirectoryLister::DisplayResults (__in CDirectoryInfo * pdi, EDirectoryLevel level)
 {
-    Scroll (pdi);
+    Scroll (pdi, level);
     
-    m_pConsole->WriteSeparatorLine(m_pConfig->m_rgAttributes[CConfig::EAttribute::SeparatorLine]);
 
-    DisplayDriveHeader (pdi->m_pszPath); 
-
-    if (pdi->m_cFiles > 0)
+    if (level == EDirectoryLevel::Initial)
     {
-        DisplayPathHeader (pdi->m_pszPath); 
+        //
+        // For the initial directory, we'll add the top separator.  
+        // For recursed directories, we'll just add the bottom so that there's
+        // only one separator between each subdirectory.
+        // 
+        
+        m_pConsole->WriteSeparatorLine(m_pConfig->m_rgAttributes[CConfig::EAttribute::SeparatorLine]);
+
+        //
+        // We'll only show the dirve header on the initial directory processed.
+        // Any recursed subdirs won't show it.
+        //
+
+        DisplayDriveHeader(pdi->m_pszPath);
     }
 
-    
-    if (m_pCmdLine->m_fWideListing)
-    {
-        DisplayResultsWide (pdi);
-    }
-    else
-    {
-        DisplayResultsNormal (pdi);
-    }
+    DisplayPathHeader (pdi->m_pszPath); 
 
-    if (pdi->m_cFiles > 0 || pdi->m_cSubDirectories > 0)
+    if (pdi->m_vMatches.size() == 0)
     {
-        DisplayFooter (pdi);    
+        m_pConsole->Puts(CConfig::EAttribute::Default, L"Directory is empty.\n");
+    }
+    else 
+    {
+        if (m_pCmdLine->m_fWideListing)
+        {
+            DisplayResultsWide (pdi);
+        }
+        else
+        {
+            DisplayResultsNormal (pdi);
+        }
+
+        DisplayDirectorySummary (pdi);
+
+        //
+        // Only show the volume footer here if we're not doing a recursive list.
+        // Otherwise, it'll be shown after the recursive summary.
+        //
+
+        if (!m_pCmdLine->m_fRecurse)
+        {
+            DisplayVolumeFooter(pdi);
+        }
     }
         
     m_pConsole->WriteSeparatorLine (m_pConfig->m_rgAttributes[CConfig::EAttribute::SeparatorLine]);
@@ -556,7 +611,7 @@ void CDirectoryLister::DisplayResults (CDirectoryInfo * pdi)
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-void CDirectoryLister::DisplayResultsWide (CDirectoryInfo * pdi)
+void CDirectoryLister::DisplayResultsWide (__in CDirectoryInfo * pdi)
 {                                 
     HRESULT hr             = S_OK;
     UINT    cColumns;
@@ -585,10 +640,10 @@ void CDirectoryLister::DisplayResultsWide (CDirectoryInfo * pdi)
     {
         for (nCol = 0; nCol < cColumns; ++nCol)
         {                   
-            LPWSTR            pszName;    
-            WIN32_FIND_DATA * pwfd;       
-            WORD              wAttr;      
-            size_t            cSpacesNeeded;
+            LPWSTR            pszName       = NULL;    
+            WIN32_FIND_DATA * pwfd          = NULL;       
+            WORD              wAttr         = 0;      
+            size_t            cSpacesNeeded = 0;
 
 
 
@@ -626,7 +681,7 @@ Error:
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-HRESULT CDirectoryLister::GetColumnInfo (CDirectoryInfo * pdi, UINT * pcColumns, UINT * pcxColumnWidth)
+HRESULT CDirectoryLister::GetColumnInfo (__in CDirectoryInfo * pdi, __in UINT * pcColumns, __in UINT * pcxColumnWidth)
 {
     HRESULT                    hr              = S_OK;
     BOOL                       fSuccess;       
@@ -659,7 +714,7 @@ Error:
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-HRESULT CDirectoryLister::AddEmptyMatches (CDirectoryInfo * pdi, size_t cColumns)
+HRESULT CDirectoryLister::AddEmptyMatches (__in CDirectoryInfo * pdi, size_t cColumns)
 {
 	HRESULT   hr = S_OK;
     size_t    i;       
@@ -688,7 +743,7 @@ HRESULT CDirectoryLister::AddEmptyMatches (CDirectoryInfo * pdi, size_t cColumns
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-HRESULT CDirectoryLister::GetWideFormattedName (WIN32_FIND_DATA * pwfd, LPWSTR * ppszName)
+HRESULT CDirectoryLister::GetWideFormattedName (__in WIN32_FIND_DATA * pwfd, __out_z LPWSTR * ppszName)
 {
     HRESULT      hr                  = S_OK;
     static WCHAR szDirName[MAX_PATH] = L"[";
@@ -727,7 +782,7 @@ HRESULT CDirectoryLister::GetWideFormattedName (WIN32_FIND_DATA * pwfd, LPWSTR *
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-void CDirectoryLister::DisplayResultsNormal (CDirectoryInfo * pdi)
+void CDirectoryLister::DisplayResultsNormal (__in CDirectoryInfo * pdi)
 {
     UINT               cchMaxSize;
     BOOL               fSuccess;   
@@ -820,7 +875,7 @@ void CDirectoryLister::DisplayResultsNormal (CDirectoryInfo * pdi)
         
         if ((iter->dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) == 0)
         {
-            m_pConsole->Printf (m_pConfig->m_rgAttributes[CConfig::EAttribute::Size], L" %*s ", cchMaxSize, FormatFileSize (uliFileSize));
+            m_pConsole->Printf (m_pConfig->m_rgAttributes[CConfig::EAttribute::Size], L" %*s ", cchMaxSize, FormatNumberWithSeparators (uliFileSize.QuadPart));
         }
         else
         {
@@ -1006,17 +1061,96 @@ void CDirectoryLister::DisplayPathHeader (LPCWSTR pszPath)
 
 ////////////////////////////////////////////////////////////////////////////////
 //
-//  CDirectoryLister::DisplayFooter
+//  CDirectoryLister::DisplayListingSummary
 //
-//  Display summary information for the directory:
-//
-//   4 directories, 27 files using 284,475 bytes
+//  Display full recursive summary information:
+// 
+//   Total files listed:
+//         143 files using 123,456 bytes
+//           7 subdirectories
+// 
 //   123,123,123,123 bytes free on volume
 //   123,117,699,072 bytes available to user %s
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-void CDirectoryLister::DisplayFooter (CDirectoryInfo * pdi)
+void CDirectoryLister::DisplayListingSummary (__in CDirectoryInfo * pdi)
+{
+    HRESULT hr         = S_OK;
+    int     cMaxDigits = 0;
+
+
+    hr = m_pConsole->ReserveLines(9);
+    CHR(hr);
+
+    cMaxDigits = (int) log10 (max (m_cFilesFound, m_cDirectoriesFound)) + 1;
+    cMaxDigits += cMaxDigits / 3;  // add space for each comma
+
+
+    m_pConsole->Puts   (m_pConfig->m_rgAttributes[CConfig::EAttribute::Information], L" Total files listed:\n");
+    m_pConsole->Puts(CConfig::EAttribute::Default, L"\n");
+
+    m_pConsole->Printf (m_pConfig->m_rgAttributes[CConfig::EAttribute::InformationHighlight], L"    %*s", cMaxDigits, FormatNumberWithSeparators (m_cFilesFound));
+    m_pConsole->Printf (m_pConfig->m_rgAttributes[CConfig::EAttribute::Information], m_cFilesFound == 1 ? L" file using " : L" files using ");
+    m_pConsole->Puts   (m_pConfig->m_rgAttributes[CConfig::EAttribute::InformationHighlight], FormatNumberWithSeparators(m_uliSizeOfAllFilesFound.QuadPart));
+    m_pConsole->Printf (m_pConfig->m_rgAttributes[CConfig::EAttribute::Information], m_uliSizeOfAllFilesFound.QuadPart == 1 ? L" byte\n" : L" bytes\n");
+
+    m_pConsole->Printf (m_pConfig->m_rgAttributes[CConfig::EAttribute::InformationHighlight], L"    %*s", cMaxDigits, FormatNumberWithSeparators (m_cDirectoriesFound));
+    m_pConsole->Puts   (m_pConfig->m_rgAttributes[CConfig::EAttribute::Information], m_cDirectoriesFound == 1 ? L" subdiretory\n" : L" subdirectories\n");
+
+    m_pConsole->Puts(CConfig::EAttribute::Default, L"\n");
+    DisplayVolumeFooter (pdi);
+
+    m_pConsole->WriteSeparatorLine (m_pConfig->m_rgAttributes[CConfig::EAttribute::SeparatorLine]);
+    m_pConsole->Puts (CConfig::EAttribute::Default, L"\n");
+
+Error:
+    return;
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CDirectoryLister::DisplayDirectorySummary
+//
+//  Display summary information for the directory:
+//
+//   4 directories, 27 files using 284,475 bytes
+//
+////////////////////////////////////////////////////////////////////////////////
+
+void CDirectoryLister::DisplayDirectorySummary (__in CDirectoryInfo * pdi)
+{
+    m_pConsole->Puts    (m_pConfig->m_rgAttributes[CConfig::EAttribute::Information], L"\n ");
+
+    m_pConsole->Printf  (m_pConfig->m_rgAttributes[CConfig::EAttribute::InformationHighlight], L"%d", pdi->m_cSubDirectories);
+    m_pConsole->Puts    (m_pConfig->m_rgAttributes[CConfig::EAttribute::Information], pdi->m_cSubDirectories == 1 ? L" dir, " : L" dirs, ");
+
+    m_pConsole->Printf  (m_pConfig->m_rgAttributes[CConfig::EAttribute::InformationHighlight], L"%d", pdi->m_cFiles);
+    m_pConsole->Printf  (m_pConfig->m_rgAttributes[CConfig::EAttribute::Information], pdi->m_cFiles == 1 ? L" file using " : L" files using ");
+    m_pConsole->Puts    (m_pConfig->m_rgAttributes[CConfig::EAttribute::InformationHighlight], FormatNumberWithSeparators(pdi->m_uliBytesUsed.QuadPart));
+    m_pConsole->Printf  (m_pConfig->m_rgAttributes[CConfig::EAttribute::Information], pdi->m_uliBytesUsed.QuadPart == 1 ? L" byte\n" : L" bytes\n");
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CDirectoryLister::DisplayVolumeFooter
+//
+//  Display free space info for volume:
+//
+//   123,123,123,123 bytes free on volume
+//   123,117,699,072 bytes available to user %s
+//
+////////////////////////////////////////////////////////////////////////////////
+
+void CDirectoryLister::DisplayVolumeFooter (__in CDirectoryInfo * pdi)
 {
     HRESULT        hr                     = S_OK;
     BOOL           fSuccess;              
@@ -1029,17 +1163,7 @@ void CDirectoryLister::DisplayFooter (CDirectoryInfo * pdi)
     fSuccess = GetDiskFreeSpaceEx (pdi->m_pszPath, &uliFreeBytesAvailable, &uliTotalBytes, &uliTotalFreeBytes);
     CBRA (fSuccess);
 
-    m_pConsole->Puts   (m_pConfig->m_rgAttributes[CConfig::EAttribute::Information],          L"\n ");
-
-    m_pConsole->Printf (m_pConfig->m_rgAttributes[CConfig::EAttribute::InformationHighlight], L"%d", pdi->m_cSubDirectories);
-    m_pConsole->Puts   (m_pConfig->m_rgAttributes[CConfig::EAttribute::Information],          pdi->m_cSubDirectories == 1 ? L" dir, " : L" dirs, ");
-
-    m_pConsole->Printf (m_pConfig->m_rgAttributes[CConfig::EAttribute::InformationHighlight], L"%d", pdi->m_cFiles);    
-    m_pConsole->Printf (m_pConfig->m_rgAttributes[CConfig::EAttribute::Information],          pdi->m_cFiles == 1 ? L" file using " : L" files using ");    
-    m_pConsole->Puts   (m_pConfig->m_rgAttributes[CConfig::EAttribute::InformationHighlight], FormatFileSize (pdi->m_uliBytesUsed));
-
-    m_pConsole->Printf (m_pConfig->m_rgAttributes[CConfig::EAttribute::Information],          pdi->m_uliBytesUsed.QuadPart == 1 ? L" byte\n " : L" bytes\n ");
-    m_pConsole->Puts   (m_pConfig->m_rgAttributes[CConfig::EAttribute::InformationHighlight], FormatFileSize (uliTotalFreeBytes));
+    m_pConsole->Printf (m_pConfig->m_rgAttributes[CConfig::EAttribute::InformationHighlight], L" %s", FormatNumberWithSeparators (uliTotalFreeBytes.QuadPart));
     m_pConsole->Printf (m_pConfig->m_rgAttributes[CConfig::EAttribute::Information],          uliTotalFreeBytes.QuadPart == 1 ? L" byte free on volume\n" : L" bytes free on volume\n");
 
     if (uliFreeBytesAvailable.QuadPart != uliTotalFreeBytes.QuadPart)
@@ -1056,7 +1180,17 @@ Error:
 
 
 
-void CDirectoryLister::DisplayFooterQuotaInfo (const ULARGE_INTEGER * puliFreeBytesAvailable)
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CDirectoryLister::DisplayFooterQuotaInfo
+//
+//  Display free space info for volume:
+//
+//   123,117,699,072 bytes available to user %s
+//
+////////////////////////////////////////////////////////////////////////////////
+
+void CDirectoryLister::DisplayFooterQuotaInfo (__in const ULARGE_INTEGER * puliFreeBytesAvailable)
 {
     DWORD cchMaxUsername = 1 << 15;
     LPWSTR pszUsername = new WCHAR[cchMaxUsername];   // Max size for an environment variable is 32k
@@ -1067,7 +1201,7 @@ void CDirectoryLister::DisplayFooterQuotaInfo (const ULARGE_INTEGER * puliFreeBy
 
 
     m_pConsole->Puts (m_pConfig->m_rgAttributes[CConfig::EAttribute::Information],          L" ");
-    m_pConsole->Puts (m_pConfig->m_rgAttributes[CConfig::EAttribute::InformationHighlight], FormatFileSize (*puliFreeBytesAvailable));
+    m_pConsole->Puts (m_pConfig->m_rgAttributes[CConfig::EAttribute::InformationHighlight], FormatNumberWithSeparators (puliFreeBytesAvailable->QuadPart));
     m_pConsole->Puts (m_pConfig->m_rgAttributes[CConfig::EAttribute::Information],          puliFreeBytesAvailable->QuadPart == 1 ? L" byte available to " : L" bytes available to ");
     m_pConsole->Puts (m_pConfig->m_rgAttributes[CConfig::EAttribute::InformationHighlight], pszUsername);
     m_pConsole->Puts (m_pConfig->m_rgAttributes[CConfig::EAttribute::Information],          L" due to quota\n");
@@ -1085,7 +1219,7 @@ void CDirectoryLister::DisplayFooterQuotaInfo (const ULARGE_INTEGER * puliFreeBy
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-UINT CDirectoryLister::GetMaxSize (ULARGE_INTEGER * puli)
+UINT CDirectoryLister::GetMaxSize (__in ULARGE_INTEGER * puli)
 {
     UINT cchDigits = 0;
 
@@ -1104,13 +1238,13 @@ UINT CDirectoryLister::GetMaxSize (ULARGE_INTEGER * puli)
 
 ////////////////////////////////////////////////////////////////////////////////
 //
-//  CDirectoryLister::FormatFileSize
+//  CDirectoryLister::FormatNumberWithSeparators
 //
 //  
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-LPCWSTR CDirectoryLister::FormatFileSize (ULARGE_INTEGER uli)
+LPCWSTR CDirectoryLister::FormatNumberWithSeparators (ULONGLONG n)
 {
     static WCHAR szFileSize[27];  // 2^64 = 1.84467440737096E+19 = 18,446,744,073,709,600,000 = 18 chars + 6 commas + 1 null
     LPWSTR       pszSize;
@@ -1141,8 +1275,8 @@ LPCWSTR CDirectoryLister::FormatFileSize (ULARGE_INTEGER uli)
         // remaining number down by a factor of 10.
         //
 
-        uiDigit      = (UINT) uli.QuadPart % 10u;    
-        uli.QuadPart = uli.QuadPart / 10u;
+        uiDigit = (UINT) (n % 10ull);
+        n       = n / 10ull;
 
         //
         // Point to the next free spot in the write buffer
@@ -1170,7 +1304,7 @@ LPCWSTR CDirectoryLister::FormatFileSize (ULARGE_INTEGER uli)
         
         *pszSize = (WCHAR) (uiDigit + (UINT) L'0');
     }             
-	while (uli.QuadPart > 0);
+	while (n > 0ull);
 
     return pszSize;
 }
