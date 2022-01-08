@@ -16,6 +16,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 CConsoleApi::CConsoleApi (void)
+    : m_cLinesToSkip (0)
 {
 }
 
@@ -69,9 +70,16 @@ HRESULT CConsoleApi::Puts (WORD attr, LPCWSTR psz)
 
             pStart = p + 1;
 
-            // Handle the newline
-            m_coord.X = 0;
-            ++m_coord.Y;
+            if (m_cLinesToSkip == 0)
+            {   
+                // Handle the newline
+                m_coord.X = 0;
+                ++m_coord.Y;
+            }
+            else
+            {
+                --m_cLinesToSkip;
+            }
         }
 
         ++p;
@@ -163,25 +171,50 @@ HRESULT CConsoleApi::WriteString (WORD attr, __in_ecount(cch) WCHAR * p, size_t 
         assert (m_coord.X <= m_consoleScreenBufferInfoEx.dwSize.X);
         if (m_coord.X + cch >= m_consoleScreenBufferInfoEx.dwSize.X)
         {
-            cch = m_consoleScreenBufferInfoEx.dwSize.X - m_coord.X;
+            cch = (size_t) m_consoleScreenBufferInfoEx.dwSize.X - (size_t) m_coord.X;
             assert (cch > 0);            
 
             fClipped = TRUE;
         }
     }
-
-    fSuccess = FillConsoleOutputAttribute(m_hStdOut, attr, (DWORD)cch, m_coord, &cWritten);
-    CWRA(fSuccess);
-
-    fSuccess = WriteConsoleOutputCharacter(m_hStdOut, p, (DWORD)cch, m_coord, &cWritten);
-    CWRA(fSuccess);
-
-    if (!fClipped)
+    else if (m_cLinesToSkip > 0)
     {
-        m_coord.Y += (m_coord.X + (SHORT)cWritten) / m_consoleScreenBufferInfoEx.dwSize.X;
+        //
+        // If we're wrapping text and need to skip lines, account for the lines that would be wrapped
+        // 
+
+        int cLinesToWrite = (int) cch / m_consoleScreenBufferInfoEx.dwSize.X;
+
+        if (cLinesToWrite < m_cLinesToSkip)
+        {
+            m_cLinesToSkip -= cLinesToWrite;
+        }
+        else
+        {
+            size_t cchSkip = m_cLinesToSkip * m_consoleScreenBufferInfoEx.dwSize.X;
+
+            cch -= cchSkip;
+            p   += cchSkip;
+
+            m_cLinesToSkip = 0;
+        }
     }
 
-    m_coord.X += cWritten % m_consoleScreenBufferInfoEx.dwSize.X;
+    if (m_cLinesToSkip == 0)
+    {
+        fSuccess = FillConsoleOutputAttribute (m_hStdOut, attr, (DWORD) cch, m_coord, &cWritten);
+        CWRA (fSuccess);
+
+        fSuccess = WriteConsoleOutputCharacter (m_hStdOut, p, (DWORD) cch, m_coord, &cWritten);
+        CWRA (fSuccess);
+
+        if (!fClipped)
+        {
+            m_coord.Y += (m_coord.X + (SHORT) cWritten) / m_consoleScreenBufferInfoEx.dwSize.X;
+        }
+
+        m_coord.X += cWritten % m_consoleScreenBufferInfoEx.dwSize.X;
+    }
 
 
 Error:
@@ -209,15 +242,23 @@ HRESULT CConsoleApi::WriteSeparatorLine (WORD attr)
     DWORD   cWritten    = 0;
 
 
-    assert (m_coord.X == 0);
+    if (m_cLinesToSkip == 0)
+    {
+        assert (m_coord.X == 0);
 
-    fSuccess = FillConsoleOutputAttribute (m_hStdOut, attr, bufferWidth, m_coord, &cWritten);
-    CWRA (fSuccess);
+        fSuccess = FillConsoleOutputAttribute (m_hStdOut, attr, bufferWidth, m_coord, &cWritten);
+        CWRA (fSuccess);
 
-    fSuccess = FillConsoleOutputCharacter (m_hStdOut, L'═', bufferWidth, m_coord, &cWritten);
-    CWRA (fSuccess);
+        fSuccess = FillConsoleOutputCharacter (m_hStdOut, L'═', bufferWidth, m_coord, &cWritten);
+        CWRA (fSuccess);
 
-    ++m_coord.Y;
+        ++m_coord.Y;
+    }
+    else
+    {
+        --m_cLinesToSkip;
+    }
+
 
 Error:
     return hr;
@@ -250,17 +291,25 @@ HRESULT CConsoleApi::ReserveLines (int cLines)
 
     //
     // If we need more lines than the total buffer size, scroll the entire buffer
-    // and let the caller know that they should just skip the first n lines of output
+    // and track the number of lines we'll just ignore as the caller writes.
     //
 
     if (cLines > m_consoleScreenBufferInfoEx.dwSize.Y)
     {
-        ScrollBuffer (m_consoleScreenBufferInfoEx.dwSize.Y);
-        assert (FALSE);
-        // Let the caller know to skip cLines - m_consoleScreenBufferInfoEx.dwSize.Y lines of output
-        // bail out here.
-    }
+        m_cLinesToSkip = cLines - m_consoleScreenBufferInfoEx.dwSize.Y;
 
+        DbgPrintf(L"Asked to reserve %d lines, but only %d lines exist in buffer.  Will skip next %d lines of output.\n",
+            cLines,
+            m_consoleScreenBufferInfoEx.dwSize.Y,
+            m_cLinesToSkip);
+
+        //
+        // Adjust the request to just be for the full size of the buffer
+        //
+
+        cLines = m_consoleScreenBufferInfoEx.dwSize.Y;
+    }
+    
     //
     // If we need more lines than are free in the buffer, scroll the buffer up to make room
     //
@@ -268,7 +317,7 @@ HRESULT CConsoleApi::ReserveLines (int cLines)
     cBufferLinesRemaining = m_consoleScreenBufferInfoEx.dwSize.Y - m_coord.Y;
     if (cLines > cBufferLinesRemaining)
     {
-        ScrollBuffer (cLines - cBufferLinesRemaining);
+        ScrollBuffer(cLines - cBufferLinesRemaining);
     }
 
     //
@@ -279,18 +328,18 @@ HRESULT CConsoleApi::ReserveLines (int cLines)
     if (m_coord.Y + cLines > m_consoleScreenBufferInfoEx.srWindow.Bottom)
     {
         SHORT      windowHeight = m_consoleScreenBufferInfoEx.srWindow.Bottom - m_consoleScreenBufferInfoEx.srWindow.Top;
-        SMALL_RECT srWindow     = m_consoleScreenBufferInfoEx.srWindow;
+        SMALL_RECT srWindow = m_consoleScreenBufferInfoEx.srWindow;
 
         // absolute coords
-        srWindow.Bottom = (SHORT) m_coord.Y + (SHORT) cLines;
-        srWindow.Top    = srWindow.Bottom - windowHeight;
+        srWindow.Bottom = (SHORT)m_coord.Y + (SHORT)cLines;
+        srWindow.Top = srWindow.Bottom - windowHeight;
 
         fSuccess = SetConsoleWindowInfo(m_hStdOut, TRUE, &srWindow);
         CWRA(fSuccess);
 
         m_consoleScreenBufferInfoEx.srWindow = srWindow;
     }
-
+ 
 
 
 Error:

@@ -15,7 +15,9 @@
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-CConsoleBuffer::CConsoleBuffer (void)
+CConsoleBuffer::CConsoleBuffer (void) 
+    : m_cScreenBuffer (0),
+      m_prgScreenBuffer (NULL)
 {
 }
 

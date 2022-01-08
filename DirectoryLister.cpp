@@ -402,7 +402,7 @@ HRESULT CDirectoryLister::AddMatchToList (__in CFileInfo * pwfd, __in CDirectory
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-void CDirectoryLister::Scroll (__in CDirectoryInfo * pdi, EDirectoryLevel level)
+void CDirectoryLister::Scroll (__in const CDirectoryInfo * pdi, EDirectoryLevel level)
 {
     HRESULT hr              = S_OK;
     int     cLinesNeeded    = 0;
@@ -443,7 +443,7 @@ Error:
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-HRESULT CDirectoryLister::CalculateLinesNeeded (__in CDirectoryInfo * pdi, __out int * pcLinesNeeded, EDirectoryLevel level)
+HRESULT CDirectoryLister::CalculateLinesNeeded (__in const CDirectoryInfo * pdi, __out int * pcLinesNeeded, EDirectoryLevel level)
 {
     HRESULT     hr           = S_OK;
     int         cLinesNeeded = 0;
@@ -640,7 +640,7 @@ void CDirectoryLister::DisplayResultsWide (__in CDirectoryInfo * pdi)
     {
         for (nCol = 0; nCol < cColumns; ++nCol)
         {                   
-            LPWSTR            pszName       = NULL;    
+            LPCWSTR           pszName       = NULL;    
             WIN32_FIND_DATA * pwfd          = NULL;       
             WORD              wAttr         = 0;      
             size_t            cSpacesNeeded = 0;
@@ -681,7 +681,7 @@ Error:
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-HRESULT CDirectoryLister::GetColumnInfo (__in CDirectoryInfo * pdi, __in UINT * pcColumns, __in UINT * pcxColumnWidth)
+HRESULT CDirectoryLister::GetColumnInfo (__in const CDirectoryInfo * pdi, __out UINT * pcColumns, __out UINT * pcxColumnWidth)
 {
     HRESULT                    hr              = S_OK;
     BOOL                       fSuccess;       
@@ -743,7 +743,7 @@ HRESULT CDirectoryLister::AddEmptyMatches (__in CDirectoryInfo * pdi, size_t cCo
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-HRESULT CDirectoryLister::GetWideFormattedName (__in WIN32_FIND_DATA * pwfd, __out_z LPWSTR * ppszName)
+HRESULT CDirectoryLister::GetWideFormattedName (__in const WIN32_FIND_DATA * pwfd, __deref_out_z LPCWSTR * ppszName)
 {
     HRESULT      hr                  = S_OK;
     static WCHAR szDirName[MAX_PATH] = L"[";
@@ -752,12 +752,13 @@ HRESULT CDirectoryLister::GetWideFormattedName (__in WIN32_FIND_DATA * pwfd, __o
     
     if (pwfd->dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
     {
-        size_t cchRemaining;
+        LPWSTR pszBufEnd    = szDirName + 1;
+        size_t cchRemaining = 0;
 
 
         
-        StringCchCopyEx (szDirName + 1, ARRAYSIZE (szDirName) - 1, pwfd->cFileName, ppszName, &cchRemaining, 0);
-        StringCchCat    (*ppszName,  cchRemaining, L"]");
+        StringCchCopyEx (szDirName + 1, ARRAYSIZE (szDirName) - 1, pwfd->cFileName, &pszBufEnd, &cchRemaining, 0);
+        StringCchCat    (pszBufEnd,  cchRemaining, L"]");
 
         *ppszName = szDirName;
     }
@@ -1074,7 +1075,7 @@ void CDirectoryLister::DisplayPathHeader (LPCWSTR pszPath)
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-void CDirectoryLister::DisplayListingSummary (__in CDirectoryInfo * pdi)
+void CDirectoryLister::DisplayListingSummary (__in const CDirectoryInfo * pdi)
 {
     HRESULT hr         = S_OK;
     int     cMaxDigits = 0;
@@ -1122,7 +1123,7 @@ Error:
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-void CDirectoryLister::DisplayDirectorySummary (__in CDirectoryInfo * pdi)
+void CDirectoryLister::DisplayDirectorySummary (__in const CDirectoryInfo * pdi)
 {
     m_pConsole->Puts    (m_pConfig->m_rgAttributes[CConfig::EAttribute::Information], L"\n ");
 
@@ -1150,7 +1151,7 @@ void CDirectoryLister::DisplayDirectorySummary (__in CDirectoryInfo * pdi)
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-void CDirectoryLister::DisplayVolumeFooter (__in CDirectoryInfo * pdi)
+void CDirectoryLister::DisplayVolumeFooter (__in const CDirectoryInfo * pdi)
 {
     HRESULT        hr                     = S_OK;
     BOOL           fSuccess;              
@@ -1219,17 +1220,23 @@ void CDirectoryLister::DisplayFooterQuotaInfo (__in const ULARGE_INTEGER * puliF
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-UINT CDirectoryLister::GetMaxSize (__in ULARGE_INTEGER * puli)
+UINT CDirectoryLister::GetMaxSize (__in const ULARGE_INTEGER * puli)
 {
-    UINT cchDigits = 0;
+    UINT cchDigits = 1;
 
 
 	if (puli->QuadPart != 0)
 	{
-		cchDigits = (UINT) log10 ((float) puli->QuadPart);
+		cchDigits += (UINT) log10 ((float) puli->QuadPart);
 	}
 
-    return cchDigits + (cchDigits / 3) + 1;
+    //
+    // add space for the comma digit group separators
+    //
+
+    cchDigits += (cchDigits - 1) / 3;
+
+    return cchDigits;
 }
 
 

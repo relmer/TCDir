@@ -16,6 +16,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 CConsole::CConsole(void)
+    : m_wrapMode (CConsole::EWrapMode::Clip)
 {
     m_hStdOut = GetStdHandle (STD_OUTPUT_HANDLE);   
 

@@ -21,4 +21,6 @@ public:
     virtual HRESULT ReserveLines         (int cLines);
     virtual HRESULT ScrollBuffer         (int cLines);
 
+protected:
+    int m_cLinesToSkip;     // If asked to scroll more lines than exist in the buffer, we'll just skip the first n lines of output to accommodate
 };               

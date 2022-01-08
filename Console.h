@@ -7,7 +7,7 @@
 class CConsole
 {
 public:
-    enum EWrapMode
+    enum class EWrapMode
     {
         Clip = 0,
         Wrap = 1,

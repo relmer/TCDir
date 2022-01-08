@@ -119,7 +119,8 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <ProgramDatabaseFile>$(OutDir)TCDir.pdb</ProgramDatabaseFile>
       <SubSystem>Console</SubSystem>
-      <Profile>true</Profile>
+      <Profile>
+      </Profile>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
