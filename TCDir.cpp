@@ -74,8 +74,8 @@ int wmain (int argc, WCHAR * argv[])
     // Initialize the console and configuration
     //
 
-    pConsole = new CConsoleApi();
-    //pConsole = new CConsoleBuffer();
+    //pConsole = new CConsoleApi();
+    pConsole = new CConsoleBuffer();
     CBR (pConsole != NULL);
 
     hr = pConsole->SetWrapMode(CConsole::EWrapMode::Clip);

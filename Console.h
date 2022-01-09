@@ -32,6 +32,8 @@ public:
     virtual HRESULT ReserveLines         (int cLines)                                           PURE;
     virtual HRESULT ScrollBuffer         (int cLines)                                           PURE;
 
+    virtual HRESULT Flush                (void) { return S_OK; }
+
 #ifdef _DEBUG
     void Test                                (void);
     void TestCanWriteMoreLinesThanWindowSize (void);

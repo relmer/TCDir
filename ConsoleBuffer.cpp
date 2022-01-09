@@ -19,6 +19,7 @@ CConsoleBuffer::CConsoleBuffer (void)
     : m_cScreenBuffer (0),
       m_prgScreenBuffer (NULL)
 {
+    InitializeBuffer ();
 }
 
 
@@ -61,6 +62,11 @@ HRESULT CConsoleBuffer::InitializeBuffer (void)
     //
 
     m_cScreenBuffer = m_consoleScreenBufferInfoEx.dwSize.X * m_consoleScreenBufferInfoEx.dwSize.Y;
+
+    DbgPrintf (L"Allocating %d line screen buffer (%d bytes)\n",
+               m_consoleScreenBufferInfoEx.dwSize.Y,
+               m_cScreenBuffer);
+
     m_prgScreenBuffer = (CHAR_INFO *) HeapAlloc (GetProcessHeap (), HEAP_ZERO_MEMORY, m_cScreenBuffer * sizeof (*m_prgScreenBuffer));
     CPR (m_prgScreenBuffer);
 
@@ -85,13 +91,13 @@ Error:
 
 ////////////////////////////////////////////////////////////////////////////////
 //
-//  CConsoleBuffer::FlushBuffer
+//  CConsoleBuffer::Flush
 //
 //  
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-HRESULT CConsoleBuffer::FlushBuffer (void)
+HRESULT CConsoleBuffer::Flush (void)
 {
     HRESULT hr = S_OK;
     COORD      coordDestination = { 0, 0 };
@@ -107,11 +113,6 @@ HRESULT CConsoleBuffer::FlushBuffer (void)
     srWrite.Right  = m_consoleScreenBufferInfoEx.dwSize.X;
 
     WriteConsoleOutput (m_hStdOut, m_prgScreenBuffer, m_consoleScreenBufferInfoEx.dwSize, coordDestination, &srWrite);
-
-    HeapFree (GetProcessHeap (), 0, m_prgScreenBuffer);
-    m_prgScreenBuffer = NULL;
-    m_cScreenBuffer = 0;
-
 
 //Error:
     return hr;
@@ -139,9 +140,9 @@ HRESULT CConsoleBuffer::Puts (WORD attr, LPCWSTR psz)
 
 
     //
-    // WriteConsoleOutputCharacter does not support newline characters, so
-    // we'll have to handle those manually
+    // We have to handle embedded newlines manually
     //
+
     while (p < pEnd)
     {
         if (*p == L'\n')
@@ -223,12 +224,27 @@ Error:
 HRESULT CConsoleBuffer::WriteString (WORD attr, __in_ecount(cch) WCHAR * p, size_t cch)
 {
     HRESULT     hr              = S_OK;
-    WCHAR     * pEnd            = p + cch;
+    BOOL        fClipped        = FALSE;
+    WCHAR     * pEnd            = NULL;
     CHAR_INFO * pciBuffer       = m_prgScreenBuffer + ((size_t) m_coord.Y * m_consoleScreenBufferInfoEx.dwSize.X) + m_coord.X;
     CHAR_INFO * pciBufferEnd    = m_prgScreenBuffer + m_cScreenBuffer;
     size_t      idx             = 0;
 
 
+
+    if (m_wrapMode == EWrapMode::Clip)
+    {
+        assert (m_coord.X <= m_consoleScreenBufferInfoEx.dwSize.X);
+        if (m_coord.X + cch >= m_consoleScreenBufferInfoEx.dwSize.X)
+        {
+            cch = (size_t) m_consoleScreenBufferInfoEx.dwSize.X - (size_t) m_coord.X;
+            assert (cch > 0);
+
+            fClipped = TRUE;
+        }
+    }
+
+    pEnd = p + cch;
 
     while (p < pEnd)
     {
@@ -243,8 +259,13 @@ HRESULT CConsoleBuffer::WriteString (WORD attr, __in_ecount(cch) WCHAR * p, size
 
     idx = pciBuffer - m_prgScreenBuffer;
 
-    m_coord.Y = (short) (idx / m_consoleScreenBufferInfoEx.dwSize.X);
-    m_coord.X = (short) (idx % m_consoleScreenBufferInfoEx.dwSize.X);
+
+    if (!fClipped)
+    {
+        m_coord.Y = (SHORT) (idx / m_consoleScreenBufferInfoEx.dwSize.X);
+    }
+
+    m_coord.X = (SHORT) (idx % m_consoleScreenBufferInfoEx.dwSize.X);
 
 
 Error:
@@ -302,7 +323,6 @@ HRESULT CConsoleBuffer::ReserveLines (int cLines)
 {
     HRESULT hr                      = S_OK;
     BOOL    fSuccess                = FALSE;
-    int     cWindowLinesTotal       = 0;
     int     cBufferLinesRemaining   = 0;
 
 
@@ -311,8 +331,7 @@ HRESULT CConsoleBuffer::ReserveLines (int cLines)
     // If there are enough lines left in the current window, no need to scroll
     //
 
-    cWindowLinesTotal = m_consoleScreenBufferInfoEx.srWindow.Bottom - m_consoleScreenBufferInfoEx.srWindow.Top + 1;
-    BAIL_OUT_IF((cLines + m_coord.Y) <= cWindowLinesTotal, S_OK);
+    BAIL_OUT_IF ((cLines + m_coord.Y) <= m_consoleScreenBufferInfoEx.srWindow.Bottom, S_OK);
 
     //
     // If we need more lines than are free in the buffer, scroll the buffer up to make room
@@ -331,19 +350,17 @@ HRESULT CConsoleBuffer::ReserveLines (int cLines)
 
     if (m_coord.Y + cLines > m_consoleScreenBufferInfoEx.srWindow.Bottom)
     {
-        SHORT      cLinesToMoveWindow = 0;
-        SMALL_RECT srcWindow = { 0 };
+        SHORT      windowHeight = m_consoleScreenBufferInfoEx.srWindow.Bottom - m_consoleScreenBufferInfoEx.srWindow.Top;
+        SMALL_RECT srWindow = m_consoleScreenBufferInfoEx.srWindow;
 
+        // absolute coords
+        srWindow.Bottom = (SHORT) m_coord.Y + (SHORT) cLines;
+        srWindow.Top = srWindow.Bottom - windowHeight;
 
+        fSuccess = SetConsoleWindowInfo (m_hStdOut, TRUE, &srWindow);
+        CWRA (fSuccess);
 
-        cLinesToMoveWindow = (SHORT)m_coord.Y + (SHORT)cLines - m_consoleScreenBufferInfoEx.srWindow.Bottom;
-
-        // relative coords
-        srcWindow.Top += cLinesToMoveWindow;
-        srcWindow.Bottom += cLinesToMoveWindow;
-
-        fSuccess = SetConsoleWindowInfo(m_hStdOut, FALSE, &srcWindow);
-        CWRA(fSuccess);
+        m_consoleScreenBufferInfoEx.srWindow = srWindow;
     }
 
 
@@ -377,7 +394,7 @@ HRESULT CConsoleBuffer::ScrollBuffer (int cLinesToScroll)
 
 
     ciFill.Attributes = m_attrDefault;
-    ciFill.Char.UnicodeChar = L'-';
+    ciFill.Char.UnicodeChar = L' ';
 
     memmove_s (m_prgScreenBuffer, cbScreenBuffer, m_prgScreenBuffer + idxNewTopOfBuffer, cci * sizeof(*m_prgScreenBuffer));
     

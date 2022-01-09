@@ -592,6 +592,8 @@ void CDirectoryLister::DisplayResults (__in CDirectoryInfo * pdi, EDirectoryLeve
     m_pConsole->WriteSeparatorLine (m_pConfig->m_rgAttributes[CConfig::EAttribute::SeparatorLine]);
     m_pConsole->Puts (CConfig::EAttribute::Default, L"\n");
 
+    m_pConsole->Flush();
+
     DbgPrintf(L"%s complete, new cursor pos = %d\n",
         pdi->m_pszPath,
         m_pConsole->m_coord.Y
@@ -785,10 +787,11 @@ HRESULT CDirectoryLister::GetWideFormattedName (__in const WIN32_FIND_DATA * pwf
 
 void CDirectoryLister::DisplayResultsNormal (__in CDirectoryInfo * pdi)
 {
-    UINT               cchMaxSize;
-    BOOL               fSuccess;   
-    WCHAR              szDate[11]; // "12/34/5678" + null = 11 characters
-    WCHAR              szTime[9];  // "12:34 PM"   + null = 9 characters
+    SHORT              lastY        = 0;
+    UINT               cchMaxSize   = 0;
+    BOOL               fSuccess     = FALSE;   
+    WCHAR              szDate[11]   = { 0 }; // "12/34/5678" + null = 11 characters
+    WCHAR              szTime[9]    = { 0 };  // "12:34 PM"   + null = 9 characters
     FileInfoVectorIter iter;       
     static const WCHAR kchHyphen    = L'-';
     static const WCHAR kszDirSize[] = L"<DIR>";
@@ -816,6 +819,7 @@ void CDirectoryLister::DisplayResultsNormal (__in CDirectoryInfo * pdi)
     
     
 
+    lastY = m_pConsole->m_coord.Y;
     
     cchMaxSize = GetMaxSize (&pdi->m_uliLargestFileSize);
     cchMaxSize = max (cchMaxSize, kcchDirSize);
@@ -891,6 +895,9 @@ void CDirectoryLister::DisplayResultsNormal (__in CDirectoryInfo * pdi)
         m_pConsole->Puts (attr, iter->cFileName);
         m_pConsole->Puts (attr, L"\n");
         
+        assert (m_pConsole->m_coord.Y == lastY + 1);
+        ++lastY;
+
         ++iter;
     }
 }

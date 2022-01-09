@@ -5,7 +5,7 @@
 
 
 
-class CConsoleBuffer : CConsole
+class CConsoleBuffer : public CConsole
 {
 public:
     CConsoleBuffer          (void);
@@ -24,8 +24,8 @@ public:
     virtual HRESULT ScrollBuffer         (int cLines);
 
 protected:
-    HRESULT InitializeBuffer     (void);
-    HRESULT FlushBuffer          (void);
+    HRESULT         InitializeBuffer (void);
+    virtual HRESULT Flush            (void);
 
 
     DWORD         m_cScreenBuffer;
