@@ -26,7 +26,7 @@ CConsole::CConsole(void)
     GetConsoleScreenBufferInfoEx (m_hStdOut, &m_consoleScreenBufferInfoEx);
 
     m_attrDefault = m_consoleScreenBufferInfoEx.wAttributes;
-    m_coord        = m_consoleScreenBufferInfoEx.dwCursorPosition;
+    m_coord       = m_consoleScreenBufferInfoEx.dwCursorPosition;
 }
 
 
