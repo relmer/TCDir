@@ -71,6 +71,14 @@ int wmain (int argc, WCHAR * argv[])
  
 
     //
+    // Initialize the debug heap
+    //
+
+#ifdef _DEBUG
+    _CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF | _CRTDBG_CHECK_ALWAYS_DF);
+#endif
+
+    //
     // Initialize the console and configuration
     //
 

@@ -13,15 +13,17 @@ int DbgPrintf (LPCWSTR pszFormat, ...)
 
     static const int   s_cchBuf             = 9999;  // Max console buffer width
     static  WCHAR      s_szBuf[s_cchBuf]    = { L'\0' };
-    va_list            vaArgs               = 0;
+    va_list            vaArgs;
 
 
 
-    va_start(vaArgs, pszFormat);
+    va_start (vaArgs, pszFormat);
 
     cchFormatted = vswprintf_s(s_szBuf, s_cchBuf, pszFormat, vaArgs);
     assert (cchFormatted >= 0);
-    assert (cchFormatted <= s_cchBuf);
+    assert (cchFormatted <  s_cchBuf);
+
+    va_end (vaArgs);
 
     OutputDebugString(s_szBuf);
 

@@ -276,48 +276,58 @@ Error:
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-HRESULT CConsoleApi::ReserveLines (int cLines)
+HRESULT CConsoleApi::ReserveLines (int cLinesNeeded)
 {
     HRESULT hr                      = S_OK;
     BOOL    fSuccess                = FALSE;
     int     cBufferLinesRemaining   = 0;
 
 
+    SHORT cBufferLinesTotal       = m_consoleScreenBufferInfoEx.dwSize.Y;
+    SHORT cBufferLinesUsed        = m_consoleScreenBufferInfoEx.dwCursorPosition.Y;
+    SHORT cBufferLinesFree        = cBufferLinesTotal - cBufferLinesUsed;
+    SHORT cNewBufferLinesToBeUsed = m_coord.Y + cLinesNeeded;
+
+
     //
-    // If there are enough lines left in the current window, no need to scroll
+    // If there are enough lines left in the current buffer, no need to scroll
     //
 
-    BAIL_OUT_IF ((cLines + m_coord.Y) <= m_consoleScreenBufferInfoEx.srWindow.Bottom, S_OK);
+    BAIL_OUT_IF (cNewBufferLinesToBeUsed <= cBufferLinesTotal, S_OK);
 
     //
     // If we need more lines than the total buffer size, scroll the entire buffer
     // and track the number of lines we'll just ignore as the caller writes.
     //
 
-    if (cLines > m_consoleScreenBufferInfoEx.dwSize.Y)
+    if (cLinesNeeded > cBufferLinesTotal)
     {
-        m_cLinesToSkip = cLines - m_consoleScreenBufferInfoEx.dwSize.Y;
-
-        DbgPrintf(L"Asked to reserve %d lines, but only %d lines exist in buffer.  Will skip next %d lines of output.\n",
-            cLines,
-            m_consoleScreenBufferInfoEx.dwSize.Y,
-            m_cLinesToSkip);
-
         //
         // Adjust the request to just be for the full size of the buffer
+        // and skip any lines prior to that
         //
 
-        cLines = m_consoleScreenBufferInfoEx.dwSize.Y;
+        m_cLinesToSkip   = cLinesNeeded - cBufferLinesTotal;
+        cLinesNeeded     = cBufferLinesTotal;
+        cBufferLinesUsed = 0;
+
+        DbgPrintf(L"Asked to reserve %d lines, but only %d lines exist in buffer.  Will skip next %d lines of output.\n",
+            cLinesNeeded,
+            m_consoleScreenBufferInfoEx.dwSize.Y,
+            m_cLinesToSkip);
     }
     
     //
     // If we need more lines than are free in the buffer, scroll the buffer up to make room
     //
 
-    cBufferLinesRemaining = m_consoleScreenBufferInfoEx.dwSize.Y - m_coord.Y;
-    if (cLines > cBufferLinesRemaining)
+    if full, scroll cLinesNeeded
+    if not full, 
+
+    cBufferLinesRemaining = cLinesNeeded - (cBufferLinesTotal - cBufferLinesUsed);
+    if (cLinesNeeded > cBufferLinesRemaining)
     {
-        ScrollBuffer(cLines - cBufferLinesRemaining);
+        ScrollBuffer(cLinesNeeded - cBufferLinesRemaining);
     }
 
     //
@@ -325,13 +335,13 @@ HRESULT CConsoleApi::ReserveLines (int cLines)
     // to the bottom of the area we need
     //
 
-    if (m_coord.Y + cLines > m_consoleScreenBufferInfoEx.srWindow.Bottom)
+    if (m_coord.Y + cLinesNeeded > m_consoleScreenBufferInfoEx.srWindow.Bottom)
     {
         SHORT      windowHeight = m_consoleScreenBufferInfoEx.srWindow.Bottom - m_consoleScreenBufferInfoEx.srWindow.Top;
         SMALL_RECT srWindow = m_consoleScreenBufferInfoEx.srWindow;
 
         // absolute coords
-        srWindow.Bottom = (SHORT)m_coord.Y + (SHORT)cLines;
+        srWindow.Bottom = (SHORT)m_coord.Y + (SHORT)cLinesNeeded;
         srWindow.Top = srWindow.Bottom - windowHeight;
 
         fSuccess = SetConsoleWindowInfo(m_hStdOut, TRUE, &srWindow);
@@ -384,6 +394,47 @@ HRESULT CConsoleApi::ScrollBuffer (int cLinesToScroll)
     //m_coord.Y = srScrollRect.Top;
 
     m_coord.Y -= (short) cLinesToScroll;
+
+Error:
+    return hr;
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CConsoleApi::Flush
+//
+//  Clean up after outputting to the console.  In this case, we'll
+//  just make sure that the bottom of the buffer is scrolled into view.
+//
+////////////////////////////////////////////////////////////////////////////////
+
+HRESULT CConsoleApi::Flush (void)
+{
+    HRESULT                      hr                        = S_OK;
+    BOOL                         fSuccess                  = FALSE;
+    CONSOLE_SCREEN_BUFFER_INFOEX consoleScreenBufferInfoEx = { 0 };
+    SHORT                        windowHeight              = 0;
+
+    
+
+    consoleScreenBufferInfoEx.cbSize = sizeof (consoleScreenBufferInfoEx);
+    fSuccess = GetConsoleScreenBufferInfoEx (m_hStdOut, &m_consoleScreenBufferInfoEx);
+    CWRA (fSuccess);
+
+    BAIL_OUT_IF (m_coord.Y >= m_consoleScreenBufferInfoEx.srWindow.Top && 
+                 m_coord.Y <= m_consoleScreenBufferInfoEx.srWindow.Bottom, S_OK);
+
+    windowHeight                                = m_consoleScreenBufferInfoEx.srWindow.Bottom - m_consoleScreenBufferInfoEx.srWindow.Top;
+    m_consoleScreenBufferInfoEx.srWindow.Bottom = m_consoleScreenBufferInfoEx.dwSize.Y;
+    m_consoleScreenBufferInfoEx.srWindow.Top    = m_consoleScreenBufferInfoEx.srWindow.Bottom - windowHeight;
+
+    fSuccess = SetConsoleWindowInfo (m_hStdOut, TRUE, &m_consoleScreenBufferInfoEx.srWindow);
+    CWRA (fSuccess);
+
 
 Error:
     return hr;

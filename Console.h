@@ -29,7 +29,7 @@ public:
     virtual HRESULT WriteString          (WORD attr, __in_ecount(cch) WCHAR * p, size_t cch)    PURE;
     virtual HRESULT WriteSeparatorLine   (WORD attr)                                            PURE;
 
-    virtual HRESULT ReserveLines         (int cLines)                                           PURE;
+    virtual HRESULT ReserveLines         (int cLines);
     virtual HRESULT ScrollBuffer         (int cLines)                                           PURE;
 
     virtual HRESULT Flush                (void) { return S_OK; }
@@ -56,5 +56,6 @@ protected:
 
     EWrapMode m_wrapMode;
     WORD      m_attrDefault;
-    DWORD     m_consoleMode;
+    int       m_cLinesToSkip;     // If asked to scroll more lines than exist in the buffer, we'll just skip the first n lines of output to accommodate
+
 };               

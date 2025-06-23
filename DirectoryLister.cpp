@@ -236,7 +236,11 @@ HRESULT CDirectoryLister::ProcessDirectory (LPCWSTR pszPath, LPCWSTR pszFileSpec
 
 
 Error:    
-    FindClose (hFind);
+    if (hFind != INVALID_HANDLE_VALUE)
+    {
+        FindClose (hFind);
+    }
+
     return hr;
 }
 
@@ -590,7 +594,7 @@ void CDirectoryLister::DisplayResults (__in CDirectoryInfo * pdi, EDirectoryLeve
     }
         
     m_pConsole->WriteSeparatorLine (m_pConfig->m_rgAttributes[CConfig::EAttribute::SeparatorLine]);
-    m_pConsole->Puts (CConfig::EAttribute::Default, L"\n");
+    m_pConsole->Puts (m_pConfig->m_rgAttributes[CConfig::EAttribute::Default], L"\n");
 
     m_pConsole->Flush();
 
@@ -633,6 +637,8 @@ void CDirectoryLister::DisplayResultsWide (__in CDirectoryInfo * pdi)
     CHR (hr);
 
     cRows = (UINT) pdi->m_vMatches.size() / cColumns;
+
+    assert(pdi->m_vMatches.size() == cRows * cColumns);
    
     //
     // Display the matches in columns
@@ -1200,18 +1206,18 @@ Error:
 
 void CDirectoryLister::DisplayFooterQuotaInfo (__in const ULARGE_INTEGER * puliFreeBytesAvailable)
 {
-    DWORD cchMaxUsername = 1 << 15;
-    LPWSTR pszUsername = new WCHAR[cchMaxUsername];   // Max size for an environment variable is 32k
+    DWORD   cchMaxUsername = 1 << 15;     // Max size for an environment variable is 32k
+    wstring strUsername;            
 
 
 
-    GetEnvironmentVariable (L"username", pszUsername, cchMaxUsername);
-
+    strUsername.resize (cchMaxUsername);
+    GetEnvironmentVariable (L"username", &strUsername[0], cchMaxUsername);
 
     m_pConsole->Puts (m_pConfig->m_rgAttributes[CConfig::EAttribute::Information],          L" ");
     m_pConsole->Puts (m_pConfig->m_rgAttributes[CConfig::EAttribute::InformationHighlight], FormatNumberWithSeparators (puliFreeBytesAvailable->QuadPart));
     m_pConsole->Puts (m_pConfig->m_rgAttributes[CConfig::EAttribute::Information],          puliFreeBytesAvailable->QuadPart == 1 ? L" byte available to " : L" bytes available to ");
-    m_pConsole->Puts (m_pConfig->m_rgAttributes[CConfig::EAttribute::InformationHighlight], pszUsername);
+    m_pConsole->Puts (m_pConfig->m_rgAttributes[CConfig::EAttribute::InformationHighlight], strUsername.c_str());
     m_pConsole->Puts (m_pConfig->m_rgAttributes[CConfig::EAttribute::Information],          L" due to quota\n");
 }
 

@@ -13,111 +13,111 @@ const CConfig::STextAttr CConfig::s_rgTextAttrs[] =
     // Code
     //
 
-    { TEXT(".c"),              FC_LightGreen   },
-    { TEXT(".cpp"),            FC_LightGreen   },
-    { TEXT(".cxx"),            FC_LightGreen   },
-    { TEXT(".h"),              FC_LightGreen   },
-    { TEXT(".hpp"),            FC_LightGreen   },
-    { TEXT(".hxx"),            FC_LightGreen   },
-    { TEXT(".asm"),            FC_LightGreen   },
-    { TEXT(".cs"),             FC_LightGreen   },
-    { TEXT(".resx"),           FC_LightGreen   },
-    { TEXT(".rc"),             FC_LightGreen   },
-    { TEXT(".rcml"),           FC_LightGreen   },
+    { L".c",              FC_LightGreen   },
+    { L".cpp",            FC_LightGreen   },
+    { L".cxx",            FC_LightGreen   },
+    { L".h",              FC_LightGreen   },
+    { L".hpp",            FC_LightGreen   },
+    { L".hxx",            FC_LightGreen   },
+    { L".asm",            FC_LightGreen   },
+    { L".cs",             FC_LightGreen   },
+    { L".resx",           FC_LightGreen   },
+    { L".rc",             FC_LightGreen   },
+    { L".rcml",           FC_LightGreen   },
 
     //
     // Intermediate files
     //
 
-    { TEXT(".obj"),            FC_Green        },
-    { TEXT(".lib"),            FC_Green        },
-    { TEXT(".res"),            FC_Green        },
-    { TEXT(".pch"),            FC_Green        },
+    { L".obj",            FC_Green        },
+    { L".lib",            FC_Green        },
+    { L".res",            FC_Green        },
+    { L".pch",            FC_Green        },
 
     //
     // Miscellaneous code-related files
     //
 
-    { TEXT(".i"),              FC_Green        },
-    { TEXT(".cod"),            FC_Green        },
+    { L".i",              FC_Green        },
+    { L".cod",            FC_Green        },
 
     //
     // Build
     //
 
-    { TEXT(".wrn"),            FC_LightRed     },
-    { TEXT(".err"),            FC_LightRed     },
-    { TEXT(".log"),            FC_White        },
+    { L".wrn",            FC_LightRed     },
+    { L".err",            FC_LightRed     },
+    { L".log",            FC_White        },
 
     //
     // Executable files
     //
 
-    { TEXT(".cmd"),            FC_LightRed     },
-    { TEXT(".bat"),            FC_LightRed     },
-    { TEXT(".btm"),            FC_LightRed     },
-    { TEXT(".wsh"),            FC_LightCyan    },
-    { TEXT(".exe"),            FC_LightCyan    },
-    { TEXT(".com"),            FC_LightCyan    },
+    { L".cmd",            FC_LightRed     },
+    { L".bat",            FC_LightRed     },
+    { L".btm",            FC_LightRed     },
+    { L".wsh",            FC_LightCyan    },
+    { L".exe",            FC_LightCyan    },
+    { L".com",            FC_LightCyan    },
 
     //
     // Visual Studio files
     //
 
-    { TEXT(".sln"),            FC_Magenta      },
-    { TEXT(".vcproj"),         FC_Magenta      },
-    { TEXT(".csdproj"),        FC_DarkGrey     },
-    { TEXT(".user"),           FC_DarkGrey     },
-    { TEXT(".ncb"),            FC_DarkGrey     },
+    { L".sln",            FC_Magenta      },
+    { L".vcproj",         FC_Magenta      },
+    { L".csdproj",        FC_DarkGrey     },
+    { L".user",           FC_DarkGrey     },
+    { L".ncb",            FC_DarkGrey     },
 
     //
     // Source Insight files
     //
 
-    { TEXT(".cf3"),            FC_DarkGrey     },
-    { TEXT(".iab"),            FC_DarkGrey     },
-    { TEXT(".iad"),            FC_DarkGrey     },
-    { TEXT(".imb"),            FC_DarkGrey     },
-    { TEXT(".imd"),            FC_DarkGrey     },
-    { TEXT(".pfi"),            FC_DarkGrey     },
-    { TEXT(".po"),             FC_DarkGrey     },
-    { TEXT(".pr"),             FC_Magenta      },
-    { TEXT(".pri"),            FC_DarkGrey     },
-    { TEXT(".ps"),             FC_DarkGrey     },
-    { TEXT(".wk3"),            FC_DarkGrey     },
-    { TEXT(".SearchResults"),  FC_DarkGrey     },
+    { L".cf3",            FC_DarkGrey     },
+    { L".iab",            FC_DarkGrey     },
+    { L".iad",            FC_DarkGrey     },
+    { L".imb",            FC_DarkGrey     },
+    { L".imd",            FC_DarkGrey     },
+    { L".pfi",            FC_DarkGrey     },
+    { L".po",             FC_DarkGrey     },
+    { L".pr",             FC_Magenta      },
+    { L".pri",            FC_DarkGrey     },
+    { L".ps",             FC_DarkGrey     },
+    { L".wk3",            FC_DarkGrey     },
+    { L".SearchResults",  FC_DarkGrey     },
 
     //
     // Document types
     //
 
-    { TEXT(".txt"),            FC_White        },
-    { TEXT(".me"),             FC_White        },
-    { TEXT(".text"),           FC_White        },
-    { TEXT(".1st"),            FC_White        },
-    { TEXT(".now"),            FC_White        },
-    { TEXT(".!!!"),            FC_White        },
-    { TEXT(".doc"),            FC_White        },
-    { TEXT(".xls"),            FC_White        },
-    { TEXT(".ppt"),            FC_White        },
-    { TEXT(".eml"),            FC_White        },
-    { TEXT(".html"),           FC_White        },
+    { L".txt",            FC_White        },
+    { L".me",             FC_White        },
+    { L".text",           FC_White        },
+    { L".1st",            FC_White        },
+    { L".now",            FC_White        },
+    { L".!!!",            FC_White        },
+    { L".doc",            FC_White        },
+    { L".xls",            FC_White        },
+    { L".ppt",            FC_White        },
+    { L".eml",            FC_White        },
+    { L".html",           FC_White        },
 
     //
     // Compressed/archive types
     //
 
-    { TEXT(".zip"),            FC_Magenta      },
-    { TEXT(".rar"),            FC_Magenta      },
-    { TEXT(".arj"),            FC_Magenta      },
-    { TEXT(".gz"),             FC_Magenta      },
-    { TEXT(".tar"),            FC_Magenta      },
+    { L".zip",            FC_Magenta      },
+    { L".rar",            FC_Magenta      },
+    { L".arj",            FC_Magenta      },
+    { L".gz",             FC_Magenta      },
+    { L".tar",            FC_Magenta      },
 
     //
     // End of table
     //
 
-    { NULL,                     0              }
+    { NULL,                     0         }
 };
 
 
@@ -178,7 +178,12 @@ void CConfig::InitializeTextAttrs (WORD wDefaultAttr)
     m_rgAttributes[EAttribute::Directory]               = FC_LightBlue;
     m_rgAttributes[EAttribute::SeparatorLine]           = FC_LightBlue;
 
+    {
+        TextAttrMap  footest;
+    }
+
     InitializeExtensionToTextAttrMap();
+
 }
 
 
