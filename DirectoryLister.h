@@ -21,7 +21,7 @@ public:
     CDirectoryLister  (__in CCommandLine * pCmdLine, __in CConsole * pConsole, __in CConfig * pConfig);
     ~CDirectoryLister (void); 
 
-    void operator() (LPCWSTR pszMask);
+    void List         (LPCWSTR pszMask);
 
 
 protected:    

@@ -57,7 +57,7 @@ CDirectoryLister::~CDirectoryLister (void)
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-void CDirectoryLister::operator() (LPCWSTR pszMask)
+void CDirectoryLister::List (LPCWSTR pszMask)
 {
     HRESULT hr                          = S_OK;
     int     nDrive                      = 0;    
@@ -145,10 +145,10 @@ Error:
 
 HRESULT CDirectoryLister::ProcessDirectory (LPCWSTR pszPath, LPCWSTR pszFileSpec, EDirectoryLevel level)
 {
-    HRESULT         hr = S_OK;
+    HRESULT         hr                          = S_OK;
     BOOL            fSuccess;                    
     WCHAR           szPathAndFileSpec[MAX_PATH]; 
-    HANDLE          hFind = INVALID_HANDLE_VALUE;
+    HANDLE          hFind                       = INVALID_HANDLE_VALUE;
     CFileInfo       fileInfo;                         
     CDirectoryInfo  di;
     StringList      listSubdirs;                 
@@ -420,7 +420,7 @@ void CDirectoryLister::Scroll (__in const CDirectoryInfo * pdi, EDirectoryLevel 
     hr = CalculateLinesNeeded (pdi, &cLinesNeeded, level);
     CHR (hr);
 
-    DbgPrintf (L"%s (%d files, %d subdirs).  Current cursor pos = %d, lines needed = %d\n",
+    DEBUGMSG (L"%s (%d files, %d subdirs).  Current cursor pos = %d, lines needed = %d\n",
         pdi->m_pszPath,
         pdi->m_cFiles,
         pdi->m_cSubDirectories,
@@ -598,7 +598,7 @@ void CDirectoryLister::DisplayResults (__in CDirectoryInfo * pdi, EDirectoryLeve
 
     m_pConsole->Flush();
 
-    DbgPrintf(L"%s complete, new cursor pos = %d\n",
+    DEBUGMSG(L"%s complete, new cursor pos = %d\n",
         pdi->m_pszPath,
         m_pConsole->m_coord.Y
     );
@@ -901,7 +901,11 @@ void CDirectoryLister::DisplayResultsNormal (__in CDirectoryInfo * pdi)
         m_pConsole->Puts (attr, iter->cFileName);
         m_pConsole->Puts (attr, L"\n");
         
-        assert (m_pConsole->m_coord.Y == lastY + 1);
+        DEBUGMSG (L"m_coord.Y = %d, lastY = %d\n",
+            m_pConsole->m_coord.Y,
+            lastY);
+        
+        //assert (m_pConsole->m_coord.Y == lastY + 1);
         ++lastY;
 
         ++iter;

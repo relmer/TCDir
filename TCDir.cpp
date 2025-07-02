@@ -79,14 +79,29 @@ int wmain (int argc, WCHAR * argv[])
 #endif
 
     //
-    // Initialize the console and configuration
+    // Find out if we're running in a Windows Terminal or a tradidional console
     //
 
-    //pConsole = new CConsoleApi();
-    pConsole = new CConsoleBuffer();
-    CBR (pConsole != NULL);
+    if (GetEnvironmentVariableW (L"WT_SESSION", nullptr, 0) > 0)
+    {
+        // Likely running in Windows Terminal
+        
+        // TODO: Add support for Windows Terminal
+        //pConsole = new CTerminalApi ();
+        //CPR (pConsole);
+    }
+    else
+    {
+        pConsole = new CConsoleApi ();
+        //pConsole = new CConsoleBuffer();
+        CPR (pConsole);
 
-    hr = pConsole->SetWrapMode(CConsole::EWrapMode::Clip);
+        // This looks like the default, so don't need to set it here.
+        //hr = pConsole->SetWrapMode (CConsole::EWrapMode::Clip);
+        //CHR (hr);
+    }
+    
+    hr = pConsole->Initialize ();
     CHR (hr);
 
     pConfig = new CConfig (pConsole->m_consoleScreenBufferInfoEx.wAttributes);
@@ -124,7 +139,16 @@ int wmain (int argc, WCHAR * argv[])
     // For each mask, show a directory listing
     //
 
-    for_each (cmdline.m_listMask.begin(), cmdline.m_listMask.end(), CDirectoryLister (&cmdline, pConsole, pConfig));
+    //for_each (cmdline.m_listMask.begin(), cmdline.m_listMask.end(), CDirectoryLister (&cmdline, pConsole, pConfig));
+
+    {
+        CDirectoryLister dirLister (&cmdline, pConsole, pConfig);
+
+        for (LPCWSTR mask : cmdline.m_listMask)
+        {
+            dirLister.List (mask);
+        }
+    }
 
 
 Error:      

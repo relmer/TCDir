@@ -63,7 +63,7 @@ HRESULT CConsoleBuffer::InitializeBuffer (void)
 
     m_cScreenBuffer = m_consoleScreenBufferInfoEx.dwSize.X * m_consoleScreenBufferInfoEx.dwSize.Y;
 
-    DbgPrintf (L"Allocating %d line screen buffer (%d bytes)\n",
+    DEBUGMSG (L"Allocating %d line screen buffer (%d bytes)\n",
                m_consoleScreenBufferInfoEx.dwSize.Y,
                m_cScreenBuffer);
 

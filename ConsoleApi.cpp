@@ -16,7 +16,6 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 CConsoleApi::CConsoleApi (void)
-    : m_cLinesToSkip (0)
 {
 }
 
@@ -44,7 +43,7 @@ CConsoleApi::~CConsoleApi (void)
 //
 //  CConsoleApi::Puts
 //
-//  Write a simple string to the console
+//  Write a single line to the console (no format string)
 //
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -56,11 +55,14 @@ HRESULT CConsoleApi::Puts (WORD attr, LPCWSTR psz)
     const WCHAR * p         = pStart;
 
 
+Todo:  this doesn't need to handle newlines anymore since we're just buffering everything.
+Todo:  Also, fix WriteString.  Printf calls Puts which is wrong now since Puts always writes a newline.
 
     //
     // WriteConsoleOutputCharacter does not support newline characters, so
     // we'll have to handle those manually
     //
+
     while (p < pEnd)
     {
         if (*p == L'\n')
@@ -69,23 +71,15 @@ HRESULT CConsoleApi::Puts (WORD attr, LPCWSTR psz)
             CHR (hr);
 
             pStart = p + 1;
-
-            if (m_cLinesToSkip == 0)
-            {   
-                // Handle the newline
-                m_coord.X = 0;
-                ++m_coord.Y;
-            }
-            else
-            {
-                --m_cLinesToSkip;
-            }
         }
 
         ++p;
     }
 
     hr = WriteString (attr, (LPWSTR) pStart, p - pStart);
+    CHR (hr);
+
+    hr = WriteString (attr, L"\n", 1);
     CHR (hr);
 
 
@@ -146,7 +140,7 @@ Error:
 // 
 ////////////////////////////////////////////////////////////////////////////////
 
-HRESULT CConsoleApi::WriteString (WORD attr, __in_ecount(cch) WCHAR * p, size_t cch)
+HRESULT CConsoleApi::WriteString (WORD attr, __in_ecount(cch) LPCWSTR p, size_t cch)
 {
     HRESULT hr        = S_OK;
     BOOL    fSuccess  = FALSE;
@@ -177,44 +171,19 @@ HRESULT CConsoleApi::WriteString (WORD attr, __in_ecount(cch) WCHAR * p, size_t 
             fClipped = TRUE;
         }
     }
-    else if (m_cLinesToSkip > 0)
+
+    fSuccess = FillConsoleOutputAttribute (m_hStdOut, attr, (DWORD) cch, m_coord, &cWritten);
+    CWRA (fSuccess);
+
+    fSuccess = WriteConsoleOutputCharacter (m_hStdOut, p, (DWORD) cch, m_coord, &cWritten);
+    CWRA (fSuccess);
+
+    if (!fClipped)
     {
-        //
-        // If we're wrapping text and need to skip lines, account for the lines that would be wrapped
-        // 
-
-        int cLinesToWrite = (int) cch / m_consoleScreenBufferInfoEx.dwSize.X;
-
-        if (cLinesToWrite < m_cLinesToSkip)
-        {
-            m_cLinesToSkip -= cLinesToWrite;
-        }
-        else
-        {
-            size_t cchSkip = m_cLinesToSkip * m_consoleScreenBufferInfoEx.dwSize.X;
-
-            cch -= cchSkip;
-            p   += cchSkip;
-
-            m_cLinesToSkip = 0;
-        }
+        m_coord.Y += (m_coord.X + (SHORT) cWritten) / m_consoleScreenBufferInfoEx.dwSize.X;
     }
 
-    if (m_cLinesToSkip == 0)
-    {
-        fSuccess = FillConsoleOutputAttribute (m_hStdOut, attr, (DWORD) cch, m_coord, &cWritten);
-        CWRA (fSuccess);
-
-        fSuccess = WriteConsoleOutputCharacter (m_hStdOut, p, (DWORD) cch, m_coord, &cWritten);
-        CWRA (fSuccess);
-
-        if (!fClipped)
-        {
-            m_coord.Y += (m_coord.X + (SHORT) cWritten) / m_consoleScreenBufferInfoEx.dwSize.X;
-        }
-
-        m_coord.X += cWritten % m_consoleScreenBufferInfoEx.dwSize.X;
-    }
+    m_coord.X += cWritten % m_consoleScreenBufferInfoEx.dwSize.X;
 
 
 Error:
@@ -278,15 +247,12 @@ Error:
 
 HRESULT CConsoleApi::ReserveLines (int cLinesNeeded)
 {
-    HRESULT hr                      = S_OK;
-    BOOL    fSuccess                = FALSE;
-    int     cBufferLinesRemaining   = 0;
+    HRESULT hr                       = S_OK;
+    int     cBufferLinesTotal        = m_consoleScreenBufferInfoEx.dwSize.Y;
+    int     cBufferLinesUsed         = m_consoleScreenBufferInfoEx.dwCursorPosition.Y;
+    int     cBufferLinesFree         = cBufferLinesTotal - cBufferLinesUsed;
+    int     cNewBufferLinesToBeUsed  = m_coord.Y + cLinesNeeded;
 
-
-    SHORT cBufferLinesTotal       = m_consoleScreenBufferInfoEx.dwSize.Y;
-    SHORT cBufferLinesUsed        = m_consoleScreenBufferInfoEx.dwCursorPosition.Y;
-    SHORT cBufferLinesFree        = cBufferLinesTotal - cBufferLinesUsed;
-    SHORT cNewBufferLinesToBeUsed = m_coord.Y + cLinesNeeded;
 
 
     //
@@ -296,38 +262,45 @@ HRESULT CConsoleApi::ReserveLines (int cLinesNeeded)
     BAIL_OUT_IF (cNewBufferLinesToBeUsed <= cBufferLinesTotal, S_OK);
 
     //
-    // If we need more lines than the total buffer size, scroll the entire buffer
-    // and track the number of lines we'll just ignore as the caller writes.
+    // If we need more lines than the total buffer size, there's no need to scroll
+    // anything since we'll just overwrite the entire buffer.  
+    // 
+    // We'll also need to track the number of lines to just ignore (the lines in excess
+    // of the total buffer size) as the caller writes. 
     //
 
     if (cLinesNeeded > cBufferLinesTotal)
     {
+        m_cLinesToSkip = cLinesNeeded - cBufferLinesTotal;
+
+        DEBUGMSG(L"Asked to reserve %d lines, but only %d lines exist in buffer.  Will skip next %d lines of output.\n",
+            cLinesNeeded,
+            cBufferLinesTotal,
+            m_cLinesToSkip);
+
         //
         // Adjust the request to just be for the full size of the buffer
         // and skip any lines prior to that
         //
 
-        m_cLinesToSkip   = cLinesNeeded - cBufferLinesTotal;
         cLinesNeeded     = cBufferLinesTotal;
         cBufferLinesUsed = 0;
-
-        DbgPrintf(L"Asked to reserve %d lines, but only %d lines exist in buffer.  Will skip next %d lines of output.\n",
-            cLinesNeeded,
-            m_consoleScreenBufferInfoEx.dwSize.Y,
-            m_cLinesToSkip);
     }
     
     //
     // If we need more lines than are free in the buffer, scroll the buffer up to make room
     //
 
-    if full, scroll cLinesNeeded
-    if not full, 
-
-    cBufferLinesRemaining = cLinesNeeded - (cBufferLinesTotal - cBufferLinesUsed);
-    if (cLinesNeeded > cBufferLinesRemaining)
+    if (cLinesNeeded > cBufferLinesFree)
     {
-        ScrollBuffer(cLinesNeeded - cBufferLinesRemaining);
+        int cBufferLinesToScroll = cLinesNeeded - cBufferLinesFree;
+
+        DEBUGMSG (L"Need %d lines, but only %d lines remain in the buffer.  Scrolling up %d lines to make room.\n",
+            cLinesNeeded,
+            cBufferLinesFree,
+            cBufferLinesToScroll);
+
+        ScrollBuffer (cBufferLinesToScroll);
     }
 
     //
@@ -335,20 +308,20 @@ HRESULT CConsoleApi::ReserveLines (int cLinesNeeded)
     // to the bottom of the area we need
     //
 
-    if (m_coord.Y + cLinesNeeded > m_consoleScreenBufferInfoEx.srWindow.Bottom)
-    {
-        SHORT      windowHeight = m_consoleScreenBufferInfoEx.srWindow.Bottom - m_consoleScreenBufferInfoEx.srWindow.Top;
-        SMALL_RECT srWindow = m_consoleScreenBufferInfoEx.srWindow;
+    //if (cNewBufferLinesToBeUsed > m_consoleScreenBufferInfoEx.srWindow.Bottom)
+    //{
+    //    SHORT      windowHeight = m_consoleScreenBufferInfoEx.srWindow.Bottom - m_consoleScreenBufferInfoEx.srWindow.Top;
+    //    SMALL_RECT srWindow     = m_consoleScreenBufferInfoEx.srWindow;
 
-        // absolute coords
-        srWindow.Bottom = (SHORT)m_coord.Y + (SHORT)cLinesNeeded;
-        srWindow.Top = srWindow.Bottom - windowHeight;
+    //    // absolute coords
+    //    srWindow.Bottom = (SHORT)m_coord.Y + (SHORT)cLinesNeeded;
+    //    srWindow.Top = srWindow.Bottom - windowHeight;
 
-        fSuccess = SetConsoleWindowInfo(m_hStdOut, TRUE, &srWindow);
-        CWRA(fSuccess);
+    //    fSuccess = SetConsoleWindowInfo(m_hStdOut, TRUE, &srWindow);
+    //    CWRA(fSuccess);
 
-        m_consoleScreenBufferInfoEx.srWindow = srWindow;
-    }
+    //    m_consoleScreenBufferInfoEx.srWindow = srWindow;
+    //}
  
 
 
@@ -415,27 +388,27 @@ Error:
 HRESULT CConsoleApi::Flush (void)
 {
     HRESULT                      hr                        = S_OK;
-    BOOL                         fSuccess                  = FALSE;
-    CONSOLE_SCREEN_BUFFER_INFOEX consoleScreenBufferInfoEx = { 0 };
-    SHORT                        windowHeight              = 0;
-
-    
-
-    consoleScreenBufferInfoEx.cbSize = sizeof (consoleScreenBufferInfoEx);
-    fSuccess = GetConsoleScreenBufferInfoEx (m_hStdOut, &m_consoleScreenBufferInfoEx);
-    CWRA (fSuccess);
-
-    BAIL_OUT_IF (m_coord.Y >= m_consoleScreenBufferInfoEx.srWindow.Top && 
-                 m_coord.Y <= m_consoleScreenBufferInfoEx.srWindow.Bottom, S_OK);
-
-    windowHeight                                = m_consoleScreenBufferInfoEx.srWindow.Bottom - m_consoleScreenBufferInfoEx.srWindow.Top;
-    m_consoleScreenBufferInfoEx.srWindow.Bottom = m_consoleScreenBufferInfoEx.dwSize.Y;
-    m_consoleScreenBufferInfoEx.srWindow.Top    = m_consoleScreenBufferInfoEx.srWindow.Bottom - windowHeight;
-
-    fSuccess = SetConsoleWindowInfo (m_hStdOut, TRUE, &m_consoleScreenBufferInfoEx.srWindow);
-    CWRA (fSuccess);
-
-
-Error:
+//    BOOL                         fSuccess                  = FALSE;
+//    CONSOLE_SCREEN_BUFFER_INFOEX consoleScreenBufferInfoEx = { 0 };
+//    SHORT                        windowHeight              = 0;
+//
+//    
+//
+//    consoleScreenBufferInfoEx.cbSize = sizeof (consoleScreenBufferInfoEx);
+//    fSuccess = GetConsoleScreenBufferInfoEx (m_hStdOut, &m_consoleScreenBufferInfoEx);
+//    CWRA (fSuccess);
+//
+//    BAIL_OUT_IF (m_coord.Y >= m_consoleScreenBufferInfoEx.srWindow.Top && 
+//                 m_coord.Y <= m_consoleScreenBufferInfoEx.srWindow.Bottom, S_OK);
+//
+//    windowHeight                                = m_consoleScreenBufferInfoEx.srWindow.Bottom - m_consoleScreenBufferInfoEx.srWindow.Top;
+//    m_consoleScreenBufferInfoEx.srWindow.Bottom = m_consoleScreenBufferInfoEx.dwSize.Y;
+//    m_consoleScreenBufferInfoEx.srWindow.Top    = m_consoleScreenBufferInfoEx.srWindow.Bottom - windowHeight;
+//
+//    fSuccess = SetConsoleWindowInfo (m_hStdOut, TRUE, &m_consoleScreenBufferInfoEx.srWindow);
+//    CWRA (fSuccess);
+//
+//
+//Error:
     return hr;
 }

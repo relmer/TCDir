@@ -84,7 +84,7 @@ extern const WCHAR g_kszDefaultMask[];
 
 
 
-#include "Debug.h"
+#include "ehm.h"
 #include "Flag.h"
 
 

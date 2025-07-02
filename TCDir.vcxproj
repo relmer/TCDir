@@ -179,8 +179,8 @@
     <ClCompile Include="CommandLine.cpp" />
     <ClCompile Include="ConsoleApi.cpp" />
     <ClCompile Include="ConsoleBuffer.cpp" />
-    <ClCompile Include="Debug.cpp" />
     <ClCompile Include="DirectoryLister.cpp" />
+    <ClCompile Include="Ehm.cpp" />
     <ClCompile Include="FileInfo.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
@@ -197,9 +197,9 @@
     <ClInclude Include="CommandLine.h" />
     <ClInclude Include="ConsoleApi.h" />
     <ClInclude Include="ConsoleBuffer.h" />
-    <ClInclude Include="debug.h" />
     <ClInclude Include="DirectoryInfo.h" />
     <ClInclude Include="DirectoryLister.h" />
+    <ClInclude Include="Ehm.h" />
     <ClInclude Include="FileInfo.h" />
     <ClInclude Include="Flag.h" />
     <ClInclude Include="stdafx.h" />
