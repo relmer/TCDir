@@ -7,27 +7,18 @@
 class CConsole
 {
 public:
-    enum class EWrapMode
-    {
-        Clip = 0,
-        Wrap = 1,
 
-        __count
-    };
-
-    CConsole          (void);
-    virtual ~CConsole (void);
+    CConsole   (void);
+     ~CConsole (void);
     
-    HRESULT         Initialize           (void);
-    HRESULT         SetWrapMode          (EWrapMode mode);
-
-    virtual HRESULT Puts                 (WORD attr, LPCWSTR psz)                               PURE;
-    virtual int     Printf               (WORD attr, LPCWSTR pszFormat, ...)                    PURE;
-    virtual HRESULT WriteString          (WORD attr, __in_ecount(cch) WCHAR * p, size_t cch)    PURE;
-    virtual HRESULT WriteSeparatorLine   (WORD attr)                                            PURE;
+    HRESULT Initialize           (void);
+    void    Puts                 (WORD attr, LPCWSTR psz);
+    int     Printf               (WORD attr, LPCWSTR pszFormat, ...);
+    void    WriteSeparatorLine   (WORD attr);
+    HRESULT Flush                (void);
 
 #ifdef _DEBUG
-    void Test                                (void);
+    void Test                    (void);
 #endif 
 
     HANDLE                       m_hStdOut; 
@@ -38,9 +29,10 @@ public:
 
 protected:
 
-    virtual HRESULT Flush (void) { return S_OK; }
+    void SetColor (WORD attr);
 
-    EWrapMode m_wrapMode;
+    static const size_t s_kcchInitialBufferSize = 1000000;
+
     WORD      m_attrDefault;
     wstring   m_strBuffer;
 };               

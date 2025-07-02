@@ -1,9 +1,10 @@
-﻿#include "StdAfx.h"
+﻿#include "pch.h"
 #include "DirectoryLister.h"
 
 #include "CommandLine.h"
 #include "Config.h"
 #include "Console.h"
+#include "Flag.h"
 
 
 
@@ -101,7 +102,7 @@ void CDirectoryLister::List (LPCWSTR pszMask)
 
     if (PathIsDirectory (szWellFormedPath))
     {
-        PathAppend (szWellFormedPath, g_kszDefaultMask);
+        PathAppend (szWellFormedPath, L"*");
     }
 
     //
@@ -145,14 +146,14 @@ Error:
 
 HRESULT CDirectoryLister::ProcessDirectory (LPCWSTR pszPath, LPCWSTR pszFileSpec, EDirectoryLevel level)
 {
-    HRESULT         hr                          = S_OK;
-    BOOL            fSuccess;                    
-    WCHAR           szPathAndFileSpec[MAX_PATH]; 
-    HANDLE          hFind                       = INVALID_HANDLE_VALUE;
-    CFileInfo       fileInfo;                         
-    CDirectoryInfo  di;
-    StringList      listSubdirs;                 
-    StringListIter  iter;                        
+    HRESULT                 hr                          = S_OK;
+    BOOL                    fSuccess;                    
+    WCHAR                   szPathAndFileSpec[MAX_PATH]; 
+    HANDLE                  hFind                       = INVALID_HANDLE_VALUE;
+    CFileInfo               fileInfo;                         
+    CDirectoryInfo          di;
+    list<wstring>           listSubdirs;
+    list<wstring>::iterator iter;
 
 
 
@@ -428,8 +429,6 @@ void CDirectoryLister::Scroll (__in const CDirectoryInfo * pdi, EDirectoryLevel 
         cLinesNeeded
     );
 
-    hr = m_pConsole->ReserveLines (cLinesNeeded);
-    CHR (hr);
 
 Error:
     return;    
@@ -567,7 +566,7 @@ void CDirectoryLister::DisplayResults (__in CDirectoryInfo * pdi, EDirectoryLeve
 
     if (pdi->m_vMatches.size() == 0)
     {
-        m_pConsole->Puts(CConfig::EAttribute::Default, L"Directory is empty.\n");
+        m_pConsole->Puts(CConfig::EAttribute::Default, L"Directory is empty.");
     }
     else 
     {
@@ -593,8 +592,9 @@ void CDirectoryLister::DisplayResults (__in CDirectoryInfo * pdi, EDirectoryLeve
         }
     }
         
+    m_pConsole->Puts (m_pConfig->m_rgAttributes[CConfig::EAttribute::Default], L"");
     m_pConsole->WriteSeparatorLine (m_pConfig->m_rgAttributes[CConfig::EAttribute::SeparatorLine]);
-    m_pConsole->Puts (m_pConfig->m_rgAttributes[CConfig::EAttribute::Default], L"\n");
+    m_pConsole->Puts (m_pConfig->m_rgAttributes[CConfig::EAttribute::Default], L"");
 
     m_pConsole->Flush();
 
@@ -660,16 +660,15 @@ void CDirectoryLister::DisplayResultsWide (__in CDirectoryInfo * pdi)
             CHR (hr);
 
             wAttr = m_pConfig->GetTextAttrForFile (pwfd);
-            hr = m_pConsole->Puts (wAttr, pszName);
-            CHR (hr);
+            m_pConsole->Printf (wAttr, L"%s", pszName);
 
             for (cSpacesNeeded = cxColumnWidth - wcslen (pszName); cSpacesNeeded > 0; cSpacesNeeded--)
             {
-                m_pConsole->Puts (m_pConfig->m_rgAttributes[CConfig::EAttribute::Default], L" ");
+                m_pConsole->Printf (m_pConfig->m_rgAttributes[CConfig::EAttribute::Default], L" ");
             }
         }
 
-        m_pConsole->Puts (m_pConfig->m_rgAttributes[CConfig::EAttribute::Default], L"\n");
+        m_pConsole->Puts (m_pConfig->m_rgAttributes[CConfig::EAttribute::Default], L"");
     }
 
 Error:
@@ -857,11 +856,11 @@ void CDirectoryLister::DisplayResultsNormal (__in CDirectoryInfo * pdi)
         uliFileSize.LowPart  = iter->nFileSizeLow;
         uliFileSize.HighPart = iter->nFileSizeHigh;
 
-        m_pConsole->Puts (m_pConfig->m_rgAttributes[CConfig::EAttribute::Date],    szDate);
-        m_pConsole->Puts (m_pConfig->m_rgAttributes[CConfig::EAttribute::Default], L"  ");
+        m_pConsole->Printf (m_pConfig->m_rgAttributes[CConfig::EAttribute::Date],    L"%s", szDate);
+        m_pConsole->Printf (m_pConfig->m_rgAttributes[CConfig::EAttribute::Default], L"  ");
         
-        m_pConsole->Puts (m_pConfig->m_rgAttributes[CConfig::EAttribute::Time],    szTime);
-        m_pConsole->Puts (m_pConfig->m_rgAttributes[CConfig::EAttribute::Default], L" ");
+        m_pConsole->Printf (m_pConfig->m_rgAttributes[CConfig::EAttribute::Time],    L"%s", szTime);
+        m_pConsole->Printf (m_pConfig->m_rgAttributes[CConfig::EAttribute::Default], L" ");
 
         while (pAttrMap->m_dwAttr != 0)
         {
@@ -890,22 +889,17 @@ void CDirectoryLister::DisplayResultsNormal (__in CDirectoryInfo * pdi)
         }
         else
         {
-            UINT cchLeftSidePadding;
-
-            cchLeftSidePadding = (cchMaxSize - kcchDirSize) / 2;            
-            
+            UINT cchLeftSidePadding = (cchMaxSize - kcchDirSize) / 2;            
             m_pConsole->Printf (m_pConfig->m_rgAttributes[CConfig::EAttribute::Directory], L" %*s%-*s ", cchLeftSidePadding, L"", cchMaxSize - cchLeftSidePadding, kszDirSize);
          }        
 
         attr = (m_pConfig->GetTextAttrForFile (&(*iter)));
-        m_pConsole->Puts (attr, iter->cFileName);
-        m_pConsole->Puts (attr, L"\n");
+        m_pConsole->Printf (attr, L"%s\n", iter->cFileName);
         
         DEBUGMSG (L"m_coord.Y = %d, lastY = %d\n",
             m_pConsole->m_coord.Y,
             lastY);
         
-        //assert (m_pConsole->m_coord.Y == lastY + 1);
         ++lastY;
 
         ++iter;
@@ -992,20 +986,20 @@ void CDirectoryLister::DisplayDriveHeader (LPCWSTR pszPath)
                           NULL, 
                           szFileSystemName, ARRAYSIZE (szFileSystemName));
 
-    m_pConsole->Puts (m_pConfig->m_rgAttributes[CConfig::EAttribute::Information], L" Volume ");
+    m_pConsole->Printf (m_pConfig->m_rgAttributes[CConfig::EAttribute::Information], L" Volume ");
 
     if (fUncPath)
     {
-        m_pConsole->Puts (m_pConfig->m_rgAttributes[CConfig::EAttribute::InformationHighlight], pszPath);
+        m_pConsole->Printf (m_pConfig->m_rgAttributes[CConfig::EAttribute::InformationHighlight], L"%s", pszPath);
     }
     else
     {
-        m_pConsole->Puts   (m_pConfig->m_rgAttributes[CConfig::EAttribute::Information],          L"in drive ");
+        m_pConsole->Printf (m_pConfig->m_rgAttributes[CConfig::EAttribute::Information],          L"in drive ");
         m_pConsole->Printf (m_pConfig->m_rgAttributes[CConfig::EAttribute::InformationHighlight], L"%c", szDriveRoot[0]);
     }        
 
-    m_pConsole->Puts (m_pConfig->m_rgAttributes[CConfig::EAttribute::Information],          L" is ");
-    m_pConsole->Puts (m_pConfig->m_rgAttributes[CConfig::EAttribute::InformationHighlight], s_krgszVolumeDescription[uiDriveType]);
+    m_pConsole->Printf (m_pConfig->m_rgAttributes[CConfig::EAttribute::Information],          L" is ");
+    m_pConsole->Printf (m_pConfig->m_rgAttributes[CConfig::EAttribute::InformationHighlight], L"%s", s_krgszVolumeDescription[uiDriveType]);
 
 
     //
@@ -1030,24 +1024,24 @@ void CDirectoryLister::DisplayDriveHeader (LPCWSTR pszPath)
         dwResult = WNetGetConnection (szDriveRoot, szRemoteName, &cchRemoteName);              
         if (dwResult == NOERROR)
         {
-            m_pConsole->Puts (m_pConfig->m_rgAttributes[CConfig::EAttribute::Information],          L" mapped to ");
-            m_pConsole->Puts (m_pConfig->m_rgAttributes[CConfig::EAttribute::InformationHighlight], szRemoteName);
+            m_pConsole->Printf (m_pConfig->m_rgAttributes[CConfig::EAttribute::Information],          L" mapped to ");
+            m_pConsole->Printf (m_pConfig->m_rgAttributes[CConfig::EAttribute::InformationHighlight], L"%s", szRemoteName);
         }
     }
 
-    m_pConsole->Puts (m_pConfig->m_rgAttributes[CConfig::EAttribute::Information],          L" (");
-    m_pConsole->Puts (m_pConfig->m_rgAttributes[CConfig::EAttribute::InformationHighlight], szFileSystemName);
-    m_pConsole->Puts (m_pConfig->m_rgAttributes[CConfig::EAttribute::Information],          L")\n");
+    m_pConsole->Printf (m_pConfig->m_rgAttributes[CConfig::EAttribute::Information],          L" (");
+    m_pConsole->Printf (m_pConfig->m_rgAttributes[CConfig::EAttribute::InformationHighlight], L"%s", szFileSystemName);
+    m_pConsole->Printf (m_pConfig->m_rgAttributes[CConfig::EAttribute::Information],          L")\n");
 
     if (szVolumeName[0] != L'\0')
     {
-        m_pConsole->Puts (m_pConfig->m_rgAttributes[CConfig::EAttribute::Information],          L" Volume name is \"");
-        m_pConsole->Puts (m_pConfig->m_rgAttributes[CConfig::EAttribute::InformationHighlight], szVolumeName);
-        m_pConsole->Puts (m_pConfig->m_rgAttributes[CConfig::EAttribute::Information],          L"\"\n\n");
+        m_pConsole->Printf (m_pConfig->m_rgAttributes[CConfig::EAttribute::Information],          L" Volume name is \"");
+        m_pConsole->Printf (m_pConfig->m_rgAttributes[CConfig::EAttribute::InformationHighlight], L"%s", szVolumeName);
+        m_pConsole->Printf (m_pConfig->m_rgAttributes[CConfig::EAttribute::Information],          L"\"\n\n");
     }
     else
     {
-        m_pConsole->Puts (m_pConfig->m_rgAttributes[CConfig::EAttribute::Information], L" Volume has no name\n\n");
+        m_pConsole->Puts (m_pConfig->m_rgAttributes[CConfig::EAttribute::Information], L" Volume has no name\n");
     }
 
 Error:
@@ -1068,9 +1062,9 @@ Error:
 
 void CDirectoryLister::DisplayPathHeader (LPCWSTR pszPath)
 {
-    m_pConsole->Puts (m_pConfig->m_rgAttributes[CConfig::EAttribute::Information],          L" Directory of ");
-    m_pConsole->Puts (m_pConfig->m_rgAttributes[CConfig::EAttribute::InformationHighlight], pszPath);
-    m_pConsole->Puts (m_pConfig->m_rgAttributes[CConfig::EAttribute::Information],          L"\n\n");
+    m_pConsole->Printf (m_pConfig->m_rgAttributes[CConfig::EAttribute::Information],          L" Directory of ");
+    m_pConsole->Printf (m_pConfig->m_rgAttributes[CConfig::EAttribute::InformationHighlight], L"%s", pszPath);
+    m_pConsole->Printf (m_pConfig->m_rgAttributes[CConfig::EAttribute::Information],          L"\n\n");
 }
 
 
@@ -1094,36 +1088,29 @@ void CDirectoryLister::DisplayPathHeader (LPCWSTR pszPath)
 
 void CDirectoryLister::DisplayListingSummary (__in const CDirectoryInfo * pdi)
 {
-    HRESULT hr         = S_OK;
-    int     cMaxDigits = 0;
+    int cMaxDigits = 0;
 
-
-    hr = m_pConsole->ReserveLines(9);
-    CHR(hr);
 
     cMaxDigits = (int) log10 (max (m_cFilesFound, m_cDirectoriesFound)) + 1;
     cMaxDigits += cMaxDigits / 3;  // add space for each comma
 
 
-    m_pConsole->Puts   (m_pConfig->m_rgAttributes[CConfig::EAttribute::Information], L" Total files listed:\n");
-    m_pConsole->Puts(CConfig::EAttribute::Default, L"\n");
+    m_pConsole->Puts   (m_pConfig->m_rgAttributes[CConfig::EAttribute::Information], L" Total files listed:");
+    m_pConsole->Puts   (CConfig::EAttribute::Default, L"\n");
 
     m_pConsole->Printf (m_pConfig->m_rgAttributes[CConfig::EAttribute::InformationHighlight], L"    %*s", cMaxDigits, FormatNumberWithSeparators (m_cFilesFound));
-    m_pConsole->Printf (m_pConfig->m_rgAttributes[CConfig::EAttribute::Information], m_cFilesFound == 1 ? L" file using " : L" files using ");
-    m_pConsole->Puts   (m_pConfig->m_rgAttributes[CConfig::EAttribute::InformationHighlight], FormatNumberWithSeparators(m_uliSizeOfAllFilesFound.QuadPart));
-    m_pConsole->Printf (m_pConfig->m_rgAttributes[CConfig::EAttribute::Information], m_uliSizeOfAllFilesFound.QuadPart == 1 ? L" byte\n" : L" bytes\n");
+    m_pConsole->Printf (m_pConfig->m_rgAttributes[CConfig::EAttribute::Information],          m_cFilesFound == 1 ? L" file using " : L" files using ");
+    m_pConsole->Printf (m_pConfig->m_rgAttributes[CConfig::EAttribute::InformationHighlight], FormatNumberWithSeparators (m_uliSizeOfAllFilesFound.QuadPart));
+    m_pConsole->Printf (m_pConfig->m_rgAttributes[CConfig::EAttribute::Information],          m_uliSizeOfAllFilesFound.QuadPart == 1 ? L" byte\n" : L" bytes\n");
 
     m_pConsole->Printf (m_pConfig->m_rgAttributes[CConfig::EAttribute::InformationHighlight], L"    %*s", cMaxDigits, FormatNumberWithSeparators (m_cDirectoriesFound));
-    m_pConsole->Puts   (m_pConfig->m_rgAttributes[CConfig::EAttribute::Information], m_cDirectoriesFound == 1 ? L" subdiretory\n" : L" subdirectories\n");
+    m_pConsole->Puts   (m_pConfig->m_rgAttributes[CConfig::EAttribute::Information],          m_cDirectoriesFound == 1 ? L" subdiretory" : L" subdirectories");
 
-    m_pConsole->Puts(CConfig::EAttribute::Default, L"\n");
+    m_pConsole->Puts(CConfig::EAttribute::Default, L"");
     DisplayVolumeFooter (pdi);
 
     m_pConsole->WriteSeparatorLine (m_pConfig->m_rgAttributes[CConfig::EAttribute::SeparatorLine]);
-    m_pConsole->Puts (CConfig::EAttribute::Default, L"\n");
-
-Error:
-    return;
+    m_pConsole->Puts (CConfig::EAttribute::Default, L"");
 }
 
 
@@ -1142,15 +1129,14 @@ Error:
 
 void CDirectoryLister::DisplayDirectorySummary (__in const CDirectoryInfo * pdi)
 {
-    m_pConsole->Puts    (m_pConfig->m_rgAttributes[CConfig::EAttribute::Information], L"\n ");
+    m_pConsole->Printf (m_pConfig->m_rgAttributes[CConfig::EAttribute::Information],          L"\n ");
+    m_pConsole->Printf (m_pConfig->m_rgAttributes[CConfig::EAttribute::InformationHighlight], L"%d", pdi->m_cSubDirectories);
+    m_pConsole->Printf (m_pConfig->m_rgAttributes[CConfig::EAttribute::Information],          pdi->m_cSubDirectories == 1 ? L" dir, " : L" dirs, ");
 
-    m_pConsole->Printf  (m_pConfig->m_rgAttributes[CConfig::EAttribute::InformationHighlight], L"%d", pdi->m_cSubDirectories);
-    m_pConsole->Puts    (m_pConfig->m_rgAttributes[CConfig::EAttribute::Information], pdi->m_cSubDirectories == 1 ? L" dir, " : L" dirs, ");
-
-    m_pConsole->Printf  (m_pConfig->m_rgAttributes[CConfig::EAttribute::InformationHighlight], L"%d", pdi->m_cFiles);
-    m_pConsole->Printf  (m_pConfig->m_rgAttributes[CConfig::EAttribute::Information], pdi->m_cFiles == 1 ? L" file using " : L" files using ");
-    m_pConsole->Puts    (m_pConfig->m_rgAttributes[CConfig::EAttribute::InformationHighlight], FormatNumberWithSeparators(pdi->m_uliBytesUsed.QuadPart));
-    m_pConsole->Printf  (m_pConfig->m_rgAttributes[CConfig::EAttribute::Information], pdi->m_uliBytesUsed.QuadPart == 1 ? L" byte\n" : L" bytes\n");
+    m_pConsole->Printf (m_pConfig->m_rgAttributes[CConfig::EAttribute::InformationHighlight], L"%d", pdi->m_cFiles);
+    m_pConsole->Printf (m_pConfig->m_rgAttributes[CConfig::EAttribute::Information],          pdi->m_cFiles == 1 ? L" file using " : L" files using ");
+    m_pConsole->Printf (m_pConfig->m_rgAttributes[CConfig::EAttribute::InformationHighlight], FormatNumberWithSeparators (pdi->m_uliBytesUsed.QuadPart));
+    m_pConsole->Printf (m_pConfig->m_rgAttributes[CConfig::EAttribute::Information],          pdi->m_uliBytesUsed.QuadPart == 1 ? L" byte\n" : L" bytes\n");
 }
 
 
@@ -1218,11 +1204,11 @@ void CDirectoryLister::DisplayFooterQuotaInfo (__in const ULARGE_INTEGER * puliF
     strUsername.resize (cchMaxUsername);
     GetEnvironmentVariable (L"username", &strUsername[0], cchMaxUsername);
 
-    m_pConsole->Puts (m_pConfig->m_rgAttributes[CConfig::EAttribute::Information],          L" ");
-    m_pConsole->Puts (m_pConfig->m_rgAttributes[CConfig::EAttribute::InformationHighlight], FormatNumberWithSeparators (puliFreeBytesAvailable->QuadPart));
-    m_pConsole->Puts (m_pConfig->m_rgAttributes[CConfig::EAttribute::Information],          puliFreeBytesAvailable->QuadPart == 1 ? L" byte available to " : L" bytes available to ");
-    m_pConsole->Puts (m_pConfig->m_rgAttributes[CConfig::EAttribute::InformationHighlight], strUsername.c_str());
-    m_pConsole->Puts (m_pConfig->m_rgAttributes[CConfig::EAttribute::Information],          L" due to quota\n");
+    m_pConsole->Printf(m_pConfig->m_rgAttributes[CConfig::EAttribute::Information],          L" ");
+    m_pConsole->Printf(m_pConfig->m_rgAttributes[CConfig::EAttribute::InformationHighlight], FormatNumberWithSeparators (puliFreeBytesAvailable->QuadPart));
+    m_pConsole->Printf(m_pConfig->m_rgAttributes[CConfig::EAttribute::Information],          puliFreeBytesAvailable->QuadPart == 1 ? L" byte available to " : L" bytes available to ");
+    m_pConsole->Printf(m_pConfig->m_rgAttributes[CConfig::EAttribute::InformationHighlight], strUsername.c_str());
+    m_pConsole->Printf(m_pConfig->m_rgAttributes[CConfig::EAttribute::Information],          L" due to quota\n");
 }
 
 

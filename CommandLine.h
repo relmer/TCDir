@@ -4,7 +4,7 @@
 
 
 
-#include "stdafx.h"
+#include "pch.h"
 
 
 
@@ -63,7 +63,7 @@ public:
     ESortOrder       m_rgSortPreference[(size_t) ESortOrder::__SO_COUNT];
     ESortOrder       m_sortorder;
     ESortDirection   m_sortdirection;        
-    LPCWSTRList      m_listMask;        
+    list<LPCWSTR>    m_listMask;
     BOOL             m_fWideListing;
 
 
