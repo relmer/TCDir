@@ -35,8 +35,6 @@ protected:
     HRESULT ProcessDirectory           (LPCWSTR pszPath, LPCWSTR pszFileSpec, EDirectoryLevel level);
     HRESULT RecurseIntoSubdirectories  (LPCWSTR pszPath, LPCWSTR pszFileSpec);
     HRESULT AddMatchToList             (__in CFileInfo * pwfd, __in CDirectoryInfo * pdi);
-    void    Scroll                     (__in const CDirectoryInfo * pdi, EDirectoryLevel level);
-    HRESULT CalculateLinesNeeded       (__in const CDirectoryInfo * pdi, __out int * pcLinesNeeded, EDirectoryLevel level);
     void    DisplayResults             (__in CDirectoryInfo * pdi, EDirectoryLevel level);
     void    DisplayResultsWide         (__in CDirectoryInfo * pdi);
     HRESULT GetColumnInfo              (__in const CDirectoryInfo * pdi, __out UINT * pcColumns, __out UINT * pcxColumnWidth);

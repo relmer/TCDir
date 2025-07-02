@@ -401,138 +401,6 @@ HRESULT CDirectoryLister::AddMatchToList (__in CFileInfo * pwfd, __in CDirectory
 
 ////////////////////////////////////////////////////////////////////////////////
 //
-//  CDirectoryLister::Scroll
-//
-//  
-//
-////////////////////////////////////////////////////////////////////////////////
-
-void CDirectoryLister::Scroll (__in const CDirectoryInfo * pdi, EDirectoryLevel level)
-{
-    HRESULT hr              = S_OK;
-    int     cLinesNeeded    = 0;
-
-
-
-    //
-    // Calculate the number of rows to scroll
-    //
-
-    hr = CalculateLinesNeeded (pdi, &cLinesNeeded, level);
-    CHR (hr);
-
-    DEBUGMSG (L"%s (%d files, %d subdirs).  Current cursor pos = %d, lines needed = %d\n",
-        pdi->m_pszPath,
-        pdi->m_cFiles,
-        pdi->m_cSubDirectories,
-        m_pConsole->m_coord.Y,
-        cLinesNeeded
-    );
-
-
-Error:
-    return;    
-}
-
-
-
-
-
-////////////////////////////////////////////////////////////////////////////////
-//
-//  CDirectoryLister::CalculateLinesNeeded
-//
-//  
-//
-////////////////////////////////////////////////////////////////////////////////
-
-HRESULT CDirectoryLister::CalculateLinesNeeded (__in const CDirectoryInfo * pdi, __out int * pcLinesNeeded, EDirectoryLevel level)
-{
-    HRESULT     hr           = S_OK;
-    int         cLinesNeeded = 0;
-
-
-    //
-    // For the initial directory, we'll add the top separator.  
-    // For recursed directories, we'll just add the bottom so that there's
-    // only one separator between each subdirectory.
-    // 
-
-    if (level == EDirectoryLevel::Initial)
-    {
-        ++cLinesNeeded;     // Top separator line
-    }
-
-    //
-    // We only print the volume header info once on the initial directory 
-    // we're listing.  If we're recursing, we don't repeat it with each subdirectory.
-    //
-
-    if (level == EDirectoryLevel::Initial)
-    {
-        // DisplayDriveHeader
-        ++cLinesNeeded;     // Volume in drive _ is _____
-        ++cLinesNeeded;     // Volume name is ______
-        ++cLinesNeeded;     // Blank line
-    }
-
-    // DisplayPathHeader
-    ++cLinesNeeded;     // Directory of ___________________
-    ++cLinesNeeded;     // Blank line
-
-    if (pdi->m_vMatches.size() == 0)
-    {
-        ++cLinesNeeded;     // Directory is empty
-    }
-    else
-    {
-        if (m_pCmdLine->m_fWideListing)
-        {
-            UINT cColumns;
-            UINT cxColumnWidth;
-
-
-            // DisplayResultsWide
-            assert (pdi->m_cchLargestFileName > 0);
-
-            hr = GetColumnInfo (pdi, &cColumns, &cxColumnWidth);
-            CHR (hr);
-
-            cLinesNeeded += (int) (pdi->m_vMatches.size() + (cColumns - 1)) / cColumns;
-        }
-        else
-        {
-            // DisplayResultsNormal
-            cLinesNeeded += (int) pdi->m_vMatches.size();
-        }
-
-        // DisplayDirectorySummary
-        ++cLinesNeeded;     // Blank line
-        ++cLinesNeeded;     // __ dirs, __ files using ____ bytes
-
-        if (!m_pCmdLine->m_fRecurse)
-        {
-            // DisplayVolumeFooter
-            ++cLinesNeeded;     // _____________ bytes free on volume
-            ++cLinesNeeded;     // _____________ bytes available to user %s (only if a quota is active)
- 
-        }
-    }
-
-    ++cLinesNeeded;     // Bottom separator line
-    ++cLinesNeeded;     // Blank line
-
-    *pcLinesNeeded = cLinesNeeded;
-
-Error:
-    return hr;
-}
-
-
-
-
-////////////////////////////////////////////////////////////////////////////////
-//
 //  CDirectoryLister::DisplayResults
 //
 //  
@@ -541,9 +409,6 @@ Error:
 
 void CDirectoryLister::DisplayResults (__in CDirectoryInfo * pdi, EDirectoryLevel level)
 {
-    Scroll (pdi, level);
-    
-
     if (level == EDirectoryLevel::Initial)
     {
         //
@@ -552,7 +417,7 @@ void CDirectoryLister::DisplayResults (__in CDirectoryInfo * pdi, EDirectoryLeve
         // only one separator between each subdirectory.
         // 
         
-        m_pConsole->WriteSeparatorLine(m_pConfig->m_rgAttributes[CConfig::EAttribute::SeparatorLine]);
+        m_pConsole->WriteSeparatorLine (m_pConfig->m_rgAttributes[CConfig::EAttribute::SeparatorLine]);
 
         //
         // We'll only show the dirve header on the initial directory processed.
@@ -566,7 +431,7 @@ void CDirectoryLister::DisplayResults (__in CDirectoryInfo * pdi, EDirectoryLeve
 
     if (pdi->m_vMatches.size() == 0)
     {
-        m_pConsole->Puts(CConfig::EAttribute::Default, L"Directory is empty.");
+        m_pConsole->Puts (m_pConfig->m_rgAttributes[CConfig::EAttribute::Default], L"Directory is empty.");
     }
     else 
     {
@@ -1095,8 +960,8 @@ void CDirectoryLister::DisplayListingSummary (__in const CDirectoryInfo * pdi)
     cMaxDigits += cMaxDigits / 3;  // add space for each comma
 
 
-    m_pConsole->Puts   (m_pConfig->m_rgAttributes[CConfig::EAttribute::Information], L" Total files listed:");
-    m_pConsole->Puts   (CConfig::EAttribute::Default, L"\n");
+    m_pConsole->Puts   (m_pConfig->m_rgAttributes[CConfig::EAttribute::Information],          L" Total files listed:");
+    m_pConsole->Puts   (m_pConfig->m_rgAttributes[CConfig::EAttribute::Default],              L"\n");
 
     m_pConsole->Printf (m_pConfig->m_rgAttributes[CConfig::EAttribute::InformationHighlight], L"    %*s", cMaxDigits, FormatNumberWithSeparators (m_cFilesFound));
     m_pConsole->Printf (m_pConfig->m_rgAttributes[CConfig::EAttribute::Information],          m_cFilesFound == 1 ? L" file using " : L" files using ");
@@ -1106,11 +971,11 @@ void CDirectoryLister::DisplayListingSummary (__in const CDirectoryInfo * pdi)
     m_pConsole->Printf (m_pConfig->m_rgAttributes[CConfig::EAttribute::InformationHighlight], L"    %*s", cMaxDigits, FormatNumberWithSeparators (m_cDirectoriesFound));
     m_pConsole->Puts   (m_pConfig->m_rgAttributes[CConfig::EAttribute::Information],          m_cDirectoriesFound == 1 ? L" subdiretory" : L" subdirectories");
 
-    m_pConsole->Puts(CConfig::EAttribute::Default, L"");
+    m_pConsole->Puts   (m_pConfig->m_rgAttributes[CConfig::EAttribute::Default],              L"");
     DisplayVolumeFooter (pdi);
 
     m_pConsole->WriteSeparatorLine (m_pConfig->m_rgAttributes[CConfig::EAttribute::SeparatorLine]);
-    m_pConsole->Puts (CConfig::EAttribute::Default, L"");
+    m_pConsole->Puts               (m_pConfig->m_rgAttributes[CConfig::EAttribute::Default], L"");
 }
 
 
