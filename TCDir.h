@@ -1,18 +1,18 @@
-#pragma once
+#pragma once	
 
 
 
 
 
-HANDLE hStdOut;
+class CConfig;
+class CConsole;
 
 
 
 
 
-int  wmain         (int argc, WCHAR* argv[]);
-int  ConsolePrintf (LPCWSTR pszFormat, ...);
-void Usage         (void);
+int  wmain         (int argc, WCHAR * argv[]);
+void Usage         (__in CConsole * pConsole, __in CConfig * pConfig);
 
 
 

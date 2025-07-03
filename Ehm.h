@@ -13,6 +13,48 @@
 
 
 
+#define WIDEN2(x)       L ## x
+#define WIDEN(x)        WIDEN2(x)
+#define __WFUNCTION__   WIDEN(__FUNCTION__)
+#define __WFILE__       WIDEN(__FILE__)
+
+
+
+
+
+//
+// Forward declarations
+//
+
+void DEBUGMSG   (LPCWSTR pszFormat, ...);
+void RELEASEMSG (LPCWSTR pszFormat, ...);
+
+
+
+
+
+#if DBG || DEBUG || _DEBUG
+    #define EHM_BREAKPOINT __debugbreak()    
+#else
+    #define EHM_BREAKPOINT
+#endif
+
+
+
+
+
+#define ASSERT(__condition)                                             \
+    if (!(__condition))                                                 \
+    {                                                                   \
+        DEBUGMSG ((L"%s(%d) - %s - Assertion failed:  %s\n"),           \
+                    __WFILE__, __LINE__, __WFUNCTION__, L#__condition); \
+        EHM_BREAKPOINT;                                                 \
+    }                                                                                                               
+
+
+
+
+
 //
 // Core helper macros
 //
@@ -26,7 +68,7 @@
     {                                                                                       \
         if (__arg_fAssert)                                                                  \
         {                                                                                   \
-            assert (FALSE);                                                                 \
+            ASSERT (FALSE);                                                                 \
         }                                                                                   \
                                                                                             \
         if (__arg_fReplaceHr)                                                               \
@@ -44,11 +86,11 @@
 
 #define __CWRAExHelper(__arg_fSuccess, __arg_fAssert, __arg_fReplaceHr, __arg_hrReplaceHr)  \
 {                                                                                           \
-    if (!fSuccess)                                                                          \
+    if (!__arg_fSuccess)                                                                    \
     {                                                                                       \
         if (__arg_fAssert)                                                                  \
         {                                                                                   \
-            assert (FALSE);                                                                 \
+            ASSERT (FALSE);                                                                 \
         }                                                                                   \
                                                                                             \
         if (__arg_fReplaceHr)                                                               \
@@ -72,7 +114,7 @@
     {                                                                                       \
         if (__arg_fAssert)                                                                  \
         {                                                                                   \
-            assert (FALSE);                                                                 \
+            ASSERT (FALSE);                                                                 \
         }                                                                                   \
                                                                                             \
         hr = __arg_hrReplaceHr;                                                             \
@@ -89,7 +131,7 @@
     {                                                                                       \
         if (__arg_fAssert)                                                                  \
         {                                                                                   \
-            assert (FALSE);                                                                 \
+            ASSERT (FALSE);                                                                 \
         }                                                                                   \
                                                                                             \
         hr = __arg_hrReplaceHr;                                                             \
@@ -217,21 +259,4 @@
 {                                                                                           \
     __CPRAExHelper (__arg_prTest, FALSE, E_OUTOFMEMORY)                                     \
 }                                                                                   
-
-
-
-
-
-#ifdef DEBUG
-        
-
-#else // DEBUG
-
-
-#endif // DEBUG
-
-
-
-
-
 
