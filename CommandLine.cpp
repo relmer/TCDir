@@ -15,12 +15,13 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 CCommandLine::CCommandLine (void) :
-    m_fRecurse              (FALSE),        
+    m_fRecurse              (false),        
     m_dwAttributesRequired  (0),            
     m_dwAttributesExcluded  (0),            
     m_sortorder             (ESortOrder::SO_DEFAULT),   
     m_sortdirection         (ESortDirection::SD_ASCENDING),
-    m_fWideListing          (FALSE)
+    m_fWideListing          (false),
+    m_fPerfTimer            (false)
 {          
     //
     // Define the ranking of sort attributes.  If the requested
@@ -140,7 +141,7 @@ HRESULT CCommandLine::HandleSwitch (LPCWSTR pszArg)
     struct SwitchMap
     {
         WCHAR              m_chSwitch; 
-        BOOL             * m_pfToggle; 
+        bool             * m_pfToggle; 
         SwitchParserFunc   m_pHandler; 
     };                             
 
@@ -150,12 +151,13 @@ HRESULT CCommandLine::HandleSwitch (LPCWSTR pszArg)
         {  L'o',   NULL,            &CCommandLine::OrderByHandler    },
         {  L'a',   NULL,            &CCommandLine::AttributeHandler  },
         {  L'w',   &m_fWideListing, NULL                             },
+        {  L'p',   &m_fPerfTimer,   NULL                             },
 
         {  L'\0',  NULL,            NULL                             },  // End of map
     };      
     
     HRESULT     hr           = S_OK;
-    BOOL        fToggleState = TRUE;  
+    bool        fToggleState = TRUE;  
     SwitchMap * pMap         = map;
 	WCHAR       ch           = L'\0';
 
@@ -165,7 +167,7 @@ HRESULT CCommandLine::HandleSwitch (LPCWSTR pszArg)
     
     if (*pszArg == '-')
     {
-        fToggleState = FALSE;
+        fToggleState = false;
         ++pszArg;
 
         CBRAEx (*pszArg != L'\0', E_INVALIDARG);    

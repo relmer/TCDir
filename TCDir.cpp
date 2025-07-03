@@ -8,6 +8,8 @@
 #include "Config.h"
 #include "Console.h"
 #include "DirectoryLister.h"
+#include "PerfTimer.h"
+
 
 
 
@@ -90,6 +92,8 @@ int wmain (int argc, WCHAR * argv[])
     //pConsole->Test();
 #endif
 
+
+
     //
     // Process the commandline
     //
@@ -121,6 +125,13 @@ int wmain (int argc, WCHAR * argv[])
     //for_each (cmdline.m_listMask.begin(), cmdline.m_listMask.end(), CDirectoryLister (&cmdline, pConsole, pConfig));
 
     {
+        unique_ptr<PerfTimer> perfTimerPtr;
+
+        if (cmdline.m_fPerfTimer)
+        {
+            perfTimerPtr = make_unique<PerfTimer> (L"TCDir time elapsed", PerfTimer::Automatic, PerfTimer::Msec, [] (const wchar_t * msg) { fputws (msg, stdout); });
+        }
+
         CDirectoryLister dirLister (&cmdline, pConsole, pConfig);
 
         for (LPCWSTR mask : cmdline.m_listMask)

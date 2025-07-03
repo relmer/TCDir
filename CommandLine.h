@@ -57,14 +57,15 @@ public:
     // Public members
     //
 
-    BOOL             m_fRecurse;             
+    bool             m_fRecurse;             
     DWORD            m_dwAttributesRequired; 
     DWORD            m_dwAttributesExcluded; 
     ESortOrder       m_rgSortPreference[(size_t) ESortOrder::__SO_COUNT];
     ESortOrder       m_sortorder;
     ESortDirection   m_sortdirection;        
     list<LPCWSTR>    m_listMask;
-    BOOL             m_fWideListing;
+    bool             m_fWideListing;
+    bool             m_fPerfTimer;          // Enable performance timer  
 
 
 protected: 
