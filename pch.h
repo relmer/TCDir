@@ -21,7 +21,7 @@
 // Windows headers
 #include <windows.h>
 
-#define STRSAFE_NO_DEPRECATE
+#include <lmcons.h>
 #include <strsafe.h>
 
 

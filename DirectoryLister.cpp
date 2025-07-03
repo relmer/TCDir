@@ -125,6 +125,8 @@ void CDirectoryLister::List (LPCWSTR pszMask)
     // Process a directory
     //
 
+    m_pConsole->Puts (m_pConfig->m_rgAttributes[CConfig::EAttribute::Default], L"");
+
     hr = ProcessDirectory (szPath, szFileSpec, EDirectoryLevel::Initial);
     CHR (hr);
 
@@ -484,25 +486,21 @@ void CDirectoryLister::DisplayResults (__in CDirectoryInfo * pdi, EDirectoryLeve
 void CDirectoryLister::DisplayResultsWide (__in CDirectoryInfo * pdi)
 {                                 
     HRESULT hr             = S_OK;
-    UINT    cColumns;
-    UINT    cxColumnWidth; 
-    UINT    nRow;
-    UINT    nCol;
-    UINT    cRows;
+    size_t  cColumns;
+    size_t  cxColumnWidth; 
+    size_t  nRow;
+    size_t  nCol;
+    size_t  cRows;
+    size_t  cItemsInLastRow;
 
 
-
-    CBR (pdi->m_cchLargestFileName > 0);
+    CBRA (pdi->m_cchLargestFileName > 0);
 
     hr = GetColumnInfo (pdi, &cColumns, &cxColumnWidth);
     CHR (hr);    
 
-    hr = AddEmptyMatches (pdi, cColumns);
-    CHR (hr);
-
-    cRows = (UINT) pdi->m_vMatches.size() / cColumns;
-
-    assert(pdi->m_vMatches.size() == cRows * cColumns);
+    cRows = (pdi->m_vMatches.size() + cColumns - 1) / cColumns;
+    cItemsInLastRow = pdi->m_vMatches.size () % cColumns;
    
     //
     // Display the matches in columns
@@ -511,7 +509,9 @@ void CDirectoryLister::DisplayResultsWide (__in CDirectoryInfo * pdi)
     for (nRow = 0; nRow < cRows; ++nRow)
     {
         for (nCol = 0; nCol < cColumns; ++nCol)
-        {                   
+        {   
+            size_t            idx           = 0;
+            size_t            fullRows      = cItemsInLastRow ? cRows - 1 : cRows;
             LPCWSTR           pszName       = NULL;    
             WIN32_FIND_DATA * pwfd          = NULL;       
             WORD              wAttr         = 0;      
@@ -519,7 +519,27 @@ void CDirectoryLister::DisplayResultsWide (__in CDirectoryInfo * pdi)
 
 
 
-            pwfd = &pdi->m_vMatches[nRow + ((size_t) nCol * (size_t) cRows)];
+            if ((nRow * cColumns + nCol) >= pdi->m_vMatches.size ())
+            {
+                break;
+            }
+
+            // We print in column-major order, so skip over 
+            // items in previous columns.  The last row
+            // may not be full, so assume one fewer row for now.
+            idx = nRow + (nCol * fullRows);
+
+            // Skip past any items in the last row prior to this column
+            if (nCol < cItemsInLastRow)
+            {
+                idx += nCol;
+            }
+            else
+            {
+                idx += cItemsInLastRow;
+            }
+
+            pwfd = &pdi->m_vMatches[idx];
             hr = GetWideFormattedName (pwfd, &pszName);
             CHR (hr);
 
@@ -534,6 +554,7 @@ void CDirectoryLister::DisplayResultsWide (__in CDirectoryInfo * pdi)
 
         m_pConsole->Puts (m_pConfig->m_rgAttributes[CConfig::EAttribute::Default], L"");
     }
+
 
 Error:
     return;
@@ -552,7 +573,7 @@ Error:
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-HRESULT CDirectoryLister::GetColumnInfo (__in const CDirectoryInfo * pdi, __out UINT * pcColumns, __out UINT * pcxColumnWidth)
+HRESULT CDirectoryLister::GetColumnInfo (__in const CDirectoryInfo * pdi, __out size_t * pcColumns, __out size_t * pcxColumnWidth)
 {
     HRESULT                    hr              = S_OK;
     BOOL                       fSuccess;       
@@ -573,49 +594,14 @@ HRESULT CDirectoryLister::GetColumnInfo (__in const CDirectoryInfo * pdi, __out 
     else
     {
         // 1 space between columns
-        *pcColumns = cxConsoleWidth / (UINT) (pdi->m_cchLargestFileName + 1);    
+        *pcColumns = cxConsoleWidth / (pdi->m_cchLargestFileName + 1);    
     }
 
     *pcxColumnWidth = cxConsoleWidth / *pcColumns;
 
+
 Error:
     return hr;
-}
-
-
-
-
-
-////////////////////////////////////////////////////////////////////////////////
-//
-//  CDirectoryLister::AddEmptyMatches
-//
-//  Add empty matches to the end of the match list
-//  to ensure that there are an exact multiple of cColumns.
-//
-////////////////////////////////////////////////////////////////////////////////
-
-HRESULT CDirectoryLister::AddEmptyMatches (__in CDirectoryInfo * pdi, size_t cColumns)
-{
-    HRESULT   hr                = S_OK;
-    size_t    cColumnsInLastRow = pdi->m_vMatches.size() % cColumns;
-    size_t    cColumnsToPad     = cColumns - cColumnsInLastRow;       
-    CFileInfo emptyFileInfo;
-
-
-
-    // If the last row is full, we don't need to add any padding
-    BAIL_OUT_IF (cColumnsInLastRow == 0, S_OK);
-
-    while (cColumnsToPad > 0)
-    {
-        pdi->m_vMatches.push_back (emptyFileInfo);
-
-        --cColumnsToPad;
-    }
-
-Error:
-	return hr;
 }
 
 
@@ -1076,13 +1062,23 @@ Error:
 
 void CDirectoryLister::DisplayFooterQuotaInfo (__in const ULARGE_INTEGER * puliFreeBytesAvailable)
 {
-    DWORD   cchMaxUsername = 1 << 15;     // Max size for an environment variable is 32k
+    BOOL    fSuccess    = FALSE;
+    DWORD   cchUsername = UNLEN + 1;     // Use Windows constant for max username length
     wstring strUsername;            
 
+    
 
-
-    strUsername.resize (cchMaxUsername);
-    GetEnvironmentVariable (L"USERNAME", &strUsername[0], cchMaxUsername);
+    strUsername.reserve (cchUsername);
+    
+    fSuccess = GetUserName (&strUsername[0], &cchUsername);
+    if (fSuccess)
+    {
+        strUsername.resize (cchUsername - 1); // Remove null terminator from size
+    }
+    else
+    {
+        strUsername = L"<Unknown>";
+    }
 
     m_pConsole->Printf(m_pConfig->m_rgAttributes[CConfig::EAttribute::Information],          L" ");
     m_pConsole->Printf(m_pConfig->m_rgAttributes[CConfig::EAttribute::InformationHighlight], FormatNumberWithSeparators (puliFreeBytesAvailable->QuadPart));

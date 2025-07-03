@@ -117,17 +117,16 @@ int CConsole::Printf (WORD attr, LPCWSTR pszFormat, ...)
     static const int   s_cchBuf          = 9999;  // Max console buffer width
     static  WCHAR      s_szBuf[s_cchBuf] = { L'\0' };
 
-    HRESULT   hr              = S_OK;
-    va_list   vaArgs          = 0;  
-    int       cchFormatted    = 0; 
+    HRESULT   hr     = S_OK;
+    va_list   vaArgs = 0;  
+    LPWSTR    pszEnd = nullptr;
 
 
 
     va_start (vaArgs, pszFormat);
     
-    cchFormatted = vswprintf_s (s_szBuf, s_cchBuf, pszFormat, vaArgs);
-    CBRA (cchFormatted >= 0);
-    CBRA (cchFormatted <= s_cchBuf);
+    hr = StringCchVPrintfEx (s_szBuf, s_cchBuf, &pszEnd, nullptr, 0, pszFormat, vaArgs);
+    CHRA (hr);
 
     SetColor (attr);
     m_strBuffer.append (s_szBuf);
@@ -135,7 +134,7 @@ int CConsole::Printf (WORD attr, LPCWSTR pszFormat, ...)
 Error:
     va_end (vaArgs);
 
-    return SUCCEEDED (hr) ? cchFormatted : 0;
+    return SUCCEEDED (hr) ? (int) (pszEnd - s_szBuf) : 0;
 }
 
 
@@ -151,12 +150,12 @@ Error:
 // 
 ////////////////////////////////////////////////////////////////////////////////
 
-void CConsole::WriteSeparatorLine (WORD attr)
+void CConsole::WriteSeparatorLine (WORD /* attr */)
 {
-    SetColor (attr);
-    
-    m_strBuffer.append (m_consoleScreenBufferInfoEx.dwSize.X, L'═');
-    m_strBuffer.append (L"\n");
+    //SetColor (attr);
+    //
+    //m_strBuffer.append (m_consoleScreenBufferInfoEx.dwSize.X, L'═');
+    //m_strBuffer.append (L"\n");
 }
 
 

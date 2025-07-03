@@ -37,8 +37,7 @@ protected:
     HRESULT AddMatchToList             (__in CFileInfo * pwfd, __in CDirectoryInfo * pdi);
     void    DisplayResults             (__in CDirectoryInfo * pdi, EDirectoryLevel level);
     void    DisplayResultsWide         (__in CDirectoryInfo * pdi);
-    HRESULT GetColumnInfo              (__in const CDirectoryInfo * pdi, __out UINT * pcColumns, __out UINT * pcxColumnWidth);
-    HRESULT AddEmptyMatches            (__in CDirectoryInfo * pdi, size_t cColumns);
+    HRESULT GetColumnInfo              (__in const CDirectoryInfo * pdi, __out size_t * pcColumns, __out size_t * pcxColumnWidth);
     HRESULT GetWideFormattedName       (__in const WIN32_FIND_DATA * pwfd, __deref_out_z LPCWSTR * ppszName);
     void    DisplayResultsNormal       (__in CDirectoryInfo * pdi);
     void    DisplayDriveHeader         (LPCWSTR pszPath);

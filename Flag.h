@@ -7,10 +7,10 @@
 class CFlag
 {
 public:
-    static inline BOOL IsSet    (DWORD dwFlags, DWORD dwBitsRequired);
-    static inline BOOL IsNotSet (DWORD dwFlags, DWORD dwBitsExcluded);
-    static inline void Set      (DWORD dwFlags, DWORD dwBitsToSet);    
-    static inline void Clear    (DWORD dwFlags, DWORD dwBitsToClear);
+    static inline BOOL IsSet    (DWORD dwFlags,   DWORD dwBitsRequired);
+    static inline BOOL IsNotSet (DWORD dwFlags,   DWORD dwBitsExcluded);
+    static inline void Set      (DWORD & dwFlags, DWORD dwBitsToSet);    
+    static inline void Clear    (DWORD & dwFlags, DWORD dwBitsToClear);
 };            
 
 
@@ -59,7 +59,7 @@ BOOL CFlag::IsNotSet (DWORD dwFlags, DWORD dwBitsExcluded)
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-void CFlag::Set (DWORD dwFlags, DWORD dwBitsToSet)
+void CFlag::Set (DWORD & dwFlags, DWORD dwBitsToSet)
 {               
     dwFlags |= dwBitsToSet;
 }
@@ -76,7 +76,7 @@ void CFlag::Set (DWORD dwFlags, DWORD dwBitsToSet)
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-void CFlag::Clear (DWORD dwFlags, DWORD dwBitsToClear)
+void CFlag::Clear (DWORD & dwFlags, DWORD dwBitsToClear)
 {
     dwFlags &= ~dwBitsToClear;
 }
