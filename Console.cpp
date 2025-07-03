@@ -173,9 +173,9 @@ void CConsole::WriteSeparatorLine (WORD attr)
 
 HRESULT CConsole::Flush (void)
 {
-    HRESULT  hr         = S_OK;
-    BOOL     fSuccess   = FALSE;
-    DWORD    cch        = (DWORD) m_strBuffer.length();
+    HRESULT  hr       = S_OK;
+    BOOL     fSuccess = FALSE;
+    DWORD    cch      = (DWORD) m_strBuffer.length();
 
 
 

@@ -18,19 +18,24 @@
 
 
 
+// Windows headers
 #include <windows.h>
-
-#include <assert.h>
-#include <math.h>
-#include <shlwapi.h>
-#include <stdarg.h>
-#include <stdio.h>
 
 #define STRSAFE_NO_DEPRECATE
 #include <strsafe.h>
 
 
 
+// C headers
+#include <assert.h>
+#include <math.h>
+#include <shlwapi.h>
+#include <stdarg.h>
+#include <stdio.h>
+
+
+
+// C++ headers
 #include <algorithm>
 #include <format>
 #include <list>

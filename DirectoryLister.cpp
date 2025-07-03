@@ -5,6 +5,7 @@
 #include "Config.h"
 #include "Console.h"
 #include "Flag.h"
+#include "UniqueFindHandle.h"
 
 
 
@@ -259,11 +260,11 @@ Error:
 
 HRESULT CDirectoryLister::RecurseIntoSubdirectories (LPCWSTR pszPath, LPCWSTR pszFileSpec)
 {
-    HRESULT         hr                           = S_OK;
-    BOOL            fSuccess;                    
-    WCHAR           szPathAndFileSpec[MAX_PATH]; 
-    HANDLE          hFind                        = INVALID_HANDLE_VALUE;
-    WIN32_FIND_DATA wfd;                         
+    HRESULT          hr                           = S_OK;
+    BOOL             fSuccess;                    
+    WCHAR            szPathAndFileSpec[MAX_PATH]; 
+    UniqueFindHandle hFind;
+    WIN32_FIND_DATA  wfd;                         
 
    
 
@@ -280,8 +281,8 @@ HRESULT CDirectoryLister::RecurseIntoSubdirectories (LPCWSTR pszPath, LPCWSTR ps
     // Search for subdirectories to recurse into
     // 
     
-    hFind = FindFirstFile (szPathAndFileSpec, &wfd);
-    CBR (hFind != INVALID_HANDLE_VALUE);
+    hFind.reset (FindFirstFile (szPathAndFileSpec, &wfd));
+    CBR (hFind.get() != INVALID_HANDLE_VALUE);
 
     do 
     {
@@ -306,15 +307,13 @@ HRESULT CDirectoryLister::RecurseIntoSubdirectories (LPCWSTR pszPath, LPCWSTR ps
             }
         }
             
-        fSuccess = FindNextFile (hFind, &wfd);
+        fSuccess = FindNextFile (hFind.get(), &wfd);
     }
     while (fSuccess);
 
 
 
 Error:
-    FindClose (hFind);
-    
     return hr;
 }    
 
@@ -566,8 +565,18 @@ HRESULT CDirectoryLister::GetColumnInfo (__in const CDirectoryInfo * pdi, __out 
     CBRA (fSuccess);
 
     cxConsoleWidth  = csbi.srWindow.Right - csbi.srWindow.Left;
-    *pcColumns      = cxConsoleWidth / (UINT) (pdi->m_cchLargestFileName + 1);    // 1 space between columns
-	*pcxColumnWidth = cxConsoleWidth / *pcColumns;
+
+    if (pdi->m_cchLargestFileName + 1 > cxConsoleWidth)
+    {
+        *pcColumns = 1;
+    }
+    else
+    {
+        // 1 space between columns
+        *pcColumns = cxConsoleWidth / (UINT) (pdi->m_cchLargestFileName + 1);    
+    }
+
+    *pcxColumnWidth = cxConsoleWidth / *pcColumns;
 
 Error:
     return hr;
@@ -588,18 +597,24 @@ Error:
 
 HRESULT CDirectoryLister::AddEmptyMatches (__in CDirectoryInfo * pdi, size_t cColumns)
 {
-	HRESULT   hr = S_OK;
-    size_t    i;       
+    HRESULT   hr                = S_OK;
+    size_t    cColumnsInLastRow = pdi->m_vMatches.size() % cColumns;
+    size_t    cColumnsToPad     = cColumns - cColumnsInLastRow;       
     CFileInfo emptyFileInfo;
 
 
 
-    for (i = pdi->m_vMatches.size() % cColumns; i > 0; --i)
+    // If the last row is full, we don't need to add any padding
+    BAIL_OUT_IF (cColumnsInLastRow == 0, S_OK);
+
+    while (cColumnsToPad > 0)
     {
         pdi->m_vMatches.push_back (emptyFileInfo);
+
+        --cColumnsToPad;
     }
 
-//Error:
+Error:
 	return hr;
 }
 
@@ -1067,7 +1082,7 @@ void CDirectoryLister::DisplayFooterQuotaInfo (__in const ULARGE_INTEGER * puliF
 
 
     strUsername.resize (cchMaxUsername);
-    GetEnvironmentVariable (L"username", &strUsername[0], cchMaxUsername);
+    GetEnvironmentVariable (L"USERNAME", &strUsername[0], cchMaxUsername);
 
     m_pConsole->Printf(m_pConfig->m_rgAttributes[CConfig::EAttribute::Information],          L" ");
     m_pConsole->Printf(m_pConfig->m_rgAttributes[CConfig::EAttribute::InformationHighlight], FormatNumberWithSeparators (puliFreeBytesAvailable->QuadPart));

@@ -203,6 +203,7 @@
     <ClInclude Include="pch.h" />
     <ClInclude Include="TCDir.h" />
     <ClInclude Include="Console.h" />
+    <ClInclude Include="UniqueFindHandle.h" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="ReadMe.txt" />
