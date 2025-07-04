@@ -64,10 +64,11 @@ void TestColors ()
 
 int wmain (int argc, WCHAR * argv[])
 {
-    HRESULT        hr;      
-    CCommandLine   cmdline; 
-    CConsole     * pConsole = NULL;
-    CConfig      * pConfig  = NULL;
+    HRESULT               hr;      
+    CCommandLine          cmdline; 
+    unique_ptr<PerfTimer> perfTimerPtr;
+    unique_ptr<CConsole>  consolePtr;
+    unique_ptr<CConfig>   configPtr;
 
  
 
@@ -79,17 +80,17 @@ int wmain (int argc, WCHAR * argv[])
     _CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF | _CRTDBG_CHECK_ALWAYS_DF);
 #endif
 
-    pConsole = new CConsole();
-    CPR (pConsole);
-    
-    hr = pConsole->Initialize ();
+    consolePtr.reset (new (nothrow) CConsole ());
+    CPR (consolePtr);
+        
+    hr = consolePtr->Initialize();
     CHR (hr);
 
-    pConfig = new CConfig (pConsole->m_consoleScreenBufferInfoEx.wAttributes);
-    CBR (pConfig != NULL);
+    configPtr.reset (new (nothrow) CConfig (consolePtr->m_consoleScreenBufferInfoEx.wAttributes));
+    CPR (configPtr);
 
 #ifdef _DEBUG
-    //pConsole->Test();
+    //consolePtr->Test();
 #endif
 
 
@@ -101,7 +102,7 @@ int wmain (int argc, WCHAR * argv[])
     hr = cmdline.Parse (argc - 1, argv + 1);
     if (FAILED (hr))
     {
-        Usage (pConsole, pConfig);
+        Usage (consolePtr.get(), configPtr.get());
     }
     CHR (hr);
 
@@ -125,14 +126,13 @@ int wmain (int argc, WCHAR * argv[])
     //for_each (cmdline.m_listMask.begin(), cmdline.m_listMask.end(), CDirectoryLister (&cmdline, pConsole, pConfig));
 
     {
-        unique_ptr<PerfTimer> perfTimerPtr;
 
         if (cmdline.m_fPerfTimer)
         {
             perfTimerPtr = make_unique<PerfTimer> (L"TCDir time elapsed", PerfTimer::Automatic, PerfTimer::Msec, [] (const wchar_t * msg) { fputws (msg, stdout); });
         }
 
-        CDirectoryLister dirLister (&cmdline, pConsole, pConfig);
+        CDirectoryLister dirLister (&cmdline, consolePtr.get(), configPtr.get());
 
         for (LPCWSTR mask : cmdline.m_listMask)
         {
@@ -142,8 +142,6 @@ int wmain (int argc, WCHAR * argv[])
 
 
 Error:      
-    delete pConfig;
-    delete pConsole;
 
 	return 0;
 }

@@ -125,9 +125,9 @@ void RELEASEMSG (LPCWSTR pszFormat, ...);
 
 #define __CPRAExHelper(__arg_prTest, __arg_fAssert, __arg_hrReplaceHr)                      \
 {                                                                                           \
-    void * __pr = __arg_prTest;                                                             \
+    /*void * __pr = __arg_prTest;*/                                                             \
                                                                                             \
-    if (__pr == NULL)                                                                       \
+    if (__arg_prTest == nullptr)                                                            \
     {                                                                                       \
         if (__arg_fAssert)                                                                  \
         {                                                                                   \
