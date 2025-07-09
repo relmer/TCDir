@@ -23,7 +23,6 @@ public:
 
     HANDLE                       m_hStdOut; 
     CONSOLE_SCREEN_BUFFER_INFOEX m_consoleScreenBufferInfoEx;
-    COORD                        m_coord;
 
 
 

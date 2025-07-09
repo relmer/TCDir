@@ -463,12 +463,6 @@ void CDirectoryLister::DisplayResults (__in CDirectoryInfo * pdi, EDirectoryLeve
     m_pConsole->Puts (m_pConfig->m_rgAttributes[CConfig::EAttribute::Default], L"");
 
     m_pConsole->Flush();
-
-    DEBUGMSG(L"%s complete, new cursor pos = %d\n",
-        pdi->m_pszPath,
-        m_pConsole->m_coord.Y
-    );
-
 }
 
 
@@ -658,7 +652,6 @@ HRESULT CDirectoryLister::GetWideFormattedName (__in const WIN32_FIND_DATA * pwf
 
 void CDirectoryLister::DisplayResultsNormal (__in CDirectoryInfo * pdi)
 {
-    SHORT              lastY        = 0;
     UINT               cchMaxSize   = 0;
     BOOL               fSuccess     = FALSE;   
     WCHAR              szDate[11]   = { 0 }; // "12/34/5678" + null = 11 characters
@@ -690,8 +683,6 @@ void CDirectoryLister::DisplayResultsNormal (__in CDirectoryInfo * pdi)
     
     
 
-    lastY = m_pConsole->m_coord.Y;
-    
     cchMaxSize = GetMaxSize (&pdi->m_uliLargestFileSize);
     cchMaxSize = max (cchMaxSize, kcchDirSize);
     
@@ -761,12 +752,6 @@ void CDirectoryLister::DisplayResultsNormal (__in CDirectoryInfo * pdi)
 
         attr = (m_pConfig->GetTextAttrForFile (&(*iter)));
         m_pConsole->Printf (attr, L"%s\n", iter->cFileName);
-        
-        DEBUGMSG (L"m_coord.Y = %d, lastY = %d\n",
-            m_pConsole->m_coord.Y,
-            lastY);
-        
-        ++lastY;
 
         ++iter;
     }
@@ -954,11 +939,14 @@ void CDirectoryLister::DisplayPathHeader (LPCWSTR pszPath)
 
 void CDirectoryLister::DisplayListingSummary (__in const CDirectoryInfo * pdi)
 {
-    int cMaxDigits = 0;
+    int cMaxDigits = 1;
 
 
-    cMaxDigits = (int) log10 (max (m_cFilesFound, m_cDirectoriesFound)) + 1;
-    cMaxDigits += cMaxDigits / 3;  // add space for each comma
+    if (m_cFilesFound > 0 || m_cDirectoriesFound > 0)
+    { 
+        cMaxDigits = (int) log10 (max (m_cFilesFound, m_cDirectoriesFound)) + 1;
+        cMaxDigits += cMaxDigits / 3;  // add space for each comma
+    }
 
 
     m_pConsole->Puts   (m_pConfig->m_rgAttributes[CConfig::EAttribute::Information],          L" Total files listed:");

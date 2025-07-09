@@ -15,7 +15,6 @@
 CConsole::CConsole(void) :  
     m_consoleScreenBufferInfoEx (sizeof (m_consoleScreenBufferInfoEx)),  
     m_attrDefault               (0),
-    m_coord                     ({0, 0}),
     m_hStdOut                   (nullptr)
 {  
     // Initialization of m_consoleScreenBufferInfoEx above assumes cbSize is the first member  
@@ -65,7 +64,6 @@ HRESULT CConsole::Initialize (void)
     CWRA (fSuccess);
 
     m_attrDefault = m_consoleScreenBufferInfoEx.wAttributes;
-    m_coord       = m_consoleScreenBufferInfoEx.dwCursorPosition;
 
     m_strBuffer.reserve (s_kcchInitialBufferSize);
 
