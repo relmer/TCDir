@@ -410,6 +410,12 @@ HRESULT CDirectoryLister::AddMatchToList (__in CFileInfo * pwfd, __in CDirectory
 
 void CDirectoryLister::DisplayResults (__in CDirectoryInfo * pdi, EDirectoryLevel level)
 {
+    // For subdirectories with no matches, skip displaying entirely
+    if (level == EDirectoryLevel::Subdirectory && pdi->m_vMatches.size() == 0)
+    {
+        return;
+    }
+
     if (level == EDirectoryLevel::Initial)
     {
         //
@@ -432,7 +438,14 @@ void CDirectoryLister::DisplayResults (__in CDirectoryInfo * pdi, EDirectoryLeve
 
     if (pdi->m_vMatches.size() == 0)
     {
-        m_pConsole->Puts (m_pConfig->m_rgAttributes[CConfig::EAttribute::Default], L"Directory is empty.");
+        if (wcscmp(pdi->m_pszFileSpec, L"*") == 0)
+        {
+            m_pConsole->Puts(m_pConfig->m_rgAttributes[CConfig::EAttribute::Default], L"Directory is empty.");
+        }
+        else
+        {
+            m_pConsole->Printf(m_pConfig->m_rgAttributes[CConfig::EAttribute::Default], L"No files matching '%s' found.\n", pdi->m_pszFileSpec);
+        }
     }
     else 
     {
@@ -958,7 +971,7 @@ void CDirectoryLister::DisplayListingSummary (__in const CDirectoryInfo * pdi)
     m_pConsole->Printf (m_pConfig->m_rgAttributes[CConfig::EAttribute::Information],          m_uliSizeOfAllFilesFound.QuadPart == 1 ? L" byte\n" : L" bytes\n");
 
     m_pConsole->Printf (m_pConfig->m_rgAttributes[CConfig::EAttribute::InformationHighlight], L"    %*s", cMaxDigits, FormatNumberWithSeparators (m_cDirectoriesFound));
-    m_pConsole->Puts   (m_pConfig->m_rgAttributes[CConfig::EAttribute::Information],          m_cDirectoriesFound == 1 ? L" subdiretory" : L" subdirectories");
+    m_pConsole->Puts   (m_pConfig->m_rgAttributes[CConfig::EAttribute::Information],          m_cDirectoriesFound == 1 ? L" subdirectory" : L" subdirectories");
 
     m_pConsole->Puts   (m_pConfig->m_rgAttributes[CConfig::EAttribute::Default],              L"");
     DisplayVolumeFooter (pdi);
