@@ -18,7 +18,7 @@
             "type": "cppvsdbg",
             "request": "launch",
             "program": "${workspaceFolder}\\x64\\Debug\\TCDir.exe",
-            "args": ["C:\\Windows\\System32\\*.asdf", "/s"],
+            "args": ["C:\\Windows\\System32", "/s"],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
             "environment": [],

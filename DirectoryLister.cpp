@@ -152,11 +152,9 @@ HRESULT CDirectoryLister::ProcessDirectory (LPCWSTR pszPath, LPCWSTR pszFileSpec
     HRESULT                 hr                          = S_OK;
     BOOL                    fSuccess;                    
     WCHAR                   szPathAndFileSpec[MAX_PATH]; 
-    HANDLE                  hFind                       = INVALID_HANDLE_VALUE;
+    UniqueFindHandle        hFind;
     CFileInfo               fileInfo;                         
     CDirectoryInfo          di;
-    list<wstring>           listSubdirs;
-    list<wstring>::iterator iter;
 
 
 
@@ -181,8 +179,8 @@ HRESULT CDirectoryLister::ProcessDirectory (LPCWSTR pszPath, LPCWSTR pszFileSpec
     // Search for matching files and directories
     // 
     
-    hFind = FindFirstFile (szPathAndFileSpec, &fileInfo);
-    if (hFind != INVALID_HANDLE_VALUE)
+    hFind.reset (FindFirstFile (szPathAndFileSpec, &fileInfo));
+    if (hFind.get() != INVALID_HANDLE_VALUE)
     {
         do 
         {
@@ -201,7 +199,7 @@ HRESULT CDirectoryLister::ProcessDirectory (LPCWSTR pszPath, LPCWSTR pszFileSpec
                 }
             }
                 
-            fSuccess = FindNextFile (hFind, &fileInfo);
+            fSuccess = FindNextFile (hFind.get(), &fileInfo);
         }
         while (fSuccess);        
     }
@@ -240,11 +238,6 @@ HRESULT CDirectoryLister::ProcessDirectory (LPCWSTR pszPath, LPCWSTR pszFileSpec
 
 
 Error:    
-    if (hFind != INVALID_HANDLE_VALUE)
-    {
-        FindClose (hFind);
-    }
-
     return hr;
 }
 
@@ -427,7 +420,7 @@ void CDirectoryLister::DisplayResults (__in CDirectoryInfo * pdi, EDirectoryLeve
         m_pConsole->WriteSeparatorLine (m_pConfig->m_rgAttributes[CConfig::EAttribute::SeparatorLine]);
 
         //
-        // We'll only show the dirve header on the initial directory processed.
+        // We'll only show the drive header on the initial directory processed.
         // Any recursed subdirs won't show it.
         //
 
@@ -585,14 +578,14 @@ HRESULT CDirectoryLister::GetColumnInfo (__in const CDirectoryInfo * pdi, __out 
     HRESULT                    hr              = S_OK;
     BOOL                       fSuccess;       
     CONSOLE_SCREEN_BUFFER_INFO csbi;           
-	UINT                       cxConsoleWidth; 
+    UINT                       cxConsoleWidth; 
 
 
     
     fSuccess = GetConsoleScreenBufferInfo (m_pConsole->m_hStdOut, &csbi);
     CBRA (fSuccess);
 
-    cxConsoleWidth  = csbi.srWindow.Right - csbi.srWindow.Left;
+    cxConsoleWidth  = csbi.srWindow.Right - csbi.srWindow.Left + 1;
 
     if (pdi->m_cchLargestFileName + 1 > cxConsoleWidth)
     {
@@ -625,8 +618,8 @@ Error:
 
 HRESULT CDirectoryLister::GetWideFormattedName (__in const WIN32_FIND_DATA * pwfd, __deref_out_z LPCWSTR * ppszName)
 {
-    HRESULT      hr                  = S_OK;
-    static WCHAR szDirName[MAX_PATH] = L"[";
+    HRESULT      hr                      = S_OK;
+    static WCHAR szDirName[MAX_PATH + 2] = L"[";
 
 
     
@@ -637,7 +630,7 @@ HRESULT CDirectoryLister::GetWideFormattedName (__in const WIN32_FIND_DATA * pwf
 
 
         
-        StringCchCopyEx (szDirName + 1, ARRAYSIZE (szDirName) - 1, pwfd->cFileName, &pszBufEnd, &cchRemaining, 0);
+        StringCchCopyEx (szDirName + 1, ARRAYSIZE (szDirName) - 2, pwfd->cFileName, &pszBufEnd, &cchRemaining, 0);
         StringCchCat    (pszBufEnd,  cchRemaining, L"]");
 
         *ppszName = szDirName;
@@ -1069,7 +1062,7 @@ void CDirectoryLister::DisplayFooterQuotaInfo (__in const ULARGE_INTEGER * puliF
 
     
 
-    strUsername.reserve (cchUsername);
+    strUsername.resize (cchUsername);
     
     fSuccess = GetUserName (&strUsername[0], &cchUsername);
     if (fSuccess)
@@ -1105,10 +1098,10 @@ UINT CDirectoryLister::GetMaxSize (__in const ULARGE_INTEGER * puli)
     UINT cchDigits = 1;
 
 
-	if (puli->QuadPart != 0)
-	{
-		cchDigits += (UINT) log10 ((float) puli->QuadPart);
-	}
+    if (puli->QuadPart != 0)
+    {
+        cchDigits += (UINT) log10 ((double) puli->QuadPart);
+    }
 
     //
     // add space for the comma digit group separators
@@ -1152,7 +1145,7 @@ LPCWSTR CDirectoryLister::FormatNumberWithSeparators (ULONGLONG n)
     // Extract the digits, placing comma seperators appropriately
     //
 
-	do
+    do
     {
         UINT uiDigit;
 
@@ -1191,7 +1184,7 @@ LPCWSTR CDirectoryLister::FormatNumberWithSeparators (ULONGLONG n)
         
         *pszSize = (WCHAR) (uiDigit + (UINT) L'0');
     }             
-	while (n > 0ull);
+    while (n > 0ull);
 
     return pszSize;
 }
