@@ -180,7 +180,7 @@
       <OptimizeReferences>true</OptimizeReferences>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <Profile>true</Profile>
-      <LinkTimeCodeGeneration>PGInstrument</LinkTimeCodeGeneration>
+      <LinkTimeCodeGeneration>PGOptimization</LinkTimeCodeGeneration>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>

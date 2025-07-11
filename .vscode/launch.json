@@ -14,7 +14,7 @@
             "preLaunchTask": "Build Debug x64"
         },
         {
-            "name": "Debug TCDir (with args)",
+            "name": "Debug TCDir /s",
             "type": "cppvsdbg",
             "request": "launch",
             "program": "${workspaceFolder}\\x64\\Debug\\TCDir.exe",
@@ -26,12 +26,25 @@
             "preLaunchTask": "Build Debug x64"
         },
         {
+            "name": "Debug TCDir /w /s",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}\\x64\\Debug\\TCDir.exe",
+            "args": ["C:\\Windows\\System32", "/w", "/s"],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "console": "integratedTerminal",
+            "preLaunchTask": "Build Debug x64"
+        },
+        {
             "name": "Run Release TCDir",
             "type": "cppvsdbg",
             "request": "launch",
             "program": "${workspaceFolder}\\x64\\Release\\TCDir.exe",
-            "args": [],
-            "stopAtEntry": false,
+            "args": ["C:\\Windows\\System32", "/w", "/s"],
+            //"args": [],
+            "stopAtEntry": true,
             "cwd": "${workspaceFolder}",
             "environment": [],
             "console": "integratedTerminal",

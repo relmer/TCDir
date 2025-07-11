@@ -214,14 +214,24 @@ Error:
 
 HRESULT CCommandLine::OrderByHandler (LPCWSTR pszArg)
 {
-    HRESULT              hr                = S_OK;;               
-    static const WCHAR   s_kszOrderByMap[] = L"nesd";
-    const WCHAR        * pchOrderBy;       
-    int                  idxOrderBy;       
+    struct SSortOrderMap
+    {
+        WCHAR      ch;
+        ESortOrder sortorder;
+    };
+
+    static const SSortOrderMap s_krgSortOrderMap[] =
+    {
+        { L'n', ESortOrder::SO_NAME      },
+        { L'e', ESortOrder::SO_EXTENSION },
+        { L's', ESortOrder::SO_SIZE      },
+        { L'd', ESortOrder::SO_DATE      }
+    };
 
 
+    HRESULT hr = S_OK;;               
+    WCHAR   ch = 0; 
 
-    assert (pszArg != NULL);
 
 
     //
@@ -230,7 +240,6 @@ HRESULT CCommandLine::OrderByHandler (LPCWSTR pszArg)
 
     CBRAEx (pszArg != NULL, E_INVALIDARG);
     CBRAEx (*pszArg != L'\0', E_INVALIDARG);
-
     
     //
     // Check to see if we're reversing the sort order
@@ -254,27 +263,17 @@ HRESULT CCommandLine::OrderByHandler (LPCWSTR pszArg)
     // Find the sort order character in the map array
     //
 
-    pchOrderBy = wcschr (s_kszOrderByMap, towlower (*pszArg));
-    if (pchOrderBy != NULL)
-    {        
-        //
-        // Convert to an index into the map array
-        //
-
-        idxOrderBy = (int) (pchOrderBy - s_kszOrderByMap);
-
-        //
-        // Convert to the sort order enumeration
-        //
-
-        m_sortorder = (ESortOrder) idxOrderBy;
-
-        //
-        // Use this as the primary sort attribute
-        //
-
-        m_rgSortPreference[0] = m_sortorder;
+    ch = towlower (*pszArg);
+    for (SSortOrderMap entry : s_krgSortOrderMap)
+    {
+        if (ch == entry.ch)
+        {
+            m_sortorder           = entry.sortorder;
+            m_rgSortPreference[0] = entry.sortorder;
+            break;
+        }
     }
+    
 
 
 Error:

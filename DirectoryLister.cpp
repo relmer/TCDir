@@ -513,6 +513,7 @@ void CDirectoryLister::DisplayResultsWide (__in CDirectoryInfo * pdi)
             size_t            idx           = 0;
             size_t            fullRows      = cItemsInLastRow ? cRows - 1 : cRows;
             LPCWSTR           pszName       = NULL;    
+            size_t            cchName       = 0;
             WIN32_FIND_DATA * pwfd          = NULL;       
             WORD              wAttr         = 0;      
             size_t            cSpacesNeeded = 0;
@@ -544,11 +545,15 @@ void CDirectoryLister::DisplayResultsWide (__in CDirectoryInfo * pdi)
             CHR (hr);
 
             wAttr = m_pConfig->GetTextAttrForFile (pwfd);
-            m_pConsole->Printf (wAttr, L"%s", pszName);
+            m_pConsole->Printf (wAttr, L"%.*s", cxColumnWidth, pszName);
 
-            for (cSpacesNeeded = cxColumnWidth - wcslen (pszName); cSpacesNeeded > 0; cSpacesNeeded--)
+            cchName = wcslen (pszName);
+            if (cxColumnWidth > cchName)
             {
-                m_pConsole->Printf (m_pConfig->m_rgAttributes[CConfig::EAttribute::Default], L" ");
+                for (cSpacesNeeded = cxColumnWidth - wcslen (pszName); cSpacesNeeded > 0; cSpacesNeeded--)
+                {
+                    m_pConsole->Printf (m_pConfig->m_rgAttributes[CConfig::EAttribute::Default], L" ");
+                }
             }
         }
 
@@ -630,8 +635,11 @@ HRESULT CDirectoryLister::GetWideFormattedName (__in const WIN32_FIND_DATA * pwf
 
 
         
-        StringCchCopyEx (szDirName + 1, ARRAYSIZE (szDirName) - 2, pwfd->cFileName, &pszBufEnd, &cchRemaining, 0);
-        StringCchCat    (pszBufEnd,  cchRemaining, L"]");
+        hr = StringCchCopyEx (szDirName + 1, ARRAYSIZE (szDirName) - 2, pwfd->cFileName, &pszBufEnd, &cchRemaining, 0);
+        CHRA (hr);
+
+        hr = StringCchCat (pszBufEnd,  cchRemaining, L"]");
+        CHRA (hr);
 
         *ppszName = szDirName;
     }
@@ -640,7 +648,7 @@ HRESULT CDirectoryLister::GetWideFormattedName (__in const WIN32_FIND_DATA * pwf
         *ppszName = pwfd->cFileName;
     }
 
-//Error:
+Error:
     return hr;
 }
 
