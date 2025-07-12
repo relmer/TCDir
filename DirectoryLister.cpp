@@ -569,7 +569,6 @@ Error:
 
 
 
-
 ////////////////////////////////////////////////////////////////////////////////
 //
 //  CDirectoryLister::GetColumnCount
@@ -666,22 +665,98 @@ Error:
 
 void CDirectoryLister::DisplayResultsNormal (__in CDirectoryInfo * pdi)
 {
-    UINT               cchMaxSize   = 0;
-    BOOL               fSuccess     = FALSE;   
-    WCHAR              szDate[11]   = { 0 }; // "12/34/5678" + null = 11 characters
-    WCHAR              szTime[9]    = { 0 };  // "12:34 PM"   + null = 9 characters
-    FileInfoVectorIter iter;       
-    static const WCHAR kchHyphen    = L'-';
-    static const WCHAR kszDirSize[] = L"<DIR>";
-    static const UINT  kcchDirSize  = ARRAYSIZE (kszDirSize) - 1;
+    HRESULT hr                           = S_OK;
+    size_t  cchStringLengthOfMaxFileSize = GetStringLengthOfMaxFileSize (&pdi->m_uliLargestFileSize);
+
     
-    struct SAttrMap
+
+    for (const CFileInfo & fileInfo : pdi->m_vMatches)
+    {
+        WORD textAttr = m_pConfig->GetTextAttrForFile (&fileInfo);
+
+
+
+        hr = DisplayResultsNormalDateAndTime (fileInfo.ftLastWriteTime);
+        CHR (hr);
+
+        DisplayResultsNormalAttributes (fileInfo.dwFileAttributes);
+        DisplayResultsNormalFileSize   (fileInfo, cchStringLengthOfMaxFileSize);
+
+        m_pConsole->Printf (textAttr, L"%s\n", fileInfo.cFileName);
+    }
+    
+
+
+Error:
+    return;
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CDirectoryLister::DisplayResultsNormalDateAndTime
+//
+//  Displays the date and time from the given FILETIME 
+// 
+////////////////////////////////////////////////////////////////////////////////
+
+HRESULT CDirectoryLister::DisplayResultsNormalDateAndTime (const FILETIME & ftLastWriteTime)
+{
+    HRESULT    hr         = S_OK;
+    BOOL       fSuccess   = FALSE;
+    WCHAR      szDate[11] = { 0 }; // "12/34/5678" + null = 11 characters
+    WCHAR      szTime[9]  = { 0 };  // "12:34 PM"   + null = 9 characters
+    SYSTEMTIME st         = { 0 };
+    SYSTEMTIME stLocal    = { 0 };
+
+
+
+    fSuccess = FileTimeToSystemTime (&ftLastWriteTime, &st);
+    CWRA (fSuccess);
+    
+    fSuccess = SystemTimeToTzSpecificLocalTime (NULL, &st, &stLocal);
+    CWRA (fSuccess);
+
+    fSuccess = GetDateFormatEx (LOCALE_NAME_USER_DEFAULT, 0, &stLocal, L"MM/dd/yyyy", szDate, ARRAYSIZE (szDate), NULL);
+    CWRA (fSuccess);
+
+    fSuccess = GetTimeFormatEx (LOCALE_NAME_USER_DEFAULT, 0, &stLocal, L"hh:mm tt",   szTime, ARRAYSIZE (szTime));
+    CWRA (fSuccess);
+
+    m_pConsole->Printf (m_pConfig->m_rgAttributes[CConfig::EAttribute::Date],    L"%s", szDate);
+    m_pConsole->Printf (m_pConfig->m_rgAttributes[CConfig::EAttribute::Default], L"  ");
+    
+    m_pConsole->Printf (m_pConfig->m_rgAttributes[CConfig::EAttribute::Time],    L"%s", szTime);
+    m_pConsole->Printf (m_pConfig->m_rgAttributes[CConfig::EAttribute::Default], L" ");
+
+Error:
+    return hr;
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CDirectoryLister::DisplayResultsNormalAttributes
+//
+//  Displays the file attributes
+// 
+////////////////////////////////////////////////////////////////////////////////
+
+void CDirectoryLister::DisplayResultsNormalAttributes  (DWORD dwFileAttributes)
+{
+    struct SFileAttributeEntry
     {
         DWORD m_dwAttr;
         WCHAR m_chAttr;
     };
     
-    static const SAttrMap attrmap[] =
+    static const SFileAttributeEntry s_krgAttrMap[] =
     {
         {  FILE_ATTRIBUTE_READONLY,      L'R' },
         {  FILE_ATTRIBUTE_HIDDEN,        L'H' },
@@ -691,86 +766,71 @@ void CDirectoryLister::DisplayResultsNormal (__in CDirectoryInfo * pdi)
         {  FILE_ATTRIBUTE_ENCRYPTED,     L'E' },
         {  FILE_ATTRIBUTE_COMPRESSED,    L'C' },
         {  FILE_ATTRIBUTE_REPARSE_POINT, L'P' },
-        {  FILE_ATTRIBUTE_SPARSE_FILE,   L'0' },
-        {  0,                            0    }
+        {  FILE_ATTRIBUTE_SPARSE_FILE,   L'0' }
     };      
-    
-    
-
-    cchMaxSize = GetMaxSize (&pdi->m_uliLargestFileSize);
-    cchMaxSize = max (cchMaxSize, kcchDirSize);
-    
-    iter = pdi->m_vMatches.begin();
-    while (iter != pdi->m_vMatches.end())
-    {                           
-        SYSTEMTIME       st             = { 0 };
-        SYSTEMTIME       stLocal        = { 0 };
-        ULARGE_INTEGER   uliFileSize    = { 0 };
-        const SAttrMap * pAttrMap       = attrmap;
-        WORD             attr           = 0;
 
 
-        fSuccess = FileTimeToSystemTime (&iter->ftLastWriteTime, &st);
-        assert (fSuccess);
+
+    for (const SFileAttributeEntry fileAttributeEntry : s_krgAttrMap)
+    {
+        WORD  attrTextColor = m_pConfig->m_rgAttributes[CConfig::EAttribute::FileAttributeNotPresent];
+        WCHAR chDisplay     = L'-';
         
-        fSuccess = SystemTimeToTzSpecificLocalTime (NULL, &st, &stLocal);
-        assert (fSuccess);
-
-        GetDateFormat (LOCALE_USER_DEFAULT, 0, &stLocal, L"MM/dd/yyyy", szDate, ARRAYSIZE (szDate));
-        GetTimeFormat (LOCALE_USER_DEFAULT, 0, &stLocal, L"hh:mm tt",   szTime, ARRAYSIZE (szTime));
 
 
-        //
-        // Get the two 32-bit halves into a convenient 64-bit type
-        //
-        
-        uliFileSize.LowPart  = iter->nFileSizeLow;
-        uliFileSize.HighPart = iter->nFileSizeHigh;
-
-        m_pConsole->Printf (m_pConfig->m_rgAttributes[CConfig::EAttribute::Date],    L"%s", szDate);
-        m_pConsole->Printf (m_pConfig->m_rgAttributes[CConfig::EAttribute::Default], L"  ");
-        
-        m_pConsole->Printf (m_pConfig->m_rgAttributes[CConfig::EAttribute::Time],    L"%s", szTime);
-        m_pConsole->Printf (m_pConfig->m_rgAttributes[CConfig::EAttribute::Default], L" ");
-
-        while (pAttrMap->m_dwAttr != 0)
+        if (dwFileAttributes & fileAttributeEntry.m_dwAttr)
         {
-            WCHAR chDisplay;
-            
-            if (iter->dwFileAttributes & pAttrMap->m_dwAttr)
-            {
-                attr = m_pConfig->m_rgAttributes[CConfig::EAttribute::FileAttributePresent];
-                chDisplay = pAttrMap->m_chAttr;
-            }
-            else
-            {
-                attr = m_pConfig->m_rgAttributes[CConfig::EAttribute::FileAttributeNotPresent];
-                chDisplay = kchHyphen;
-            }
-
-            m_pConsole->Printf (attr, L"%c", chDisplay);
-
-            ++pAttrMap;
+            attrTextColor = m_pConfig->m_rgAttributes[CConfig::EAttribute::FileAttributePresent];
+            chDisplay = fileAttributeEntry.m_chAttr;
         }
-
         
-        if ((iter->dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) == 0)
-        {
-            m_pConsole->Printf (m_pConfig->m_rgAttributes[CConfig::EAttribute::Size], L" %*s ", cchMaxSize, FormatNumberWithSeparators (uliFileSize.QuadPart));
-        }
-        else
-        {
-            UINT cchLeftSidePadding = (cchMaxSize - kcchDirSize) / 2;            
-            m_pConsole->Printf (m_pConfig->m_rgAttributes[CConfig::EAttribute::Directory], L" %*s%-*s ", cchLeftSidePadding, L"", cchMaxSize - cchLeftSidePadding, kszDirSize);
-         }        
-
-        attr = (m_pConfig->GetTextAttrForFile (&(*iter)));
-        m_pConsole->Printf (attr, L"%s\n", iter->cFileName);
-
-        ++iter;
+        m_pConsole->Printf (attrTextColor, L"%c", chDisplay);
     }
 }
 
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CDirectoryLister::DisplayResultsNormalFileSize
+//
+//  Displays the file size
+//  
+////////////////////////////////////////////////////////////////////////////////
+
+void CDirectoryLister::DisplayResultsNormalFileSize (const CFileInfo & fileInfo, size_t cchStringLengthOfMaxFileSize)
+{
+    static const WCHAR  kszDirSize[] = L"<DIR>";
+    static const size_t kcchDirSize  = ARRAYSIZE (kszDirSize) - 1;
+
+    size_t         cchMaxFileSize = max (cchStringLengthOfMaxFileSize, kcchDirSize);
+    ULARGE_INTEGER uliFileSize;
+
+
+    
+    uliFileSize.LowPart  = fileInfo.nFileSizeLow;
+    uliFileSize.HighPart = fileInfo.nFileSizeHigh;
+
+    if ((fileInfo.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) == 0)
+    {
+        m_pConsole->Printf (m_pConfig->m_rgAttributes[CConfig::EAttribute::Size], 
+                            L" %*s ", 
+                            cchMaxFileSize, 
+                            FormatNumberWithSeparators (uliFileSize.QuadPart));
+    }
+    else
+    {
+        size_t cchLeftSidePadding = (cchMaxFileSize - kcchDirSize) / 2;            
+        m_pConsole->Printf (m_pConfig->m_rgAttributes[CConfig::EAttribute::Directory], 
+                            L" %*s%-*s ", 
+                            cchLeftSidePadding, 
+                            L"", 
+                            cchMaxFileSize - cchLeftSidePadding, 
+                            kszDirSize);
+    }        
+}
 
 
 
@@ -1095,29 +1155,29 @@ void CDirectoryLister::DisplayFooterQuotaInfo (__in const ULARGE_INTEGER * puliF
 
 ////////////////////////////////////////////////////////////////////////////////
 //
-//  CDirectoryLister::GetMaxSize
+//  CDirectoryLister::GetStringLengthOfMaxFileSize
 //
 //  
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-UINT CDirectoryLister::GetMaxSize (__in const ULARGE_INTEGER * puli)
+UINT CDirectoryLister::GetStringLengthOfMaxFileSize (__in const ULARGE_INTEGER * puli)
 {
-    UINT cchDigits = 1;
+    UINT cch = 1;
 
 
     if (puli->QuadPart != 0)
     {
-        cchDigits += (UINT) log10 ((double) puli->QuadPart);
+        cch += (UINT) log10 ((double) puli->QuadPart);
     }
 
     //
     // add space for the comma digit group separators
     //
 
-    cchDigits += (cchDigits - 1) / 3;
+    cch += (cch - 1) / 3;
 
-    return cchDigits;
+    return cch;
 }
 
 
