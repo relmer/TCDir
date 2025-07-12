@@ -38,6 +38,7 @@
 // C++ headers
 #include <algorithm>
 #include <chrono>
+#include <filesystem>
 #include <format>
 #include <functional>
 #include <list>

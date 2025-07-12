@@ -13,7 +13,7 @@ protected:
         WORD    m_wAttr;
     };
 
-    typedef unordered_map<LPCWSTR, WORD> TextAttrMap;
+    typedef unordered_map<wstring, WORD> TextAttrMap;
     typedef TextAttrMap::const_iterator  TextAttrMapConstIter;
 
 
