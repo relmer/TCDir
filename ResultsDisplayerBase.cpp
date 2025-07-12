@@ -133,7 +133,7 @@ void CResultsDisplayerBase::DisplayResults (__in CDirectoryInfo * pdi, EDirector
 
 void CResultsDisplayerBase::DisplayDriveHeader (LPCWSTR pszPath)
 {
-    static const LPCWSTR s_krgszVolumeDescription[] = 
+    static constexpr LPCWSTR s_krgszVolumeDescription[] =
     {
         L"an unknown type",
         L"an unknown type",

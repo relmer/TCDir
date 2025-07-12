@@ -112,8 +112,8 @@ void CConsole::Puts (WORD attr, LPCWSTR psz)
 
 int CConsole::Printf (WORD attr, LPCWSTR pszFormat, ...)
 {
-    static const int   s_cchBuf          = 9999;  // Max console buffer width
-    static  WCHAR      s_szBuf[s_cchBuf] = { L'\0' };
+    static constexpr int s_cchBuf          = 9999;  // Max console buffer width
+    static  WCHAR        s_szBuf[s_cchBuf] = { L'\0' };
 
     HRESULT   hr     = S_OK;
     va_list   vaArgs = 0;  
@@ -200,7 +200,7 @@ Error:
 void CConsole::SetColor(WORD attr)
 {
     // Mapping table for base colors (0-7): Black, Blue, Green, Cyan, Red, Magenta, Yellow, White
-    static const int s_knAnsiColor[] = { 30, 34, 32, 36, 31, 35, 33, 37 };
+    static constexpr int s_knAnsiColor[] = { 30, 34, 32, 36, 31, 35, 33, 37 };
 
     int foreground      = attr & 0x0F;
     int background      = (attr & 0xF0) >> 4;

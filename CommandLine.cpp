@@ -220,7 +220,7 @@ HRESULT CCommandLine::OrderByHandler (LPCWSTR pszArg)
         ESortOrder sortorder;
     };
 
-    static const SSortOrderMap s_krgSortOrderMap[] =
+    static constexpr SSortOrderMap s_krgSortOrderMap[] =
     {
         { L'n', ESortOrder::SO_NAME      },
         { L'e', ESortOrder::SO_EXTENSION },
@@ -294,12 +294,12 @@ Error:
 
 HRESULT CCommandLine::AttributeHandler (LPCWSTR pszArg)
 {
-    HRESULT              hr                = S_OK;      
-    DWORD              * pdwMask; 
-    const WCHAR        * pchAttribute;       
-    int                  idxAttribute;       
-    static const WCHAR   s_kszAttributes[] = L"dhsratecp0";
-    static const DWORD   s_kdwAttributes[] = 
+    HRESULT                  hr                = S_OK;      
+    DWORD                  * pdwMask; 
+    const WCHAR            * pchAttribute;       
+    int                      idxAttribute;       
+    static constexpr WCHAR   s_kszAttributes[] = L"dhsratecp0";
+    static constexpr DWORD   s_kdwAttributes[] =
     { 
         FILE_ATTRIBUTE_DIRECTORY, 
         FILE_ATTRIBUTE_HIDDEN, 

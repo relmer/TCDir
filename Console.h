@@ -30,8 +30,8 @@ protected:
 
     void SetColor (WORD attr);
 
-    static const size_t s_kcchInitialBufferSize = 10 * 1024 * 1024;
+    static constexpr size_t s_kcchInitialBufferSize = 10 * 1024 * 1024;
 
     WORD      m_attrDefault;
     wstring   m_strBuffer;
-};               
+};

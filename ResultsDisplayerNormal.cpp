@@ -125,7 +125,7 @@ void CResultsDisplayerNormal::DisplayResultsNormalAttributes  (DWORD dwFileAttri
         WCHAR m_chAttr;
     };
     
-    static const SFileAttributeEntry s_krgAttrMap[] =
+    static constexpr SFileAttributeEntry s_krgAttrMap[] =
     {
         {  FILE_ATTRIBUTE_READONLY,      L'R' },
         {  FILE_ATTRIBUTE_HIDDEN,        L'H' },
@@ -170,8 +170,8 @@ void CResultsDisplayerNormal::DisplayResultsNormalAttributes  (DWORD dwFileAttri
 
 void CResultsDisplayerNormal::DisplayResultsNormalFileSize (const WIN32_FIND_DATA & fileInfo, size_t cchStringLengthOfMaxFileSize)
 {
-    static const WCHAR  kszDirSize[] = L"<DIR>";
-    static const size_t kcchDirSize  = ARRAYSIZE (kszDirSize) - 1;
+    static constexpr WCHAR  kszDirSize[] = L"<DIR>";
+    static constexpr size_t kcchDirSize  = ARRAYSIZE (kszDirSize) - 1;
 
     size_t         cchMaxFileSize = max (cchStringLengthOfMaxFileSize, kcchDirSize);
     ULARGE_INTEGER uliFileSize;

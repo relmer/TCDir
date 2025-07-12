@@ -6,7 +6,7 @@
 
 
 
-const CConfig::STextAttr CConfig::s_rgTextAttrs[] =
+constexpr CConfig::STextAttr CConfig::s_rgTextAttrs[] =
 {
     //
     // Code
