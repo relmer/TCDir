@@ -188,7 +188,7 @@
     <ClCompile Include="CommandLine.cpp" />
     <ClCompile Include="DirectoryLister.cpp" />
     <ClCompile Include="Ehm.cpp" />
-    <ClCompile Include="FileInfo.cpp" />
+    <ClCompile Include="FileComparator.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
@@ -209,7 +209,7 @@
     <ClInclude Include="DirectoryInfo.h" />
     <ClInclude Include="DirectoryLister.h" />
     <ClInclude Include="Ehm.h" />
-    <ClInclude Include="FileInfo.h" />
+    <ClInclude Include="FileComparator.h" />
     <ClInclude Include="Flag.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="PerfTimer.h" />

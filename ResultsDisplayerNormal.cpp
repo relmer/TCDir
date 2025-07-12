@@ -42,7 +42,7 @@ void CResultsDisplayerNormal::DisplayFileResults (__in CDirectoryInfo * pdi)
 
     
 
-    for (const CFileInfo & fileInfo : pdi->m_vMatches)
+    for (const WIN32_FIND_DATA & fileInfo : pdi->m_vMatches)
     {
         WORD textAttr = m_pConfig->GetTextAttrForFile (&fileInfo);
 
@@ -168,7 +168,7 @@ void CResultsDisplayerNormal::DisplayResultsNormalAttributes  (DWORD dwFileAttri
 //  
 ////////////////////////////////////////////////////////////////////////////////
 
-void CResultsDisplayerNormal::DisplayResultsNormalFileSize (const CFileInfo & fileInfo, size_t cchStringLengthOfMaxFileSize)
+void CResultsDisplayerNormal::DisplayResultsNormalFileSize (const WIN32_FIND_DATA & fileInfo, size_t cchStringLengthOfMaxFileSize)
 {
     static const WCHAR  kszDirSize[] = L"<DIR>";
     static const size_t kcchDirSize  = ARRAYSIZE (kszDirSize) - 1;

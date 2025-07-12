@@ -1,6 +1,5 @@
 #pragma once
 
-#include "FileInfo.h"
 #include "DirectoryInfo.h"
 
 class CCommandLine;

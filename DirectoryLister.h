@@ -1,6 +1,5 @@
 #pragma once
 
-#include "FileInfo.h"
 #include "DirectoryInfo.h"
 #include "ResultsDisplayerBase.h"
 
@@ -23,7 +22,7 @@ public:
 protected:    
     HRESULT ProcessDirectory           (LPCWSTR pszPath, LPCWSTR pszFileSpec, CResultsDisplayerBase::EDirectoryLevel level);
     HRESULT RecurseIntoSubdirectories  (LPCWSTR pszPath, LPCWSTR pszFileSpec);
-    HRESULT AddMatchToList             (__in CFileInfo * pwfd, __in CDirectoryInfo * pdi);
+    HRESULT AddMatchToList             (__in WIN32_FIND_DATA * pwfd, __in CDirectoryInfo * pdi);
     BOOL    IsDots                     (LPCWSTR pszFileName);
 
     

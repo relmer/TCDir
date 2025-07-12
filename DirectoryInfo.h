@@ -1,17 +1,7 @@
 #pragma once
 
-#include "FileInfo.h"
-
-
-
-
-
-typedef vector<CFileInfo>        FileInfoVector;
-typedef FileInfoVector::iterator FileInfoVectorIter;
-
-
-
-
+typedef vector<WIN32_FIND_DATA>        FileInfoVector;
+typedef FileInfoVector::iterator       FileInfoVectorIter;
 
 class CDirectoryInfo
 {
@@ -36,4 +26,3 @@ public:
     UINT           m_cSubDirectories;
     ULARGE_INTEGER m_uliBytesUsed;
 };
-

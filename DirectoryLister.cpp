@@ -2,6 +2,7 @@
 #include "DirectoryLister.h"
 #include "ResultsDisplayerNormal.h"
 #include "ResultsDisplayerWide.h"
+#include "FileComparator.h"
 
 #include "CommandLine.h"
 #include "Config.h"
@@ -30,8 +31,6 @@ CDirectoryLister::CDirectoryLister (__in CCommandLine * pCmdLine, __in CConsole 
 {
     m_uliSizeOfAllFilesFound.QuadPart = 0;
 
-    CFileInfo::s_pCmdLine = m_pCmdLine;
-    
     // Create the appropriate displayer based on wide listing flag
     if (m_pCmdLine->m_fWideListing)
     {
@@ -164,7 +163,7 @@ HRESULT CDirectoryLister::ProcessDirectory (LPCWSTR pszPath, LPCWSTR pszFileSpec
     BOOL             fSuccess;                    
     WCHAR            szPathAndFileSpec[MAX_PATH]; 
     UniqueFindHandle hFind;
-    CFileInfo        fileInfo;                         
+    WIN32_FIND_DATA  wfd;                         
     CDirectoryInfo   di;
 
 
@@ -190,36 +189,36 @@ HRESULT CDirectoryLister::ProcessDirectory (LPCWSTR pszPath, LPCWSTR pszFileSpec
     // Search for matching files and directories
     // 
     
-    hFind.reset (FindFirstFile (szPathAndFileSpec, &fileInfo));
+    hFind.reset (FindFirstFile (szPathAndFileSpec, &wfd));
     if (hFind.get() != INVALID_HANDLE_VALUE)
     {
         do 
         {
-            if (!IsDots (fileInfo.cFileName))
+            if (!IsDots (wfd.cFileName))
             {
                 //
                 // If the required attributes are present and the excluded attributes are not 
                 // then add the file to the list of matches for this directory
                 //
                 
-                if (CFlag::IsSet    (fileInfo.dwFileAttributes, m_pCmdLine->m_dwAttributesRequired) && 
-                    CFlag::IsNotSet (fileInfo.dwFileAttributes, m_pCmdLine->m_dwAttributesExcluded))
+                if (CFlag::IsSet    (wfd.dwFileAttributes, m_pCmdLine->m_dwAttributesRequired) && 
+                    CFlag::IsNotSet (wfd.dwFileAttributes, m_pCmdLine->m_dwAttributesExcluded))
                 {
-                    hr = AddMatchToList (&fileInfo, &di);
+                    hr = AddMatchToList (&wfd, &di);
                     CHR (hr);
                 }
             }
                 
-            fSuccess = FindNextFile (hFind.get(), &fileInfo);
+            fSuccess = FindNextFile (hFind.get(), &wfd);
         }
         while (fSuccess);        
     }
 
     //
-    // Sort the results
+    // Sort the results using FileComparator
     //
 
-    std::sort (di.m_vMatches.begin(), di.m_vMatches.end());
+    std::sort (di.m_vMatches.begin(), di.m_vMatches.end(), FileComparator(m_pCmdLine));
 
     //
     // Show the directory contents using the displayer
@@ -331,7 +330,7 @@ Error:
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-HRESULT CDirectoryLister::AddMatchToList (__in CFileInfo * pwfd, __in CDirectoryInfo * pdi)
+HRESULT CDirectoryLister::AddMatchToList (__in WIN32_FIND_DATA * pwfd, __in CDirectoryInfo * pdi)
 {
     HRESULT hr           = S_OK;
     size_t  cchFileName  = 0; 

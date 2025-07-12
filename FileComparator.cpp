@@ -1,5 +1,5 @@
 #include "pch.h"
-#include "FileInfo.h"
+#include "FileComparator.h"
 
 
 
@@ -7,38 +7,15 @@
 
 ////////////////////////////////////////////////////////////////////////////////
 //
-//  Define class statics
+//  FileComparator::FileComparator
+//
+//  
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-// TODO:  Not very elegant...clean this up.
-CCommandLine * CFileInfo::s_pCmdLine = NULL;
-
-
-
-
-
-////////////////////////////////////////////////////////////////////////////////
-//
-//  CFileInfo::operator< 
-//
-//  Define a compoarison operator for use by std::sort
-//
-////////////////////////////////////////////////////////////////////////////////
-
-CFileInfo::CFileInfo(void)
+FileComparator::FileComparator(const CCommandLine* pCmdLine) :
+    m_pCmdLine(pCmdLine)
 {
-    cAlternateFileName[0]           = L'\0';
-    cFileName[0]                    = L'\0';
-    dwFileAttributes                = 0;
-    dwReserved0                     = 0;
-    dwReserved1                     = 0;
-    ftCreationTime.dwHighDateTime   = 0;
-    ftCreationTime.dwLowDateTime    = 0;
-    ftLastAccessTime.dwHighDateTime = 0;
-    ftLastAccessTime.dwLowDateTime  = 0;
-    ftLastWriteTime.dwHighDateTime  = 0;
-    ftLastWriteTime.dwLowDateTime   = 0;
 }
 
 
@@ -47,27 +24,26 @@ CFileInfo::CFileInfo(void)
 
 ////////////////////////////////////////////////////////////////////////////////
 //
-//  CFileInfo::operator< 
+//  FileComparator::operator()
 //
-//  Define a compoarison operator for use by std::sort
+//  Compare two WIN32_FIND_DATA entries for sorting
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-bool CFileInfo::operator< (const CFileInfo& rhs) const
+bool FileComparator::operator()(const WIN32_FIND_DATA& lhs, const WIN32_FIND_DATA& rhs) const
 {
-    bool                       comesBeforeRhs   = false;
-    bool                       isDirectory      = false;
-    bool                       isDirectoryRhs   = false;
-    CCommandLine::ESortOrder * pSortAttribute   = NULL;
-    CCommandLine::ESortOrder * pLastAttribute   = &s_pCmdLine->m_rgSortPreference[ARRAYSIZE(s_pCmdLine->m_rgSortPreference)];
-    LONGLONG                   cmp              = 0;
-
+    bool                             comesBeforeRhs   = false;
+    bool                             isDirectory      = false;
+    bool                             isDirectoryRhs   = false;
+    const CCommandLine::ESortOrder * pSortAttribute   = NULL;
+    const CCommandLine::ESortOrder * pLastAttribute   = &m_pCmdLine->m_rgSortPreference[ARRAYSIZE(m_pCmdLine->m_rgSortPreference)];
+    LONGLONG                         cmp              = 0;
 
     //
     // If only one of the operands is a directory, it should be sorted first
     //
 
-    isDirectory = !!(dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY);
+    isDirectory = !!(lhs.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY);
     isDirectoryRhs = !!(rhs.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY);
 
     if (isDirectory ^ isDirectoryRhs)
@@ -79,7 +55,7 @@ bool CFileInfo::operator< (const CFileInfo& rhs) const
     // Compare based on requested sort attribute with fallbacks
     //
 
-    for (pSortAttribute = s_pCmdLine->m_rgSortPreference;
+    for (pSortAttribute = m_pCmdLine->m_rgSortPreference;
         pSortAttribute < pLastAttribute;
         ++pSortAttribute)
     {
@@ -87,15 +63,15 @@ bool CFileInfo::operator< (const CFileInfo& rhs) const
         {
         case CCommandLine::ESortOrder::SO_DEFAULT:
         case CCommandLine::ESortOrder::SO_NAME:
-            cmp = lstrcmpiW(cFileName, rhs.cFileName);
+            cmp = lstrcmpiW(lhs.cFileName, rhs.cFileName);
             break;
 
         case CCommandLine::ESortOrder::SO_DATE:
-            cmp = CompareFileTime(&ftLastWriteTime, &rhs.ftLastWriteTime);
+            cmp = CompareFileTime(&lhs.ftLastWriteTime, &rhs.ftLastWriteTime);
             break;
 
         case CCommandLine::ESortOrder::SO_EXTENSION:
-            cmp = lstrcmpiW(PathFindExtension(cFileName), PathFindExtension(rhs.cFileName));
+            cmp = lstrcmpiW(PathFindExtension(lhs.cFileName), PathFindExtension(rhs.cFileName));
             break;
 
         case CCommandLine::ESortOrder::SO_SIZE:
@@ -103,8 +79,8 @@ bool CFileInfo::operator< (const CFileInfo& rhs) const
             ULARGE_INTEGER uliFileSize;
             ULARGE_INTEGER uliRhsFileSize;
 
-            uliFileSize.HighPart = nFileSizeHigh;
-            uliFileSize.LowPart  = nFileSizeLow;
+            uliFileSize.HighPart = lhs.nFileSizeHigh;
+            uliFileSize.LowPart  = lhs.nFileSizeLow;
 
             uliRhsFileSize.HighPart = rhs.nFileSizeHigh;
             uliRhsFileSize.LowPart  = rhs.nFileSizeLow;
@@ -138,16 +114,11 @@ bool CFileInfo::operator< (const CFileInfo& rhs) const
     // requested attribute, *ignore* reverse sorting for this attribute.
     //
 
-    if (pSortAttribute == s_pCmdLine->m_rgSortPreference &&
-        s_pCmdLine->m_sortdirection == CCommandLine::ESortDirection::SD_DESCENDING)
+    if (pSortAttribute == m_pCmdLine->m_rgSortPreference &&
+        m_pCmdLine->m_sortdirection == CCommandLine::ESortDirection::SD_DESCENDING)
     {
         comesBeforeRhs = !comesBeforeRhs;
     }
 
     return comesBeforeRhs;
 }
-
-
-
-
-

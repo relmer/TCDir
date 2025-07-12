@@ -16,5 +16,5 @@ public:
 protected:
     HRESULT DisplayResultsNormalDateAndTime (const FILETIME & ftLastWriteTime);
     void    DisplayResultsNormalAttributes  (DWORD dwFileAttributes);
-    void    DisplayResultsNormalFileSize    (const CFileInfo & fileInfo, size_t cchStringLengthOfMaxFileSize);
+    void    DisplayResultsNormalFileSize    (const WIN32_FIND_DATA & fileInfo, size_t cchStringLengthOfMaxFileSize);
 };
