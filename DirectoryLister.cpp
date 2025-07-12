@@ -1,5 +1,7 @@
 ﻿#include "pch.h"
 #include "DirectoryLister.h"
+#include "ResultsDisplayerNormal.h"
+#include "ResultsDisplayerWide.h"
 
 #include "CommandLine.h"
 #include "Config.h"
@@ -30,7 +32,15 @@ CDirectoryLister::CDirectoryLister (__in CCommandLine * pCmdLine, __in CConsole 
 
     CFileInfo::s_pCmdLine = m_pCmdLine;
     
-    m_displayer = make_unique<CResultsDisplayerBase>(m_pCmdLine, m_pConsole, m_pConfig);
+    // Create the appropriate displayer based on wide listing flag
+    if (m_pCmdLine->m_fWideListing)
+    {
+        m_displayer = make_unique<CResultsDisplayerWide>(m_pCmdLine, m_pConsole, m_pConfig);
+    }
+    else
+    {
+        m_displayer = make_unique<CResultsDisplayerNormal>(m_pCmdLine, m_pConsole, m_pConfig);
+    }
 }
 
 

@@ -17,11 +17,12 @@ public:
     };
 
     CResultsDisplayerBase                   (__in CCommandLine * pCmdLine, __in CConsole * pConsole, __in CConfig * pConfig);
-    ~CResultsDisplayerBase                  (void);
+    virtual ~CResultsDisplayerBase          (void);
 
     void    DisplayResults                  (__in CDirectoryInfo * pdi, EDirectoryLevel level);
-    void    DisplayResultsWide              (__in CDirectoryInfo * pdi);
-    void    DisplayResultsNormal            (__in CDirectoryInfo * pdi);
+    
+    // Pure virtual method - must be implemented by derived classes
+    virtual void DisplayFileResults         (__in CDirectoryInfo * pdi) = 0;
     void    DisplayDriveHeader              (LPCWSTR pszPath);
     void    DisplayPathHeader               (LPCWSTR pszPath);
     void    DisplayDirectorySummary         (__in const CDirectoryInfo * pdi);
@@ -30,11 +31,6 @@ public:
     void    DisplayFooterQuotaInfo          (__in const ULARGE_INTEGER * puliFreeBytesAvailable);
 
 protected:
-    HRESULT GetColumnInfo                   (__in const CDirectoryInfo * pdi, __out size_t * pcColumns, __out size_t * pcxColumnWidth);
-    HRESULT GetWideFormattedName            (__in const WIN32_FIND_DATA * pwfd, __deref_out_z LPCWSTR * ppszName);
-    HRESULT DisplayResultsNormalDateAndTime (const FILETIME & ftLastWriteTime);
-    void    DisplayResultsNormalAttributes  (DWORD dwFileAttributes);
-    void    DisplayResultsNormalFileSize    (const CFileInfo & fileInfo, size_t cchStringLengthOfMaxFileSize);
     UINT    GetStringLengthOfMaxFileSize    (__in const ULARGE_INTEGER * puli);
     LPCWSTR FormatNumberWithSeparators      (ULONGLONG n);
 
