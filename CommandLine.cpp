@@ -83,8 +83,6 @@ HRESULT CCommandLine::Parse (int cArg, WCHAR ** ppszArg)
 
     CBREx (cArg, S_OK);
 
-
-
     //
     // Iterate over the arguments
     //
@@ -138,65 +136,50 @@ Error:
 
 HRESULT CCommandLine::HandleSwitch (LPCWSTR pszArg)
 {
-    struct SwitchMap
+    struct SwitchEntry
     {
         WCHAR              m_chSwitch; 
-        bool             * m_pfToggle; 
+        bool             * m_pfValueOfSwitch; 
         SwitchParserFunc   m_pHandler; 
     };                             
 
-    SwitchMap map[] =
+    SwitchEntry allSwitches[] =
     {
         {  L's',   &m_fRecurse,     NULL                             },
         {  L'o',   NULL,            &CCommandLine::OrderByHandler    },
         {  L'a',   NULL,            &CCommandLine::AttributeHandler  },
         {  L'w',   &m_fWideListing, NULL                             },
         {  L'p',   &m_fPerfTimer,   NULL                             },
-
-        {  L'\0',  NULL,            NULL                             },  // End of map
     };      
     
-    HRESULT     hr           = S_OK;
-    bool        fToggleState = TRUE;  
-    SwitchMap * pMap         = map;
-	WCHAR       ch           = L'\0';
+    HRESULT hr = S_OK;
+	WCHAR   ch = L'\0';
 
 
-
-    CBRAEx ((pszArg != NULL) && (*pszArg != L'\0'), E_INVALIDARG);
-    
-    if (*pszArg == '-')
-    {
-        fToggleState = false;
-        ++pszArg;
-
-        CBRAEx (*pszArg != L'\0', E_INVALIDARG);    
-    }
 
 	ch = (WCHAR) tolower (*pszArg);
 
-    hr = E_FAIL;
-    while (pMap->m_chSwitch != L'\0')
+    // Default to E_INVALIDARG for unrecognized switches
+    hr = E_INVALIDARG;
+
+    for (SwitchEntry entry : allSwitches)
     {
-        if (pMap->m_chSwitch == ch)
+        if (entry.m_chSwitch == ch)
         {
-            if (pMap->m_pfToggle != NULL)
+            if (entry.m_pfValueOfSwitch != NULL)
             {
-                *pMap->m_pfToggle = fToggleState;
+                *(entry.m_pfValueOfSwitch) = true;
 				hr = S_OK;
             }
             else
             {
-                hr = (this->*(pMap->m_pHandler))(pszArg + 1);
+                hr = (this->*(entry.m_pHandler))(pszArg + 1);
             }
 
             break;
         }
-
-        ++pMap;
     }
 
-Error:
     return hr;
 }
 
@@ -229,18 +212,11 @@ HRESULT CCommandLine::OrderByHandler (LPCWSTR pszArg)
     };
 
 
-    HRESULT hr = S_OK;;               
+    HRESULT hr = S_OK;               
     WCHAR   ch = 0; 
 
 
 
-    //
-    // Make sure the arg isn't empty
-    //
-
-    CBRAEx (pszArg != NULL, E_INVALIDARG);
-    CBRAEx (*pszArg != L'\0', E_INVALIDARG);
-    
     //
     // Check to see if we're reversing the sort order
     //
@@ -249,19 +225,18 @@ HRESULT CCommandLine::OrderByHandler (LPCWSTR pszArg)
     {
         m_sortdirection = ESortDirection::SD_DESCENDING;
 
-
         //
         // Move to the next character and make sure it's not empty
         //
 
         ++pszArg;
-        CBRAEx (*pszArg != L'\0', E_INVALIDARG);
     }
-
 
     //
     // Find the sort order character in the map array
     //
+
+    hr = E_INVALIDARG; // If there's no match, we'll return this
 
     ch = towlower (*pszArg);
     for (SSortOrderMap entry : s_krgSortOrderMap)
@@ -270,13 +245,12 @@ HRESULT CCommandLine::OrderByHandler (LPCWSTR pszArg)
         {
             m_sortorder           = entry.sortorder;
             m_rgSortPreference[0] = entry.sortorder;
+
+            hr = S_OK;
             break;
         }
     }
     
-
-
-Error:
     return hr;
 }
 
