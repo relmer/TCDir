@@ -13,7 +13,7 @@
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-FileComparator::FileComparator(const CCommandLine* pCmdLine) :
+FileComparator::FileComparator (const CCommandLine* pCmdLine) :
     m_pCmdLine(pCmdLine)
 {
 }
@@ -30,25 +30,27 @@ FileComparator::FileComparator(const CCommandLine* pCmdLine) :
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-bool FileComparator::operator()(const WIN32_FIND_DATA& lhs, const WIN32_FIND_DATA& rhs) const
+bool FileComparator::operator() (const WIN32_FIND_DATA & lhs, const WIN32_FIND_DATA & rhs) const
 {
-    bool                             comesBeforeRhs   = false;
-    bool                             isDirectory      = false;
-    bool                             isDirectoryRhs   = false;
-    const CCommandLine::ESortOrder * pSortAttribute   = NULL;
-    const CCommandLine::ESortOrder * pLastAttribute   = &m_pCmdLine->m_rgSortPreference[ARRAYSIZE(m_pCmdLine->m_rgSortPreference)];
-    LONGLONG                         cmp              = 0;
+    bool                             comesBeforeRhs = false;
+    bool                             isLhsDirectory = false;
+    bool                             isRhsDirectory = false;
+    const CCommandLine::ESortOrder * pSortAttribute = NULL;
+    const CCommandLine::ESortOrder * pLastAttribute = &m_pCmdLine->m_rgSortPreference[ARRAYSIZE(m_pCmdLine->m_rgSortPreference)];
+    LONGLONG                         cmp            = 0;
+
+
 
     //
     // If only one of the operands is a directory, it should be sorted first
     //
 
-    isDirectory = !!(lhs.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY);
-    isDirectoryRhs = !!(rhs.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY);
+    isLhsDirectory = lhs.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY;
+    isRhsDirectory = rhs.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY;
 
-    if (isDirectory ^ isDirectoryRhs)
+    if (isLhsDirectory ^ isRhsDirectory)
     {
-        return isDirectory;
+        return isLhsDirectory;
     }
 
     //
@@ -56,8 +58,8 @@ bool FileComparator::operator()(const WIN32_FIND_DATA& lhs, const WIN32_FIND_DAT
     //
 
     for (pSortAttribute = m_pCmdLine->m_rgSortPreference;
-        pSortAttribute < pLastAttribute;
-        ++pSortAttribute)
+         pSortAttribute < pLastAttribute;
+         ++pSortAttribute)
     {
         switch (*pSortAttribute)
         {
@@ -71,8 +73,12 @@ bool FileComparator::operator()(const WIN32_FIND_DATA& lhs, const WIN32_FIND_DAT
             break;
 
         case CCommandLine::ESortOrder::SO_EXTENSION:
-            cmp = lstrcmpiW(PathFindExtension(lhs.cFileName), PathFindExtension(rhs.cFileName));
+        {
+            filesystem::path lhsPath (lhs.cFileName);
+            filesystem::path rhsPath (rhs.cFileName);
+            cmp = lstrcmpiW(lhsPath.extension().c_str(), rhsPath.extension().c_str());
             break;
+        }
 
         case CCommandLine::ESortOrder::SO_SIZE:
         {

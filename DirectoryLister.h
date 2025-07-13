@@ -20,8 +20,15 @@ public:
     void List         (LPCWSTR pszMask);
 
 protected:    
-    HRESULT ProcessDirectory           (LPCWSTR pszPath, LPCWSTR pszFileSpec, CResultsDisplayerBase::EDirectoryLevel level);
-    HRESULT RecurseIntoSubdirectories  (LPCWSTR pszPath, LPCWSTR pszFileSpec);
+    HRESULT ProcessDirectory           (const CDriveInfo & driveInfo, 
+                                        filesystem::path dirPath, 
+                                        filesystem::path fileSpec, 
+                                        CResultsDisplayerBase::EDirectoryLevel level);
+    
+    HRESULT RecurseIntoSubdirectories  (const CDriveInfo & driveInfo,
+                                        filesystem::path dirPath, 
+                                        filesystem::path fileSpec);
+
     HRESULT AddMatchToList             (__in WIN32_FIND_DATA * pwfd, __in CDirectoryInfo * pdi);
     BOOL    IsDots                     (LPCWSTR pszFileName);
 

@@ -72,65 +72,50 @@ CDirectoryLister::~CDirectoryLister (void)
 
 void CDirectoryLister::List (LPCWSTR pszMask)
 {
-    HRESULT hr                          = S_OK;
-    int     nDrive                      = 0;    
-    BOOL    fSuccess                    = TRUE;                   
-    WCHAR   szWellFormedPath[MAX_PATH]  = { 0 };
-    WCHAR   szPath[MAX_PATH]            = { 0 };           
-    WCHAR   szFileSpec[MAX_PATH]        = { 0 };     
-  
-
-
-    //
-    // If the path does not begin with a drive letter, we'll use
-    // the current drive.
-    //
+    HRESULT          hr             = S_OK;
+    filesystem::path inputPath        (pszMask);
+    filesystem::path wellFormedPath;
     
-    nDrive = PathGetDriveNumber (pszMask);
-    if (nDrive == -1)
-    {
-        GetCurrentDirectory (ARRAYSIZE (szWellFormedPath), szWellFormedPath);
 
+
+    if (!inputPath.has_root_name())
+    {
+        // No drive letter, use current directory
+        wellFormedPath = filesystem::current_path();
+        
         //
         // If the path begins with a backslash, it's an absolute path.
-        // We'll prepend only the drive letter, colon, and root dir to it.
+        // We'll use only the root path portion.
         //
         
         if (*pszMask == L'\\')
         {
-            PathStripToRoot (szWellFormedPath);
+            wellFormedPath = wellFormedPath.root_path();
         }             
         
-        PathAppend (szWellFormedPath, pszMask);
+        wellFormedPath /= inputPath;
     }                                
     else                             
     {                                
-        StringCchCopy (szWellFormedPath, ARRAYSIZE (szWellFormedPath), pszMask);
-    }                                
+        wellFormedPath = inputPath;
+    }
     
     //
     // If the mask is just a path, append the default mask to it
     // 
 
-    if (PathIsDirectory (szWellFormedPath))
+    if (filesystem::is_directory(wellFormedPath))
     {
-        PathAppend (szWellFormedPath, L"*");
+        wellFormedPath /= L"*";
     }
 
     //
-    // Get rid of any relative path references
+    // Get rid of any relative path references and separate path and mask portions
     //
 
-    fSuccess = PathCanonicalize (szPath, szWellFormedPath);
-    CBRA (fSuccess);
-
-    //
-    // For recursive searches, we'll need to separate the path and mask portions
-    //
-
-    StringCchCopy      (szFileSpec,  ARRAYSIZE (szFileSpec), szPath);
-    PathStripPath      (szFileSpec); 
-    PathRemoveFileSpec (szPath);     
+    filesystem::path canonicalPath = filesystem::weakly_canonical (wellFormedPath);
+    filesystem::path dirPath       = canonicalPath.parent_path();
+    filesystem::path fileSpec      = canonicalPath.filename();    
 
     //
     // Process a directory
@@ -138,8 +123,12 @@ void CDirectoryLister::List (LPCWSTR pszMask)
 
     m_pConsole->Puts (m_pConfig->m_rgAttributes[CConfig::EAttribute::Default], L"");
 
-    hr = ProcessDirectory (szPath, szFileSpec, CResultsDisplayerBase::EDirectoryLevel::Initial);
-    CHR (hr);
+    {
+        CDriveInfo driveInfo (dirPath);
+
+        hr = ProcessDirectory (driveInfo, dirPath, fileSpec, CResultsDisplayerBase::EDirectoryLevel::Initial);
+        CHR (hr);
+    }
 
 Error:
     return;
@@ -157,39 +146,22 @@ Error:
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-HRESULT CDirectoryLister::ProcessDirectory (LPCWSTR pszPath, LPCWSTR pszFileSpec, CResultsDisplayerBase::EDirectoryLevel level)
+HRESULT CDirectoryLister::ProcessDirectory (const CDriveInfo & driveInfo, filesystem::path dirPath, filesystem::path fileSpec, CResultsDisplayerBase::EDirectoryLevel level)
 {
-    HRESULT          hr                          = S_OK;
+    HRESULT          hr              = S_OK;
+    CDirectoryInfo   di                (dirPath, fileSpec);
+    filesystem::path pathAndFileSpec = dirPath / fileSpec;
     BOOL             fSuccess;                    
-    WCHAR            szPathAndFileSpec[MAX_PATH]; 
     UniqueFindHandle hFind;
     WIN32_FIND_DATA  wfd;                         
-    CDirectoryInfo   di;
 
 
-
-    //
-    // Store the path and filespec
-    //
-
-    di.m_pszPath     = pszPath;
-    di.m_pszFileSpec = pszFileSpec;
-    
-
-    //
-    // Create the full path + filespec
-    //
-
-    StringCchCopy (szPathAndFileSpec, ARRAYSIZE (szPathAndFileSpec), pszPath);
-    fSuccess = PathAppend (szPathAndFileSpec, pszFileSpec);
-    CBRA (fSuccess);
-    
 
     //
     // Search for matching files and directories
     // 
     
-    hFind.reset (FindFirstFile (szPathAndFileSpec, &wfd));
+    hFind.reset (FindFirstFile (pathAndFileSpec.c_str(), &wfd));
     if (hFind.get() != INVALID_HANDLE_VALUE)
     {
         do 
@@ -218,13 +190,13 @@ HRESULT CDirectoryLister::ProcessDirectory (LPCWSTR pszPath, LPCWSTR pszFileSpec
     // Sort the results using FileComparator
     //
 
-    std::sort (di.m_vMatches.begin(), di.m_vMatches.end(), FileComparator(m_pCmdLine));
+    std::sort (di.m_vMatches.begin(), di.m_vMatches.end(), FileComparator (m_pCmdLine));
 
     //
     // Show the directory contents using the displayer
     //
     
-    m_displayer->DisplayResults (&di, level);
+    m_displayer->DisplayResults (driveInfo, &di, level);
 
     //
     // Recurse into subdirectories 
@@ -232,7 +204,7 @@ HRESULT CDirectoryLister::ProcessDirectory (LPCWSTR pszPath, LPCWSTR pszFileSpec
 
     if (m_pCmdLine->m_fRecurse)
     {
-        hr = RecurseIntoSubdirectories (pszPath, pszFileSpec);
+        hr = RecurseIntoSubdirectories (driveInfo, dirPath, fileSpec);
         CHR (hr);
 
         //
@@ -261,30 +233,21 @@ Error:
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-HRESULT CDirectoryLister::RecurseIntoSubdirectories (LPCWSTR pszPath, LPCWSTR pszFileSpec)
+HRESULT CDirectoryLister::RecurseIntoSubdirectories (const CDriveInfo & driveInfo, filesystem::path dirPath, filesystem::path fileSpec)
 {
-    HRESULT          hr                           = S_OK;
+    HRESULT          hr              = S_OK;
+    filesystem::path pathAndFileSpec = dirPath / L"*";    
     BOOL             fSuccess;                    
-    WCHAR            szPathAndFileSpec[MAX_PATH]; 
     UniqueFindHandle hFind;
     WIN32_FIND_DATA  wfd;                         
 
    
 
     //
-    // Create the full path + filespec
-    //
-
-    StringCchCopy (szPathAndFileSpec, ARRAYSIZE (szPathAndFileSpec), pszPath);
-    fSuccess = PathAppend (szPathAndFileSpec, L"*");
-    CBRA (fSuccess);
-    
-
-    //
     // Search for subdirectories to recurse into
     // 
     
-    hFind.reset (FindFirstFile (szPathAndFileSpec, &wfd));
+    hFind.reset (FindFirstFile (pathAndFileSpec.c_str(), &wfd));
     CBR (hFind.get() != INVALID_HANDLE_VALUE);
 
     do 
@@ -298,15 +261,8 @@ HRESULT CDirectoryLister::RecurseIntoSubdirectories (LPCWSTR pszPath, LPCWSTR ps
         {
             if (CFlag::IsSet (wfd.dwFileAttributes, FILE_ATTRIBUTE_DIRECTORY))
             {
-                WCHAR szSubdirPath[MAX_PATH];
-            
-            
-                StringCchCopy (szSubdirPath, ARRAYSIZE (szSubdirPath), pszPath);
-            
-                fSuccess = PathAppend (szSubdirPath, wfd.cFileName);
-                CBRA (fSuccess);
-            
-                ProcessDirectory (szSubdirPath, pszFileSpec, CResultsDisplayerBase::EDirectoryLevel::Subdirectory);
+                filesystem::path subdirPath = dirPath / wfd.cFileName;            
+                ProcessDirectory (driveInfo, subdirPath, fileSpec, CResultsDisplayerBase::EDirectoryLevel::Subdirectory);
             }
         }
             

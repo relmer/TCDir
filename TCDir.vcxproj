@@ -184,6 +184,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="DriveInfo.cpp" />
     <ClCompile Include="Config.cpp" />
     <ClCompile Include="CommandLine.cpp" />
     <ClCompile Include="DirectoryLister.cpp" />
@@ -203,6 +204,7 @@
     <ClCompile Include="Console.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="DriveInfo.h" />
     <ClInclude Include="Color.h" />
     <ClInclude Include="Config.h" />
     <ClInclude Include="CommandLine.h" />
