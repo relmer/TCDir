@@ -64,11 +64,11 @@ void TestColors ()
 
 int wmain (int argc, WCHAR * argv[])
 {
-    HRESULT               hr;      
-    CCommandLine          cmdline; 
-    unique_ptr<PerfTimer> perfTimerPtr;
-    unique_ptr<CConsole>  consolePtr;
-    unique_ptr<CConfig>   configPtr;
+    HRESULT                  hr           = S_OK;      
+    shared_ptr<CCommandLine> cmdlinePtr   = make_shared<CCommandLine>();
+    unique_ptr<PerfTimer>    perfTimerPtr;
+    shared_ptr<CConfig>      configPtr    = make_shared<CConfig>();
+    shared_ptr<CConsole>     consolePtr   = make_shared<CConsole>();
 
  
 
@@ -80,17 +80,15 @@ int wmain (int argc, WCHAR * argv[])
     _CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF | _CRTDBG_CHECK_ALWAYS_DF);
 #endif
 
-    consolePtr.reset (new (nothrow) CConsole ());
-    CPR (consolePtr);
-        
-    hr = consolePtr->Initialize();
+
+
+    hr = consolePtr->Initialize (configPtr);
     CHR (hr);
 
-    configPtr.reset (new (nothrow) CConfig (consolePtr->m_consoleScreenBufferInfoEx.wAttributes));
-    CPR (configPtr);
+
 
 #ifdef _DEBUG
-    //consolePtr->Test();
+    //consolePtr.Test();
 #endif
 
 
@@ -99,7 +97,7 @@ int wmain (int argc, WCHAR * argv[])
     // Process the commandline
     //
 
-    hr = cmdline.Parse (argc - 1, argv + 1);
+    hr = cmdlinePtr->Parse (argc - 1, argv + 1);
     if (FAILED (hr))
     {
         Usage (consolePtr.get(), configPtr.get());
@@ -112,9 +110,9 @@ int wmain (int argc, WCHAR * argv[])
     // Use default mask if no mask is given
     //
 
-    if (cmdline.m_listMask.empty())
+    if (cmdlinePtr->m_listMask.empty())
     {
-        cmdline.m_listMask.push_back (L"*");
+        cmdlinePtr->m_listMask.push_back (L"*");
     }
 
 
@@ -123,18 +121,15 @@ int wmain (int argc, WCHAR * argv[])
     // For each mask, show a directory listing
     //
 
-    //for_each (cmdline.m_listMask.begin(), cmdline.m_listMask.end(), CDirectoryLister (&cmdline, pConsole, pConfig));
-
     {
-
-        if (cmdline.m_fPerfTimer)
+        if (cmdlinePtr->m_fPerfTimer)
         {
             perfTimerPtr = make_unique<PerfTimer> (L"TCDir time elapsed", PerfTimer::Automatic, PerfTimer::Msec, [] (const wchar_t * msg) { fputws (msg, stdout); });
         }
 
-        CDirectoryLister dirLister (&cmdline, consolePtr.get(), configPtr.get());
+        CDirectoryLister dirLister (cmdlinePtr, consolePtr, configPtr);
 
-        for (const wstring & mask : cmdline.m_listMask)
+        for (const wstring & mask : cmdlinePtr->m_listMask)
         {
             dirLister.List (mask);
         }

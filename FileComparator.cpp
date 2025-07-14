@@ -13,8 +13,8 @@
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-FileComparator::FileComparator (const CCommandLine* pCmdLine) :
-    m_pCmdLine(pCmdLine)
+FileComparator::FileComparator (shared_ptr<const CCommandLine> cmdLinePtr) :
+    m_cmdLinePtr (cmdLinePtr)
 {
 }
 
@@ -36,7 +36,7 @@ bool FileComparator::operator() (const WIN32_FIND_DATA & lhs, const WIN32_FIND_D
     bool                             isLhsDirectory = false;
     bool                             isRhsDirectory = false;
     const CCommandLine::ESortOrder * pSortAttribute = NULL;
-    const CCommandLine::ESortOrder * pLastAttribute = &m_pCmdLine->m_rgSortPreference[ARRAYSIZE(m_pCmdLine->m_rgSortPreference)];
+    const CCommandLine::ESortOrder * pLastAttribute = &m_cmdLinePtr->m_rgSortPreference[ARRAYSIZE(m_cmdLinePtr->m_rgSortPreference)];
     LONGLONG                         cmp            = 0;
 
 
@@ -57,7 +57,7 @@ bool FileComparator::operator() (const WIN32_FIND_DATA & lhs, const WIN32_FIND_D
     // Compare based on requested sort attribute with fallbacks
     //
 
-    for (pSortAttribute = m_pCmdLine->m_rgSortPreference;
+    for (pSortAttribute = m_cmdLinePtr->m_rgSortPreference;
          pSortAttribute < pLastAttribute;
          ++pSortAttribute)
     {
@@ -120,8 +120,8 @@ bool FileComparator::operator() (const WIN32_FIND_DATA & lhs, const WIN32_FIND_D
     // requested attribute, *ignore* reverse sorting for this attribute.
     //
 
-    if (pSortAttribute == m_pCmdLine->m_rgSortPreference &&
-        m_pCmdLine->m_sortdirection == CCommandLine::ESortDirection::SD_DESCENDING)
+    if (pSortAttribute == m_cmdLinePtr->m_rgSortPreference &&
+        m_cmdLinePtr->m_sortdirection == CCommandLine::ESortDirection::SD_DESCENDING)
     {
         comesBeforeRhs = !comesBeforeRhs;
     }

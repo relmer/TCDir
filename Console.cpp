@@ -1,6 +1,8 @@
 ﻿#include "pch.h"
 #include "Console.h"
 
+#include "Config.h"
+
 
 
 
@@ -51,7 +53,7 @@ CConsole::~CConsole (void)
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-HRESULT CConsole::Initialize (void)
+HRESULT CConsole::Initialize (shared_ptr<CConfig> configPtr)
 {
     HRESULT hr       = S_OK;
     BOOL    fSuccess = FALSE;
@@ -59,21 +61,31 @@ HRESULT CConsole::Initialize (void)
 
 
 
+    CBRAEx (configPtr != nullptr, E_INVALIDARG);
+    
     m_hStdOut = GetStdHandle (STD_OUTPUT_HANDLE);
-
+    
     fSuccess = GetConsoleScreenBufferInfoEx (m_hStdOut, &m_consoleScreenBufferInfoEx);
     CWRA (fSuccess);
-
+    
     m_attrDefault = m_consoleScreenBufferInfoEx.wAttributes;
-
+    
     m_strBuffer.reserve (s_kcchInitialBufferSize);
+    
 
     fSuccess = GetConsoleMode (m_hStdOut, &mode);
     CWRA (fSuccess);
-
+    
     mode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING;
     fSuccess = SetConsoleMode (m_hStdOut, mode);
     CWRA (fSuccess);
+    
+    
+
+    m_configPtr = configPtr;
+    m_configPtr->Initialize (m_attrDefault);
+
+
 
 Error:
     return hr;

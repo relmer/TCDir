@@ -18,8 +18,8 @@
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-CResultsDisplayerWide::CResultsDisplayerWide (__in CCommandLine * pCmdLine, __in CConsole * pConsole, __in CConfig * pConfig) :
-    CResultsDisplayerBase (pCmdLine, pConsole, pConfig)
+CResultsDisplayerWide::CResultsDisplayerWide (shared_ptr<CCommandLine> cmdLinePtr, shared_ptr<CConsole> consolePtr, shared_ptr<CConfig> configPtr) :
+    CResultsDisplayerBase (cmdLinePtr, consolePtr, configPtr)
 {
 }
 
@@ -95,20 +95,20 @@ void CResultsDisplayerWide::DisplayFileResults (__in CDirectoryInfo * pdi)
             hr = GetWideFormattedName (pwfd, &pszName);
             CHR (hr);
 
-            wAttr = m_pConfig->GetTextAttrForFile (pwfd);
-            m_pConsole->Printf (wAttr, L"%.*s", cxColumnWidth, pszName);
+            wAttr = m_configPtr->GetTextAttrForFile (pwfd);
+            m_consolePtr->Printf (wAttr, L"%.*s", cxColumnWidth, pszName);
 
             cchName = wcslen (pszName);
             if (cxColumnWidth > cchName)
             {
                 for (cSpacesNeeded = cxColumnWidth - wcslen (pszName); cSpacesNeeded > 0; cSpacesNeeded--)
                 {
-                    m_pConsole->Printf (m_pConfig->m_rgAttributes[CConfig::EAttribute::Default], L" ");
+                    m_consolePtr->Printf (m_configPtr->m_rgAttributes[CConfig::EAttribute::Default], L" ");
                 }
             }
         }
 
-        m_pConsole->Puts (m_pConfig->m_rgAttributes[CConfig::EAttribute::Default], L"");
+        m_consolePtr->Puts (m_configPtr->m_rgAttributes[CConfig::EAttribute::Default], L"");
     }
 
 Error:
@@ -136,7 +136,7 @@ HRESULT CResultsDisplayerWide::GetColumnInfo (__in const CDirectoryInfo * pdi, _
 
     
 
-    fSuccess = GetConsoleScreenBufferInfo (m_pConsole->m_hStdOut, &csbi);
+    fSuccess = GetConsoleScreenBufferInfo (m_consolePtr->m_hStdOut, &csbi);
     CBRA (fSuccess);
 
     cxConsoleWidth  = csbi.srWindow.Right - csbi.srWindow.Left + 1;

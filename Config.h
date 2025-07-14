@@ -37,9 +37,7 @@ public:
     };
 
     
-    CConfig  (WORD wDefaultAttr);
-    ~CConfig ();
-        
+    void Initialize         (WORD wDefaultAttr);
     WORD GetTextAttrForFile (const WIN32_FIND_DATA * pwfd);
 
     WORD         m_rgAttributes[EAttribute::__count];
@@ -47,7 +45,6 @@ public:
 
 
 protected:
-    void InitializeTextAttrs              (WORD wDefaultAttr);
     void InitializeExtensionToTextAttrMap (void);
 
     static const STextAttr s_rgTextAttrs[];

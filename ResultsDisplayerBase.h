@@ -16,7 +16,7 @@ public:
         Subdirectory
     };
 
-    CResultsDisplayerBase                   (__in CCommandLine * pCmdLine, __in CConsole * pConsole, __in CConfig * pConfig);
+    CResultsDisplayerBase                   (shared_ptr<CCommandLine> cmdLinePtr, shared_ptr<CConsole> consolePtr, shared_ptr<CConfig> configPtr);
     virtual ~CResultsDisplayerBase          (void);
 
     void    DisplayResults                  (const CDriveInfo & driveInfo, __in CDirectoryInfo * pdi, EDirectoryLevel level);
@@ -34,7 +34,7 @@ protected:
     UINT    GetStringLengthOfMaxFileSize    (__in const ULARGE_INTEGER * puli);
     LPCWSTR FormatNumberWithSeparators      (ULONGLONG n);
 
-    CCommandLine   * m_pCmdLine; 
-    CConsole       * m_pConsole;
-    CConfig        * m_pConfig;
+    shared_ptr<CCommandLine> m_cmdLinePtr; 
+    shared_ptr<CConsole>     m_consolePtr;
+    shared_ptr<CConfig>      m_configPtr;
 };

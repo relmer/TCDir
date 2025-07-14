@@ -18,8 +18,8 @@
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-CResultsDisplayerNormal::CResultsDisplayerNormal (__in CCommandLine * pCmdLine, __in CConsole * pConsole, __in CConfig * pConfig) :
-    CResultsDisplayerBase (pCmdLine, pConsole, pConfig)
+CResultsDisplayerNormal::CResultsDisplayerNormal (shared_ptr<CCommandLine> cmdLinePtr, shared_ptr<CConsole> consolePtr, shared_ptr<CConfig> configPtr) :
+    CResultsDisplayerBase (cmdLinePtr, consolePtr, configPtr)
 {
 }
 
@@ -44,7 +44,7 @@ void CResultsDisplayerNormal::DisplayFileResults (__in CDirectoryInfo * pdi)
 
     for (const WIN32_FIND_DATA & fileInfo : pdi->m_vMatches)
     {
-        WORD textAttr = m_pConfig->GetTextAttrForFile (&fileInfo);
+        WORD textAttr = m_configPtr->GetTextAttrForFile (&fileInfo);
 
         hr = DisplayResultsNormalDateAndTime (fileInfo.ftLastWriteTime);
         CHR (hr);
@@ -52,7 +52,7 @@ void CResultsDisplayerNormal::DisplayFileResults (__in CDirectoryInfo * pdi)
         DisplayResultsNormalAttributes (fileInfo.dwFileAttributes);
         DisplayResultsNormalFileSize   (fileInfo, cchStringLengthOfMaxFileSize);
 
-        m_pConsole->Printf (textAttr, L"%s\n", fileInfo.cFileName);
+        m_consolePtr->Printf (textAttr, L"%s\n", fileInfo.cFileName);
     }
     
 
@@ -95,11 +95,11 @@ HRESULT CResultsDisplayerNormal::DisplayResultsNormalDateAndTime (const FILETIME
     fSuccess = GetTimeFormatEx (LOCALE_NAME_USER_DEFAULT, 0, &stLocal, L"hh:mm tt",   szTime, ARRAYSIZE (szTime));
     CWRA (fSuccess);
 
-    m_pConsole->Printf (m_pConfig->m_rgAttributes[CConfig::EAttribute::Date],    L"%s", szDate);
-    m_pConsole->Printf (m_pConfig->m_rgAttributes[CConfig::EAttribute::Default], L"  ");
+    m_consolePtr->Printf (m_configPtr->m_rgAttributes[CConfig::EAttribute::Date],    L"%s", szDate);
+    m_consolePtr->Printf (m_configPtr->m_rgAttributes[CConfig::EAttribute::Default], L"  ");
     
-    m_pConsole->Printf (m_pConfig->m_rgAttributes[CConfig::EAttribute::Time],    L"%s", szTime);
-    m_pConsole->Printf (m_pConfig->m_rgAttributes[CConfig::EAttribute::Default], L" ");
+    m_consolePtr->Printf (m_configPtr->m_rgAttributes[CConfig::EAttribute::Time],    L"%s", szTime);
+    m_consolePtr->Printf (m_configPtr->m_rgAttributes[CConfig::EAttribute::Default], L" ");
 
 Error:
     return hr;
@@ -142,17 +142,17 @@ void CResultsDisplayerNormal::DisplayResultsNormalAttributes  (DWORD dwFileAttri
 
     for (const SFileAttributeEntry fileAttributeEntry : s_krgAttrMap)
     {
-        WORD  attrTextColor = m_pConfig->m_rgAttributes[CConfig::EAttribute::FileAttributeNotPresent];
+        WORD  attrTextColor = m_configPtr->m_rgAttributes[CConfig::EAttribute::FileAttributeNotPresent];
         WCHAR chDisplay     = L'-';
         
 
         if (dwFileAttributes & fileAttributeEntry.m_dwAttr)
         {
-            attrTextColor = m_pConfig->m_rgAttributes[CConfig::EAttribute::FileAttributePresent];
+            attrTextColor = m_configPtr->m_rgAttributes[CConfig::EAttribute::FileAttributePresent];
             chDisplay = fileAttributeEntry.m_chAttr;
         }
         
-        m_pConsole->Printf (attrTextColor, L"%c", chDisplay);
+        m_consolePtr->Printf (attrTextColor, L"%c", chDisplay);
     }
 }
 
@@ -183,7 +183,7 @@ void CResultsDisplayerNormal::DisplayResultsNormalFileSize (const WIN32_FIND_DAT
 
     if ((fileInfo.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) == 0)
     {
-        m_pConsole->Printf (m_pConfig->m_rgAttributes[CConfig::EAttribute::Size], 
+        m_consolePtr->Printf (m_configPtr->m_rgAttributes[CConfig::EAttribute::Size], 
                             L" %*s ", 
                             cchMaxFileSize, 
                             FormatNumberWithSeparators (uliFileSize.QuadPart));
@@ -191,7 +191,7 @@ void CResultsDisplayerNormal::DisplayResultsNormalFileSize (const WIN32_FIND_DAT
     else
     {
         size_t cchLeftSidePadding = (cchMaxFileSize - kcchDirSize) / 2;            
-        m_pConsole->Printf (m_pConfig->m_rgAttributes[CConfig::EAttribute::Directory], 
+        m_consolePtr->Printf (m_configPtr->m_rgAttributes[CConfig::EAttribute::Directory], 
                             L" %*s%-*s ", 
                             cchLeftSidePadding, 
                             L"", 

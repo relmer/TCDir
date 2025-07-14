@@ -17,10 +17,10 @@
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-CResultsDisplayerBase::CResultsDisplayerBase (__in CCommandLine * pCmdLine, __in CConsole * pConsole, __in CConfig * pConfig) :
-    m_pCmdLine          (pCmdLine),
-    m_pConsole          (pConsole),
-    m_pConfig           (pConfig)
+CResultsDisplayerBase::CResultsDisplayerBase (shared_ptr<CCommandLine> cmdLinePtr, shared_ptr<CConsole> consolePtr, shared_ptr<CConfig> configPtr) :
+    m_cmdLinePtr (cmdLinePtr),
+    m_consolePtr (consolePtr),
+    m_configPtr  (configPtr)
 {
 }
 
@@ -68,7 +68,7 @@ void CResultsDisplayerBase::DisplayResults (const CDriveInfo & driveInfo, __in C
         // only one separator between each subdirectory.
         // 
         
-        m_pConsole->WriteSeparatorLine (m_pConfig->m_rgAttributes[CConfig::EAttribute::SeparatorLine]);
+        m_consolePtr->WriteSeparatorLine (m_configPtr->m_rgAttributes[CConfig::EAttribute::SeparatorLine]);
 
         //
         // We'll only show the drive header on the initial directory processed.
@@ -84,11 +84,11 @@ void CResultsDisplayerBase::DisplayResults (const CDriveInfo & driveInfo, __in C
     {
         if (pdi->m_fileSpec == L"*")
         {
-            m_pConsole->Puts (m_pConfig->m_rgAttributes[CConfig::EAttribute::Default], L"Directory is empty.");
+            m_consolePtr->Puts (m_configPtr->m_rgAttributes[CConfig::EAttribute::Default], L"Directory is empty.");
         }
         else
         {
-            m_pConsole->Printf (m_pConfig->m_rgAttributes[CConfig::EAttribute::Default], L"No files matching '%s' found.\n", pdi->m_fileSpec.c_str());
+            m_consolePtr->Printf (m_configPtr->m_rgAttributes[CConfig::EAttribute::Default], L"No files matching '%s' found.\n", pdi->m_fileSpec.c_str());
         }
     }
     else 
@@ -101,17 +101,17 @@ void CResultsDisplayerBase::DisplayResults (const CDriveInfo & driveInfo, __in C
         // Otherwise, it'll be shown after the recursive summary.
         //
 
-        if (!m_pCmdLine->m_fRecurse)
+        if (!m_cmdLinePtr->m_fRecurse)
         {
             DisplayVolumeFooter (pdi);
         }
     }
         
-    m_pConsole->Puts               (m_pConfig->m_rgAttributes[CConfig::EAttribute::Default], L"");
-    m_pConsole->WriteSeparatorLine (m_pConfig->m_rgAttributes[CConfig::EAttribute::SeparatorLine]);
-    m_pConsole->Puts               (m_pConfig->m_rgAttributes[CConfig::EAttribute::Default], L"");
+    m_consolePtr->Puts               (m_configPtr->m_rgAttributes[CConfig::EAttribute::Default], L"");
+    m_consolePtr->WriteSeparatorLine (m_configPtr->m_rgAttributes[CConfig::EAttribute::SeparatorLine]);
+    m_consolePtr->Puts               (m_configPtr->m_rgAttributes[CConfig::EAttribute::Default], L"");
 
-    m_pConsole->Flush();
+    m_consolePtr->Flush();
 }
 
 
@@ -131,20 +131,20 @@ void CResultsDisplayerBase::DisplayResults (const CDriveInfo & driveInfo, __in C
 
 void CResultsDisplayerBase::DisplayDriveHeader (const CDriveInfo & driveInfo)
 {
-    m_pConsole->Printf (m_pConfig->m_rgAttributes[CConfig::EAttribute::Information], L" Volume ");
+    m_consolePtr->Printf (m_configPtr->m_rgAttributes[CConfig::EAttribute::Information], L" Volume ");
 
     if (driveInfo.IsUncPath())
     {
-        m_pConsole->Printf (m_pConfig->m_rgAttributes[CConfig::EAttribute::InformationHighlight], L"%s", driveInfo.GetUncPath().c_str());
+        m_consolePtr->Printf (m_configPtr->m_rgAttributes[CConfig::EAttribute::InformationHighlight], L"%s", driveInfo.GetUncPath().c_str());
     }
     else
     {
-        m_pConsole->Printf (m_pConfig->m_rgAttributes[CConfig::EAttribute::Information],          L"in drive ");
-        m_pConsole->Printf (m_pConfig->m_rgAttributes[CConfig::EAttribute::InformationHighlight], L"%c", driveInfo.GetRootPath().c_str()[0]);
+        m_consolePtr->Printf (m_configPtr->m_rgAttributes[CConfig::EAttribute::Information],          L"in drive ");
+        m_consolePtr->Printf (m_configPtr->m_rgAttributes[CConfig::EAttribute::InformationHighlight], L"%c", driveInfo.GetRootPath().c_str()[0]);
     }        
 
-    m_pConsole->Printf (m_pConfig->m_rgAttributes[CConfig::EAttribute::Information],          L" is ");
-    m_pConsole->Printf (m_pConfig->m_rgAttributes[CConfig::EAttribute::InformationHighlight], L"%s", driveInfo.GetVolumeDescription().c_str());
+    m_consolePtr->Printf (m_configPtr->m_rgAttributes[CConfig::EAttribute::Information],          L" is ");
+    m_consolePtr->Printf (m_configPtr->m_rgAttributes[CConfig::EAttribute::InformationHighlight], L"%s", driveInfo.GetVolumeDescription().c_str());
 
     //
     // If this is a mapped drive, get the remote name that it's mapped to
@@ -153,24 +153,24 @@ void CResultsDisplayerBase::DisplayDriveHeader (const CDriveInfo & driveInfo)
     const wstring & remoteName = driveInfo.GetRemoteName();
     if (remoteName.length() > 0)
     {
-        m_pConsole->Printf (m_pConfig->m_rgAttributes[CConfig::EAttribute::Information],          L" mapped to ");
-        m_pConsole->Printf (m_pConfig->m_rgAttributes[CConfig::EAttribute::InformationHighlight], L"%s", remoteName.c_str());
+        m_consolePtr->Printf (m_configPtr->m_rgAttributes[CConfig::EAttribute::Information],          L" mapped to ");
+        m_consolePtr->Printf (m_configPtr->m_rgAttributes[CConfig::EAttribute::InformationHighlight], L"%s", remoteName.c_str());
     }
 
-    m_pConsole->Printf (m_pConfig->m_rgAttributes[CConfig::EAttribute::Information],          L" (");
-    m_pConsole->Printf (m_pConfig->m_rgAttributes[CConfig::EAttribute::InformationHighlight], L"%s", driveInfo.GetFileSystemName());
-    m_pConsole->Printf (m_pConfig->m_rgAttributes[CConfig::EAttribute::Information],          L")\n");
+    m_consolePtr->Printf (m_configPtr->m_rgAttributes[CConfig::EAttribute::Information],          L" (");
+    m_consolePtr->Printf (m_configPtr->m_rgAttributes[CConfig::EAttribute::InformationHighlight], L"%s", driveInfo.GetFileSystemName());
+    m_consolePtr->Printf (m_configPtr->m_rgAttributes[CConfig::EAttribute::Information],          L")\n");
 
     LPCWSTR pszVolumeName = driveInfo.GetVolumeName();
     if (pszVolumeName[0] != L'\0')
     {
-        m_pConsole->Printf (m_pConfig->m_rgAttributes[CConfig::EAttribute::Information],          L" Volume name is \"");
-        m_pConsole->Printf (m_pConfig->m_rgAttributes[CConfig::EAttribute::InformationHighlight], L"%s", pszVolumeName);
-        m_pConsole->Printf (m_pConfig->m_rgAttributes[CConfig::EAttribute::Information],          L"\"\n\n");
+        m_consolePtr->Printf (m_configPtr->m_rgAttributes[CConfig::EAttribute::Information],          L" Volume name is \"");
+        m_consolePtr->Printf (m_configPtr->m_rgAttributes[CConfig::EAttribute::InformationHighlight], L"%s", pszVolumeName);
+        m_consolePtr->Printf (m_configPtr->m_rgAttributes[CConfig::EAttribute::Information],          L"\"\n\n");
     }
     else
     {
-        m_pConsole->Puts (m_pConfig->m_rgAttributes[CConfig::EAttribute::Information], L" Volume has no name\n");
+        m_consolePtr->Puts (m_configPtr->m_rgAttributes[CConfig::EAttribute::Information], L" Volume has no name\n");
     }
 }
 
@@ -188,9 +188,9 @@ void CResultsDisplayerBase::DisplayDriveHeader (const CDriveInfo & driveInfo)
 
 void CResultsDisplayerBase::DisplayPathHeader (const filesystem::path & dirPath)
 {
-    m_pConsole->Printf (m_pConfig->m_rgAttributes[CConfig::EAttribute::Information],          L" Directory of ");
-    m_pConsole->Printf (m_pConfig->m_rgAttributes[CConfig::EAttribute::InformationHighlight], L"%s", dirPath.c_str());
-    m_pConsole->Printf (m_pConfig->m_rgAttributes[CConfig::EAttribute::Information],          L"\n\n");
+    m_consolePtr->Printf (m_configPtr->m_rgAttributes[CConfig::EAttribute::Information],          L" Directory of ");
+    m_consolePtr->Printf (m_configPtr->m_rgAttributes[CConfig::EAttribute::InformationHighlight], L"%s", dirPath.c_str());
+    m_consolePtr->Printf (m_configPtr->m_rgAttributes[CConfig::EAttribute::Information],          L"\n\n");
 }
 
 
@@ -222,22 +222,22 @@ void CResultsDisplayerBase::DisplayListingSummary (__in const CDirectoryInfo * p
         cMaxDigits += cMaxDigits / 3;  // add space for each comma
     }
 
-    m_pConsole->Printf (m_pConfig->m_rgAttributes[CConfig::EAttribute::Information],          L" Total files listed:");
-    m_pConsole->Puts   (m_pConfig->m_rgAttributes[CConfig::EAttribute::Default],              L"\n");
+    m_consolePtr->Printf (m_configPtr->m_rgAttributes[CConfig::EAttribute::Information],          L" Total files listed:");
+    m_consolePtr->Puts   (m_configPtr->m_rgAttributes[CConfig::EAttribute::Default],              L"\n");
 
-    m_pConsole->Printf (m_pConfig->m_rgAttributes[CConfig::EAttribute::InformationHighlight], L"    %*s", cMaxDigits, FormatNumberWithSeparators (cFilesFound));
-    m_pConsole->Printf (m_pConfig->m_rgAttributes[CConfig::EAttribute::Information],          cFilesFound == 1 ? L" file using " : L" files using ");
-    m_pConsole->Printf (m_pConfig->m_rgAttributes[CConfig::EAttribute::InformationHighlight], FormatNumberWithSeparators (uliSizeOfAllFilesFound.QuadPart));
-    m_pConsole->Printf (m_pConfig->m_rgAttributes[CConfig::EAttribute::Information],          uliSizeOfAllFilesFound.QuadPart == 1 ? L" byte\n" : L" bytes\n");
+    m_consolePtr->Printf (m_configPtr->m_rgAttributes[CConfig::EAttribute::InformationHighlight], L"    %*s", cMaxDigits, FormatNumberWithSeparators (cFilesFound));
+    m_consolePtr->Printf (m_configPtr->m_rgAttributes[CConfig::EAttribute::Information],          cFilesFound == 1 ? L" file using " : L" files using ");
+    m_consolePtr->Printf (m_configPtr->m_rgAttributes[CConfig::EAttribute::InformationHighlight], FormatNumberWithSeparators (uliSizeOfAllFilesFound.QuadPart));
+    m_consolePtr->Printf (m_configPtr->m_rgAttributes[CConfig::EAttribute::Information],          uliSizeOfAllFilesFound.QuadPart == 1 ? L" byte\n" : L" bytes\n");
 
-    m_pConsole->Printf (m_pConfig->m_rgAttributes[CConfig::EAttribute::InformationHighlight], L"    %*s", cMaxDigits, FormatNumberWithSeparators (cDirectoriesFound));
-    m_pConsole->Puts   (m_pConfig->m_rgAttributes[CConfig::EAttribute::Information],          cDirectoriesFound == 1 ? L" subdirectory" : L" subdirectories");
+    m_consolePtr->Printf (m_configPtr->m_rgAttributes[CConfig::EAttribute::InformationHighlight], L"    %*s", cMaxDigits, FormatNumberWithSeparators (cDirectoriesFound));
+    m_consolePtr->Puts   (m_configPtr->m_rgAttributes[CConfig::EAttribute::Information],          cDirectoriesFound == 1 ? L" subdirectory" : L" subdirectories");
 
-    m_pConsole->Puts   (m_pConfig->m_rgAttributes[CConfig::EAttribute::Default],              L"");
+    m_consolePtr->Puts   (m_configPtr->m_rgAttributes[CConfig::EAttribute::Default],              L"");
     DisplayVolumeFooter (pdi);
 
-    m_pConsole->WriteSeparatorLine (m_pConfig->m_rgAttributes[CConfig::EAttribute::SeparatorLine]);
-    m_pConsole->Puts               (m_pConfig->m_rgAttributes[CConfig::EAttribute::Default], L"");
+    m_consolePtr->WriteSeparatorLine (m_configPtr->m_rgAttributes[CConfig::EAttribute::SeparatorLine]);
+    m_consolePtr->Puts               (m_configPtr->m_rgAttributes[CConfig::EAttribute::Default], L"");
 }
 
 
@@ -256,14 +256,14 @@ void CResultsDisplayerBase::DisplayListingSummary (__in const CDirectoryInfo * p
 
 void CResultsDisplayerBase::DisplayDirectorySummary (__in const CDirectoryInfo * pdi)
 {
-    m_pConsole->Printf (m_pConfig->m_rgAttributes[CConfig::EAttribute::Information],          L"\n ");
-    m_pConsole->Printf (m_pConfig->m_rgAttributes[CConfig::EAttribute::InformationHighlight], L"%d", pdi->m_cSubDirectories);
-    m_pConsole->Printf (m_pConfig->m_rgAttributes[CConfig::EAttribute::Information],          pdi->m_cSubDirectories == 1 ? L" dir, " : L" dirs, ");
+    m_consolePtr->Printf (m_configPtr->m_rgAttributes[CConfig::EAttribute::Information],          L"\n ");
+    m_consolePtr->Printf (m_configPtr->m_rgAttributes[CConfig::EAttribute::InformationHighlight], L"%d", pdi->m_cSubDirectories);
+    m_consolePtr->Printf (m_configPtr->m_rgAttributes[CConfig::EAttribute::Information],          pdi->m_cSubDirectories == 1 ? L" dir, " : L" dirs, ");
 
-    m_pConsole->Printf (m_pConfig->m_rgAttributes[CConfig::EAttribute::InformationHighlight], L"%d", pdi->m_cFiles);
-    m_pConsole->Printf (m_pConfig->m_rgAttributes[CConfig::EAttribute::Information],          pdi->m_cFiles == 1 ? L" file using " : L" files using ");
-    m_pConsole->Printf (m_pConfig->m_rgAttributes[CConfig::EAttribute::InformationHighlight], FormatNumberWithSeparators (pdi->m_uliBytesUsed.QuadPart));
-    m_pConsole->Printf (m_pConfig->m_rgAttributes[CConfig::EAttribute::Information],          pdi->m_uliBytesUsed.QuadPart == 1 ? L" byte\n" : L" bytes\n");
+    m_consolePtr->Printf (m_configPtr->m_rgAttributes[CConfig::EAttribute::InformationHighlight], L"%d", pdi->m_cFiles);
+    m_consolePtr->Printf (m_configPtr->m_rgAttributes[CConfig::EAttribute::Information],          pdi->m_cFiles == 1 ? L" file using " : L" files using ");
+    m_consolePtr->Printf (m_configPtr->m_rgAttributes[CConfig::EAttribute::InformationHighlight], FormatNumberWithSeparators (pdi->m_uliBytesUsed.QuadPart));
+    m_consolePtr->Printf (m_configPtr->m_rgAttributes[CConfig::EAttribute::Information],          pdi->m_uliBytesUsed.QuadPart == 1 ? L" byte\n" : L" bytes\n");
 }
 
 
@@ -294,8 +294,8 @@ void CResultsDisplayerBase::DisplayVolumeFooter (__in const CDirectoryInfo * pdi
     fSuccess = GetDiskFreeSpaceEx (pdi->m_dirPath.c_str(), &uliFreeBytesAvailable, &uliTotalBytes, &uliTotalFreeBytes);
     CBRA (fSuccess);
 
-    m_pConsole->Printf (m_pConfig->m_rgAttributes[CConfig::EAttribute::InformationHighlight], L" %s", FormatNumberWithSeparators (uliTotalFreeBytes.QuadPart));
-    m_pConsole->Printf (m_pConfig->m_rgAttributes[CConfig::EAttribute::Information],          uliTotalFreeBytes.QuadPart == 1 ? L" byte free on volume\n" : L" bytes free on volume\n");
+    m_consolePtr->Printf (m_configPtr->m_rgAttributes[CConfig::EAttribute::InformationHighlight], L" %s", FormatNumberWithSeparators (uliTotalFreeBytes.QuadPart));
+    m_consolePtr->Printf (m_configPtr->m_rgAttributes[CConfig::EAttribute::Information],          uliTotalFreeBytes.QuadPart == 1 ? L" byte free on volume\n" : L" bytes free on volume\n");
 
     if (uliFreeBytesAvailable.QuadPart != uliTotalFreeBytes.QuadPart)
     {
@@ -341,11 +341,11 @@ void CResultsDisplayerBase::DisplayFooterQuotaInfo (__in const ULARGE_INTEGER * 
         strUsername = L"<Unknown>";
     }
 
-    m_pConsole->Printf(m_pConfig->m_rgAttributes[CConfig::EAttribute::Information],          L" ");
-    m_pConsole->Printf(m_pConfig->m_rgAttributes[CConfig::EAttribute::InformationHighlight], FormatNumberWithSeparators (puliFreeBytesAvailable->QuadPart));
-    m_pConsole->Printf(m_pConfig->m_rgAttributes[CConfig::EAttribute::Information],          puliFreeBytesAvailable->QuadPart == 1 ? L" byte available to " : L" bytes available to ");
-    m_pConsole->Printf(m_pConfig->m_rgAttributes[CConfig::EAttribute::InformationHighlight], strUsername.c_str());
-    m_pConsole->Printf(m_pConfig->m_rgAttributes[CConfig::EAttribute::Information],          L" due to quota\n");
+    m_consolePtr->Printf(m_configPtr->m_rgAttributes[CConfig::EAttribute::Information],          L" ");
+    m_consolePtr->Printf(m_configPtr->m_rgAttributes[CConfig::EAttribute::InformationHighlight], FormatNumberWithSeparators (puliFreeBytesAvailable->QuadPart));
+    m_consolePtr->Printf(m_configPtr->m_rgAttributes[CConfig::EAttribute::Information],          puliFreeBytesAvailable->QuadPart == 1 ? L" byte available to " : L" bytes available to ");
+    m_consolePtr->Printf(m_configPtr->m_rgAttributes[CConfig::EAttribute::InformationHighlight], strUsername.c_str());
+    m_consolePtr->Printf(m_configPtr->m_rgAttributes[CConfig::EAttribute::Information],          L" due to quota\n");
 }
 
 

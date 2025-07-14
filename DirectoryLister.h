@@ -14,7 +14,7 @@ class CConsole;
 class CDirectoryLister
 {
 public:
-    CDirectoryLister  (__in CCommandLine * pCmdLine, __in CConsole * pConsole, __in CConfig * pConfig);
+    CDirectoryLister  (shared_ptr<CCommandLine> cmdLinePtr, shared_ptr<CConsole> consolePtr, shared_ptr<CConfig> configPtr);
     ~CDirectoryLister (void); 
 
     void List         (const wstring & mask);
@@ -33,9 +33,9 @@ protected:
     BOOL    IsDots                     (LPCWSTR pszFileName);
 
     
-    CCommandLine                        * m_pCmdLine; 
-    CConsole                            * m_pConsole;
-    CConfig                             * m_pConfig;
+    shared_ptr<CCommandLine>              m_cmdLinePtr; 
+    shared_ptr<CConsole>                  m_consolePtr;
+    shared_ptr<CConfig>                   m_configPtr;
     unique_ptr<CResultsDisplayerBase>     m_displayer;
     ULARGE_INTEGER                        m_uliSizeOfAllFilesFound;
     UINT                                  m_cFilesFound;

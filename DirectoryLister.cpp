@@ -22,23 +22,23 @@
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-CDirectoryLister::CDirectoryLister (__in CCommandLine * pCmdLine, __in CConsole * pConsole, __in CConfig * pConfig) :
-    m_pCmdLine          (pCmdLine),
-    m_pConsole          (pConsole),
-    m_pConfig           (pConfig),
+CDirectoryLister::CDirectoryLister (shared_ptr<CCommandLine> pCmdLine, shared_ptr<CConsole> pConsole, shared_ptr<CConfig> pConfig) :
+    m_cmdLinePtr        (pCmdLine),
+    m_consolePtr        (pConsole),
+    m_configPtr         (pConfig),
     m_cFilesFound       (0),
     m_cDirectoriesFound (0)
 {
     m_uliSizeOfAllFilesFound.QuadPart = 0;
 
     // Create the appropriate displayer based on wide listing flag
-    if (m_pCmdLine->m_fWideListing)
+    if (m_cmdLinePtr->m_fWideListing)
     {
-        m_displayer = make_unique<CResultsDisplayerWide>(m_pCmdLine, m_pConsole, m_pConfig);
+        m_displayer = make_unique<CResultsDisplayerWide>(m_cmdLinePtr, m_consolePtr, m_configPtr);
     }
     else
     {
-        m_displayer = make_unique<CResultsDisplayerNormal>(m_pCmdLine, m_pConsole, m_pConfig);
+        m_displayer = make_unique<CResultsDisplayerNormal>(m_cmdLinePtr, m_consolePtr, m_configPtr);
     }
 }
 
@@ -101,9 +101,9 @@ void CDirectoryLister::List (const wstring & mask)
     exists = filesystem::exists (dirPath, ec);
     if (!exists || !filesystem::is_directory (dirPath)) 
     {
-        m_pConsole->Printf (m_pConfig->m_rgAttributes[CConfig::EAttribute::Error],                L"Error:  ", dirPath.c_str());
-        m_pConsole->Printf (m_pConfig->m_rgAttributes[CConfig::EAttribute::InformationHighlight], L"%s", dirPath.c_str());
-        m_pConsole->Puts   (m_pConfig->m_rgAttributes[CConfig::EAttribute::Error],                L" does not exist");
+        m_consolePtr->Printf (m_configPtr->m_rgAttributes[CConfig::EAttribute::Error],                L"Error:  ", dirPath.c_str());
+        m_consolePtr->Printf (m_configPtr->m_rgAttributes[CConfig::EAttribute::InformationHighlight], L"%s", dirPath.c_str());
+        m_consolePtr->Puts   (m_configPtr->m_rgAttributes[CConfig::EAttribute::Error],                L" does not exist");
         
         BAIL_OUT_IF (TRUE, HRESULT_FROM_WIN32 (ERROR_PATH_NOT_FOUND));
     }
@@ -112,7 +112,7 @@ void CDirectoryLister::List (const wstring & mask)
     // Process a directory
     //
 
-    m_pConsole->Puts (m_pConfig->m_rgAttributes[CConfig::EAttribute::Default], L"");
+    m_consolePtr->Puts (m_configPtr->m_rgAttributes[CConfig::EAttribute::Default], L"");
 
     {
         CDriveInfo driveInfo (dirPath);
@@ -164,8 +164,8 @@ HRESULT CDirectoryLister::ProcessDirectory (const CDriveInfo & driveInfo, filesy
                 // then add the file to the list of matches for this directory
                 //
                 
-                if (CFlag::IsSet    (wfd.dwFileAttributes, m_pCmdLine->m_dwAttributesRequired) && 
-                    CFlag::IsNotSet (wfd.dwFileAttributes, m_pCmdLine->m_dwAttributesExcluded))
+                if (CFlag::IsSet    (wfd.dwFileAttributes, m_cmdLinePtr->m_dwAttributesRequired) && 
+                    CFlag::IsNotSet (wfd.dwFileAttributes, m_cmdLinePtr->m_dwAttributesExcluded))
                 {
                     hr = AddMatchToList (&wfd, &di);
                     CHR (hr);
@@ -181,7 +181,7 @@ HRESULT CDirectoryLister::ProcessDirectory (const CDriveInfo & driveInfo, filesy
     // Sort the results using FileComparator
     //
 
-    std::sort (di.m_vMatches.begin(), di.m_vMatches.end(), FileComparator (m_pCmdLine));
+    std::sort (di.m_vMatches.begin(), di.m_vMatches.end(), FileComparator (m_cmdLinePtr));
 
     //
     // Show the directory contents using the displayer
@@ -193,7 +193,7 @@ HRESULT CDirectoryLister::ProcessDirectory (const CDriveInfo & driveInfo, filesy
     // Recurse into subdirectories 
     //
 
-    if (m_pCmdLine->m_fRecurse)
+    if (m_cmdLinePtr->m_fRecurse)
     {
         hr = RecurseIntoSubdirectories (driveInfo, dirPath, fileSpec);
         CHR (hr);
@@ -284,7 +284,7 @@ HRESULT CDirectoryLister::AddMatchToList (__in WIN32_FIND_DATA * pwfd, __in CDir
 
 
 
-    if (m_pCmdLine->m_fWideListing)
+    if (m_cmdLinePtr->m_fWideListing)
     {
         cchFileName = wcslen (pwfd->cFileName);
     }
@@ -295,7 +295,7 @@ HRESULT CDirectoryLister::AddMatchToList (__in WIN32_FIND_DATA * pwfd, __in CDir
         // In wide directory listings, directories are shown inside brackets
         // so add space for them here.
         //
-        if (m_pCmdLine->m_fWideListing)
+        if (m_cmdLinePtr->m_fWideListing)
         {                
             cchFileName += 2;  
         }
@@ -326,7 +326,7 @@ HRESULT CDirectoryLister::AddMatchToList (__in WIN32_FIND_DATA * pwfd, __in CDir
         ++m_cFilesFound;
     }            
 
-    if (m_pCmdLine->m_fWideListing)
+    if (m_cmdLinePtr->m_fWideListing)
     {
         if (cchFileName > pdi->m_cchLargestFileName)
         {

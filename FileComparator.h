@@ -5,10 +5,10 @@
 class FileComparator
 {
 public:
-    FileComparator(const CCommandLine* pCmdLine);
+    FileComparator (shared_ptr<const CCommandLine> cmdLinePtr);
     
     bool operator()(const WIN32_FIND_DATA& lhs, const WIN32_FIND_DATA& rhs) const;
 
 private:
-    const CCommandLine* m_pCmdLine;
+    shared_ptr<const CCommandLine> m_cmdLinePtr;
 };

@@ -4,6 +4,12 @@
 
 
 
+class CConfig;
+
+
+
+
+
 class CConsole
 {
 public:
@@ -11,7 +17,7 @@ public:
     CConsole   (void);
      ~CConsole (void);
     
-    HRESULT Initialize           (void);
+    HRESULT Initialize           (shared_ptr<CConfig> configPtr);
     void    Puts                 (WORD attr, LPCWSTR psz);
     int     Printf               (WORD attr, LPCWSTR pszFormat, ...);
     void    WriteSeparatorLine   (WORD attr);
@@ -32,6 +38,7 @@ protected:
 
     static constexpr size_t s_kcchInitialBufferSize = 10 * 1024 * 1024;
 
-    WORD      m_attrDefault;
-    wstring   m_strBuffer;
+    shared_ptr<CConfig> m_configPtr;
+    WORD                m_attrDefault;
+    wstring             m_strBuffer;
 };
