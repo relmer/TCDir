@@ -1,5 +1,8 @@
 {
     "files.associations": {
         "list": "cpp"
-    }
+    },
+    "cSpell.words": [
+        "HRESULT"
+    ]
 }

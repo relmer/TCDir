@@ -74,22 +74,39 @@ void CDirectoryLister::List (const wstring & mask)
 {
     HRESULT          hr             = S_OK;
     filesystem::path absolutePath    (filesystem::absolute(mask));
+    bool             exists        = false;
+    std::error_code  ec;
     filesystem::path dirPath;
     filesystem::path fileSpec;    
     
 
 
     //
-    // If the mask is just a path, append the default mask to it
+    // If the mask is a directory, append the default mask to it
     // 
 
-    if (filesystem::is_directory (absolutePath))
+    exists = filesystem::exists (absolutePath, ec);
+    if (exists && filesystem::is_directory (absolutePath))
     {
         absolutePath /= L"*";
     }
 
-    dirPath  = absolutePath.parent_path();
+    dirPath  = absolutePath.parent_path() / "";
     fileSpec = absolutePath.filename();
+
+    // 
+    // At this point dirPath should be a directory, so we can validate it
+    //
+
+    exists = filesystem::exists (dirPath, ec);
+    if (!exists || !filesystem::is_directory (dirPath)) 
+    {
+        m_pConsole->Printf (m_pConfig->m_rgAttributes[CConfig::EAttribute::Error],                L"Error:  ", dirPath.c_str());
+        m_pConsole->Printf (m_pConfig->m_rgAttributes[CConfig::EAttribute::InformationHighlight], L"%s", dirPath.c_str());
+        m_pConsole->Puts   (m_pConfig->m_rgAttributes[CConfig::EAttribute::Error],                L" does not exist");
+        
+        BAIL_OUT_IF (TRUE, HRESULT_FROM_WIN32 (ERROR_PATH_NOT_FOUND));
+    }
 
     //
     // Process a directory

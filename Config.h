@@ -31,7 +31,8 @@ public:
         Information,
         InformationHighlight,
         SeparatorLine,
-
+        Error,
+        
         __count
     };
 

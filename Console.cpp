@@ -35,6 +35,7 @@ CConsole::CConsole(void) :
 
 CConsole::~CConsole (void)
 {
+    SetColor (m_attrDefault);
     Flush();
 }
 

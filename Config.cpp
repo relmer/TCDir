@@ -178,13 +178,9 @@ void CConfig::InitializeTextAttrs (WORD wDefaultAttr)
     m_rgAttributes[EAttribute::Size]                    = FC_Yellow;
     m_rgAttributes[EAttribute::Directory]               = FC_LightBlue;
     m_rgAttributes[EAttribute::SeparatorLine]           = FC_LightBlue;
+    m_rgAttributes[EAttribute::Error]                   = FC_LightRed;
 
-    {
-        TextAttrMap  footest;
-    }
-
-    InitializeExtensionToTextAttrMap ();
-
+    InitializeExtensionToTextAttrMap();
 }
 
 

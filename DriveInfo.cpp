@@ -6,8 +6,10 @@
 
 
 CDriveInfo::CDriveInfo (const filesystem::path & dirPath) :
-    m_nVolumeType (DRIVE_UNKNOWN),
-    m_fUncPath    (false)
+    m_szVolumeName     { 0 },
+    m_szFileSystemName { 0 },
+    m_nVolumeType      (DRIVE_UNKNOWN),
+    m_fUncPath         (false)
 {
     InitializeVolumeInfo (dirPath);
     InitializeUncInfo();
@@ -19,7 +21,10 @@ CDriveInfo::CDriveInfo (const filesystem::path & dirPath) :
 
 void CDriveInfo::InitializeVolumeInfo (const filesystem::path & dirPath)
 {
-    bool fSuccess;
+    HRESULT hr       = S_OK;
+    bool    fSuccess = false;
+
+
 
     // Ensure root path ends with a slash
     ASSERT (dirPath.has_root_path());
@@ -47,7 +52,10 @@ void CDriveInfo::InitializeVolumeInfo (const filesystem::path & dirPath)
                                      NULL,
                                      NULL,
                                      m_szFileSystemName, ARRAYSIZE (m_szFileSystemName));
-    ASSERT (fSuccess);
+    CWR (fSuccess);  // Worth logging, but expected to fail on bad paths, so don't assert.
+
+Error:
+    return;
 }
 
 
@@ -77,7 +85,7 @@ void CDriveInfo::InitializeUncInfo()
         m_remoteName.resize (cchRemoteName);
         dwResult = WNetGetConnection (m_rootPath.root_name().c_str(), &m_remoteName[0], &cchRemoteName);
     }
-    CBRA (dwResult == NOERROR);
+    CBR (dwResult == NOERROR);  // Expected to fail on bad paths, so log but don't assert.
 
     // Trim the string to the actual length (remove null terminator and extra space)
     m_remoteName.resize (wcslen (m_remoteName.c_str()));
