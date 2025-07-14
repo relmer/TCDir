@@ -17,7 +17,7 @@ public:
     CDirectoryLister  (__in CCommandLine * pCmdLine, __in CConsole * pConsole, __in CConfig * pConfig);
     ~CDirectoryLister (void); 
 
-    void List         (LPCWSTR pszMask);
+    void List         (const wstring & mask);
 
 protected:    
     HRESULT ProcessDirectory           (const CDriveInfo & driveInfo, 

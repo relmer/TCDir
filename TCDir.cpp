@@ -134,7 +134,7 @@ int wmain (int argc, WCHAR * argv[])
 
         CDirectoryLister dirLister (&cmdline, consolePtr.get(), configPtr.get());
 
-        for (LPCWSTR mask : cmdline.m_listMask)
+        for (const wstring & mask : cmdline.m_listMask)
         {
             dirLister.List (mask);
         }

@@ -57,15 +57,15 @@ public:
     // Public members
     //
 
-    bool             m_fRecurse;             
-    DWORD            m_dwAttributesRequired; 
-    DWORD            m_dwAttributesExcluded; 
-    ESortOrder       m_rgSortPreference[(size_t) ESortOrder::__SO_COUNT];
-    ESortOrder       m_sortorder;
-    ESortDirection   m_sortdirection;        
-    list<LPCWSTR>    m_listMask;
-    bool             m_fWideListing;
-    bool             m_fPerfTimer;          // Enable performance timer  
+    bool               m_fRecurse;             
+    DWORD              m_dwAttributesRequired; 
+    DWORD              m_dwAttributesExcluded; 
+    ESortOrder         m_rgSortPreference[(size_t) ESortOrder::__SO_COUNT];
+    ESortOrder         m_sortorder;
+    ESortDirection     m_sortdirection;        
+    list<std::wstring> m_listMask;
+    bool               m_fWideListing;
+    bool               m_fPerfTimer;          // Enable performance timer  
 
 
 protected: 
@@ -85,10 +85,4 @@ protected:
     HRESULT AttributeHandler (LPCWSTR pszArg);
 
     
-};                                
-
-
-
-
-
-
+};

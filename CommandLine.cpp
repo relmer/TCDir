@@ -110,7 +110,7 @@ HRESULT CCommandLine::Parse (int cArg, WCHAR ** ppszArg)
             //
 
             default:                
-                m_listMask.push_back (pszArg);
+                m_listMask.emplace_back (pszArg);
                 break;
         }
 
@@ -360,9 +360,3 @@ HRESULT CCommandLine::AttributeHandler (LPCWSTR pszArg)
 Error:
     return hr;
 }
-
-
-
-
-
-

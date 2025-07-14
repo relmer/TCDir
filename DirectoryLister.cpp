@@ -70,52 +70,26 @@ CDirectoryLister::~CDirectoryLister (void)
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-void CDirectoryLister::List (LPCWSTR pszMask)
+void CDirectoryLister::List (const wstring & mask)
 {
     HRESULT          hr             = S_OK;
-    filesystem::path inputPath        (pszMask);
-    filesystem::path wellFormedPath;
+    filesystem::path absolutePath    (filesystem::absolute(mask));
+    filesystem::path dirPath;
+    filesystem::path fileSpec;    
     
 
 
-    if (!inputPath.has_root_name())
-    {
-        // No drive letter, use current directory
-        wellFormedPath = filesystem::current_path();
-        
-        //
-        // If the path begins with a backslash, it's an absolute path.
-        // We'll use only the root path portion.
-        //
-        
-        if (*pszMask == L'\\')
-        {
-            wellFormedPath = wellFormedPath.root_path();
-        }             
-        
-        wellFormedPath /= inputPath;
-    }                                
-    else                             
-    {                                
-        wellFormedPath = inputPath;
-    }
-    
     //
     // If the mask is just a path, append the default mask to it
     // 
 
-    if (filesystem::is_directory(wellFormedPath))
+    if (filesystem::is_directory (absolutePath))
     {
-        wellFormedPath /= L"*";
+        absolutePath /= L"*";
     }
 
-    //
-    // Get rid of any relative path references and separate path and mask portions
-    //
-
-    filesystem::path canonicalPath = filesystem::weakly_canonical (wellFormedPath);
-    filesystem::path dirPath       = canonicalPath.parent_path();
-    filesystem::path fileSpec      = canonicalPath.filename();    
+    dirPath  = absolutePath.parent_path();
+    fileSpec = absolutePath.filename();
 
     //
     // Process a directory
