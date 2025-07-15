@@ -1,13 +1,13 @@
 ﻿#include "pch.h"
 #include "DirectoryLister.h"
-#include "ResultsDisplayerNormal.h"
-#include "ResultsDisplayerWide.h"
-#include "FileComparator.h"
 
 #include "CommandLine.h"
 #include "Config.h"
 #include "Console.h"
+#include "FileComparator.h"
 #include "Flag.h"
+#include "ResultsDisplayerNormal.h"
+#include "ResultsDisplayerWide.h"
 #include "UniqueFindHandle.h"
 
 
@@ -20,7 +20,7 @@
 //
 //  
 //
-////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////  
 
 CDirectoryLister::CDirectoryLister (shared_ptr<CCommandLine> pCmdLine, shared_ptr<CConsole> pConsole, shared_ptr<CConfig> pConfig) :
     m_cmdLinePtr        (pCmdLine),
@@ -52,7 +52,7 @@ CDirectoryLister::CDirectoryLister (shared_ptr<CCommandLine> pCmdLine, shared_pt
 //
 //  
 //
-////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////  
 
 CDirectoryLister::~CDirectoryLister (void)
 {
@@ -68,7 +68,7 @@ CDirectoryLister::~CDirectoryLister (void)
 //
 //  
 //
-////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////  
 
 void CDirectoryLister::List (const wstring & mask)
 {
@@ -79,7 +79,7 @@ void CDirectoryLister::List (const wstring & mask)
     filesystem::path dirPath;
     filesystem::path fileSpec;    
     
-
+    
 
     //
     // If the mask is a directory, append the default mask to it
@@ -101,9 +101,9 @@ void CDirectoryLister::List (const wstring & mask)
     exists = filesystem::exists (dirPath, ec);
     if (!exists || !filesystem::is_directory (dirPath)) 
     {
-        m_consolePtr->Printf (m_configPtr->m_rgAttributes[CConfig::EAttribute::Error],                L"Error:  ", dirPath.c_str());
-        m_consolePtr->Printf (m_configPtr->m_rgAttributes[CConfig::EAttribute::InformationHighlight], L"%s", dirPath.c_str());
-        m_consolePtr->Puts   (m_configPtr->m_rgAttributes[CConfig::EAttribute::Error],                L" does not exist");
+        m_consolePtr->Printf (CConfig::EAttribute::Error,                L"Error:  ", dirPath.c_str());
+        m_consolePtr->Printf (CConfig::EAttribute::InformationHighlight, L"%s", dirPath.c_str());
+        m_consolePtr->Puts   (CConfig::EAttribute::Error,                L" does not exist");
         
         BAIL_OUT_IF (TRUE, HRESULT_FROM_WIN32 (ERROR_PATH_NOT_FOUND));
     }
@@ -112,7 +112,7 @@ void CDirectoryLister::List (const wstring & mask)
     // Process a directory
     //
 
-    m_consolePtr->Puts (m_configPtr->m_rgAttributes[CConfig::EAttribute::Default], L"");
+    m_consolePtr->Puts (CConfig::EAttribute::Default, L"");
 
     {
         CDriveInfo driveInfo (dirPath);
@@ -135,7 +135,7 @@ Error:
 //
 //  
 //
-////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////  
 
 HRESULT CDirectoryLister::ProcessDirectory (const CDriveInfo & driveInfo, filesystem::path dirPath, filesystem::path fileSpec, CResultsDisplayerBase::EDirectoryLevel level)
 {
@@ -146,7 +146,7 @@ HRESULT CDirectoryLister::ProcessDirectory (const CDriveInfo & driveInfo, filesy
     UniqueFindHandle hFind;
     WIN32_FIND_DATA  wfd;                         
 
-
+    
 
     //
     // Search for matching files and directories
@@ -222,7 +222,7 @@ Error:
 //
 //  
 //
-////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////  
 
 HRESULT CDirectoryLister::RecurseIntoSubdirectories (const CDriveInfo & driveInfo, filesystem::path dirPath, filesystem::path fileSpec)
 {
@@ -232,7 +232,7 @@ HRESULT CDirectoryLister::RecurseIntoSubdirectories (const CDriveInfo & driveInf
     UniqueFindHandle hFind;
     WIN32_FIND_DATA  wfd;                         
 
-   
+    
 
     //
     // Search for subdirectories to recurse into
@@ -275,14 +275,14 @@ Error:
 //
 //  
 //
-////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////  
 
 HRESULT CDirectoryLister::AddMatchToList (__in WIN32_FIND_DATA * pwfd, __in CDirectoryInfo * pdi)
 {
     HRESULT hr           = S_OK;
     size_t  cchFileName  = 0; 
 
-
+    
 
     if (m_cmdLinePtr->m_fWideListing)
     {
@@ -351,7 +351,7 @@ HRESULT CDirectoryLister::AddMatchToList (__in WIN32_FIND_DATA * pwfd, __in CDir
 //
 //  
 //
-////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////  
 
 BOOL CDirectoryLister::IsDots(LPCWSTR pszFileName)
 {
@@ -359,7 +359,7 @@ BOOL CDirectoryLister::IsDots(LPCWSTR pszFileName)
     static const WCHAR kchNull = L'\0';
     BOOL               fDots = FALSE;
 
-
+    
 
     if (pszFileName[0] == kchDot)
     {

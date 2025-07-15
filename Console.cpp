@@ -33,7 +33,7 @@ CConsole::CConsole(void) :
 //
 //  
 //
-////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////  
 
 CConsole::~CConsole (void)
 {
@@ -51,7 +51,7 @@ CConsole::~CConsole (void)
 //
 //  
 //
-////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////  
 
 HRESULT CConsole::Initialize (shared_ptr<CConfig> configPtr)
 {
@@ -73,6 +73,7 @@ HRESULT CConsole::Initialize (shared_ptr<CConfig> configPtr)
     m_strBuffer.reserve (s_kcchInitialBufferSize);
     
 
+
     fSuccess = GetConsoleMode (m_hStdOut, &mode);
     CWRA (fSuccess);
     
@@ -80,7 +81,7 @@ HRESULT CConsole::Initialize (shared_ptr<CConfig> configPtr)
     fSuccess = SetConsoleMode (m_hStdOut, mode);
     CWRA (fSuccess);
     
-    
+
 
     m_configPtr = configPtr;
     m_configPtr->Initialize (m_attrDefault);
@@ -101,31 +102,16 @@ Error:
 //
 //  Write a single line to the console (no format string)
 //
-////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////  
 
-void CConsole::Puts (WORD attr, LPCWSTR psz)
+void CConsole::Puts (int attributeIndex, LPCWSTR psz)
 {
-    SetColor (attr);
-    
+    SetColor (m_configPtr->m_rgAttributes[attributeIndex]);
+
     m_strBuffer.append (psz);
     m_strBuffer.append (L"\n");
 }
 
-
-
-
-////////////////////////////////////////////////////////////////////////////////
-//
-//  CConsole::Puts
-//
-//  Write a single line to the console (no format string) - index version
-//
-////////////////////////////////////////////////////////////////////////////////
-
-void CConsole::Puts (int attributeIndex, LPCWSTR psz)
-{
-    Puts (m_configPtr->m_rgAttributes[attributeIndex], psz);
-}
 
 
 
@@ -136,43 +122,7 @@ void CConsole::Puts (int attributeIndex, LPCWSTR psz)
 //
 //  
 //
-////////////////////////////////////////////////////////////////////////////////
-
-int CConsole::Printf (WORD attr, LPCWSTR pszFormat, ...)
-{
-    static constexpr int s_cchBuf          = 9999;  // Max console buffer width
-    static  WCHAR        s_szBuf[s_cchBuf] = { L'\0' };
-
-    HRESULT   hr     = S_OK;
-    va_list   vaArgs = 0;  
-    LPWSTR    pszEnd = nullptr;
-
-
-
-    va_start (vaArgs, pszFormat);
-    
-    hr = StringCchVPrintfEx (s_szBuf, s_cchBuf, &pszEnd, nullptr, 0, pszFormat, vaArgs);
-    CHRA (hr);
-
-    SetColor (attr);
-    m_strBuffer.append (s_szBuf);
-
-Error:
-    va_end (vaArgs);
-
-    return SUCCEEDED (hr) ? (int) (pszEnd - s_szBuf) : 0;
-}
-
-
-
-
-////////////////////////////////////////////////////////////////////////////////
-//
-//  CConsole::Printf
-//
-//  Printf with attribute index lookup
-//
-////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////  
 
 int CConsole::Printf (int attributeIndex, LPCWSTR pszFormat, ...)
 {
@@ -182,6 +132,7 @@ int CConsole::Printf (int attributeIndex, LPCWSTR pszFormat, ...)
     HRESULT   hr     = S_OK;
     va_list   vaArgs = 0;  
     LPWSTR    pszEnd = nullptr;
+
 
 
     va_start (vaArgs, pszFormat);
@@ -201,6 +152,7 @@ Error:
 
 
 
+
 ////////////////////////////////////////////////////////////////////////////////
 //
 //  CConsole::WriteConsoleLine
@@ -208,7 +160,7 @@ Error:
 //  Draws a line across the console at the current internal cursor position
 //  and moves to the next line
 // 
-////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////  
 
 void CConsole::WriteSeparatorLine (WORD /* attr */)
 {
@@ -228,7 +180,7 @@ void CConsole::WriteSeparatorLine (WORD /* attr */)
 //
 // 
 //  
-////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////  
 
 HRESULT CConsole::Flush (void)
 {
@@ -257,7 +209,7 @@ Error:
 //
 //
 // 
-////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////  
 
 void CConsole::SetColor(WORD attr)
 {
@@ -303,7 +255,7 @@ void CConsole::SetColor(WORD attr)
 //
 //  
 //
-////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////  
 
 void CConsole::Test (void)
 {
