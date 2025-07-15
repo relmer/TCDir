@@ -100,7 +100,7 @@ int wmain (int argc, WCHAR * argv[])
     hr = cmdlinePtr->Parse (argc - 1, argv + 1);
     if (FAILED (hr))
     {
-        Usage (consolePtr.get(), configPtr.get());
+        Usage (consolePtr.get());
     }
     CHR (hr);
 
@@ -153,33 +153,33 @@ Error:
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-void Usage (__in CConsole * pConsole, __in CConfig * pConfig)
+void Usage (__in CConsole * pConsole)
 {
-    pConsole->Puts (pConfig->m_rgAttributes[CConfig::EAttribute::Default], L"");
-    pConsole->Puts (pConfig->m_rgAttributes[CConfig::EAttribute::Default], L"Relmerator's Technicolor Directory (C)2004-2025 by Robert Elmer");
-    pConsole->Puts (pConfig->m_rgAttributes[CConfig::EAttribute::Default], L"");
-    pConsole->Puts (pConfig->m_rgAttributes[CConfig::EAttribute::Default], L"TCDIR [drive:][path][filename] [/A[[:]attributes]] [/O[[:]sortorder]] [/S]");
-    pConsole->Puts (pConfig->m_rgAttributes[CConfig::EAttribute::Default], L"");
-    pConsole->Puts (pConfig->m_rgAttributes[CConfig::EAttribute::Default], L"  [drive:][path][filename]");
-    pConsole->Puts (pConfig->m_rgAttributes[CConfig::EAttribute::Default], L"              Specifies drive, directory, and/or files to list.");
-    pConsole->Puts (pConfig->m_rgAttributes[CConfig::EAttribute::Default], L"");
-    pConsole->Puts (pConfig->m_rgAttributes[CConfig::EAttribute::Default], L"  /A          Displays files with specified attributes.");
-    pConsole->Puts (pConfig->m_rgAttributes[CConfig::EAttribute::Default], L"  attributes   D  Directories                R  Read-only files");
-    pConsole->Puts (pConfig->m_rgAttributes[CConfig::EAttribute::Default], L"               H  Hidden files               A  Files ready for archiving");
-    pConsole->Puts (pConfig->m_rgAttributes[CConfig::EAttribute::Default], L"               S  System files               T  Temporary files");
-    pConsole->Puts (pConfig->m_rgAttributes[CConfig::EAttribute::Default], L"               E  Encrypted files            C  Compressed files");
-    pConsole->Puts (pConfig->m_rgAttributes[CConfig::EAttribute::Default], L"               P  Reparse points             0  Sparse files");
-    pConsole->Puts (pConfig->m_rgAttributes[CConfig::EAttribute::Default], L"               -  Prefix meaning not");
-    pConsole->Puts (pConfig->m_rgAttributes[CConfig::EAttribute::Default], L"");
-    pConsole->Puts (pConfig->m_rgAttributes[CConfig::EAttribute::Default], L"  /O          List by files in sorted order.");
-    pConsole->Puts (pConfig->m_rgAttributes[CConfig::EAttribute::Default], L"  sortorder    N  By name (alphabetic)       S  By size (smallest first)");
-    pConsole->Puts (pConfig->m_rgAttributes[CConfig::EAttribute::Default], L"               E  By extension (alphabetic)  D  By date/time (oldest first)");
-    pConsole->Puts (pConfig->m_rgAttributes[CConfig::EAttribute::Default], L"               -  Prefix to reverse order");
-    pConsole->Puts (pConfig->m_rgAttributes[CConfig::EAttribute::Default], L"");
-    pConsole->Puts (pConfig->m_rgAttributes[CConfig::EAttribute::Default], L"  /S          Displays files in specified directory and all subdirectories.");
-    pConsole->Puts (pConfig->m_rgAttributes[CConfig::EAttribute::Default], L"");
-    pConsole->Puts (pConfig->m_rgAttributes[CConfig::EAttribute::Default], L"");
-    pConsole->Puts (pConfig->m_rgAttributes[CConfig::EAttribute::Default], L"");
+    pConsole->Puts (CConfig::EAttribute::Default, L"");
+    pConsole->Puts (CConfig::EAttribute::Default, L"Relmerator's Technicolor Directory (C)2004-2025 by Robert Elmer");
+    pConsole->Puts (CConfig::EAttribute::Default, L"");
+    pConsole->Puts (CConfig::EAttribute::Default, L"TCDIR [drive:][path][filename] [/A[[:]attributes]] [/O[[:]sortorder]] [/S]");
+    pConsole->Puts (CConfig::EAttribute::Default, L"");
+    pConsole->Puts (CConfig::EAttribute::Default, L"  [drive:][path][filename]");
+    pConsole->Puts (CConfig::EAttribute::Default, L"              Specifies drive, directory, and/or files to list.");
+    pConsole->Puts (CConfig::EAttribute::Default, L"");
+    pConsole->Puts (CConfig::EAttribute::Default, L"  /A          Displays files with specified attributes.");
+    pConsole->Puts (CConfig::EAttribute::Default, L"  attributes   D  Directories                R  Read-only files");
+    pConsole->Puts (CConfig::EAttribute::Default, L"               H  Hidden files               A  Files ready for archiving");
+    pConsole->Puts (CConfig::EAttribute::Default, L"               S  System files               T  Temporary files");
+    pConsole->Puts (CConfig::EAttribute::Default, L"               E  Encrypted files            C  Compressed files");
+    pConsole->Puts (CConfig::EAttribute::Default, L"               P  Reparse points             0  Sparse files");
+    pConsole->Puts (CConfig::EAttribute::Default, L"               -  Prefix meaning not");
+    pConsole->Puts (CConfig::EAttribute::Default, L"");
+    pConsole->Puts (CConfig::EAttribute::Default, L"  /O          List by files in sorted order.");
+    pConsole->Puts (CConfig::EAttribute::Default, L"  sortorder    N  By name (alphabetic)       S  By size (smallest first)");
+    pConsole->Puts (CConfig::EAttribute::Default, L"               E  By extension (alphabetic)  D  By date/time (oldest first)");
+    pConsole->Puts (CConfig::EAttribute::Default, L"               -  Prefix to reverse order");
+    pConsole->Puts (CConfig::EAttribute::Default, L"");
+    pConsole->Puts (CConfig::EAttribute::Default, L"  /S          Displays files in specified directory and all subdirectories.");
+    pConsole->Puts (CConfig::EAttribute::Default, L"");
+    pConsole->Puts (CConfig::EAttribute::Default, L"");
+    pConsole->Puts (CConfig::EAttribute::Default, L"");
 }
 
 

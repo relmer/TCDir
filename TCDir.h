@@ -12,10 +12,4 @@ class CConsole;
 
 
 int  wmain         (int argc, WCHAR * argv[]);
-void Usage         (__in CConsole * pConsole, __in CConfig * pConfig);
-
-
-
-
-
-
+void Usage         (__in CConsole * pConsole);
