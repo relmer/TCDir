@@ -1,0 +1,16 @@
+Critical instructions for you:
+
+Always ensure that exactly 5 blank lines exist between the #include or other preprocessor directives at the top of the file and the first function in the file.  
+
+You must ensure that exactly 5 blank lines exist between functions.
+You must ensure that exactly 5 blank lines exist after the last function in the file as well.  
+
+Never add additional blank lines if doing so would result in more than 5 lines.  
+Never delete blank lines if doing so would result in fewer than 5 lines.  
+
+There must always be 3 blank lines between variable definitions at the top of a function or block and the first real statements in that function or block.  
+
+You should also never alter the escape sequence passed to format() in SetColor.  It must always begin with \x1b. 
+
+Never violate these rules.  
+Always verify that these rules have been adhered to when making changes, and after making changes.

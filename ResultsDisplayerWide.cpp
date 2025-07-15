@@ -16,7 +16,7 @@
 //
 //  
 //
-////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////  
 
 CResultsDisplayerWide::CResultsDisplayerWide (shared_ptr<CCommandLine> cmdLinePtr, shared_ptr<CConsole> consolePtr, shared_ptr<CConfig> configPtr) :
     CResultsDisplayerBase (cmdLinePtr, consolePtr, configPtr)
@@ -33,7 +33,7 @@ CResultsDisplayerWide::CResultsDisplayerWide (shared_ptr<CCommandLine> cmdLinePt
 //
 //  
 //
-////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////  
 
 void CResultsDisplayerWide::DisplayFileResults (__in CDirectoryInfo * pdi)
 {                                 
@@ -44,7 +44,7 @@ void CResultsDisplayerWide::DisplayFileResults (__in CDirectoryInfo * pdi)
     size_t  nCol;
     size_t  cRows;
     size_t  cItemsInLastRow;
-
+    
 
 
     CBRA (pdi->m_cchLargestFileName > 0);
@@ -70,6 +70,8 @@ void CResultsDisplayerWide::DisplayFileResults (__in CDirectoryInfo * pdi)
             WIN32_FIND_DATA * pwfd          = NULL;       
             WORD              wAttr         = 0;      
             size_t            cSpacesNeeded = 0;
+            
+            
 
             if ((nRow * cColumns + nCol) >= pdi->m_vMatches.size ())
             {
@@ -103,12 +105,12 @@ void CResultsDisplayerWide::DisplayFileResults (__in CDirectoryInfo * pdi)
             {
                 for (cSpacesNeeded = cxColumnWidth - wcslen (pszName); cSpacesNeeded > 0; cSpacesNeeded--)
                 {
-                    m_consolePtr->Printf (m_configPtr->m_rgAttributes[CConfig::EAttribute::Default], L" ");
+                    m_consolePtr->Printf (CConfig::EAttribute::Default, L" ");
                 }
             }
         }
 
-        m_consolePtr->Puts (m_configPtr->m_rgAttributes[CConfig::EAttribute::Default], L"");
+        m_consolePtr->Puts (CConfig::EAttribute::Default, L"");
     }
 
 Error:
@@ -125,7 +127,7 @@ Error:
 //
 //  Figure out how many columns fit on the screen
 //
-////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////  
 
 HRESULT CResultsDisplayerWide::GetColumnInfo (__in const CDirectoryInfo * pdi, __out size_t * pcColumns, __out size_t * pcxColumnWidth)
 {
@@ -167,20 +169,20 @@ Error:
 //
 //  
 //
-////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////  
 
 HRESULT CResultsDisplayerWide::GetWideFormattedName (__in const WIN32_FIND_DATA * pwfd, __deref_out_z LPCWSTR * ppszName)
 {
     HRESULT      hr                      = S_OK;
     static WCHAR szDirName[MAX_PATH + 2] = L"[";
-
     
+
     if (pwfd->dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
     {
         LPWSTR pszBufEnd    = szDirName + 1;
         size_t cchRemaining = 0;
-
         
+
         hr = StringCchCopyEx (szDirName + 1, ARRAYSIZE (szDirName) - 2, pwfd->cFileName, &pszBufEnd, &cchRemaining, 0);
         CHRA (hr);
 

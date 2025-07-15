@@ -16,7 +16,7 @@
 //
 //  
 //
-////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////  
 
 CResultsDisplayerNormal::CResultsDisplayerNormal (shared_ptr<CCommandLine> cmdLinePtr, shared_ptr<CConsole> consolePtr, shared_ptr<CConfig> configPtr) :
     CResultsDisplayerBase (cmdLinePtr, consolePtr, configPtr)
@@ -33,14 +33,14 @@ CResultsDisplayerNormal::CResultsDisplayerNormal (shared_ptr<CCommandLine> cmdLi
 //
 //  
 //
-////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////  
 
 void CResultsDisplayerNormal::DisplayFileResults (__in CDirectoryInfo * pdi)
 {
     HRESULT hr                           = S_OK;
     size_t  cchStringLengthOfMaxFileSize = GetStringLengthOfMaxFileSize (&pdi->m_uliLargestFileSize);
-
     
+
 
     for (const WIN32_FIND_DATA & fileInfo : pdi->m_vMatches)
     {
@@ -70,7 +70,7 @@ Error:
 //
 //  Displays the date and time from the given FILETIME 
 // 
-////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////  
 
 HRESULT CResultsDisplayerNormal::DisplayResultsNormalDateAndTime (const FILETIME & ftLastWriteTime)
 {
@@ -95,11 +95,11 @@ HRESULT CResultsDisplayerNormal::DisplayResultsNormalDateAndTime (const FILETIME
     fSuccess = GetTimeFormatEx (LOCALE_NAME_USER_DEFAULT, 0, &stLocal, L"hh:mm tt",   szTime, ARRAYSIZE (szTime));
     CWRA (fSuccess);
 
-    m_consolePtr->Printf (m_configPtr->m_rgAttributes[CConfig::EAttribute::Date],    L"%s", szDate);
-    m_consolePtr->Printf (m_configPtr->m_rgAttributes[CConfig::EAttribute::Default], L"  ");
-    
-    m_consolePtr->Printf (m_configPtr->m_rgAttributes[CConfig::EAttribute::Time],    L"%s", szTime);
-    m_consolePtr->Printf (m_configPtr->m_rgAttributes[CConfig::EAttribute::Default], L" ");
+    m_consolePtr->Printf (CConfig::EAttribute::Date,    L"%s", szDate);
+    m_consolePtr->Printf (CConfig::EAttribute::Default, L"  ");
+
+    m_consolePtr->Printf (CConfig::EAttribute::Time,    L"%s", szTime);
+    m_consolePtr->Printf (CConfig::EAttribute::Default, L" ");
 
 Error:
     return hr;
@@ -115,7 +115,7 @@ Error:
 //
 //  Displays the file attributes
 // 
-////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////  
 
 void CResultsDisplayerNormal::DisplayResultsNormalAttributes  (DWORD dwFileAttributes)
 {
@@ -166,7 +166,7 @@ void CResultsDisplayerNormal::DisplayResultsNormalAttributes  (DWORD dwFileAttri
 //
 //  Displays the file size
 //  
-////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////  
 
 void CResultsDisplayerNormal::DisplayResultsNormalFileSize (const WIN32_FIND_DATA & fileInfo, size_t cchStringLengthOfMaxFileSize)
 {
@@ -175,15 +175,15 @@ void CResultsDisplayerNormal::DisplayResultsNormalFileSize (const WIN32_FIND_DAT
 
     size_t         cchMaxFileSize = max (cchStringLengthOfMaxFileSize, kcchDirSize);
     ULARGE_INTEGER uliFileSize;
+    
 
-    
-    
+
     uliFileSize.LowPart  = fileInfo.nFileSizeLow;
     uliFileSize.HighPart = fileInfo.nFileSizeHigh;
 
     if ((fileInfo.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) == 0)
     {
-        m_consolePtr->Printf (m_configPtr->m_rgAttributes[CConfig::EAttribute::Size], 
+        m_consolePtr->Printf (CConfig::EAttribute::Size, 
                             L" %*s ", 
                             cchMaxFileSize, 
                             FormatNumberWithSeparators (uliFileSize.QuadPart));
@@ -191,7 +191,7 @@ void CResultsDisplayerNormal::DisplayResultsNormalFileSize (const WIN32_FIND_DAT
     else
     {
         size_t cchLeftSidePadding = (cchMaxFileSize - kcchDirSize) / 2;            
-        m_consolePtr->Printf (m_configPtr->m_rgAttributes[CConfig::EAttribute::Directory], 
+        m_consolePtr->Printf (CConfig::EAttribute::Directory, 
                             L" %*s%-*s ", 
                             cchLeftSidePadding, 
                             L"", 

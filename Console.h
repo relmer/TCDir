@@ -1,10 +1,6 @@
 #pragma once
 
-
-
-
-
-class CConfig;
+#include "Config.h"
 
 
 
@@ -18,10 +14,8 @@ public:
      ~CConsole (void);
     
     HRESULT Initialize           (shared_ptr<CConfig> configPtr);
-    void    Puts                 (WORD attr, LPCWSTR psz);
     void    Puts                 (int attributeIndex, LPCWSTR psz);
-    int     Printf               (WORD attr, LPCWSTR pszFormat, ...);
-    int     Printf               (int attributeIndex, LPCWSTR pszFormat, ...);
+    int     Printf               (CConfig::EAttribute attributeIndex, LPCWSTR pszFormat, ...);
     void    WriteSeparatorLine   (WORD attr);
     HRESULT Flush                (void);
 
