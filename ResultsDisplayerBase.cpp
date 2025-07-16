@@ -52,10 +52,10 @@ CResultsDisplayerBase::~CResultsDisplayerBase (void)
 //
 ////////////////////////////////////////////////////////////////////////////////  
 
-void CResultsDisplayerBase::DisplayResults (const CDriveInfo & driveInfo, __in CDirectoryInfo * pdi, EDirectoryLevel level)
+void CResultsDisplayerBase::DisplayResults (const CDriveInfo & driveInfo, const CDirectoryInfo & di, EDirectoryLevel level)
 {
     // For subdirectories with no matches, skip displaying entirely
-    if (level == EDirectoryLevel::Subdirectory && pdi->m_vMatches.size() == 0)
+    if (level == EDirectoryLevel::Subdirectory && di.m_vMatches.size() == 0)
     {
         return;
     }
@@ -78,23 +78,23 @@ void CResultsDisplayerBase::DisplayResults (const CDriveInfo & driveInfo, __in C
         DisplayDriveHeader (driveInfo);
     }
 
-    DisplayPathHeader (pdi->m_dirPath); 
+    DisplayPathHeader (di.m_dirPath); 
 
-    if (pdi->m_vMatches.size() == 0)
+    if (di.m_vMatches.size() == 0)
     {
-        if (pdi->m_fileSpec == L"*")
+        if (di.m_fileSpec == L"*")
         {
             m_consolePtr->Puts (CConfig::EAttribute::Default, L"Directory is empty.");
         }
         else
         {
-            m_consolePtr->Printf (CConfig::EAttribute::Default, L"No files matching '%s' found.\n", pdi->m_fileSpec.c_str());
+            m_consolePtr->Printf (CConfig::EAttribute::Default, L"No files matching '%s' found.\n", di.m_fileSpec.c_str());
         }
     }
     else 
     {
-        DisplayFileResults      (pdi);
-        DisplayDirectorySummary (pdi);
+        DisplayFileResults      (di);
+        DisplayDirectorySummary (di);
 
         //
         // Only show the volume footer here if we're not doing a recursive list.
@@ -103,7 +103,7 @@ void CResultsDisplayerBase::DisplayResults (const CDriveInfo & driveInfo, __in C
 
         if (!m_cmdLinePtr->m_fRecurse)
         {
-            DisplayVolumeFooter (pdi);
+            DisplayVolumeFooter (di);
         }
     }
         
@@ -212,7 +212,7 @@ void CResultsDisplayerBase::DisplayPathHeader (const filesystem::path & dirPath)
 //
 ////////////////////////////////////////////////////////////////////////////////  
 
-void CResultsDisplayerBase::DisplayListingSummary (__in const CDirectoryInfo * pdi, UINT cFilesFound, UINT cDirectoriesFound, const ULARGE_INTEGER& uliSizeOfAllFilesFound)
+void CResultsDisplayerBase::DisplayListingSummary (const CDirectoryInfo & di, UINT cFilesFound, UINT cDirectoriesFound, const ULARGE_INTEGER & uliSizeOfAllFilesFound)
 {
     int cMaxDigits = 1;
 
@@ -234,7 +234,8 @@ void CResultsDisplayerBase::DisplayListingSummary (__in const CDirectoryInfo * p
     m_consolePtr->Puts   (CConfig::EAttribute::Information,          cDirectoriesFound == 1 ? L" subdirectory" : L" subdirectories");
 
     m_consolePtr->Puts   (CConfig::EAttribute::Default,              L"");
-    DisplayVolumeFooter (pdi);
+    
+    DisplayVolumeFooter (di);
 
     m_consolePtr->WriteSeparatorLine (m_configPtr->m_rgAttributes[CConfig::EAttribute::SeparatorLine]);
     m_consolePtr->Puts               (CConfig::EAttribute::Default, L"");
@@ -254,16 +255,16 @@ void CResultsDisplayerBase::DisplayListingSummary (__in const CDirectoryInfo * p
 //
 ////////////////////////////////////////////////////////////////////////////////  
 
-void CResultsDisplayerBase::DisplayDirectorySummary (__in const CDirectoryInfo * pdi)
+void CResultsDisplayerBase::DisplayDirectorySummary (const CDirectoryInfo & di)
 {
     m_consolePtr->Printf (CConfig::EAttribute::Information,          L"\n ");
-    m_consolePtr->Printf (CConfig::EAttribute::InformationHighlight, L"%d", pdi->m_cSubDirectories);
-    m_consolePtr->Printf (CConfig::EAttribute::Information,          pdi->m_cSubDirectories == 1 ? L" dir, " : L" dirs, ");
+    m_consolePtr->Printf (CConfig::EAttribute::InformationHighlight, L"%d", di.m_cSubDirectories);
+    m_consolePtr->Printf (CConfig::EAttribute::Information,          di.m_cSubDirectories == 1 ? L" dir, " : L" dirs, ");
 
-    m_consolePtr->Printf (CConfig::EAttribute::InformationHighlight, L"%d", pdi->m_cFiles);
-    m_consolePtr->Printf (CConfig::EAttribute::Information,          pdi->m_cFiles == 1 ? L" file using " : L" files using ");
-    m_consolePtr->Printf (CConfig::EAttribute::InformationHighlight, FormatNumberWithSeparators (pdi->m_uliBytesUsed.QuadPart));
-    m_consolePtr->Printf (CConfig::EAttribute::Information,          pdi->m_uliBytesUsed.QuadPart == 1 ? L" byte\n" : L" bytes\n");
+    m_consolePtr->Printf (CConfig::EAttribute::InformationHighlight, L"%d", di.m_cFiles);
+    m_consolePtr->Printf (CConfig::EAttribute::Information,          di.m_cFiles == 1 ? L" file using " : L" files using ");
+    m_consolePtr->Printf (CConfig::EAttribute::InformationHighlight, FormatNumberWithSeparators (di.m_uliBytesUsed.QuadPart));
+    m_consolePtr->Printf (CConfig::EAttribute::Information,          di.m_uliBytesUsed.QuadPart == 1 ? L" byte\n" : L" bytes\n");
 }
 
 
@@ -281,7 +282,7 @@ void CResultsDisplayerBase::DisplayDirectorySummary (__in const CDirectoryInfo *
 //
 ////////////////////////////////////////////////////////////////////////////////  
 
-void CResultsDisplayerBase::DisplayVolumeFooter (__in const CDirectoryInfo * pdi)
+void CResultsDisplayerBase::DisplayVolumeFooter (const CDirectoryInfo & di)
 {
     HRESULT        hr                     = S_OK;
     BOOL           fSuccess;              
@@ -291,7 +292,7 @@ void CResultsDisplayerBase::DisplayVolumeFooter (__in const CDirectoryInfo * pdi
 
     
 
-    fSuccess = GetDiskFreeSpaceEx (pdi->m_dirPath.c_str(), &uliFreeBytesAvailable, &uliTotalBytes, &uliTotalFreeBytes);
+    fSuccess = GetDiskFreeSpaceEx (di.m_dirPath.c_str(), &uliFreeBytesAvailable, &uliTotalBytes, &uliTotalFreeBytes);
     CBRA (fSuccess);
 
     m_consolePtr->Printf (CConfig::EAttribute::InformationHighlight, L" %s", FormatNumberWithSeparators (uliTotalFreeBytes.QuadPart));
@@ -299,7 +300,7 @@ void CResultsDisplayerBase::DisplayVolumeFooter (__in const CDirectoryInfo * pdi
 
     if (uliFreeBytesAvailable.QuadPart != uliTotalFreeBytes.QuadPart)
     {
-        DisplayFooterQuotaInfo (&uliFreeBytesAvailable);
+        DisplayFooterQuotaInfo (uliFreeBytesAvailable);
     }
     
 
@@ -321,7 +322,7 @@ Error:
 //
 ////////////////////////////////////////////////////////////////////////////////  
 
-void CResultsDisplayerBase::DisplayFooterQuotaInfo (__in const ULARGE_INTEGER * puliFreeBytesAvailable)
+void CResultsDisplayerBase::DisplayFooterQuotaInfo (const ULARGE_INTEGER & uliFreeBytesAvailable)
 {
     BOOL    fSuccess    = FALSE;
     DWORD   cchUsername = UNLEN + 1;     // Use Windows constant for max username length
@@ -342,8 +343,8 @@ void CResultsDisplayerBase::DisplayFooterQuotaInfo (__in const ULARGE_INTEGER * 
     }
 
     m_consolePtr->Printf(CConfig::EAttribute::Information,          L" ");
-    m_consolePtr->Printf(CConfig::EAttribute::InformationHighlight, FormatNumberWithSeparators (puliFreeBytesAvailable->QuadPart));
-    m_consolePtr->Printf(CConfig::EAttribute::Information,          puliFreeBytesAvailable->QuadPart == 1 ? L" byte available to " : L" bytes available to ");
+    m_consolePtr->Printf(CConfig::EAttribute::InformationHighlight, FormatNumberWithSeparators (uliFreeBytesAvailable.QuadPart));
+    m_consolePtr->Printf(CConfig::EAttribute::Information,          uliFreeBytesAvailable.QuadPart == 1 ? L" byte available to " : L" bytes available to ");
     m_consolePtr->Printf(CConfig::EAttribute::InformationHighlight, strUsername.c_str());
     m_consolePtr->Printf(CConfig::EAttribute::Information,          L" due to quota\n");
 }
@@ -360,13 +361,13 @@ void CResultsDisplayerBase::DisplayFooterQuotaInfo (__in const ULARGE_INTEGER * 
 //
 ////////////////////////////////////////////////////////////////////////////////  
 
-UINT CResultsDisplayerBase::GetStringLengthOfMaxFileSize (__in const ULARGE_INTEGER * puli)
+UINT CResultsDisplayerBase::GetStringLengthOfMaxFileSize (const ULARGE_INTEGER & uli)
 {
     UINT cch = 1;
 
-    if (puli->QuadPart != 0)
+    if (uli.QuadPart != 0)
     {
-        cch += (UINT) log10 ((double) puli->QuadPart);
+        cch += (UINT) log10 ((double) uli.QuadPart);
     }
 
     //

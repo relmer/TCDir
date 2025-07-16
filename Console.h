@@ -16,6 +16,7 @@ public:
     HRESULT Initialize           (shared_ptr<CConfig> configPtr);
     void    Puts                 (int attributeIndex, LPCWSTR psz);
     int     Printf               (CConfig::EAttribute attributeIndex, LPCWSTR pszFormat, ...);
+    int     Printf               (const WIN32_FIND_DATA & wfd, LPCWSTR pszFormat, ...);
     void    WriteSeparatorLine   (WORD attr);
     HRESULT Flush                (void);
 

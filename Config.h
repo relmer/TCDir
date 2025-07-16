@@ -38,7 +38,7 @@ public:
 
     
     void Initialize         (WORD wDefaultAttr);
-    WORD GetTextAttrForFile (const WIN32_FIND_DATA * pwfd);
+    WORD GetTextAttrForFile (const WIN32_FIND_DATA & wfd);
 
     WORD         m_rgAttributes[EAttribute::__count];
     TextAttrMap  m_mapExtensionToTextAttr;

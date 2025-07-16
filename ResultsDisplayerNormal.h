@@ -11,7 +11,7 @@ class CResultsDisplayerNormal : public CResultsDisplayerBase
 public:
     CResultsDisplayerNormal                 (shared_ptr<CCommandLine> cmdLinePtr, shared_ptr<CConsole> consolePtr, shared_ptr<CConfig> configPtr);
 
-    void DisplayFileResults                 (__in CDirectoryInfo * pdi) override;
+    void DisplayFileResults                 (const CDirectoryInfo & di) override;
 
 protected:
     HRESULT DisplayResultsNormalDateAndTime (const FILETIME & ftLastWriteTime);

@@ -153,6 +153,44 @@ Error:
 
 ////////////////////////////////////////////////////////////////////////////////
 //
+//  CConsole::Printf
+//
+//  
+//
+////////////////////////////////////////////////////////////////////////////////  
+
+int CConsole::Printf (const WIN32_FIND_DATA & wfd, LPCWSTR pszFormat, ...)
+{
+    static constexpr int s_cchBuf          = 9999;  // Max console buffer width
+    static  WCHAR        s_szBuf[s_cchBuf] = { L'\0' };
+
+    HRESULT   hr       = S_OK;
+    va_list   vaArgs   = 0;  
+    LPWSTR    pszEnd   = nullptr;
+    WORD      textAttr = m_configPtr->GetTextAttrForFile (wfd);
+    
+
+
+    va_start (vaArgs, pszFormat);
+    
+    hr = StringCchVPrintfEx (s_szBuf, s_cchBuf, &pszEnd, nullptr, 0, pszFormat, vaArgs);
+    CHRA (hr);
+
+    SetColor (textAttr);
+    m_strBuffer.append (s_szBuf);
+
+Error:
+    va_end (vaArgs);
+
+    return SUCCEEDED (hr) ? (int) (pszEnd - s_szBuf) : 0;
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
 //  CConsole::WriteConsoleLine
 //
 //  Draws a line across the console at the current internal cursor position

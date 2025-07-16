@@ -35,24 +35,22 @@ CResultsDisplayerNormal::CResultsDisplayerNormal (shared_ptr<CCommandLine> cmdLi
 //
 ////////////////////////////////////////////////////////////////////////////////  
 
-void CResultsDisplayerNormal::DisplayFileResults (__in CDirectoryInfo * pdi)
+void CResultsDisplayerNormal::DisplayFileResults (const CDirectoryInfo & di)
 {
     HRESULT hr                           = S_OK;
-    size_t  cchStringLengthOfMaxFileSize = GetStringLengthOfMaxFileSize (&pdi->m_uliLargestFileSize);
+    size_t  cchStringLengthOfMaxFileSize = GetStringLengthOfMaxFileSize (di.m_uliLargestFileSize);
     
 
 
-    for (const WIN32_FIND_DATA & fileInfo : pdi->m_vMatches)
+    for (const WIN32_FIND_DATA & fileInfo : di.m_vMatches)
     {
-        WORD textAttr = m_configPtr->GetTextAttrForFile (&fileInfo);
-
         hr = DisplayResultsNormalDateAndTime (fileInfo.ftLastWriteTime);
         CHR (hr);
 
         DisplayResultsNormalAttributes (fileInfo.dwFileAttributes);
         DisplayResultsNormalFileSize   (fileInfo, cchStringLengthOfMaxFileSize);
 
-        m_consolePtr->Printf (textAttr, L"%s\n", fileInfo.cFileName);
+        m_consolePtr->Printf (fileInfo, L"%s\n", fileInfo.cFileName);
     }
     
 
@@ -142,17 +140,17 @@ void CResultsDisplayerNormal::DisplayResultsNormalAttributes  (DWORD dwFileAttri
 
     for (const SFileAttributeEntry fileAttributeEntry : s_krgAttrMap)
     {
-        WORD  attrTextColor = m_configPtr->m_rgAttributes[CConfig::EAttribute::FileAttributeNotPresent];
-        WCHAR chDisplay     = L'-';
+        CConfig::EAttribute attr      = CConfig::EAttribute::FileAttributeNotPresent;
+        WCHAR               chDisplay = L'-';
         
 
         if (dwFileAttributes & fileAttributeEntry.m_dwAttr)
         {
-            attrTextColor = m_configPtr->m_rgAttributes[CConfig::EAttribute::FileAttributePresent];
+            attr = CConfig::EAttribute::FileAttributePresent;
             chDisplay = fileAttributeEntry.m_chAttr;
         }
         
-        m_consolePtr->Printf (attrTextColor, L"%c", chDisplay);
+        m_consolePtr->Printf (attr, L"%c", chDisplay);
     }
 }
 

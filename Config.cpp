@@ -191,18 +191,18 @@ void CConfig::InitializeExtensionToTextAttrMap (void)
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-WORD CConfig::GetTextAttrForFile (const WIN32_FIND_DATA * pwfd)
+WORD CConfig::GetTextAttrForFile (const WIN32_FIND_DATA & wfd)
 {
     HRESULT              hr           = S_OK;
     WORD                 textAttr     = m_rgAttributes[EAttribute::Default];
-    filesystem::path     filename       (pwfd->cFileName);
+    filesystem::path     filename       (wfd.cFileName);
     wstring              strExtension;
     TextAttrMapConstIter iter;
 
 
 
 
-    if (pwfd->dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
+    if (wfd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
     {
         textAttr = m_rgAttributes[EAttribute::Directory];
         BAIL_OUT_IF (TRUE, S_OK);

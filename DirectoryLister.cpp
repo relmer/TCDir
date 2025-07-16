@@ -187,7 +187,7 @@ HRESULT CDirectoryLister::ProcessDirectory (const CDriveInfo & driveInfo, filesy
     // Show the directory contents using the displayer
     //
     
-    m_displayer->DisplayResults (driveInfo, &di, level);
+    m_displayer->DisplayResults (driveInfo, di, level);
 
     //
     // Recurse into subdirectories 
@@ -204,7 +204,7 @@ HRESULT CDirectoryLister::ProcessDirectory (const CDriveInfo & driveInfo, filesy
 
         if (level == CResultsDisplayerBase::EDirectoryLevel::Initial)
         {
-            m_displayer->DisplayListingSummary (&di, m_cFilesFound, m_cDirectoriesFound, m_uliSizeOfAllFilesFound);
+            m_displayer->DisplayListingSummary (di, m_cFilesFound, m_cDirectoriesFound, m_uliSizeOfAllFilesFound);
         }
     }
 

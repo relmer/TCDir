@@ -35,45 +35,38 @@ CResultsDisplayerWide::CResultsDisplayerWide (shared_ptr<CCommandLine> cmdLinePt
 //
 ////////////////////////////////////////////////////////////////////////////////  
 
-void CResultsDisplayerWide::DisplayFileResults (__in CDirectoryInfo * pdi)
+void CResultsDisplayerWide::DisplayFileResults (const CDirectoryInfo & di)
 {                                 
     HRESULT hr             = S_OK;
     size_t  cColumns;
     size_t  cxColumnWidth; 
-    size_t  nRow;
-    size_t  nCol;
     size_t  cRows;
     size_t  cItemsInLastRow;
     
 
 
-    CBRA (pdi->m_cchLargestFileName > 0);
+    CBRA (di.m_cchLargestFileName > 0);
 
-    hr = GetColumnInfo (pdi, &cColumns, &cxColumnWidth);
+    hr = GetColumnInfo (di, cColumns, cxColumnWidth);
     CHR (hr);    
 
-    cRows = (pdi->m_vMatches.size() + cColumns - 1) / cColumns;
-    cItemsInLastRow = pdi->m_vMatches.size () % cColumns;
+    cRows           = (di.m_vMatches.size() + cColumns - 1) / cColumns;
+    cItemsInLastRow = di.m_vMatches.size () % cColumns;
    
     //
     // Display the matches in columns
     //
 
-    for (nRow = 0; nRow < cRows; ++nRow)
+    for (size_t nRow = 0; nRow < cRows; ++nRow)
     {
-        for (nCol = 0; nCol < cColumns; ++nCol)
+        for (size_t nCol = 0; nCol < cColumns; ++nCol)
         {   
-            size_t            idx           = 0;
-            size_t            fullRows      = cItemsInLastRow ? cRows - 1 : cRows;
-            LPCWSTR           pszName       = NULL;    
-            size_t            cchName       = 0;
-            WIN32_FIND_DATA * pwfd          = NULL;       
-            WORD              wAttr         = 0;      
-            size_t            cSpacesNeeded = 0;
+            size_t idx      = 0;
+            size_t fullRows = cItemsInLastRow ? cRows - 1 : cRows;
             
             
 
-            if ((nRow * cColumns + nCol) >= pdi->m_vMatches.size ())
+            if ((nRow * cColumns + nCol) >= di.m_vMatches.size ())
             {
                 break;
             }
@@ -93,21 +86,8 @@ void CResultsDisplayerWide::DisplayFileResults (__in CDirectoryInfo * pdi)
                 idx += cItemsInLastRow;
             }
 
-            pwfd = &pdi->m_vMatches[idx];
-            hr = GetWideFormattedName (pwfd, &pszName);
+            hr = DisplayFile (di.m_vMatches[idx], cxColumnWidth);
             CHR (hr);
-
-            wAttr = m_configPtr->GetTextAttrForFile (pwfd);
-            m_consolePtr->Printf (wAttr, L"%.*s", cxColumnWidth, pszName);
-
-            cchName = wcslen (pszName);
-            if (cxColumnWidth > cchName)
-            {
-                for (cSpacesNeeded = cxColumnWidth - wcslen (pszName); cSpacesNeeded > 0; cSpacesNeeded--)
-                {
-                    m_consolePtr->Printf (CConfig::EAttribute::Default, L" ");
-                }
-            }
         }
 
         m_consolePtr->Puts (CConfig::EAttribute::Default, L"");
@@ -123,13 +103,52 @@ Error:
 
 ////////////////////////////////////////////////////////////////////////////////
 //
+//  CResultsDisplayerWide::DisplayFile
+//
+//  
+//
+////////////////////////////////////////////////////////////////////////////////  
+
+HRESULT CResultsDisplayerWide::DisplayFile (const WIN32_FIND_DATA & wfd, size_t cxColumnWidth)
+{
+    HRESULT hr            = S_OK;
+    size_t  cSpacesNeeded = 0;
+    LPCWSTR pszName       = NULL;
+    size_t  cchName       = 0;
+
+
+
+    hr = GetWideFormattedName (wfd, &pszName);
+    CHR (hr);
+
+    m_consolePtr->Printf (wfd, L"%.*s", cxColumnWidth, pszName);
+
+    cchName = wcslen (pszName);
+    if (cxColumnWidth > cchName)
+    {
+        for (cSpacesNeeded = cxColumnWidth - wcslen (pszName); cSpacesNeeded > 0; cSpacesNeeded--)
+        {
+            m_consolePtr->Printf (CConfig::EAttribute::Default, L" ");
+        }
+    }
+
+Error:
+    return hr;
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
 //  CResultsDisplayerWide::GetColumnInfo
 //
 //  Figure out how many columns fit on the screen
 //
 ////////////////////////////////////////////////////////////////////////////////  
 
-HRESULT CResultsDisplayerWide::GetColumnInfo (__in const CDirectoryInfo * pdi, __out size_t * pcColumns, __out size_t * pcxColumnWidth)
+HRESULT CResultsDisplayerWide::GetColumnInfo (const CDirectoryInfo & di, size_t & cColumns, size_t & cxColumnWidth)
 {
     HRESULT                    hr              = S_OK;
     BOOL                       fSuccess;       
@@ -143,17 +162,17 @@ HRESULT CResultsDisplayerWide::GetColumnInfo (__in const CDirectoryInfo * pdi, _
 
     cxConsoleWidth  = csbi.srWindow.Right - csbi.srWindow.Left + 1;
 
-    if (pdi->m_cchLargestFileName + 1 > cxConsoleWidth)
+    if (di.m_cchLargestFileName + 1 > cxConsoleWidth)
     {
-        *pcColumns = 1;
+        cColumns = 1;
     }
     else
     {
         // 1 space between columns
-        *pcColumns = cxConsoleWidth / (pdi->m_cchLargestFileName + 1);    
+        cColumns = cxConsoleWidth / (di.m_cchLargestFileName + 1);    
     }
 
-    *pcxColumnWidth = cxConsoleWidth / *pcColumns;
+    cxColumnWidth = cxConsoleWidth / cColumns;
 
 Error:
     return hr;
@@ -171,19 +190,19 @@ Error:
 //
 ////////////////////////////////////////////////////////////////////////////////  
 
-HRESULT CResultsDisplayerWide::GetWideFormattedName (__in const WIN32_FIND_DATA * pwfd, __deref_out_z LPCWSTR * ppszName)
+HRESULT CResultsDisplayerWide::GetWideFormattedName (const WIN32_FIND_DATA & wfd, __deref_out_z LPCWSTR * ppszName)
 {
     HRESULT      hr                      = S_OK;
     static WCHAR szDirName[MAX_PATH + 2] = L"[";
     
 
-    if (pwfd->dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
+    if (wfd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
     {
         LPWSTR pszBufEnd    = szDirName + 1;
         size_t cchRemaining = 0;
         
 
-        hr = StringCchCopyEx (szDirName + 1, ARRAYSIZE (szDirName) - 2, pwfd->cFileName, &pszBufEnd, &cchRemaining, 0);
+        hr = StringCchCopyEx (szDirName + 1, ARRAYSIZE (szDirName) - 2, wfd.cFileName, &pszBufEnd, &cchRemaining, 0);
         CHRA (hr);
 
         hr = StringCchCat (pszBufEnd,  cchRemaining, L"]");
@@ -193,7 +212,7 @@ HRESULT CResultsDisplayerWide::GetWideFormattedName (__in const WIN32_FIND_DATA 
     }
     else
     {
-        *ppszName = pwfd->cFileName;
+        *ppszName = wfd.cFileName;
     }
 
 Error:
