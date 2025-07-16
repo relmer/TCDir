@@ -70,7 +70,7 @@ HRESULT CConsole::Initialize (shared_ptr<CConfig> configPtr)
     
     m_strBuffer.reserve (s_kcchInitialBufferSize);
     
-
+   
 
     fSuccess = GetConsoleMode (m_hStdOut, &mode);
     CWRA (fSuccess);
