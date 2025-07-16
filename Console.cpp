@@ -247,10 +247,11 @@ Error:
 // 
 ////////////////////////////////////////////////////////////////////////////////  
 
-void CConsole::SetColor(WORD attr)
+void CConsole::SetColor (WORD attr)
 {
     // Mapping table for base colors (0-7): Black, Blue, Green, Cyan, Red, Magenta, Yellow, White
     static constexpr int s_knAnsiColor[] = { 30, 34, 32, 36, 31, 35, 33, 37 };
+    static WORD          s_knPrevAttr = (WORD) -1;
 
     int foreground      = attr & 0x0F;
     int background      = (attr & 0xF0) >> 4;
@@ -259,6 +260,14 @@ void CConsole::SetColor(WORD attr)
     int ansiBackground  = 0;
 
 
+
+    // Nothing to do if the color is unchanged
+    if (attr == s_knPrevAttr)
+    {
+        return; 
+    }
+
+    s_knPrevAttr = attr;
 
     // Foreground
     idx = foreground & 0x07;
