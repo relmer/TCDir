@@ -1,9 +1,0 @@
----- SetConsoleTextAttribute Matches (2 in 2 files) ----
-Directory.cpp:        SetConsoleTextAttribute (g_util.m_hStdOut, FOREGROUND_BLUE | FOREGROUND_INTENSITY);
-Utils.cpp:    SetConsoleTextAttribute (m_hStdOut, wAttr);
----- pdi->m_uliLargestFileSize Matches (5 in 2 files) ----
-Directory.cpp:    m_uliLargestFileSize.QuadPart = 0;
-Directory.cpp:        if (uliFileSize.QuadPart > pdi->m_uliLargestFileSize.QuadPart)
-Directory.cpp:            pdi->m_uliLargestFileSize = uliFileSize;
-Directory.cpp:    cchMaxSize = GetMaxSize (&pdi->m_uliLargestFileSize);
-Directory.h:        ULARGE_INTEGER m_uliLargestFileSize; 

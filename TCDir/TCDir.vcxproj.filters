@@ -30,9 +30,6 @@
     <ClCompile Include="Config.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="FileInfo.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="Ehm.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -40,6 +37,21 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="PerfTimer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="DriveInfo.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="FileComparator.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ResultsDisplayerBase.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ResultsDisplayerNormal.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ResultsDisplayerWide.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -65,9 +77,6 @@
     <ClInclude Include="Color.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="FileInfo.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="DirectoryInfo.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -81,6 +90,21 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="UniqueFindHandle.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="DriveInfo.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="FileComparator.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ResultsDisplayerBase.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ResultsDisplayerNormal.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ResultsDisplayerWide.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
