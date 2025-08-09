@@ -138,7 +138,7 @@ int wmain (int argc, WCHAR * argv[])
 
 Error:      
 
-	return 0;
+return FAILED (hr) ? 1 : 0;
 }
 
 
@@ -181,9 +181,3 @@ void Usage (__in CConsole * pConsole)
     pConsole->Puts (CConfig::EAttribute::Default, L"");
     pConsole->Puts (CConfig::EAttribute::Default, L"");
 }
-
-
-
-
-
-

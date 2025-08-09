@@ -85,13 +85,27 @@ bool FileComparator::operator() (const WIN32_FIND_DATA & lhs, const WIN32_FIND_D
             ULARGE_INTEGER uliFileSize;
             ULARGE_INTEGER uliRhsFileSize;
 
+
+
+            // Use explicit relational comparison to avoid signed overflow from subtraction on 64-bit sizes.
             uliFileSize.HighPart = lhs.nFileSizeHigh;
             uliFileSize.LowPart  = lhs.nFileSizeLow;
 
             uliRhsFileSize.HighPart = rhs.nFileSizeHigh;
             uliRhsFileSize.LowPart  = rhs.nFileSizeLow;
 
-            cmp = uliFileSize.QuadPart - uliRhsFileSize.QuadPart;
+            if (uliFileSize.QuadPart < uliRhsFileSize.QuadPart)
+            {
+                cmp = -1;
+            }
+            else if (uliFileSize.QuadPart > uliRhsFileSize.QuadPart)
+            {
+                cmp = 1;
+            }
+            else
+            {
+                cmp = 0;
+            }
             break;
         }
         }
