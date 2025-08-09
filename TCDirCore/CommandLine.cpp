@@ -157,7 +157,7 @@ HRESULT CCommandLine::HandleSwitch (LPCWSTR pszArg)
 
 
 
-	ch = (WCHAR) tolower (*pszArg);
+	ch = (WCHAR) towlower (*pszArg);
 
     // Default to E_INVALIDARG for unrecognized switches
     hr = E_INVALIDARG;

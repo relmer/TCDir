@@ -59,7 +59,6 @@ void RELEASEMSG (LPCWSTR pszFormat, ...);
 // Core helper macros
 //
 
-
 #define __CHRAExHelper(__arg_hrTest, __arg_fAssert, __arg_fReplaceHr, __arg_hrReplaceHr)    \
 {                                                                                           \
     HRESULT __hr = __arg_hrTest;                                                            \
@@ -139,6 +138,20 @@ void RELEASEMSG (LPCWSTR pszFormat, ...);
         goto ErrorLabel;                                                                    \
     }                                                                                       \
 }
+
+
+
+
+
+//
+// IGNORE_RETURN_VALUE
+//
+
+#define IGNORE_RETURN_VALUE(__result, __new_value)                                          \
+{                                                                                           \
+    __result = __new_value;                                                                 \
+}
+    
 
 
 

@@ -101,7 +101,7 @@ void CDirectoryLister::List (const wstring & mask)
     exists = filesystem::exists (dirPath, ec);
     if (!exists || !filesystem::is_directory (dirPath)) 
     {
-        m_consolePtr->Printf (CConfig::EAttribute::Error,                L"Error:  ", dirPath.c_str());
+        m_consolePtr->Printf (CConfig::EAttribute::Error,                L"Error:  ");
         m_consolePtr->Printf (CConfig::EAttribute::InformationHighlight, L"%s", dirPath.c_str());
         m_consolePtr->Puts   (CConfig::EAttribute::Error,                L" does not exist");
         
@@ -253,7 +253,8 @@ HRESULT CDirectoryLister::RecurseIntoSubdirectories (const CDriveInfo & driveInf
             if (CFlag::IsSet (wfd.dwFileAttributes, FILE_ATTRIBUTE_DIRECTORY))
             {
                 filesystem::path subdirPath = dirPath / wfd.cFileName;            
-                ProcessDirectory (driveInfo, subdirPath, fileSpec, CResultsDisplayerBase::EDirectoryLevel::Subdirectory);
+                hr = ProcessDirectory (driveInfo, subdirPath, fileSpec, CResultsDisplayerBase::EDirectoryLevel::Subdirectory);
+                IGNORE_RETURN_VALUE (hr, S_OK);
             }
         }
             
