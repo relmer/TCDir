@@ -20,22 +20,25 @@ public:
     void    WriteSeparatorLine   (WORD attr);
     HRESULT Flush                (void);
 
+    UINT    GetWidth             (void)     { return m_cxConsoleWidth; }
+
 #ifdef _DEBUG
     void Test                    (void);
 #endif 
 
-    HANDLE                       m_hStdOut; 
-    CONSOLE_SCREEN_BUFFER_INFOEX m_consoleScreenBufferInfoEx;
-
-
 
 protected:
 
-    void SetColor (WORD attr);
+    HRESULT InitializeConsoleMode  (void);
+    HRESULT InitializeConsoleWidth (void);
+    void    SetColor               (WORD attr);
 
     static constexpr size_t s_kcchInitialBufferSize = 10 * 1024 * 1024;
 
+    HANDLE              m_hStdOut        = nullptr;
+    bool                m_fIsRedirected  = true;    // True if redirected (e.g., in a unit test)
     shared_ptr<CConfig> m_configPtr;
-    WORD                m_attrDefault;
+    WORD                m_attrDefault    = FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE;
     wstring             m_strBuffer;
+    UINT                m_cxConsoleWidth = 80;
 };

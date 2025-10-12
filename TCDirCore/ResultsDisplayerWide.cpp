@@ -47,8 +47,7 @@ void CResultsDisplayerWide::DisplayFileResults (const CDirectoryInfo & di)
 
     CBRA (di.m_cchLargestFileName > 0);
 
-    hr = GetColumnInfo (di, cColumns, cxColumnWidth);
-    CHR (hr);    
+    GetColumnInfo (di, cColumns, cxColumnWidth);
 
     cRows           = (di.m_vMatches.size() + cColumns - 1) / cColumns;
     cItemsInLastRow = di.m_vMatches.size () % cColumns;
@@ -148,19 +147,11 @@ Error:
 //
 ////////////////////////////////////////////////////////////////////////////////  
 
-HRESULT CResultsDisplayerWide::GetColumnInfo (const CDirectoryInfo & di, size_t & cColumns, size_t & cxColumnWidth)
+void CResultsDisplayerWide::GetColumnInfo (const CDirectoryInfo & di, size_t & cColumns, size_t & cxColumnWidth)
 {
-    HRESULT                    hr              = S_OK;
-    BOOL                       fSuccess;       
-    CONSOLE_SCREEN_BUFFER_INFO csbi;           
-    UINT                       cxConsoleWidth; 
+    UINT cxConsoleWidth = m_consolePtr->GetWidth();
 
     
-
-    fSuccess = GetConsoleScreenBufferInfo (m_consolePtr->m_hStdOut, &csbi);
-    CBRA (fSuccess);
-
-    cxConsoleWidth  = csbi.srWindow.Right - csbi.srWindow.Left + 1;
 
     if (di.m_cchLargestFileName + 1 > cxConsoleWidth)
     {
@@ -173,9 +164,6 @@ HRESULT CResultsDisplayerWide::GetColumnInfo (const CDirectoryInfo & di, size_t 
     }
 
     cxColumnWidth = cxConsoleWidth / cColumns;
-
-Error:
-    return hr;
 }
 
 

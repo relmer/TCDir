@@ -60,3 +60,27 @@ void RELEASEMSG (LPCWSTR pszFormat, ...)
 
     va_end (vlArgs);
 }
+
+
+
+
+
+EHM_BREAKPOINT_FUNC g_pfnBreakpoint = nullptr;
+
+
+
+
+
+void SetBreakpointFunction (EHM_BREAKPOINT_FUNC func)
+{
+    g_pfnBreakpoint = func;
+}
+
+
+
+
+
+void EhmBreakpoint (void)
+{
+    g_pfnBreakpoint ? g_pfnBreakpoint() : __debugbreak();
+}

@@ -66,6 +66,9 @@
     <ClInclude Include="UniqueFindHandle.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="AnsiCodes.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp">

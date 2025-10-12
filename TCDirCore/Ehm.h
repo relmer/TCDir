@@ -33,8 +33,19 @@ void RELEASEMSG (LPCWSTR pszFormat, ...);
 
 
 
+typedef void (*EHM_BREAKPOINT_FUNC)(void);
+
+extern EHM_BREAKPOINT_FUNC g_pfnBreakpoint;
+
+void SetBreakpointFunction (EHM_BREAKPOINT_FUNC func);
+void EhmBreakpoint (void);
+
+
+
+
+
 #if DBG || DEBUG || _DEBUG
-    #define EHM_BREAKPOINT __debugbreak()    
+    #define EHM_BREAKPOINT EhmBreakpoint()
 #else
     #define EHM_BREAKPOINT
 #endif
@@ -85,7 +96,7 @@ void RELEASEMSG (LPCWSTR pszFormat, ...);
 
 #define __CWRAExHelper(__arg_fSuccess, __arg_fAssert, __arg_fReplaceHr, __arg_hrReplaceHr)  \
 {                                                                                           \
-    if (!__arg_fSuccess)                                                                    \
+    if (!(__arg_fSuccess))                                                                  \
     {                                                                                       \
         if (__arg_fAssert)                                                                  \
         {                                                                                   \
@@ -109,7 +120,7 @@ void RELEASEMSG (LPCWSTR pszFormat, ...);
 {                                                                                           \
     BOOL __br = __arg_brTest;                                                               \
                                                                                             \
-    if (!__br)                                                                              \
+    if (!(__br))                                                                            \
     {                                                                                       \
         if (__arg_fAssert)                                                                  \
         {                                                                                   \

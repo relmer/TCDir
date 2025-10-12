@@ -142,6 +142,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="AnsiCodes.h" />
     <ClInclude Include="Color.h" />
     <ClInclude Include="CommandLine.h" />
     <ClInclude Include="Config.h" />
