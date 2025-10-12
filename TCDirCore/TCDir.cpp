@@ -138,7 +138,7 @@ int wmain (int argc, WCHAR * argv[])
 
 Error:      
 
-return FAILED (hr) ? 1 : 0;
+    return FAILED (hr) ? 1 : 0;
 }
 
 
