@@ -100,7 +100,7 @@ int wmain (int argc, WCHAR * argv[])
     hr = cmdlinePtr->Parse (argc - 1, argv + 1);
     if (FAILED (hr))
     {
-        Usage (consolePtr.get());
+        DisplayUsage (consolePtr.get());
     }
     CHR (hr);
 
@@ -147,37 +147,118 @@ Error:
 
 ////////////////////////////////////////////////////////////////////////////////
 //
-//  Usage
+//  IsPowerShell
+//
+//  Detect if running in PowerShell by checking PSModulePath environment variable
+//
+////////////////////////////////////////////////////////////////////////////////
+
+bool IsPowerShell (void)
+{
+    WCHAR buffer[1];
+    DWORD result = GetEnvironmentVariableW (L"PSModulePath", buffer, ARRAYSIZE(buffer));
+    
+    // If result > 0, the variable exists (even if buffer is too small)
+    return result > 0;
+}
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  DisplayUsage
 //
 //  
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-void Usage (__in CConsole * pConsole)
+void DisplayUsage (__in CConsole * pConsole)
 {
-    pConsole->Puts (CConfig::EAttribute::Default, L"");
-    pConsole->Puts (CConfig::EAttribute::Default, L"Relmerator's Technicolor Directory (C)2004-2025 by Robert Elmer");
-    pConsole->Puts (CConfig::EAttribute::Default, L"");
-    pConsole->Puts (CConfig::EAttribute::Default, L"TCDIR [drive:][path][filename] [/A[[:]attributes]] [/O[[:]sortorder]] [/S]");
-    pConsole->Puts (CConfig::EAttribute::Default, L"");
-    pConsole->Puts (CConfig::EAttribute::Default, L"  [drive:][path][filename]");
-    pConsole->Puts (CConfig::EAttribute::Default, L"              Specifies drive, directory, and/or files to list.");
-    pConsole->Puts (CConfig::EAttribute::Default, L"");
-    pConsole->Puts (CConfig::EAttribute::Default, L"  /A          Displays files with specified attributes.");
-    pConsole->Puts (CConfig::EAttribute::Default, L"  attributes   D  Directories                R  Read-only files");
-    pConsole->Puts (CConfig::EAttribute::Default, L"               H  Hidden files               A  Files ready for archiving");
-    pConsole->Puts (CConfig::EAttribute::Default, L"               S  System files               T  Temporary files");
-    pConsole->Puts (CConfig::EAttribute::Default, L"               E  Encrypted files            C  Compressed files");
-    pConsole->Puts (CConfig::EAttribute::Default, L"               P  Reparse points             0  Sparse files");
-    pConsole->Puts (CConfig::EAttribute::Default, L"               -  Prefix meaning not");
-    pConsole->Puts (CConfig::EAttribute::Default, L"");
-    pConsole->Puts (CConfig::EAttribute::Default, L"  /O          List by files in sorted order.");
-    pConsole->Puts (CConfig::EAttribute::Default, L"  sortorder    N  By name (alphabetic)       S  By size (smallest first)");
-    pConsole->Puts (CConfig::EAttribute::Default, L"               E  By extension (alphabetic)  D  By date/time (oldest first)");
-    pConsole->Puts (CConfig::EAttribute::Default, L"               -  Prefix to reverse order");
-    pConsole->Puts (CConfig::EAttribute::Default, L"");
-    pConsole->Puts (CConfig::EAttribute::Default, L"  /S          Displays files in specified directory and all subdirectories.");
-    pConsole->Puts (CConfig::EAttribute::Default, L"");
-    pConsole->Puts (CConfig::EAttribute::Default, L"");
+    static LPCWSTR s_usageLines[] =
+    {
+        L"",
+        L"Relmerator's Technicolor Directory (C)2004-2025 by Robert Elmer",
+        L"",
+        L"TCDIR [drive:][path][filename] [/A[[:]attributes]] [/O[[:]sortorder]] [/S]",
+        L"",
+        L"  [drive:][path][filename]",
+        L"              Specifies drive, directory, and/or files to list.",
+        L"",
+        L"  /A          Displays files with specified attributes.",
+        L"  attributes   D  Directories                R  Read-only files",
+        L"               H  Hidden files               A  Files ready for archiving",
+        L"               S  System files               T  Temporary files",
+        L"               E  Encrypted files            C  Compressed files",
+        L"               P  Reparse points             0  Sparse files",
+        L"               -  Prefix meaning not",
+        L"",
+        L"  /O          List by files in sorted order.",
+        L"  sortorder    N  By name (alphabetic)       S  By size (smallest first)",
+        L"               E  By extension (alphabetic)  D  By date/time (oldest first)",
+        L"               -  Prefix to reverse order",
+        L"",
+        L"  /S          Displays files in specified directory and all subdirectories.",
+        L"",
+        L"",
+        L"",
+        L"  Set the " TCDIR_ENV_VAR_NAME L" environment variable to override default colors for file ",
+        L"  extensions or attributes:",
+        L""
+    };
+    
+    static LPCWSTR s_envVarSyntax[] =
+    {
+        L"      set " TCDIR_ENV_VAR_NAME L"=<attr|.ext>=<fore>[on <back>][;...]",           // CMD
+        L"      $env:" TCDIR_ENV_VAR_NAME L" = \"<attr|.ext>=<fore>[on <back>][;...]\"",    // PowerShell
+    };
+    
+    static LPCWSTR s_colorOverrideLines[] =
+    {
+        L"",
+        L"      <attr>  An attribute (single character, see 'attributes' above)",
+        L"      <.ext>  A file extension, including the leading period.",
+        L"      <fore>  Foreground color",
+        L"      <back>  Background color",
+        L"",
+        L"      Colors:",
+        L"          Black        DarkGrey",
+        L"          Blue         LightBlue",
+        L"          Green        LightGreen",
+        L"          Cyan         LightCyan",
+        L"          Red          LightRed",
+        L"          Magenta      LightMagenta",
+        L"          Brown        Yellow",
+        L"          LightGrey    White",
+        L"",
+    };
+    
+    static LPCWSTR s_envVarExample[] =
+    {
+        L"      Example: set " TCDIR_ENV_VAR_NAME L"=.cpp=Yellow;.h=LightCyan on Blue",           // CMD
+        L"      Example: $env:" TCDIR_ENV_VAR_NAME L" = \".cpp=Yellow;.h=LightCyan on Blue\"",    // PowerShell
+    };
+    
+    bool isPowerShell = IsPowerShell ();
+
+
+
+    //
+    // Display usage
+    //
+    
+    for (LPCWSTR line : s_usageLines)
+    {
+        pConsole->Puts (CConfig::EAttribute::Default, line);
+    }
+
+    pConsole->Puts (CConfig::EAttribute::Default, s_envVarSyntax[isPowerShell]);
+    
+    for (LPCWSTR line : s_colorOverrideLines)
+    {
+        pConsole->Puts (CConfig::EAttribute::Default, line);
+    }
+    
+    pConsole->Puts (CConfig::EAttribute::Default, s_envVarExample[isPowerShell]);
     pConsole->Puts (CConfig::EAttribute::Default, L"");
 }

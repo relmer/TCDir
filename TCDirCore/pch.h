@@ -43,6 +43,7 @@
 #include <functional>
 #include <list>
 #include <memory>
+#include <ranges>
 #include <string>
 #include <string_view>
 #include <unordered_map>

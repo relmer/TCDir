@@ -6,6 +6,7 @@
 
 
 
+
 constexpr CConfig::STextAttr CConfig::s_rgTextAttrs[] =
 {
     //
@@ -148,6 +149,7 @@ void CConfig::Initialize (WORD wDefaultAttr)
     m_rgAttributes[EAttribute::Error]                   = FC_LightRed;
 
     InitializeExtensionToTextAttrMap();
+    ApplyUserColorOverrides();
 }
 
 
@@ -180,6 +182,276 @@ void CConfig::InitializeExtensionToTextAttrMap (void)
 }
 
 
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CConfig::ApplyUserColorOverrides
+//
+//  Parse the TCDIR environment variable for user color overrides.
+//  Format: <attr|.ext>=<fore>[on <back>][;...]
+//  Example: .cpp=LightGreen;.h=Yellow on Blue
+//
+////////////////////////////////////////////////////////////////////////////////
+
+void CConfig::ApplyUserColorOverrides (void)
+{
+    HRESULT hr               = S_OK;
+    DWORD   cchBufNeeded     = 0;
+    DWORD   cchExcludingNull = 0;
+    wstring envValue;
+
+
+
+    //
+    // Read environment variable directly into wstring
+    //
+    
+    cchBufNeeded = GetEnvironmentVariableW (TCDIR_ENV_VAR_NAME, nullptr, 0);
+    BAIL_OUT_IF (cchBufNeeded == 0, S_OK);  // Variable not set
+    
+    cchExcludingNull = cchBufNeeded - 1;
+    envValue.resize (cchExcludingNull, L'\0');  // -1 because cchBufNeeded includes null terminator
+    
+    cchBufNeeded = GetEnvironmentVariableW (TCDIR_ENV_VAR_NAME, envValue.data(), cchBufNeeded);
+    CWRA (cchBufNeeded == cchExcludingNull);
+    
+    //
+    // Use ranges/views to avoid copies
+    //
+    
+    for (auto token : envValue | std::views::split (L';'))
+    {
+        wstring_view entry (token.begin (), token.end ());
+        ProcessColorOverrideEntry (entry);
+    }
+
+
+
+Error:
+    return;
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CConfig::ProcessColorOverrideEntry
+//
+//  Process a single color override entry in the format: <key>=<value>
+//  Example: .cpp=Yellow 
+//           .h=LightCyan on Blue
+//
+////////////////////////////////////////////////////////////////////////////////
+
+void CConfig::ProcessColorOverrideEntry (wstring_view entry)
+{
+    HRESULT      hr        = S_OK;
+    wstring_view keyView;
+    wstring_view valueView;
+    WORD         colorAttr = 0;
+
+
+        
+    hr = ParseKeyAndValue (entry, keyView, valueView);
+    CHR (hr);
+
+    colorAttr = ParseColorSpec (valueView);
+    
+    //
+    // Apply the override based on key type
+    //
+    
+    if (keyView[0] == L'.')
+    {
+        wstring key (keyView);
+
+        // File extension override
+        std::transform (key.begin(), key.end(), key.begin(),
+                        [] (wchar_t c) { return towlower (c); });
+        
+        m_mapExtensionToTextAttr[key] = colorAttr;
+    }
+    else if (keyView.length() == 1)
+    {
+        // Single character attribute override (D, H, S, etc.)
+        // Reserved for future implementation
+    }
+
+
+Error:
+    return;
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CConfig::ParseKeyAndValue
+//
+////////////////////////////////////////////////////////////////////////////////
+
+HRESULT CConfig::ParseKeyAndValue (wstring_view entry, wstring_view & keyView, wstring_view & valueView)
+{
+    HRESULT      hr = S_OK;
+    size_t       equalPos = 0;
+
+
+
+    equalPos = entry.find (L'=');
+    CBREx (equalPos != wstring_view::npos, E_INVALIDARG);
+
+    keyView   = entry.substr (0, equalPos);
+    valueView = entry.substr (equalPos + 1);
+
+    keyView   = TrimWhitespace (keyView);
+    valueView = TrimWhitespace (valueView);
+
+    CBREx (!keyView.empty () && !valueView.empty (), E_INVALIDARG);
+
+Error:
+    return hr;
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CConfig::ParseColorSpec
+//
+//  Parse a color specification in the format: <fore> [on <back>]
+//  Examples: "Yellow", "LightCyan on Blue"
+//
+////////////////////////////////////////////////////////////////////////////////
+
+WORD CConfig::ParseColorSpec (wstring_view colorSpec)
+{
+    WORD foreColor = 0;
+    WORD backColor = 0;
+
+    
+
+    auto result = std::ranges::search (
+        colorSpec,
+        L" on "sv,
+        [] (wchar_t a, wchar_t b) { return towlower (a) == towlower (b); }
+    );
+
+    if (result.empty ())
+    {
+        // Only foreground specified
+        wstring_view foreView = TrimWhitespace (colorSpec);
+        foreColor = ParseColorName (foreView, false);
+    }
+    else
+    {
+        size_t onPos = result.begin () - colorSpec.begin ();
+
+        // Both foreground and background specified
+        wstring_view foreView = TrimWhitespace (colorSpec.substr (0, onPos));
+        wstring_view backView = TrimWhitespace (colorSpec.substr (onPos + 4));
+
+        foreColor = ParseColorName (foreView, false);
+        backColor = ParseColorName (backView, true);
+    }
+
+    return foreColor | backColor;
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CConfig::TrimWhitespace
+//
+//  Remove leading and trailing whitespace from a string_view.
+//  Returns a new string with whitespace removed.
+//
+////////////////////////////////////////////////////////////////////////////////
+
+wstring_view CConfig::TrimWhitespace (wstring_view str)
+{
+    size_t start = str.find_first_not_of (L" ");
+    if (start == wstring_view::npos)
+    {
+        return L"";  // String is all whitespace
+    }
+    
+    size_t end = str.find_last_not_of (L" ");
+    return str.substr (start, end - start + 1);
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CConfig::ParseColorName
+//
+//  Convert a color name string to a WORD color value.
+//
+////////////////////////////////////////////////////////////////////////////////
+
+WORD CConfig::ParseColorName (wstring_view colorName, bool isBackground)
+{
+    struct ColorMapping
+    {
+        wstring_view name;
+        WORD         foreValue;
+        WORD         backValue;
+    };
+    
+    static const ColorMapping s_colors[] =
+    {
+        { L"Black"sv,        FC_Black,        BC_Black        },
+        { L"Blue"sv,         FC_Blue,         BC_Blue         },
+        { L"Green"sv,        FC_Green,        BC_Green        },
+        { L"Cyan"sv,         FC_Cyan,         BC_Cyan         },
+        { L"Red"sv,          FC_Red,          BC_Red          },
+        { L"Magenta"sv,      FC_Magenta,      BC_Magenta      },
+        { L"Brown"sv,        FC_Brown,        BC_Brown        },
+        { L"LightGrey"sv,    FC_LightGrey,    BC_LightGrey    },
+        { L"DarkGrey"sv,     FC_DarkGrey,     BC_DarkGrey     },
+        { L"LightBlue"sv,    FC_LightBlue,    BC_LightBlue    },
+        { L"LightGreen"sv,   FC_LightGreen,   BC_LightGreen   },
+        { L"LightCyan"sv,    FC_LightCyan,    BC_LightCyan    },
+        { L"LightRed"sv,     FC_LightRed,     BC_LightRed     },
+        { L"LightMagenta"sv, FC_LightMagenta, BC_LightMagenta },
+        { L"Yellow"sv,       FC_Yellow,       BC_Yellow       },
+        { L"White"sv,        FC_White,        BC_White        },
+    };
+    
+
+
+    //
+    // Find matching color name (case-insensitive)
+    //
+
+    for (const ColorMapping & mapping : s_colors)
+    {
+        // Use ranges::equal with case-insensitive comparison
+        if (std::ranges::equal (
+            colorName,
+            mapping.name,
+            [] (wchar_t a, wchar_t b) { return towlower (a) == towlower (b); }
+        ))
+        {
+            return isBackground ? mapping.backValue : mapping.foreValue;
+        }
+    }
+
+    return 0;  // Default/not found
+}
 
 
 

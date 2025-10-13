@@ -3,6 +3,10 @@
 
 
 
+#define TCDIR_ENV_VAR_NAME L"TCDIR"
+
+
+
 
 class CConfig
 {
@@ -45,9 +49,15 @@ public:
 
 
 protected:
-    void InitializeExtensionToTextAttrMap (void);
+    void         InitializeExtensionToTextAttrMap (void);
+    void         ApplyUserColorOverrides          (void);
+    void         ProcessColorOverrideEntry        (wstring_view entry);
+    HRESULT      ParseKeyAndValue                 (wstring_view entry, wstring_view & keyView, wstring_view & valueView);
+    WORD         ParseColorSpec                   (wstring_view colorSpec);
+    WORD         ParseColorName                   (wstring_view colorName, bool isBackground);
+    wstring_view TrimWhitespace                   (wstring_view str);
 
     static const STextAttr s_rgTextAttrs[];
-
 };
+
 
