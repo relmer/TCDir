@@ -29,9 +29,10 @@ public:
 
 protected:
 
-    HRESULT InitializeConsoleMode  (void);
-    HRESULT InitializeConsoleWidth (void);
-    void    SetColor               (WORD attr);
+    HRESULT InitializeConsoleMode             (void);
+    HRESULT InitializeConsoleWidth            (void);
+    void    SetColor                          (WORD attr);
+    void    ProcessMultiLineStringWithAttribute (wstring_view text, WORD attr);
 
     static constexpr size_t s_kcchInitialBufferSize = 10 * 1024 * 1024;
 

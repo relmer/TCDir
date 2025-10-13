@@ -133,7 +133,7 @@ HRESULT CConsole::InitializeConsoleWidth (void)
     BOOL                       fSuccess = FALSE;
     CONSOLE_SCREEN_BUFFER_INFO csbi     = { 0 };
 
-
+    
 
     // Can't query the width if the console is redirected.
     BAIL_OUT_IF (m_fIsRedirected, S_OK);
@@ -161,9 +161,10 @@ Error:
 
 void CConsole::Puts (int attributeIndex, LPCWSTR psz)
 {
-    SetColor (m_configPtr->m_rgAttributes[attributeIndex]);
-
-    m_strBuffer.append (psz);
+    ProcessMultiLineStringWithAttribute (psz, m_configPtr->m_rgAttributes[attributeIndex]);
+    
+    // Reset to default color before final newline to prevent color bleeding
+    SetColor (m_configPtr->m_rgAttributes[CConfig::EAttribute::Default]);
     m_strBuffer.append (L"\n");
 }
 
@@ -195,8 +196,7 @@ int CConsole::Printf (CConfig::EAttribute attributeIndex, LPCWSTR pszFormat, ...
     hr = StringCchVPrintfEx (s_szBuf, s_cchBuf, &pszEnd, nullptr, 0, pszFormat, vaArgs);
     CHRA (hr);
 
-    SetColor (m_configPtr->m_rgAttributes[attributeIndex]);
-    m_strBuffer.append (s_szBuf);
+    ProcessMultiLineStringWithAttribute (s_szBuf, m_configPtr->m_rgAttributes[attributeIndex]);
 
 Error:
     va_end (vaArgs);
@@ -233,13 +233,53 @@ int CConsole::Printf (const WIN32_FIND_DATA & wfd, LPCWSTR pszFormat, ...)
     hr = StringCchVPrintfEx (s_szBuf, s_cchBuf, &pszEnd, nullptr, 0, pszFormat, vaArgs);
     CHRA (hr);
 
-    SetColor (textAttr);
-    m_strBuffer.append (s_szBuf);
+    ProcessMultiLineStringWithAttribute (s_szBuf, textAttr);
 
 Error:
     va_end (vaArgs);
 
     return SUCCEEDED (hr) ? (int) (pszEnd - s_szBuf) : 0;
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CConsole::ProcessMultiLineStringWithAttribute
+//
+//  Helper function to process text with proper color handling for embedded newlines.
+//  Resets to default color before each newline, then restores the desired color.
+//
+////////////////////////////////////////////////////////////////////////////////
+
+void CConsole::ProcessMultiLineStringWithAttribute (wstring_view text, WORD attr)
+{
+    SetColor (attr);
+
+    // Split on newlines and process each part
+    auto lines = text | std::views::split (L'\n');
+    bool firstLine = true;
+
+    for (auto line : lines)
+    {
+        if (!firstLine)
+        {
+            // Reset to default color before the newline
+            SetColor (m_configPtr->m_rgAttributes[CConfig::EAttribute::Default]);
+            m_strBuffer.append (L"\n");
+
+            // Restore the original color for the next line
+            SetColor (attr);
+        }
+
+        // Append the line content
+        wstring_view lineView (line.begin (), line.end ());
+        m_strBuffer.append (lineView);
+
+        firstLine = false;
+    }
 }
 
 
