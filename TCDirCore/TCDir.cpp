@@ -203,7 +203,7 @@ void DisplayUsage (__in CConsole * pConsole)
         L"",
         L"",
         L"  Set the " TCDIR_ENV_VAR_NAME L" environment variable to override default colors for file ",
-        L"  extensions or attributes:",
+        L"  extensions or display attributes:",
         L""
     };
     
@@ -216,10 +216,17 @@ void DisplayUsage (__in CConsole * pConsole)
     static LPCWSTR s_colorOverrideLines[] =
     {
         L"",
-        L"      <attr>  An attribute (single character, see 'attributes' above)",
+        L"      <attr>  A display attribute (single character)",
         L"      <.ext>  A file extension, including the leading period.",
         L"      <fore>  Foreground color",
         L"      <back>  Background color",
+        L"",
+        L"      Display attributes:",
+        L"          D  Date                   T  Time",
+        L"          A  File attribute present -  File attribute not present",
+        L"          S  Size                   R  Directory name",
+        L"          I  Information            H  Information highlight",
+        L"          E  Error                  F  File (default)",
         L"",
         L"      Colors:",
         L"          Black        DarkGrey",
@@ -235,8 +242,8 @@ void DisplayUsage (__in CConsole * pConsole)
     
     static LPCWSTR s_envVarExample[] =
     {
-        L"      Example: set " TCDIR_ENV_VAR_NAME L"=.cpp=Yellow;.h=LightCyan on Blue",           // CMD
-        L"      Example: $env:" TCDIR_ENV_VAR_NAME L" = \".cpp=Yellow;.h=LightCyan on Blue\"",    // PowerShell
+        L"      Example: set " TCDIR_ENV_VAR_NAME L"=D=LightGreen;S=Yellow;.cpp=White on Blue",           // CMD
+        L"      Example: $env:" TCDIR_ENV_VAR_NAME L" = \"D=LightGreen;S=Yellow;.cpp=White on Blue\"",    // PowerShell
     };
     
     bool isPowerShell = IsPowerShell ();

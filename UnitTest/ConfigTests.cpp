@@ -24,6 +24,8 @@ namespace UnitTest
         using CConfig::ParseKeyAndValue;
         using CConfig::ApplyUserColorOverrides;
         using CConfig::ProcessColorOverrideEntry;
+        using CConfig::ProcessFileExtensionOverride;
+        using CConfig::ProcessDisplayAttributeOverride;
     };
 
 
@@ -645,6 +647,428 @@ namespace UnitTest
             
             Assert::IsTrue(config.m_mapExtensionToTextAttr.contains(L".cpp"));
             Assert::IsTrue(config.m_mapExtensionToTextAttr.contains(L".h"));
+            
+            SetEnvironmentVariableW(TCDIR_ENV_VAR_NAME, nullptr);
+        }
+
+
+
+
+
+        //
+        // ProcessFileExtensionOverride tests
+        //
+
+        TEST_METHOD(ProcessFileExtensionOverride_LowercaseExtension_StoresCorrectly)
+        {
+            ConfigProbe config;
+            config.Initialize(FC_LightGrey);
+            
+            config.ProcessFileExtensionOverride(L".cpp"sv, FC_Yellow);
+            
+            Assert::IsTrue(config.m_mapExtensionToTextAttr.contains(L".cpp"));
+            Assert::AreEqual((WORD)FC_Yellow, config.m_mapExtensionToTextAttr[L".cpp"]);
+        }
+
+
+
+
+
+        TEST_METHOD(ProcessFileExtensionOverride_UppercaseExtension_ConvertsToLowercase)
+        {
+            ConfigProbe config;
+            config.Initialize(FC_LightGrey);
+            
+            config.ProcessFileExtensionOverride(L".CPP"sv, FC_Red);
+            
+            Assert::IsTrue(config.m_mapExtensionToTextAttr.contains(L".cpp"));
+            Assert::IsFalse(config.m_mapExtensionToTextAttr.contains(L".CPP"));
+            Assert::AreEqual((WORD)FC_Red, config.m_mapExtensionToTextAttr[L".cpp"]);
+        }
+
+
+
+
+
+        TEST_METHOD(ProcessFileExtensionOverride_MixedCaseExtension_ConvertsToLowercase)
+        {
+            ConfigProbe config;
+            config.Initialize(FC_LightGrey);
+            
+            config.ProcessFileExtensionOverride(L".CpP"sv, FC_Blue);
+            config.ProcessFileExtensionOverride(L".HpP"sv, FC_Green);
+            
+            Assert::IsTrue(config.m_mapExtensionToTextAttr.contains(L".cpp"));
+            Assert::IsTrue(config.m_mapExtensionToTextAttr.contains(L".hpp"));
+            Assert::AreEqual((WORD)FC_Blue, config.m_mapExtensionToTextAttr[L".cpp"]);
+            Assert::AreEqual((WORD)FC_Green, config.m_mapExtensionToTextAttr[L".hpp"]);
+        }
+
+
+
+
+
+        TEST_METHOD(ProcessFileExtensionOverride_WithBackground_StoresComplete)
+        {
+            ConfigProbe config;
+            config.Initialize(FC_LightGrey);
+            
+            WORD colorAttr = FC_Yellow | BC_Blue;
+            config.ProcessFileExtensionOverride(L".txt"sv, colorAttr);
+            
+            Assert::AreEqual(colorAttr, config.m_mapExtensionToTextAttr[L".txt"]);
+        }
+
+
+
+
+
+        TEST_METHOD(ProcessFileExtensionOverride_MultipleExtensions_AllStored)
+        {
+            ConfigProbe config;
+            config.Initialize(FC_LightGrey);
+            
+            config.ProcessFileExtensionOverride(L".cpp"sv, FC_LightGreen);
+            config.ProcessFileExtensionOverride(L".h"sv, FC_LightBlue);
+            config.ProcessFileExtensionOverride(L".txt"sv, FC_White);
+            
+            Assert::AreEqual((WORD)FC_LightGreen, config.m_mapExtensionToTextAttr[L".cpp"]);
+            Assert::AreEqual((WORD)FC_LightBlue, config.m_mapExtensionToTextAttr[L".h"]);
+            Assert::AreEqual((WORD)FC_White, config.m_mapExtensionToTextAttr[L".txt"]);
+        }
+
+
+
+
+
+        //
+        // ProcessDisplayAttributeOverride tests
+        //
+
+        TEST_METHOD(ProcessDisplayAttributeOverride_DateAttribute_SetsCorrectly)
+        {
+            ConfigProbe config;
+            config.Initialize(FC_LightGrey);
+            
+            WORD originalDate = config.m_rgAttributes[CConfig::EAttribute::Date];
+            config.ProcessDisplayAttributeOverride(L'D', FC_Yellow);
+            
+            Assert::AreEqual((WORD)FC_Yellow, config.m_rgAttributes[CConfig::EAttribute::Date]);
+            Assert::AreNotEqual(originalDate, config.m_rgAttributes[CConfig::EAttribute::Date]);
+        }
+
+
+
+
+
+        TEST_METHOD(ProcessDisplayAttributeOverride_TimeAttribute_SetsCorrectly)
+        {
+            ConfigProbe config;
+            config.Initialize(FC_LightGrey);
+            
+            config.ProcessDisplayAttributeOverride(L'T', FC_Cyan);
+            
+            Assert::AreEqual((WORD)FC_Cyan, config.m_rgAttributes[CConfig::EAttribute::Time]);
+        }
+
+
+
+
+
+        TEST_METHOD(ProcessDisplayAttributeOverride_SizeAttribute_SetsCorrectly)
+        {
+            ConfigProbe config;
+            config.Initialize(FC_LightGrey);
+            
+            config.ProcessDisplayAttributeOverride(L'S', FC_Magenta);
+            
+            Assert::AreEqual((WORD)FC_Magenta, config.m_rgAttributes[CConfig::EAttribute::Size]);
+        }
+
+
+
+
+
+        TEST_METHOD(ProcessDisplayAttributeOverride_DirectoryAttribute_SetsCorrectly)
+        {
+            ConfigProbe config;
+            config.Initialize(FC_LightGrey);
+            
+            config.ProcessDisplayAttributeOverride(L'R', FC_Green);
+            
+            Assert::AreEqual((WORD)FC_Green, config.m_rgAttributes[CConfig::EAttribute::Directory]);
+        }
+
+
+
+
+
+        TEST_METHOD(ProcessDisplayAttributeOverride_FileAttributePresentAttribute_SetsCorrectly)
+        {
+            ConfigProbe config;
+            config.Initialize(FC_LightGrey);
+            
+            config.ProcessDisplayAttributeOverride(L'A', FC_LightRed);
+            
+            Assert::AreEqual((WORD)FC_LightRed, config.m_rgAttributes[CConfig::EAttribute::FileAttributePresent]);
+        }
+
+
+
+
+
+        TEST_METHOD(ProcessDisplayAttributeOverride_FileAttributeNotPresentAttribute_SetsCorrectly)
+        {
+            ConfigProbe config;
+            config.Initialize(FC_LightGrey);
+            
+            config.ProcessDisplayAttributeOverride(L'-', FC_DarkGrey);
+            
+            Assert::AreEqual((WORD)FC_DarkGrey, config.m_rgAttributes[CConfig::EAttribute::FileAttributeNotPresent]);
+        }
+
+
+
+
+
+        TEST_METHOD(ProcessDisplayAttributeOverride_InformationAttribute_SetsCorrectly)
+        {
+            ConfigProbe config;
+            config.Initialize(FC_LightGrey);
+            
+            config.ProcessDisplayAttributeOverride(L'I', FC_White);
+            
+            Assert::AreEqual((WORD)FC_White, config.m_rgAttributes[CConfig::EAttribute::Information]);
+        }
+
+
+
+
+
+        TEST_METHOD(ProcessDisplayAttributeOverride_InformationHighlightAttribute_SetsCorrectly)
+        {
+            ConfigProbe config;
+            config.Initialize(FC_LightGrey);
+            
+            config.ProcessDisplayAttributeOverride(L'H', FC_Yellow);
+            
+            Assert::AreEqual((WORD)FC_Yellow, config.m_rgAttributes[CConfig::EAttribute::InformationHighlight]);
+        }
+
+
+
+
+
+        TEST_METHOD(ProcessDisplayAttributeOverride_ErrorAttribute_SetsCorrectly)
+        {
+            ConfigProbe config;
+            config.Initialize(FC_LightGrey);
+            
+            config.ProcessDisplayAttributeOverride(L'E', FC_Red);
+            
+            Assert::AreEqual((WORD)FC_Red, config.m_rgAttributes[CConfig::EAttribute::Error]);
+        }
+
+
+
+
+
+        TEST_METHOD(ProcessDisplayAttributeOverride_DefaultAttribute_SetsCorrectly)
+        {
+            ConfigProbe config;
+            config.Initialize(FC_LightGrey);
+            
+            config.ProcessDisplayAttributeOverride(L'F', FC_Blue);
+            
+            Assert::AreEqual((WORD)FC_Blue, config.m_rgAttributes[CConfig::EAttribute::Default]);
+        }
+
+
+
+
+
+        TEST_METHOD(ProcessDisplayAttributeOverride_LowercaseChar_WorksCorrectly)
+        {
+            ConfigProbe config;
+            config.Initialize(FC_LightGrey);
+            
+            config.ProcessDisplayAttributeOverride(L'd', FC_Yellow);
+            config.ProcessDisplayAttributeOverride(L't', FC_Cyan);
+            
+            Assert::AreEqual((WORD)FC_Yellow, config.m_rgAttributes[CConfig::EAttribute::Date]);
+            Assert::AreEqual((WORD)FC_Cyan, config.m_rgAttributes[CConfig::EAttribute::Time]);
+        }
+
+
+
+
+
+        TEST_METHOD(ProcessDisplayAttributeOverride_WithBackground_StoresComplete)
+        {
+            ConfigProbe config;
+            config.Initialize(FC_LightGrey);
+            
+            WORD colorAttr = FC_White | BC_Blue;
+            config.ProcessDisplayAttributeOverride(L'D', colorAttr);
+            
+            Assert::AreEqual(colorAttr, config.m_rgAttributes[CConfig::EAttribute::Date]);
+        }
+
+
+
+
+
+        TEST_METHOD(ProcessDisplayAttributeOverride_InvalidChar_DoesNothing)
+        {
+            ConfigProbe config;
+            config.Initialize(FC_LightGrey);
+            
+            WORD originalDate = config.m_rgAttributes[CConfig::EAttribute::Date];
+            
+            config.ProcessDisplayAttributeOverride(L'X', FC_Yellow);
+            config.ProcessDisplayAttributeOverride(L'Z', FC_Red);
+            config.ProcessDisplayAttributeOverride(L'1', FC_Green);
+            
+            // Date should remain unchanged
+            Assert::AreEqual(originalDate, config.m_rgAttributes[CConfig::EAttribute::Date]);
+        }
+
+
+
+
+
+        TEST_METHOD(ProcessDisplayAttributeOverride_AllValidChars_AllWork)
+        {
+            ConfigProbe config;
+            config.Initialize(FC_LightGrey);
+            
+            // Test all valid characters
+            config.ProcessDisplayAttributeOverride(L'D', FC_Black);
+            config.ProcessDisplayAttributeOverride(L'T', FC_Blue);
+            config.ProcessDisplayAttributeOverride(L'A', FC_Green);
+            config.ProcessDisplayAttributeOverride(L'-', FC_Cyan);
+            config.ProcessDisplayAttributeOverride(L'S', FC_Red);
+            config.ProcessDisplayAttributeOverride(L'R', FC_Magenta);
+            config.ProcessDisplayAttributeOverride(L'I', FC_Brown);
+            config.ProcessDisplayAttributeOverride(L'H', FC_LightGrey);
+            config.ProcessDisplayAttributeOverride(L'E', FC_DarkGrey);
+            config.ProcessDisplayAttributeOverride(L'F', FC_LightBlue);
+            
+            Assert::AreEqual((WORD)FC_Black, config.m_rgAttributes[CConfig::EAttribute::Date]);
+            Assert::AreEqual((WORD)FC_Blue, config.m_rgAttributes[CConfig::EAttribute::Time]);
+            Assert::AreEqual((WORD)FC_Green, config.m_rgAttributes[CConfig::EAttribute::FileAttributePresent]);
+            Assert::AreEqual((WORD)FC_Cyan, config.m_rgAttributes[CConfig::EAttribute::FileAttributeNotPresent]);
+            Assert::AreEqual((WORD)FC_Red, config.m_rgAttributes[CConfig::EAttribute::Size]);
+            Assert::AreEqual((WORD)FC_Magenta, config.m_rgAttributes[CConfig::EAttribute::Directory]);
+            Assert::AreEqual((WORD)FC_Brown, config.m_rgAttributes[CConfig::EAttribute::Information]);
+            Assert::AreEqual((WORD)FC_LightGrey, config.m_rgAttributes[CConfig::EAttribute::InformationHighlight]);
+            Assert::AreEqual((WORD)FC_DarkGrey, config.m_rgAttributes[CConfig::EAttribute::Error]);
+            Assert::AreEqual((WORD)FC_LightBlue, config.m_rgAttributes[CConfig::EAttribute::Default]);
+        }
+
+
+
+
+
+        //
+        // Integration tests for mixed extensions and display attributes
+        //
+
+        TEST_METHOD(IntegrationTest_MixedExtensionsAndAttributes_AllProcessed)
+        {
+            ConfigProbe config;
+            config.Initialize(FC_LightGrey);
+            
+            SetEnvironmentVariableW(TCDIR_ENV_VAR_NAME, 
+                L"D=LightGreen;S=Yellow;.cpp=White on Blue;T=Cyan;.h=Red");
+            
+            config.ApplyUserColorOverrides();
+            
+            // Verify display attributes
+            Assert::AreEqual((WORD)FC_LightGreen, config.m_rgAttributes[CConfig::EAttribute::Date]);
+            Assert::AreEqual((WORD)FC_Yellow, config.m_rgAttributes[CConfig::EAttribute::Size]);
+            Assert::AreEqual((WORD)FC_Cyan, config.m_rgAttributes[CConfig::EAttribute::Time]);
+            
+            // Verify file extensions
+            Assert::AreEqual((WORD)(FC_White | BC_Blue), config.m_mapExtensionToTextAttr[L".cpp"]);
+            Assert::AreEqual((WORD)FC_Red, config.m_mapExtensionToTextAttr[L".h"]);
+            
+            SetEnvironmentVariableW(TCDIR_ENV_VAR_NAME, nullptr);
+        }
+
+
+
+
+
+        TEST_METHOD(IntegrationTest_AllDisplayAttributes_ComplexScenario)
+        {
+            ConfigProbe config;
+            config.Initialize(FC_LightGrey);
+            
+            SetEnvironmentVariableW(TCDIR_ENV_VAR_NAME, 
+                L"D=Red;T=Brown;A=Cyan;-=DarkGrey;S=Yellow;R=LightBlue on Black;I=White;H=LightCyan;E=LightRed;F=Green");
+            
+            config.ApplyUserColorOverrides();
+            
+            Assert::AreEqual((WORD)FC_Red, config.m_rgAttributes[CConfig::EAttribute::Date]);
+            Assert::AreEqual((WORD)FC_Brown, config.m_rgAttributes[CConfig::EAttribute::Time]);
+            Assert::AreEqual((WORD)FC_Cyan, config.m_rgAttributes[CConfig::EAttribute::FileAttributePresent]);
+            Assert::AreEqual((WORD)FC_DarkGrey, config.m_rgAttributes[CConfig::EAttribute::FileAttributeNotPresent]);
+            Assert::AreEqual((WORD)FC_Yellow, config.m_rgAttributes[CConfig::EAttribute::Size]);
+            Assert::AreEqual((WORD)(FC_LightBlue | BC_Black), config.m_rgAttributes[CConfig::EAttribute::Directory]);
+            Assert::AreEqual((WORD)FC_White, config.m_rgAttributes[CConfig::EAttribute::Information]);
+            Assert::AreEqual((WORD)FC_LightCyan, config.m_rgAttributes[CConfig::EAttribute::InformationHighlight]);
+            Assert::AreEqual((WORD)FC_LightRed, config.m_rgAttributes[CConfig::EAttribute::Error]);
+            Assert::AreEqual((WORD)FC_Green, config.m_rgAttributes[CConfig::EAttribute::Default]);
+            
+            SetEnvironmentVariableW(TCDIR_ENV_VAR_NAME, nullptr);
+        }
+
+
+
+
+
+        TEST_METHOD(IntegrationTest_MixedCaseAttributesAndExtensions_AllProcessed)
+        {
+            ConfigProbe config;
+            config.Initialize(FC_LightGrey);
+            
+            SetEnvironmentVariableW(TCDIR_ENV_VAR_NAME, 
+                L"d=Yellow;.CPP=Red;T=Blue;.H=Green");
+            
+            config.ApplyUserColorOverrides();
+            
+            Assert::AreEqual((WORD)FC_Yellow, config.m_rgAttributes[CConfig::EAttribute::Date]);
+            Assert::AreEqual((WORD)FC_Blue, config.m_rgAttributes[CConfig::EAttribute::Time]);
+            Assert::AreEqual((WORD)FC_Red, config.m_mapExtensionToTextAttr[L".cpp"]);
+            Assert::AreEqual((WORD)FC_Green, config.m_mapExtensionToTextAttr[L".h"]);
+            
+            SetEnvironmentVariableW(TCDIR_ENV_VAR_NAME, nullptr);
+        }
+
+
+
+
+
+        TEST_METHOD(IntegrationTest_DisplayAttributesWithInvalidEntries_ValidOnesProcessed)
+        {
+            ConfigProbe config;
+            config.Initialize(FC_LightGrey);
+            
+            WORD originalError = config.m_rgAttributes[CConfig::EAttribute::Error];
+            
+            SetEnvironmentVariableW(TCDIR_ENV_VAR_NAME, 
+                L"D=Yellow;X=Blue;S=Red;InvalidEntry;T=Green");
+            
+            config.ApplyUserColorOverrides();
+            
+            // Valid entries should be processed
+            Assert::AreEqual((WORD)FC_Yellow, config.m_rgAttributes[CConfig::EAttribute::Date]);
+            Assert::AreEqual((WORD)FC_Red, config.m_rgAttributes[CConfig::EAttribute::Size]);
+            Assert::AreEqual((WORD)FC_Green, config.m_rgAttributes[CConfig::EAttribute::Time]);
+            
+            // Error attribute should be unchanged (X is invalid, no E was set)
+            Assert::AreEqual(originalError, config.m_rgAttributes[CConfig::EAttribute::Error]);
             
             SetEnvironmentVariableW(TCDIR_ENV_VAR_NAME, nullptr);
         }

@@ -40,24 +40,35 @@ public:
         __count
     };
 
+    struct ValidationResult
+    {
+        vector<wstring> warnings;
+        vector<wstring> errors;
+        bool            hasIssues() const { return !warnings.empty() || !errors.empty(); }
+    };
+
     
-    void Initialize         (WORD wDefaultAttr);
-    WORD GetTextAttrForFile (const WIN32_FIND_DATA & wfd);
+    void              Initialize         (WORD wDefaultAttr);
+    WORD              GetTextAttrForFile (const WIN32_FIND_DATA & wfd);
+    ValidationResult  ValidateEnvironmentVariable (void);
 
     WORD         m_rgAttributes[EAttribute::__count];
     TextAttrMap  m_mapExtensionToTextAttr;
 
 
 protected:
-    void         InitializeExtensionToTextAttrMap (void);
-    void         ApplyUserColorOverrides          (void);
-    void         ProcessColorOverrideEntry        (wstring_view entry);
-    HRESULT      ParseKeyAndValue                 (wstring_view entry, wstring_view & keyView, wstring_view & valueView);
-    WORD         ParseColorSpec                   (wstring_view colorSpec);
-    WORD         ParseColorName                   (wstring_view colorName, bool isBackground);
-    wstring_view TrimWhitespace                   (wstring_view str);
+    void         InitializeExtensionToTextAttrMap     (void);
+    void         ApplyUserColorOverrides              (void);
+    void         ProcessColorOverrideEntry            (wstring_view entry);
+    void         ProcessFileExtensionOverride         (wstring_view extension, WORD colorAttr);
+    void         ProcessDisplayAttributeOverride      (wchar_t attrChar, WORD colorAttr);
+    HRESULT      ParseKeyAndValue                     (wstring_view entry, wstring_view & keyView, wstring_view & valueView);
+    WORD         ParseColorSpec                       (wstring_view colorSpec);
+    WORD         ParseColorName                       (wstring_view colorName, bool isBackground);
+    wstring_view TrimWhitespace                       (wstring_view str);
 
     static const STextAttr s_rgTextAttrs[];
 };
+
 
 

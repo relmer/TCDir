@@ -244,6 +244,7 @@ Error:
 //  Process a single color override entry in the format: <key>=<value>
 //  Example: .cpp=Yellow 
 //           .h=LightCyan on Blue
+//           D=Red
 //
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -259,6 +260,8 @@ void CConfig::ProcessColorOverrideEntry (wstring_view entry)
     hr = ParseKeyAndValue (entry, keyView, valueView);
     CHR (hr);
 
+    BAIL_OUT_IF (keyView.empty(), S_OK);
+
     colorAttr = ParseColorSpec (valueView);
     
     //
@@ -267,18 +270,11 @@ void CConfig::ProcessColorOverrideEntry (wstring_view entry)
     
     if (keyView[0] == L'.')
     {
-        wstring key (keyView);
-
-        // File extension override
-        std::transform (key.begin(), key.end(), key.begin(),
-                        [] (wchar_t c) { return towlower (c); });
-        
-        m_mapExtensionToTextAttr[key] = colorAttr;
+        ProcessFileExtensionOverride (keyView, colorAttr);
     }
     else if (keyView.length() == 1)
     {
-        // Single character attribute override (D, H, S, etc.)
-        // Reserved for future implementation
+        ProcessDisplayAttributeOverride (keyView[0], colorAttr);
     }
 
 
@@ -287,6 +283,68 @@ Error:
 }
 
 
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CConfig::ProcessFileExtensionOverride
+//
+//  Apply color override for a file extension (e.g., ".cpp")
+//
+////////////////////////////////////////////////////////////////////////////////
+
+void CConfig::ProcessFileExtensionOverride (wstring_view extension, WORD colorAttr)
+{
+    wstring key (extension);
+    
+    std::ranges::transform (key, key.begin(), towlower);
+    m_mapExtensionToTextAttr[key] = colorAttr;
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CConfig::ProcessDisplayAttributeOverride
+//
+//  Apply color override for a display attribute (e.g., "D" for Date)
+//
+////////////////////////////////////////////////////////////////////////////////
+
+void CConfig::ProcessDisplayAttributeOverride (wchar_t attrChar, WORD colorAttr)
+{
+    struct AttrMapping
+    {
+        wchar_t    ch;
+        EAttribute attr;
+    };
+    
+    static constexpr AttrMapping s_attrMappings[] =
+    {
+        { L'D', EAttribute::Date                    },
+        { L'T', EAttribute::Time                    },
+        { L'A', EAttribute::FileAttributePresent    },
+        { L'-', EAttribute::FileAttributeNotPresent },
+        { L'S', EAttribute::Size                    },
+        { L'R', EAttribute::Directory               },
+        { L'I', EAttribute::Information             },
+        { L'H', EAttribute::InformationHighlight    },
+        // { L'L', EAttribute::SeparatorLine        }, // Currently unused
+        { L'E', EAttribute::Error                   },
+        { L'F', EAttribute::Default                 },
+    };
+    
+    attrChar = towupper (attrChar);
+    auto iter = std::ranges::find (s_attrMappings, attrChar, &AttrMapping::ch);
+    
+    if (iter != std::ranges::end (s_attrMappings))
+    {
+        m_rgAttributes[iter->attr] = colorAttr;
+    }
+}
 
 
 
@@ -430,7 +488,7 @@ WORD CConfig::ParseColorName (wstring_view colorName, bool isBackground)
         { L"Yellow"sv,       FC_Yellow,       BC_Yellow       },
         { L"White"sv,        FC_White,        BC_White        },
     };
-    
+
 
 
     //
