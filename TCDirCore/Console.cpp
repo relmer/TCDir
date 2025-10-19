@@ -1,4 +1,5 @@
 ﻿#include "pch.h"
+#include "Color.h"
 #include "Console.h"
 #include "AnsiCodes.h"
 
@@ -153,6 +154,23 @@ Error:
 
 ////////////////////////////////////////////////////////////////////////////////
 //
+//  CConsole::Putchar
+//
+//  Write a single character to the console 
+//
+////////////////////////////////////////////////////////////////////////////////  
+
+void CConsole::Putchar (WORD attr, WCHAR ch)
+{
+    SetColor (attr);
+    m_strBuffer.push_back (ch);
+}
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
 //  CConsole::Puts
 //
 //  Write a single line to the console (no format string)
@@ -216,7 +234,7 @@ Error:
 //
 ////////////////////////////////////////////////////////////////////////////////  
 
-int CConsole::Printf (const WIN32_FIND_DATA & wfd, LPCWSTR pszFormat, ...)
+int CConsole::Printf (WORD attr, LPCWSTR pszFormat, ...)
 {
     static constexpr int s_cchBuf          = 9999;  // Max console buffer width
     static  WCHAR        s_szBuf[s_cchBuf] = { L'\0' };
@@ -224,7 +242,6 @@ int CConsole::Printf (const WIN32_FIND_DATA & wfd, LPCWSTR pszFormat, ...)
     HRESULT   hr       = S_OK;
     va_list   vaArgs   = 0;  
     LPWSTR    pszEnd   = nullptr;
-    WORD      textAttr = m_configPtr->GetTextAttrForFile (wfd);
     
 
 
@@ -233,12 +250,70 @@ int CConsole::Printf (const WIN32_FIND_DATA & wfd, LPCWSTR pszFormat, ...)
     hr = StringCchVPrintfEx (s_szBuf, s_cchBuf, &pszEnd, nullptr, 0, pszFormat, vaArgs);
     CHRA (hr);
 
-    ProcessMultiLineStringWithAttribute (s_szBuf, textAttr);
+    ProcessMultiLineStringWithAttribute (s_szBuf, attr);
 
 Error:
     va_end (vaArgs);
 
     return SUCCEEDED (hr) ? (int) (pszEnd - s_szBuf) : 0;
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CConsole::PrintColorfulString
+//
+//  Print a string, cycling through colors for each character  
+//
+////////////////////////////////////////////////////////////////////////////////  
+
+void CConsole::PrintColorfulString (LPCWSTR psz)
+{
+    static const WORD s_rgForegroundColors[] = 
+    {
+        FC_Black,
+        FC_Blue,
+        FC_Green,
+        FC_Cyan,
+        FC_Red,
+        FC_Magenta,
+        FC_Brown,
+        FC_LightGrey,
+        FC_DarkGrey,
+        FC_LightBlue,
+        FC_LightGreen,
+        FC_LightCyan,
+        FC_LightRed,
+        FC_LightMagenta,
+        FC_Yellow,
+        FC_White,
+    };
+
+    WORD   defaultAttr     = m_configPtr->m_rgAttributes[CConfig::EAttribute::Default];
+    WORD   backgroundColor = defaultAttr >> 4;
+    size_t idxColor        = 0;
+    
+
+
+    for (LPCWCHAR pch = psz; *pch != L'\0'; ++pch)
+    {
+        WORD color = s_rgForegroundColors[idxColor];
+        
+        idxColor = (idxColor + 1) % ARRAYSIZE (s_rgForegroundColors);
+        
+        // Skip if it matches the background
+        if (color == backgroundColor)
+        {
+            color = s_rgForegroundColors[idxColor];
+            idxColor = (idxColor + 1) % ARRAYSIZE (s_rgForegroundColors);
+        }
+        
+        WORD colorAttr = color | backgroundColor;
+        Putchar (colorAttr, *pch);
+    }
 }
 
 

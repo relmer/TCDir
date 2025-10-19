@@ -114,13 +114,14 @@ HRESULT CResultsDisplayerWide::DisplayFile (const WIN32_FIND_DATA & wfd, size_t 
     size_t  cSpacesNeeded = 0;
     LPCWSTR pszName       = NULL;
     size_t  cchName       = 0;
+    WORD    textAttr      = m_configPtr->GetTextAttrForFile (wfd);
 
 
 
     hr = GetWideFormattedName (wfd, &pszName);
     CHR (hr);
 
-    m_consolePtr->Printf (wfd, L"%.*s", cxColumnWidth, pszName);
+    m_consolePtr->Printf (textAttr, L"%.*s", cxColumnWidth, pszName);
 
     cchName = wcslen (pszName);
     if (cxColumnWidth > cchName)

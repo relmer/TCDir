@@ -44,13 +44,15 @@ void CResultsDisplayerNormal::DisplayFileResults (const CDirectoryInfo & di)
 
     for (const WIN32_FIND_DATA & fileInfo : di.m_vMatches)
     {
+        WORD textAttr = m_configPtr->GetTextAttrForFile (fileInfo);
+
         hr = DisplayResultsNormalDateAndTime (fileInfo.ftLastWriteTime);
         CHR (hr);
 
         DisplayResultsNormalAttributes (fileInfo.dwFileAttributes);
         DisplayResultsNormalFileSize   (fileInfo, cchStringLengthOfMaxFileSize);
 
-        m_consolePtr->Printf (fileInfo, L"%s\n", fileInfo.cFileName);
+        m_consolePtr->Printf (textAttr, L"%s\n", fileInfo.cFileName);
     }
     
 
