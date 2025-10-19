@@ -197,7 +197,8 @@
       <EntryPointSymbol>wmainCRTStartup</EntryPointSymbol>
     </Link>
     <PreBuildEvent>
-      <Command>powershell -ExecutionPolicy Bypass -File "$(SolutionDir)IncrementVersion.ps1"</Command>
+      <Command>
+      </Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
