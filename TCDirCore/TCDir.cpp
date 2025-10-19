@@ -3,6 +3,7 @@
 
 #include "pch.h"
 #include "TCDir.h"
+#include "Version.h"
 
 #include "CommandLine.h"
 #include "Config.h"
@@ -178,7 +179,8 @@ void DisplayUsage (__in CConsole * pConsole)
     static LPCWSTR s_usageLines[] =
     {
         L"",
-        L"Relmerator's Technicolor Directory (C)2004-2025 by Robert Elmer",
+        L"Technicolor Directory Version " VERSION_WSTRING,
+        L"Copyright © 2004-" VERSION_YEAR_WSTRING  L" by Robert Elmer",
         L"",
         L"TCDIR [drive:][path][filename] [/A[[:]attributes]] [/O[[:]sortorder]] [/S]",
         L"",
