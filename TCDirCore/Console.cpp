@@ -262,7 +262,7 @@ void CConsole::ProcessMultiLineStringWithAttribute (wstring_view text, WORD attr
     auto lines = text | std::views::split (L'\n');
     bool firstLine = true;
 
-    for (auto line : lines)
+    for (const auto & line : lines)
     {
         if (!firstLine)
         {
