@@ -435,8 +435,10 @@ void CConsole::SetColor (WORD attr)
     // Format: ESC [ <foreground> ; <background> m
     // Example: "\x1b[91;40m" = bright red text on black background
     //
+    // Using format_to to avoid temporary string allocation
+    //
 
-    m_strBuffer.append (format (AnsiCodes::SGR_COLOR_FORMAT, nAnsiForeground, nAnsiBackground));
+    std::format_to (std::back_inserter (m_strBuffer), AnsiCodes::SGR_COLOR_FORMAT, nAnsiForeground, nAnsiBackground);
 }
 
 

@@ -52,7 +52,7 @@ public:
     WORD              GetTextAttrForFile (const WIN32_FIND_DATA & wfd);
     ValidationResult  ValidateEnvironmentVariable (void);
 
-    WORD         m_rgAttributes[EAttribute::__count];
+    WORD         m_rgAttributes[EAttribute::__count] = { 0 };
     TextAttrMap  m_mapExtensionToTextAttr;
 
 
