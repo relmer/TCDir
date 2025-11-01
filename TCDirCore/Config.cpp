@@ -148,6 +148,8 @@ void CConfig::Initialize (WORD wDefaultAttr)
     m_rgAttributes[EAttribute::SeparatorLine]           = FC_LightBlue;
     m_rgAttributes[EAttribute::Error]                   = FC_LightRed;
 
+    
+
     InitializeExtensionToTextAttrMap();
     ApplyUserColorOverrides();
 }
@@ -178,6 +180,7 @@ void CConfig::InitializeExtensionToTextAttrMap (void)
         ASSERT (!m_mapExtensionToTextAttr.contains (strExtension));
 
         m_mapExtensionToTextAttr[strExtension] = textAttr.m_wAttr;
+        m_mapExtensionSources[strExtension] = EAttributeSource::Default;
     }
 }
 
@@ -202,7 +205,9 @@ void CConfig::ApplyUserColorOverrides (void)
     DWORD   cchExcludingNull = 0;
     wstring envValue;
 
-
+    // Clear previous validation results
+    m_lastParseResult.warnings.clear();
+    m_lastParseResult.errors.clear();
 
     //
     // Read environment variable directly into wstring
@@ -256,13 +261,33 @@ void CConfig::ProcessColorOverrideEntry (wstring_view entry)
     WORD         colorAttr = 0;
 
 
+    // Skip empty entries (from trailing semicolons or multiple semicolons)
+    entry = TrimWhitespace(entry);
+    BAIL_OUT_IF (entry.empty(), S_OK);
         
     hr = ParseKeyAndValue (entry, keyView, valueView);
-    CHR (hr);
+    if (FAILED(hr))
+    {
+        wstring msg = L"Invalid entry format: '";
+        msg += entry;
+        msg += L"' (expected format: key=value)";
+        m_lastParseResult.errors.push_back(msg);
+        BAIL_OUT_IF(TRUE, S_OK);
+    }
 
     BAIL_OUT_IF (keyView.empty(), S_OK);
 
     colorAttr = ParseColorSpec (valueView);
+    if (colorAttr == 0)
+    {
+        wstring msg = L"Invalid color specification: '";
+        msg += valueView;
+        msg += L"' in entry '";
+        msg += entry;
+        msg += L"'";
+        m_lastParseResult.errors.push_back(msg);
+        BAIL_OUT_IF(TRUE, S_OK);
+    }
     
     //
     // Apply the override based on key type
@@ -276,12 +301,18 @@ void CConfig::ProcessColorOverrideEntry (wstring_view entry)
     {
         ProcessDisplayAttributeOverride (keyView[0], colorAttr);
     }
+    else
+    {
+        wstring msg = L"Invalid key: '";
+        msg += keyView;
+        msg += L"' (expected single character or file extension starting with '.')";
+        m_lastParseResult.errors.push_back(msg);
+    }
 
 
 Error:
     return;
 }
-
 
 
 
@@ -300,6 +331,7 @@ void CConfig::ProcessFileExtensionOverride (wstring_view extension, WORD colorAt
     
     std::ranges::transform (key, key.begin(), towlower);
     m_mapExtensionToTextAttr[key] = colorAttr;
+    m_mapExtensionSources[key] = EAttributeSource::Environment;
 }
 
 
@@ -343,6 +375,14 @@ void CConfig::ProcessDisplayAttributeOverride (wchar_t attrChar, WORD colorAttr)
     if (iter != std::ranges::end (s_attrMappings))
     {
         m_rgAttributes[iter->attr] = colorAttr;
+        m_rgAttributeSources[iter->attr] = EAttributeSource::Environment;
+    }
+    else
+    {
+        wstring msg = L"Invalid display attribute character: '";
+        msg += attrChar;
+        msg += L"' (valid: D,T,A,-,S,R,I,H,E,F)";
+        m_lastParseResult.errors.push_back(msg);
     }
 }
 
@@ -565,4 +605,21 @@ WORD CConfig::GetTextAttrForFile (const WIN32_FIND_DATA & wfd)
 
 Error:
     return textAttr;
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CConfig::ValidateEnvironmentVariable
+//
+//  Returns the validation results collected during ApplyUserColorOverrides
+//
+////////////////////////////////////////////////////////////////////////////////
+
+CConfig::ValidationResult CConfig::ValidateEnvironmentVariable (void)
+{
+    return m_lastParseResult;
 }

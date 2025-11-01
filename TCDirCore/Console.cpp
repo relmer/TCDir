@@ -520,20 +520,129 @@ void CConsole::SetColor (WORD attr)
 
 
 
-#ifdef _DEBUG
 ////////////////////////////////////////////////////////////////////////////////
 //
-//  CConsole::Test
+//  CConsole::DisplayConfigurationTable
 //
-//  
+//  Display all color configuration with sources (Default vs Environment)
 //
 ////////////////////////////////////////////////////////////////////////////////  
 
-void CConsole::Test (void)
+void CConsole::DisplayConfigurationTable (void)
 {
-    //TestCanWriteMoreLinesThanWindowSize();
-    //TestCanScrollWindow();
+    static constexpr int COLUMN_WIDTH_ATTR = 25;
+    static constexpr int COLUMN_WIDTH_VALUE = 10;
+    static constexpr int COLUMN_WIDTH_SOURCE = 15;
 
-    //exit (0);
+    // Get attribute names
+    struct AttrInfo
+    {
+        LPCWSTR name;
+        CConfig::EAttribute attr;
+    };
+
+    static constexpr AttrInfo s_attrInfos[] =
+    {
+        { L"Default",                CConfig::EAttribute::Default                 },
+        { L"Date",                   CConfig::EAttribute::Date                    },
+        { L"Time",                   CConfig::EAttribute::Time                    },
+        { L"File Attribute Present", CConfig::EAttribute::FileAttributePresent    },
+        { L"File Attribute Absent",  CConfig::EAttribute::FileAttributeNotPresent },
+        { L"Size",                   CConfig::EAttribute::Size                    },
+        { L"Directory",              CConfig::EAttribute::Directory               },
+        { L"Information",            CConfig::EAttribute::Information             },
+        { L"Info Highlight",         CConfig::EAttribute::InformationHighlight    },
+        { L"Separator Line",         CConfig::EAttribute::SeparatorLine           },
+        { L"Error",                  CConfig::EAttribute::Error                   },
+    };
+
+    Puts (CConfig::EAttribute::Information, L"");
+    Puts (CConfig::EAttribute::Information, L"Current Display Attribute Configuration:");
+
+    // Header
+    wstring header = format (L"  {:<{}}  {:<{}}  {:<{}}", 
+        L"Attribute Type", COLUMN_WIDTH_ATTR,
+        L"Value", COLUMN_WIDTH_VALUE,
+        L"Source", COLUMN_WIDTH_SOURCE);
+    Puts (CConfig::EAttribute::Information, header.c_str());
+
+    // Separator line
+    wstring separator = L"  ";
+    separator += wstring(COLUMN_WIDTH_ATTR + COLUMN_WIDTH_VALUE + COLUMN_WIDTH_SOURCE + 4, L'─');
+    Puts (CConfig::EAttribute::SeparatorLine, separator.c_str());
+
+    // Display each attribute
+    for (const auto& info : s_attrInfos)
+    {
+        WORD attr = m_configPtr->m_rgAttributes[info.attr];
+        LPCWSTR source = (m_configPtr->m_rgAttributeSources[info.attr] == CConfig::EAttributeSource::Environment) 
+            ? L"Environment" : L"Default";
+
+        // Format: name, colored block, source
+        wstring line = format(L"  {:<{}}  ", info.name, COLUMN_WIDTH_ATTR);
+        m_strBuffer.append(line);
+        
+        // Add colored block
+        SetColor(attr);
+        m_strBuffer.append(L"███");  // Unicode block character
+        SetColor(m_configPtr->m_rgAttributes[CConfig::EAttribute::Information]);
+        
+        line = format(L"       {:<{}}", source, COLUMN_WIDTH_SOURCE);
+        m_strBuffer.append(line);
+        m_strBuffer.append(L"\n");
+    }
+
+    // Display file extension colors (sample of configured extensions)
+    Puts (CConfig::EAttribute::Information, L"");
+    Puts (CConfig::EAttribute::Information, L"File Extension Color Configuration (sample):");
+
+    // Header
+    header = format (L"  {:<{}}  {:<{}}  {:<{}}", 
+        L"Extension", COLUMN_WIDTH_ATTR,
+        L"Value", COLUMN_WIDTH_VALUE,
+        L"Source", COLUMN_WIDTH_SOURCE);
+    Puts (CConfig::EAttribute::Information, header.c_str());
+
+    // Separator line
+    Puts (CConfig::EAttribute::SeparatorLine, separator.c_str());
+
+    // Collect and sort extensions for display (show a sample)
+    vector<pair<wstring, WORD>> extensions;
+    for (const auto& [ext, attr] : m_configPtr->m_mapExtensionToTextAttr)
+    {
+        extensions.emplace_back(ext, attr);
+    }
+    
+    std::ranges::sort(extensions, [](const auto& a, const auto& b) { return a.first < b.first; });
+
+    // Display up to 20 extensions
+    size_t count = 0;
+    for (const auto& [ext, attr] : extensions)
+    {
+        if (count++ >= 20) 
+        {
+            Puts(CConfig::EAttribute::Information, L"  ... (and more)");
+            break;
+        }
+
+        auto sourceIter = m_configPtr->m_mapExtensionSources.find(ext);
+        LPCWSTR source = (sourceIter != m_configPtr->m_mapExtensionSources.end() && 
+                         sourceIter->second == CConfig::EAttributeSource::Environment) 
+            ? L"Environment" : L"Default";
+
+        wstring line = format(L"  {:<{}}  ", ext.c_str(), COLUMN_WIDTH_ATTR);
+        m_strBuffer.append(line);
+        
+        // Add colored block
+        SetColor(attr);
+        m_strBuffer.append(L"███");
+        SetColor(m_configPtr->m_rgAttributes[CConfig::EAttribute::Information]);
+        
+        line = format(L"       {:<{}}", source, COLUMN_WIDTH_SOURCE);
+        m_strBuffer.append(line);
+        m_strBuffer.append(L"\n");
+    }
+
+    Puts (CConfig::EAttribute::Default, L"");
 }
-#endif _DEBUG
+

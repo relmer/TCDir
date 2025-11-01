@@ -6,6 +6,7 @@
 
 
 
+
 class CConsole
 {
 public:
@@ -13,34 +14,33 @@ public:
     CConsole   (void);
      ~CConsole (void);
     
-    HRESULT Initialize           (shared_ptr<CConfig> configPtr);
-    void    Putchar              (WORD attr, WCHAR ch);
-    void    Puts                 (int attributeIndex, LPCWSTR psz);
-    int     Printf               (CConfig::EAttribute attributeIndex, LPCWSTR pszFormat, ...);
-    int     Printf               (WORD attr, LPCWSTR pszFormat, ...);
-    void    PrintColorfulString  (LPCWSTR psz);
-    void    WriteSeparatorLine   (WORD attr);
-    HRESULT Flush                (void);
+    HRESULT Initialize                (shared_ptr<CConfig> configPtr);
+    void    Putchar                   (WORD attr, WCHAR ch);
+    void    Puts                      (int attributeIndex, LPCWSTR psz);
+    int     Printf                    (CConfig::EAttribute attributeIndex, LPCWSTR pszFormat, ...);
+    int     Printf                    (WORD attr, LPCWSTR pszFormat, ...);
+    void    PrintColorfulString       (LPCWSTR psz);
+    void    WriteSeparatorLine        (WORD attr);
+    void    DisplayConfigurationTable (void);
+    HRESULT Flush                     (void);
 
-    UINT    GetWidth             (void)     { return m_cxConsoleWidth; }
+    UINT    GetWidth                  (void)     { return m_cxConsoleWidth; }
 
-#ifdef _DEBUG
-    void Test                    (void);
-#endif 
+    shared_ptr<CConfig> m_configPtr;
 
+    
 
 protected:
 
-    HRESULT InitializeConsoleMode             (void);
-    HRESULT InitializeConsoleWidth            (void);
-    void    SetColor                          (WORD attr);
+    HRESULT InitializeConsoleMode               (void);
+    HRESULT InitializeConsoleWidth              (void);
+    void    SetColor                            (WORD attr);
     void    ProcessMultiLineStringWithAttribute (wstring_view text, WORD attr);
 
     static constexpr size_t s_kcchInitialBufferSize = 10 * 1024 * 1024;
 
     HANDLE              m_hStdOut        = nullptr;
     bool                m_fIsRedirected  = true;    // True if redirected (e.g., in a unit test)
-    shared_ptr<CConfig> m_configPtr;
     WORD                m_attrDefault    = FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE;
     wstring             m_strBuffer;
     UINT                m_cxConsoleWidth = 80;

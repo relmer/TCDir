@@ -272,4 +272,54 @@ void DisplayUsage (__in CConsole * pConsole)
     
     pConsole->Puts (CConfig::EAttribute::Default, s_envVarExample[isPowerShell]);
     pConsole->Puts (CConfig::EAttribute::Default, L"");
+
+    //
+    // Check if TCDIR environment variable is set
+    //
+
+    WCHAR buffer[1];
+    DWORD result = GetEnvironmentVariableW (TCDIR_ENV_VAR_NAME, buffer, ARRAYSIZE(buffer));
+    
+    if (result > 0)  // Variable exists
+    {
+        // Get the config from console (it was already initialized and parsed)
+        auto configPtr = pConsole->m_configPtr;
+        if (configPtr)
+        {
+            auto validationResult = configPtr->ValidateEnvironmentVariable();
+            
+            //
+            // Display any validation errors or warnings
+            //
+            
+            if (validationResult.hasIssues())
+            {
+                pConsole->Puts (CConfig::EAttribute::Error, L"");
+                pConsole->Puts (CConfig::EAttribute::Error, L"TCDIR Configuration Issues Detected:");
+                pConsole->Puts (CConfig::EAttribute::Error, L"");
+                
+                for (const auto& error : validationResult.errors)
+                {
+                    wstring msg = L"  ? Error: ";
+                    msg += error;
+                    pConsole->Puts (CConfig::EAttribute::Error, msg.c_str());
+                }
+                
+                for (const auto& warning : validationResult.warnings)
+                {
+                    wstring msg = L"  ? Warning: ";
+                    msg += warning;
+                    pConsole->Puts (CConfig::EAttribute::Information, msg.c_str());
+                }
+                
+                pConsole->Puts (CConfig::EAttribute::Default, L"");
+            }
+            
+            //
+            // Display the configuration table
+            //
+            
+            pConsole->DisplayConfigurationTable();
+        }
+    }
 }

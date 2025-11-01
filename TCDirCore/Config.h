@@ -3,7 +3,9 @@
 
 
 
+
 #define TCDIR_ENV_VAR_NAME L"TCDIR"
+
 
 
 
@@ -23,6 +25,12 @@ protected:
 
 
 public:
+    enum class EAttributeSource
+    {
+        Default,
+        Environment
+    };
+
     enum EAttribute
     {
         Default,
@@ -47,15 +55,19 @@ public:
         bool            hasIssues() const { return !warnings.empty() || !errors.empty(); }
     };
 
+
     
     void              Initialize         (WORD wDefaultAttr);
     WORD              GetTextAttrForFile (const WIN32_FIND_DATA & wfd);
     ValidationResult  ValidateEnvironmentVariable (void);
 
-    WORD         m_rgAttributes[EAttribute::__count] = { 0 };
-    TextAttrMap  m_mapExtensionToTextAttr;
+    WORD                                 m_rgAttributes[EAttribute::__count]       = { 0 };
+    EAttributeSource                     m_rgAttributeSources[EAttribute::__count] = { EAttributeSource::Default };
+    TextAttrMap                          m_mapExtensionToTextAttr;
+    unordered_map<wstring, EAttributeSource> m_mapExtensionSources;
 
 
+    
 protected:
     void         InitializeExtensionToTextAttrMap     (void);
     void         ApplyUserColorOverrides              (void);
@@ -67,8 +79,14 @@ protected:
     WORD         ParseColorName                       (wstring_view colorName, bool isBackground);
     wstring_view TrimWhitespace                       (wstring_view str);
 
+    ValidationResult m_lastParseResult;
+
     static const STextAttr s_rgTextAttrs[];
 };
+
+
+
+
 
 
 
