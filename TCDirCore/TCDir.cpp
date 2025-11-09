@@ -178,7 +178,7 @@ void DisplayUsage (__in CConsole * pConsole)
 {
     static LPCWSTR s_usageLines[] =
     {
-        L"Copyright © 2004-" VERSION_YEAR_WSTRING  L" by Robert Elmer",
+        L"Copyright ï¿½ 2004-" VERSION_YEAR_WSTRING  L" by Robert Elmer",
         L"",
         L"TCDIR [drive:][path][filename] [/A[[:]attributes]] [/O[[:]sortorder]] [/S]",
         L"",
@@ -256,7 +256,7 @@ void DisplayUsage (__in CConsole * pConsole)
 
     pConsole->Puts (CConfig::EAttribute::Default, L"");
     pConsole->PrintColorfulString (L"Technicolor");
-    pConsole->Puts (CConfig::EAttribute::Default, L" Directory Version " VERSION_WSTRING);
+    pConsole->Puts (CConfig::EAttribute::Default, L" Directory version " VERSION_WSTRING);
     
     for (LPCWSTR line : s_usageLines)
     {
