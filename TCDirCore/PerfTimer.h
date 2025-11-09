@@ -24,6 +24,8 @@ public:
     void Stop  ();
     void Print ();
 
+    bool IsRunning () const { return m_fRunning; }
+
 
 protected:
     double GetReportingMetric (double duration) const
