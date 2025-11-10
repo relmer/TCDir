@@ -19,11 +19,16 @@ public:
 
     void List         (const wstring & mask);
 
-protected:    
+protected:
     HRESULT ProcessDirectory           (const CDriveInfo & driveInfo, 
                                         filesystem::path dirPath, 
                                         filesystem::path fileSpec, 
                                         CResultsDisplayerBase::EDirectoryLevel level);
+    
+    HRESULT ProcessDirectoryMultiThreaded (const CDriveInfo & driveInfo, 
+                                          filesystem::path dirPath, 
+                                          filesystem::path fileSpec,
+                                          CResultsDisplayerBase::EDirectoryLevel level);
     
     HRESULT RecurseIntoSubdirectories  (const CDriveInfo & driveInfo,
                                         filesystem::path dirPath, 

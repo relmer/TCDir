@@ -21,7 +21,8 @@ CCommandLine::CCommandLine (void) :
     m_sortorder             (ESortOrder::SO_DEFAULT),   
     m_sortdirection         (ESortDirection::SD_ASCENDING),
     m_fWideListing          (false),
-    m_fPerfTimer            (false)
+    m_fPerfTimer            (false),
+    m_fMultiThreaded        (false)
 {          
     //
     // Define the ranking of sort attributes.  If the requested
@@ -145,12 +146,13 @@ HRESULT CCommandLine::HandleSwitch (LPCWSTR pszArg)
 
     SwitchEntry allSwitches[] =
     {
-        {  L's',   &m_fRecurse,     NULL                             },
-        {  L'o',   NULL,            &CCommandLine::OrderByHandler    },
-        {  L'a',   NULL,            &CCommandLine::AttributeHandler  },
-        {  L'w',   &m_fWideListing, NULL                             },
-        {  L'p',   &m_fPerfTimer,   NULL                             },
-    };      
+        {  L's',   &m_fRecurse,        NULL                             },
+        {  L'o',   NULL,               &CCommandLine::OrderByHandler    },
+        {  L'a',   NULL,               &CCommandLine::AttributeHandler  },
+        {  L'w',   &m_fWideListing,    NULL                             },
+        {  L'p',   &m_fPerfTimer,      NULL                             },
+        {  L'm',   &m_fMultiThreaded,  NULL                             },
+    };
     
     HRESULT hr = S_OK;
 	WCHAR   ch = L'\0';

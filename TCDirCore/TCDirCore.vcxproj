@@ -156,6 +156,7 @@
     <ClInclude Include="Ehm.h" />
     <ClInclude Include="FileComparator.h" />
     <ClInclude Include="Flag.h" />
+    <ClInclude Include="MultiThreadedLister.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="PerfTimer.h" />
     <ClInclude Include="ResultsDisplayerBase.h" />
@@ -164,6 +165,7 @@
     <ClInclude Include="TCDir.h" />
     <ClInclude Include="UniqueFindHandle.h" />
     <ClInclude Include="Version.h" />
+    <ClInclude Include="WorkQueue.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="CommandLine.cpp" />
@@ -173,6 +175,7 @@
     <ClCompile Include="DriveInfo.cpp" />
     <ClCompile Include="Ehm.cpp" />
     <ClCompile Include="FileComparator.cpp" />
+    <ClCompile Include="MultiThreadedLister.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>

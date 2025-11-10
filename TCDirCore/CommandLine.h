@@ -65,7 +65,8 @@ public:
     ESortDirection     m_sortdirection;        
     list<std::wstring> m_listMask;
     bool               m_fWideListing;
-    bool               m_fPerfTimer;          // Enable performance timer  
+    bool               m_fPerfTimer;          // Enable performance timer
+    bool               m_fMultiThreaded;      // Enable multi-threaded enumeration
 
 
 protected: 

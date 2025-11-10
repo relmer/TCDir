@@ -6,6 +6,7 @@
 #include "Console.h"
 #include "FileComparator.h"
 #include "Flag.h"
+#include "MultiThreadedLister.h"
 #include "ResultsDisplayerNormal.h"
 #include "ResultsDisplayerWide.h"
 #include "UniqueFindHandle.h"
@@ -117,8 +118,16 @@ void CDirectoryLister::List (const wstring & mask)
     {
         CDriveInfo driveInfo (dirPath);
 
-        hr = ProcessDirectory (driveInfo, dirPath, fileSpec, CResultsDisplayerBase::EDirectoryLevel::Initial);
-        CHR (hr);
+        if (m_cmdLinePtr->m_fMultiThreaded && m_cmdLinePtr->m_fRecurse)
+        {
+            hr = ProcessDirectoryMultiThreaded (driveInfo, dirPath, fileSpec, CResultsDisplayerBase::EDirectoryLevel::Initial);
+            CHR (hr);
+        }
+        else
+        {
+            hr = ProcessDirectory (driveInfo, dirPath, fileSpec, CResultsDisplayerBase::EDirectoryLevel::Initial);
+            CHR (hr);
+        }
     }
 
 Error:
@@ -209,6 +218,47 @@ HRESULT CDirectoryLister::ProcessDirectory (const CDriveInfo & driveInfo, filesy
     }
 
 Error:    
+    return hr;
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CDirectoryLister::ProcessDirectoryMultiThreaded
+//
+//  
+//
+////////////////////////////////////////////////////////////////////////////////
+
+HRESULT CDirectoryLister::ProcessDirectoryMultiThreaded (const CDriveInfo & driveInfo,
+                                                         filesystem::path dirPath,
+                                                         filesystem::path fileSpec,
+                                                         CResultsDisplayerBase::EDirectoryLevel level)
+{
+    HRESULT hr = S_OK;
+
+    
+
+    {
+        // Create multithreaded lister and process the directory tree
+        CMultiThreadedLister mtLister (m_cmdLinePtr, m_consolePtr, m_configPtr);
+
+        hr = mtLister.ProcessDirectoryMultiThreaded (driveInfo, dirPath, fileSpec,
+                                                     m_displayer.get (), level,
+                                                     m_uliSizeOfAllFilesFound,
+                                                     m_cFilesFound,
+                                                     m_cDirectoriesFound);
+        CHR (hr);
+
+        // Display summary
+        CDirectoryInfo summaryDirInfo (dirPath, fileSpec);
+        m_displayer->DisplayListingSummary (summaryDirInfo, m_cFilesFound, m_cDirectoriesFound, m_uliSizeOfAllFilesFound);
+    }
+
+Error:
     return hr;
 }
 
