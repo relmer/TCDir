@@ -13,6 +13,8 @@
 
 
 
+
+
 ////////////////////////////////////////////////////////////////////////////////
 //
 //  CMultiThreadedLister::CMultiThreadedLister
@@ -30,6 +32,9 @@ CMultiThreadedLister::CMultiThreadedLister (shared_ptr<CCommandLine> pCmdLine, s
 }
 
 
+
+
+
 ////////////////////////////////////////////////////////////////////////////////
 //
 //  CMultiThreadedLister::~CMultiThreadedLister
@@ -43,6 +48,9 @@ CMultiThreadedLister::~CMultiThreadedLister ()
 }
 
 
+
+
+
 ////////////////////////////////////////////////////////////////////////////////
 //
 //  CMultiThreadedLister::ProcessDirectoryMultiThreaded
@@ -52,9 +60,9 @@ CMultiThreadedLister::~CMultiThreadedLister ()
 ////////////////////////////////////////////////////////////////////////////////
 
 HRESULT CMultiThreadedLister::ProcessDirectoryMultiThreaded (const CDriveInfo & driveInfo,
-                                                            filesystem::path dirPath,
-                                                            filesystem::path fileSpec,
-                                                            CResultsDisplayerBase * pDisplayer,
+                                                            const filesystem::path & dirPath,
+                                                            const filesystem::path & fileSpec,
+                                                            CResultsDisplayerBase & displayer,
                                                             CResultsDisplayerBase::EDirectoryLevel level,
                                                             ULARGE_INTEGER & uliSizeOfAllFilesFound,
                                                             UINT & cFilesFound,
@@ -80,8 +88,13 @@ HRESULT CMultiThreadedLister::ProcessDirectoryMultiThreaded (const CDriveInfo & 
     }
 
     // Start consuming immediately (streaming output)
-    hr = PrintDirectoryTree (pRootDirInfo, driveInfo, pDisplayer, level,
-                           uliSizeOfAllFilesFound, cFilesFound, cDirectoriesFound);
+    hr = PrintDirectoryTree (pRootDirInfo, 
+                             driveInfo, 
+                             displayer, 
+                             level,
+                             uliSizeOfAllFilesFound, 
+                             cFilesFound, 
+                             cDirectoriesFound);
     CHR (hr);
 
     // Signal work queue that no more work is coming
@@ -99,6 +112,9 @@ HRESULT CMultiThreadedLister::ProcessDirectoryMultiThreaded (const CDriveInfo & 
 Error:
     return hr;
 }
+
+
+
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -187,6 +203,8 @@ void CMultiThreadedLister::EnumerateDirectoryNode (shared_ptr<CDirectoryInfo> pD
         hr = E_FAIL;
     }
 
+
+
 Error:
     // Update final status and notify waiting consumer
     {
@@ -195,8 +213,12 @@ Error:
                                          : CDirectoryInfo::Status::Done;
         pDirInfo->m_hr = hr;
     }
+
     pDirInfo->m_cvStatusChanged.notify_one ();
 }
+
+
+
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -226,6 +248,9 @@ void CMultiThreadedLister::WorkerThreadFunc ()
 }
 
 
+
+
+
 ////////////////////////////////////////////////////////////////////////////////
 //
 //  CMultiThreadedLister::PrintDirectoryTree
@@ -236,7 +261,7 @@ void CMultiThreadedLister::WorkerThreadFunc ()
 
 HRESULT CMultiThreadedLister::PrintDirectoryTree (shared_ptr<CDirectoryInfo> pDirInfo,
                                                   const CDriveInfo & driveInfo,
-                                                  CResultsDisplayerBase * pDisplayer,
+                                                  CResultsDisplayerBase & displayer,
                                                   CResultsDisplayerBase::EDirectoryLevel level,
                                                   ULARGE_INTEGER & uliSizeOfAllFilesFound,
                                                   UINT & cFilesFound,
@@ -249,6 +274,7 @@ HRESULT CMultiThreadedLister::PrintDirectoryTree (shared_ptr<CDirectoryInfo> pDi
     // Wait for this node to complete enumeration
     {
         unique_lock<mutex> lock (pDirInfo->m_mutex);
+
         pDirInfo->m_cvStatusChanged.wait (lock, [&]() {
             return pDirInfo->m_status == CDirectoryInfo::Status::Done ||
                    pDirInfo->m_status == CDirectoryInfo::Status::Error ||
@@ -258,36 +284,37 @@ HRESULT CMultiThreadedLister::PrintDirectoryTree (shared_ptr<CDirectoryInfo> pDi
         // Check for cancellation
         if (m_fCancelRequested.load (memory_order_relaxed))
         {
-            hr = E_ABORT;
-            goto Error;
+            CHR (E_ABORT);
         }
 
         // Check for error
         if (pDirInfo->m_status == CDirectoryInfo::Status::Error)
         {
             m_consolePtr->Printf (CConfig::EAttribute::Error,
-                                L"  Error accessing directory: %s: HRESULT 0x%08X\n",
-                                pDirInfo->m_dirPath.c_str (), pDirInfo->m_hr);
-            hr = pDirInfo->m_hr;
-            goto Error;
+                                  L"  Error accessing directory: %s: HRESULT 0x%08X\n",
+                                  pDirInfo->m_dirPath.c_str (), 
+                                  pDirInfo->m_hr);
+            CHR (pDirInfo->m_hr);
         }
     }
 
     // Sort the results using FileComparator
     {
         lock_guard<mutex> lock (pDirInfo->m_mutex);
+
         std::sort (pDirInfo->m_vMatches.begin (), pDirInfo->m_vMatches.end (), 
-                  FileComparator (m_cmdLinePtr));
+                   FileComparator (m_cmdLinePtr));
     }
 
     // Display the results
-    pDisplayer->DisplayResults (driveInfo, *pDirInfo, level);
+    displayer.DisplayResults (driveInfo, *pDirInfo, level);
 
     // Update global counters
     {
         lock_guard<mutex> lock (pDirInfo->m_mutex);
-        cFilesFound += pDirInfo->m_cFiles;
-        cDirectoriesFound += pDirInfo->m_cSubDirectories;
+
+        cFilesFound                     += pDirInfo->m_cFiles;
+        cDirectoriesFound               += pDirInfo->m_cSubDirectories;
         uliSizeOfAllFilesFound.QuadPart += pDirInfo->m_uliBytesUsed.QuadPart;
     }
 
@@ -296,19 +323,25 @@ HRESULT CMultiThreadedLister::PrintDirectoryTree (shared_ptr<CDirectoryInfo> pDi
     {
         if (m_fCancelRequested.load (memory_order_relaxed))
         {
-            hr = E_ABORT;
-            goto Error;
+            CHR (E_ABORT);
         }
 
-        hr = PrintDirectoryTree (pChild, driveInfo, pDisplayer, 
-                               CResultsDisplayerBase::EDirectoryLevel::Subdirectory,
-                               uliSizeOfAllFilesFound, cFilesFound, cDirectoriesFound);
+        hr = PrintDirectoryTree (pChild, 
+                                 driveInfo, 
+                                 displayer, 
+                                 CResultsDisplayerBase::EDirectoryLevel::Subdirectory,
+                                 uliSizeOfAllFilesFound, 
+                                 cFilesFound, 
+                                 cDirectoriesFound);
         IGNORE_RETURN_VALUE (hr, S_OK);
     }
 
 Error:
     return hr;
 }
+
+
+
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -377,6 +410,9 @@ HRESULT CMultiThreadedLister::AddMatchToList (__in WIN32_FIND_DATA * pwfd, __in 
 //Error:
     return hr;
 }
+
+
+
 
 
 ////////////////////////////////////////////////////////////////////////////////

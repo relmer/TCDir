@@ -26,9 +26,9 @@ public:
     ~CMultiThreadedLister ();
 
     HRESULT ProcessDirectoryMultiThreaded (const CDriveInfo & driveInfo, 
-                                          filesystem::path dirPath, 
-                                          filesystem::path fileSpec,
-                                          CResultsDisplayerBase * pDisplayer,
+                                          const filesystem::path & dirPath, 
+                                          const filesystem::path & fileSpec,
+                                          CResultsDisplayerBase & displayer,
                                           CResultsDisplayerBase::EDirectoryLevel level,
                                           ULARGE_INTEGER & uliSizeOfAllFilesFound,
                                           UINT & cFilesFound,
@@ -39,7 +39,7 @@ protected:
     void    WorkerThreadFunc              ();
     HRESULT PrintDirectoryTree            (shared_ptr<CDirectoryInfo> pDirInfo, 
                                           const CDriveInfo & driveInfo,
-                                          CResultsDisplayerBase * pDisplayer,
+                                          CResultsDisplayerBase & displayer,
                                           CResultsDisplayerBase::EDirectoryLevel level,
                                           ULARGE_INTEGER & uliSizeOfAllFilesFound,
                                           UINT & cFilesFound,
