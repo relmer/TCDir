@@ -51,6 +51,7 @@ protected:
 private:
     HRESULT PerformEnumeration            (shared_ptr<CDirectoryInfo> pDirInfo);
     void    EnqueueChildDirectory         (const WIN32_FIND_DATA & wfd, shared_ptr<CDirectoryInfo> pDirInfo);
+    void    StopWorkers                   ();
 
 
     shared_ptr<CCommandLine>  m_cmdLinePtr;
@@ -58,4 +59,5 @@ private:
     shared_ptr<CConfig>       m_configPtr;
     atomic<bool>              m_fCancelRequested;
     CWorkQueue<WorkItem>      m_workQueue;
+    vector<thread>            m_workers;
 };

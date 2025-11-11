@@ -7,7 +7,9 @@
 	"settings": {
 		"files.associations": {
 			"list": "cpp",
-			"atomic": "cpp"
+			"atomic": "cpp",
+			"vector": "cpp",
+			"thread": "cpp"
 		}
 	}
 }

@@ -45,6 +45,34 @@ CMultiThreadedLister::CMultiThreadedLister (shared_ptr<CCommandLine> pCmdLine, s
 
 CMultiThreadedLister::~CMultiThreadedLister ()
 {
+    StopWorkers ();
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CMultiThreadedLister::StopWorkers
+//
+//  Ensures worker threads are stopped and joined
+//
+////////////////////////////////////////////////////////////////////////////////
+
+void CMultiThreadedLister::StopWorkers ()
+{
+    m_workQueue.SetDone ();
+
+    for (auto & worker : m_workers)
+    {
+        if (worker.joinable ())
+        {
+            worker.join ();
+        }
+    }
+
+    m_workers.clear ();
 }
 
 
@@ -79,12 +107,11 @@ HRESULT CMultiThreadedLister::ProcessDirectoryMultiThreaded (const CDriveInfo & 
     m_workQueue.Push (WorkItem { pRootDirInfo });
 
     // Create worker threads
-    vector<thread> workers;
-    const size_t numThreads = thread::hardware_concurrency ();
+    const size_t numThreads = max(1u, thread::hardware_concurrency ());
 
     for (size_t i = 0; i < numThreads; ++i)
     {
-        workers.emplace_back ([this]() { WorkerThreadFunc (); });
+        m_workers.emplace_back ([this]() { WorkerThreadFunc (); });
     }
 
     // Start consuming immediately (streaming output)
@@ -97,19 +124,8 @@ HRESULT CMultiThreadedLister::ProcessDirectoryMultiThreaded (const CDriveInfo & 
                              cDirectoriesFound);
     CHR (hr);
 
-    // Signal work queue that no more work is coming
-    m_workQueue.SetDone ();
-
-    // Wait for all workers to finish
-    for (auto & worker : workers)
-    {
-        if (worker.joinable ())
-        {
-            worker.join ();
-        }
-    }
-
 Error:
+    StopWorkers ();
     return hr;
 }
 
@@ -172,9 +188,9 @@ HRESULT CMultiThreadedLister::PerformEnumeration (shared_ptr<CDirectoryInfo> pDi
     filesystem::path pathAndFileSpec;
     DWORD            dwError          = 0;
     
+    
 
-
-    // Build search path
+    // Build search path for files matching the pattern
     try
     {
         pathAndFileSpec = pDirInfo->m_dirPath / pDirInfo->m_fileSpec;
@@ -184,52 +200,73 @@ HRESULT CMultiThreadedLister::PerformEnumeration (shared_ptr<CDirectoryInfo> pDi
         return E_INVALIDARG;
     }
 
+    // Search for files matching the file spec
     hFind.reset (FindFirstFile (pathAndFileSpec.c_str (), &wfd));
-    CWRA (hFind.get () != INVALID_HANDLE_VALUE);
-
-    do
+    
+    if (hFind.get () != INVALID_HANDLE_VALUE)
     {
-        if (m_fCancelRequested.load (memory_order_relaxed))
+        do
         {
-            break;
-        }
-
-        // Skip "." and ".."
-        if (IsDots (wfd.cFileName))
-        {
-            continue;
-        }
-
-        // Skip this file if it lacks required attribute or has excluded attributes
-        if (!(CFlag::IsSet    (wfd.dwFileAttributes, m_cmdLinePtr->m_dwAttributesRequired) &&
-              CFlag::IsNotSet (wfd.dwFileAttributes, m_cmdLinePtr->m_dwAttributesExcluded)))
-        {
-            continue;
-        }
-
-        // Lock for thread-safe access to pDirInfo
-        {
-            lock_guard<mutex> lock (pDirInfo->m_mutex);
-
-            // Process this entry
-            AddMatchToList (const_cast<WIN32_FIND_DATA *> (&wfd), pDirInfo.get());
-            
-            // If it's a directory and we're recursing, create child node
-            if (CFlag::IsSet (wfd.dwFileAttributes, FILE_ATTRIBUTE_DIRECTORY) && 
-                m_cmdLinePtr->m_fRecurse)
+            if (m_fCancelRequested.load (memory_order_relaxed))
             {
-                EnqueueChildDirectory (wfd, pDirInfo);
+                break;
             }
+
+            // Skip "." and ".."
+            if (IsDots (wfd.cFileName))
+            {
+                continue;
+            }
+
+            // Check if this entry should be displayed based on attribute filters
+            if (CFlag::IsSet    (wfd.dwFileAttributes, m_cmdLinePtr->m_dwAttributesRequired) &&
+                CFlag::IsNotSet (wfd.dwFileAttributes, m_cmdLinePtr->m_dwAttributesExcluded))
+            {
+                lock_guard<mutex> lock (pDirInfo->m_mutex);
+                AddMatchToList (const_cast<WIN32_FIND_DATA *> (&wfd), pDirInfo.get());
+            }
+
+        } 
+        while (FindNextFile (hFind.get (), &wfd));
+
+        // Check if loop ended due to error or naturally
+        dwError = GetLastError ();
+        if (dwError != ERROR_NO_MORE_FILES)
+        {
+            CWRA (dwError);
         }
+    }
 
-    } 
-    while (FindNextFile (hFind.get (), &wfd));
-
-    // Check if loop ended due to error or naturally
-    dwError = GetLastError ();
-    if (dwError != ERROR_NO_MORE_FILES)
+    // Now search for subdirectories if recursion is enabled
+    // This is a separate search using "*" to find all directories
+    if (m_cmdLinePtr->m_fRecurse)
     {
-        CWRA (dwError);
+        filesystem::path pathForDirs = pDirInfo->m_dirPath / L"*";
+        hFind.reset (FindFirstFile (pathForDirs.c_str (), &wfd));
+        
+        if (hFind.get () != INVALID_HANDLE_VALUE)
+        {
+            do
+            {
+                if (m_fCancelRequested.load (memory_order_relaxed))
+                {
+                    break;
+                }
+
+                if (IsDots (wfd.cFileName))
+                {
+                    continue;
+                }
+
+                // Enqueue all directories for recursion
+                if (CFlag::IsSet (wfd.dwFileAttributes, FILE_ATTRIBUTE_DIRECTORY))
+                {
+                    lock_guard<mutex> lock (pDirInfo->m_mutex);
+                    EnqueueChildDirectory (wfd, pDirInfo);
+                }
+            }
+            while (FindNextFile (hFind.get (), &wfd));
+        }
     }
 
 Error:
