@@ -22,7 +22,7 @@ CCommandLine::CCommandLine (void) :
     m_sortdirection         (ESortDirection::SD_ASCENDING),
     m_fWideListing          (false),
     m_fPerfTimer            (false),
-    m_fMultiThreaded        (false)
+    m_fMultiThreaded        (true)
 {          
     //
     // Define the ranking of sort attributes.  If the requested
@@ -154,12 +154,22 @@ HRESULT CCommandLine::HandleSwitch (LPCWSTR pszArg)
         {  L'm',   &m_fMultiThreaded,  NULL                             },
     };
     
-    HRESULT hr = S_OK;
-	WCHAR   ch = L'\0';
+    HRESULT hr       = S_OK;
+    WCHAR   ch       = L'\0';
+    bool    fDisable = false;
 
 
 
-	ch = (WCHAR) towlower (*pszArg);
+    ch = (WCHAR) towlower (*pszArg);
+
+    //
+    // Check if the next character is '-' to disable the flag
+    //
+
+    if (*(pszArg + 1) == L'-')
+    {
+        fDisable = true;
+    }
 
     // Default to E_INVALIDARG for unrecognized switches
     hr = E_INVALIDARG;
@@ -170,8 +180,8 @@ HRESULT CCommandLine::HandleSwitch (LPCWSTR pszArg)
         {
             if (entry.m_pfValueOfSwitch != NULL)
             {
-                *(entry.m_pfValueOfSwitch) = true;
-				hr = S_OK;
+                *(entry.m_pfValueOfSwitch) = !fDisable;
+                hr = S_OK;
             }
             else
             {
