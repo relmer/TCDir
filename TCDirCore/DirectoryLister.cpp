@@ -6,6 +6,7 @@
 #include "Console.h"
 #include "FileComparator.h"
 #include "Flag.h"
+#include "MultiThreadedLister.h"
 #include "ResultsDisplayerNormal.h"
 #include "ResultsDisplayerWide.h"
 #include "UniqueFindHandle.h"
@@ -72,9 +73,9 @@ CDirectoryLister::~CDirectoryLister (void)
 
 void CDirectoryLister::List (const wstring & mask)
 {
-    HRESULT          hr             = S_OK;
-    filesystem::path absolutePath    (filesystem::absolute(mask));
-    bool             exists        = false;
+    HRESULT          hr           = S_OK;
+    filesystem::path absolutePath   (filesystem::absolute(mask));
+    bool             exists       = false;
     std::error_code  ec;
     filesystem::path dirPath;
     filesystem::path fileSpec;    
@@ -117,8 +118,16 @@ void CDirectoryLister::List (const wstring & mask)
     {
         CDriveInfo driveInfo (dirPath);
 
-        hr = ProcessDirectory (driveInfo, dirPath, fileSpec, CResultsDisplayerBase::EDirectoryLevel::Initial);
-        CHR (hr);
+        if (m_cmdLinePtr->m_fMultiThreaded && m_cmdLinePtr->m_fRecurse)
+        {
+            hr = ProcessDirectoryMultiThreaded (driveInfo, dirPath, fileSpec, CResultsDisplayerBase::EDirectoryLevel::Initial);
+            CHR (hr);
+        }
+        else
+        {
+            hr = ProcessDirectory (driveInfo, dirPath, fileSpec, CResultsDisplayerBase::EDirectoryLevel::Initial);
+            CHR (hr);
+        }
     }
 
 Error:
@@ -137,45 +146,21 @@ Error:
 //
 ////////////////////////////////////////////////////////////////////////////////  
 
-HRESULT CDirectoryLister::ProcessDirectory (const CDriveInfo & driveInfo, filesystem::path dirPath, filesystem::path fileSpec, CResultsDisplayerBase::EDirectoryLevel level)
+HRESULT CDirectoryLister::ProcessDirectory (const CDriveInfo & driveInfo, 
+                                            const filesystem::path & dirPath, 
+                                            const filesystem::path & fileSpec, 
+                                            CResultsDisplayerBase::EDirectoryLevel level)
 {
-    HRESULT          hr              = S_OK;
-    CDirectoryInfo   di                (dirPath, fileSpec);
-    filesystem::path pathAndFileSpec = dirPath / fileSpec;
-    BOOL             fSuccess;                    
-    UniqueFindHandle hFind;
-    WIN32_FIND_DATA  wfd;                         
+    HRESULT          hr = S_OK;
+    CDirectoryInfo   di   (dirPath, fileSpec);
 
-    
+
 
     //
     // Search for matching files and directories
-    // 
+    //     
     
-    hFind.reset (FindFirstFile (pathAndFileSpec.c_str(), &wfd));
-    if (hFind.get() != INVALID_HANDLE_VALUE)
-    {
-        do 
-        {
-            if (!IsDots (wfd.cFileName))
-            {
-                //
-                // If the required attributes are present and the excluded attributes are not 
-                // then add the file to the list of matches for this directory
-                //
-                
-                if (CFlag::IsSet    (wfd.dwFileAttributes, m_cmdLinePtr->m_dwAttributesRequired) && 
-                    CFlag::IsNotSet (wfd.dwFileAttributes, m_cmdLinePtr->m_dwAttributesExcluded))
-                {
-                    hr = AddMatchToList (&wfd, &di);
-                    CHR (hr);
-                }
-            }
-                
-            fSuccess = FindNextFile (hFind.get(), &wfd);
-        }
-        while (fSuccess);        
-    }
+    CollectMatchingFilesAndDirectories (dirPath, fileSpec, di);
 
     //
     // Sort the results using FileComparator
@@ -218,13 +203,107 @@ Error:
 
 ////////////////////////////////////////////////////////////////////////////////
 //
+//  CDirectoryLister::CollectMatchingFilesAndDirectories
+//
+//  
+// 
+////////////////////////////////////////////////////////////////////////////////
+
+HRESULT CDirectoryLister::CollectMatchingFilesAndDirectories (const std::filesystem::path & dirPath, 
+                                                              const std::filesystem::path & fileSpec, 
+                                                              CDirectoryInfo & di)
+{
+    HRESULT          hr              = S_OK;
+    filesystem::path pathAndFileSpec = dirPath / fileSpec;
+    BOOL             fSuccess        = FALSE;
+    UniqueFindHandle hFind;
+    WIN32_FIND_DATA  wfd             = { 0 };
+
+
+
+    hFind.reset (FindFirstFile (pathAndFileSpec.c_str (), &wfd));
+    if (hFind.get () != INVALID_HANDLE_VALUE)
+    {
+        do
+        {
+            if (!IsDots (wfd.cFileName))
+            {
+                //
+                // If the required attributes are present and the excluded attributes are not 
+                // then add the file to the list of matches for this directory
+                //
+
+                if (CFlag::IsSet (wfd.dwFileAttributes, m_cmdLinePtr->m_dwAttributesRequired) &&
+                    CFlag::IsNotSet (wfd.dwFileAttributes, m_cmdLinePtr->m_dwAttributesExcluded))
+                {
+                    hr = AddMatchToList (&wfd, &di);
+                    CHR (hr);
+                }
+            }
+
+            fSuccess = FindNextFile (hFind.get (), &wfd);
+        }
+        while (fSuccess);
+    }
+
+Error:
+    return hr;
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CDirectoryLister::ProcessDirectoryMultiThreaded
+//
+//  Create multithreaded lister and process the directory tree
+//
+////////////////////////////////////////////////////////////////////////////////
+
+HRESULT CDirectoryLister::ProcessDirectoryMultiThreaded (const CDriveInfo & driveInfo,
+                                                         const filesystem::path & dirPath,
+                                                         const filesystem::path & fileSpec,
+                                                         CResultsDisplayerBase::EDirectoryLevel level)
+{
+    HRESULT              hr             = S_OK;
+    CMultiThreadedLister mtLister         (m_cmdLinePtr, m_consolePtr, m_configPtr);
+    CDirectoryInfo       summaryDirInfo   (dirPath, fileSpec);
+    
+
+
+    hr = mtLister.ProcessDirectoryMultiThreaded (driveInfo, 
+                                                 dirPath, 
+                                                 fileSpec,
+                                                 *m_displayer, 
+                                                 level,
+                                                 m_uliSizeOfAllFilesFound,
+                                                 m_cFilesFound,
+                                                 m_cDirectoriesFound);
+    CHR (hr);
+
+    m_displayer->DisplayListingSummary (summaryDirInfo, m_cFilesFound, m_cDirectoriesFound, m_uliSizeOfAllFilesFound);
+
+    
+
+Error:
+    return hr;
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
 //  CDirectoryLister::RecurseIntoSubdirectories
 //
 //  
 //
 ////////////////////////////////////////////////////////////////////////////////  
 
-HRESULT CDirectoryLister::RecurseIntoSubdirectories (const CDriveInfo & driveInfo, filesystem::path dirPath, filesystem::path fileSpec)
+HRESULT CDirectoryLister::RecurseIntoSubdirectories (const CDriveInfo & driveInfo, const filesystem::path & dirPath, const filesystem::path & fileSpec)
 {
     HRESULT          hr              = S_OK;
     filesystem::path pathAndFileSpec = dirPath / L"*";    

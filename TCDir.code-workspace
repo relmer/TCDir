@@ -6,7 +6,10 @@
 	],
 	"settings": {
 		"files.associations": {
-			"list": "cpp"
+			"list": "cpp",
+			"atomic": "cpp",
+			"vector": "cpp",
+			"thread": "cpp"
 		}
 	}
 }

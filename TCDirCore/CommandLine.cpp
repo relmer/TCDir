@@ -14,14 +14,7 @@
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-CCommandLine::CCommandLine (void) :
-    m_fRecurse              (false),        
-    m_dwAttributesRequired  (0),            
-    m_dwAttributesExcluded  (0),            
-    m_sortorder             (ESortOrder::SO_DEFAULT),   
-    m_sortdirection         (ESortDirection::SD_ASCENDING),
-    m_fWideListing          (false),
-    m_fPerfTimer            (false)
+CCommandLine::CCommandLine (void)
 {          
     //
     // Define the ranking of sort attributes.  If the requested
@@ -145,19 +138,31 @@ HRESULT CCommandLine::HandleSwitch (LPCWSTR pszArg)
 
     SwitchEntry allSwitches[] =
     {
-        {  L's',   &m_fRecurse,     NULL                             },
-        {  L'o',   NULL,            &CCommandLine::OrderByHandler    },
-        {  L'a',   NULL,            &CCommandLine::AttributeHandler  },
-        {  L'w',   &m_fWideListing, NULL                             },
-        {  L'p',   &m_fPerfTimer,   NULL                             },
-    };      
+        {  L's',   &m_fRecurse,        NULL                             },
+        {  L'o',   NULL,               &CCommandLine::OrderByHandler    },
+        {  L'a',   NULL,               &CCommandLine::AttributeHandler  },
+        {  L'w',   &m_fWideListing,    NULL                             },
+        {  L'p',   &m_fPerfTimer,      NULL                             },
+        {  L'm',   &m_fMultiThreaded,  NULL                             },
+        {  L'?',   &m_fHelp,           NULL                             },
+    };
     
-    HRESULT hr = S_OK;
-	WCHAR   ch = L'\0';
+    HRESULT hr       = S_OK;
+    WCHAR   ch       = L'\0';
+    bool    fDisable = false;
 
 
 
-	ch = (WCHAR) towlower (*pszArg);
+    ch = (WCHAR) towlower (*pszArg);
+
+    //
+    // Check if the next character is '-' to disable the flag
+    //
+
+    if (*(pszArg + 1) == L'-')
+    {
+        fDisable = true;
+    }
 
     // Default to E_INVALIDARG for unrecognized switches
     hr = E_INVALIDARG;
@@ -168,8 +173,8 @@ HRESULT CCommandLine::HandleSwitch (LPCWSTR pszArg)
         {
             if (entry.m_pfValueOfSwitch != NULL)
             {
-                *(entry.m_pfValueOfSwitch) = true;
-				hr = S_OK;
+                *(entry.m_pfValueOfSwitch) = !fDisable;
+                hr = S_OK;
             }
             else
             {

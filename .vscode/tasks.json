@@ -3,12 +3,20 @@
     "tasks": [
         {
             "label": "Build Debug x64",
-            "type": "shell",
-            "command": "C:\\Program Files\\Microsoft Visual Studio\\18\\Insiders\\MSBuild\\Current\\Bin\\MSBuild.exe",
+            "type": "process",
+            "command": "pwsh",
             "args": [
-                "TCDir.sln",
-                "-p:Configuration=Debug",
-                "-p:Platform=x64"
+                "-NoProfile",
+                "-ExecutionPolicy",
+                "Bypass",
+                "-File",
+                "${workspaceFolder}\\Build.ps1",
+                "-Configuration",
+                "Debug",
+                "-Platform",
+                "x64",
+                "-Target",
+                "Build"
             ],
             "group": {
                 "kind": "build",
@@ -24,12 +32,20 @@
         },
         {
             "label": "Build Release x64",
-            "type": "shell",
-            "command": "C:\\Program Files\\Microsoft Visual Studio\\18\\Insiders\\MSBuild\\Current\\Bin\\MSBuild.exe",
+            "type": "process",
+            "command": "pwsh",
             "args": [
-                "TCDir.sln",
-                "-p:Configuration=Release",
-                "-p:Platform=x64"
+                "-NoProfile",
+                "-ExecutionPolicy",
+                "Bypass",
+                "-File",
+                "${workspaceFolder}\\Build.ps1",
+                "-Configuration",
+                "Release",
+                "-Platform",
+                "x64",
+                "-Target",
+                "Build"
             ],
             "group": "build",
             "presentation": {
@@ -42,13 +58,20 @@
         },
         {
             "label": "Clean Debug x64",
-            "type": "shell",
-            "command": "C:\\Program Files\\Microsoft Visual Studio\\18\\Insiders\\MSBuild\\Current\\Bin\\MSBuild.exe",
+            "type": "process",
+            "command": "pwsh",
             "args": [
-                "TCDir.sln",
-                "-p:Configuration=Debug",
-                "-p:Platform=x64",
-                "-t:Clean"
+                "-NoProfile",
+                "-ExecutionPolicy",
+                "Bypass",
+                "-File",
+                "${workspaceFolder}\\Build.ps1",
+                "-Configuration",
+                "Debug",
+                "-Platform",
+                "x64",
+                "-Target",
+                "Clean"
             ],
             "group": "build",
             "presentation": {
@@ -60,13 +83,20 @@
         },
         {
             "label": "Rebuild Debug x64",
-            "type": "shell",
-            "command": "C:\\Program Files\\Microsoft Visual Studio\\18\\Insiders\\MSBuild\\Current\\Bin\\MSBuild.exe",
+            "type": "process",
+            "command": "pwsh",
             "args": [
-                "TCDir.sln",
-                "-p:Configuration=Debug",
-                "-p:Platform=x64",
-                "-t:Rebuild"
+                "-NoProfile",
+                "-ExecutionPolicy",
+                "Bypass",
+                "-File",
+                "${workspaceFolder}\\Build.ps1",
+                "-Configuration",
+                "Debug",
+                "-Platform",
+                "x64",
+                "-Target",
+                "Rebuild"
             ],
             "group": "build",
             "presentation": {

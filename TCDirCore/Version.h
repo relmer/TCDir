@@ -3,9 +3,9 @@
 // Version information for TCDir
 // The build number and year are automatically updated by the pre-build script
 
-#define VERSION_MAJOR 3
-#define VERSION_MINOR 2
-#define VERSION_BUILD 1004
+#define VERSION_MAJOR 4
+#define VERSION_MINOR 0
+#define VERSION_BUILD 1014
 #define VERSION_YEAR 2025
 
 // Helper macros for stringification

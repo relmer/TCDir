@@ -44,7 +44,7 @@ BOOL CFlag::IsSet (DWORD dwFlags, DWORD dwBitsRequired)
 
 BOOL CFlag::IsNotSet (DWORD dwFlags, DWORD dwBitsExcluded)
 {
-    return BOOLIFY ((dwFlags & dwBitsExcluded) == 0);
+    return (dwFlags & dwBitsExcluded) == 0;
 }
 
 

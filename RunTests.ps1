@@ -13,11 +13,25 @@ Write-Host "Found latest DLL: $($latestDll.FullName)"
 Write-Host "Last modified: $($latestDll.LastWriteTime)"
 
 # Try to run the tests
-$testRunner = "C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\IDE\Extensions\TestPlatform\vstest.console.exe"
-if (Test-Path $testRunner) {
+$toolsScript = Join-Path $PSScriptRoot 'scripts\VSTools.ps1'
+if (-not (Test-Path $toolsScript)) {
+    Write-Host "Tool helper script not found: $toolsScript"
+    exit 1
+}
+
+. $toolsScript
+
+
+
+$testRunner = Get-VS2026VSTestPath
+if (-not $testRunner) {
+    $testRunner = Get-VS2026VSTestPath -IncludePrerelease
+}
+
+if ($testRunner) {
     Write-Host "Running tests with: $testRunner"
     & $testRunner $latestDll.FullName
 } else {
-    Write-Host "Test runner not found at: $testRunner"
+    Write-Host "VS 2026 (v18.x) test runner not found (via vswhere)."
     exit 1
 }

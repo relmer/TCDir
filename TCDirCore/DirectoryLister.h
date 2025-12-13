@@ -19,18 +19,28 @@ public:
 
     void List         (const wstring & mask);
 
-protected:    
-    HRESULT ProcessDirectory           (const CDriveInfo & driveInfo, 
-                                        filesystem::path dirPath, 
-                                        filesystem::path fileSpec, 
-                                        CResultsDisplayerBase::EDirectoryLevel level);
+protected:
+    HRESULT ProcessDirectory                   (const CDriveInfo & driveInfo, 
+                                                const filesystem::path & dirPath, 
+                                                const filesystem::path & fileSpec, 
+                                                CResultsDisplayerBase::EDirectoryLevel level);
     
-    HRESULT RecurseIntoSubdirectories  (const CDriveInfo & driveInfo,
-                                        filesystem::path dirPath, 
-                                        filesystem::path fileSpec);
+    HRESULT CollectMatchingFilesAndDirectories (const std::filesystem::path & dirPath,
+                                                const std::filesystem::path & fileSpec,
+                                                CDirectoryInfo & di);
 
-    HRESULT AddMatchToList             (__in WIN32_FIND_DATA * pwfd, __in CDirectoryInfo * pdi);
-    BOOL    IsDots                     (LPCWSTR pszFileName);
+    HRESULT ProcessDirectoryMultiThreaded      (const CDriveInfo & driveInfo, 
+                                                const filesystem::path & dirPath, 
+                                                const filesystem::path & fileSpec,
+                                                CResultsDisplayerBase::EDirectoryLevel level);
+    
+    HRESULT RecurseIntoSubdirectories          (const CDriveInfo & driveInfo,
+                                                const filesystem::path & dirPath, 
+                                                const filesystem::path & fileSpec);
+
+    HRESULT AddMatchToList                     (__in WIN32_FIND_DATA * pwfd, __in CDirectoryInfo * pdi);
+    BOOL    IsDots                             (LPCWSTR pszFileName);
+
 
     
     shared_ptr<CCommandLine>              m_cmdLinePtr; 
