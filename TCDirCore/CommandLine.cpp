@@ -14,15 +14,7 @@
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-CCommandLine::CCommandLine (void) :
-    m_fRecurse              (false),        
-    m_dwAttributesRequired  (0),            
-    m_dwAttributesExcluded  (0),            
-    m_sortorder             (ESortOrder::SO_DEFAULT),   
-    m_sortdirection         (ESortDirection::SD_ASCENDING),
-    m_fWideListing          (false),
-    m_fPerfTimer            (false),
-    m_fMultiThreaded        (true)
+CCommandLine::CCommandLine (void)
 {          
     //
     // Define the ranking of sort attributes.  If the requested
@@ -152,6 +144,7 @@ HRESULT CCommandLine::HandleSwitch (LPCWSTR pszArg)
         {  L'w',   &m_fWideListing,    NULL                             },
         {  L'p',   &m_fPerfTimer,      NULL                             },
         {  L'm',   &m_fMultiThreaded,  NULL                             },
+        {  L'?',   &m_fHelp,           NULL                             },
     };
     
     HRESULT hr       = S_OK;

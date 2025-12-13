@@ -15,46 +15,6 @@
 
 
 
-/*
-void TestColors ()
-{
-    static LPCWSTR s_kpszColors[] =
-    {
-        L"Black",
-        L"Blue",
-        L"Green",
-        L"Cyan",
-        L"Red",
-        L"Magenta",
-        L"Brown",
-        L"Light grey",
-        L"Dark grey",
-        L"Light blue",
-        L"Light green",
-        L"Light cyan",
-        L"Light red",
-        L"Light magenta",
-        L"Yellow",
-        L"White",
-    };
-
-    for (WORD back = 0; back < 16; ++back)
-    {
-        for (WORD fore = 0; fore < 16; ++fore)
-        {
-            g_util.SetTextAttr ((back << 4) | fore);
-            g_util.ConsolePrintf (s_kpszColors[fore]);
-            g_util.ConsolePrintf (L"    ");
-        }
-
-        g_util.ConsolePrintf (L"\n");
-    }
-}
-*/
-
-
-
-
 ////////////////////////////////////////////////////////////////////////////////
 //
 //  wmain
@@ -86,23 +46,17 @@ int wmain (int argc, WCHAR * argv[])
     hr = consolePtr->Initialize (configPtr);
     CHR (hr);
 
-
-
-#ifdef _DEBUG
-    //consolePtr.Test();
-#endif
-
-
-
     //
     // Process the commandline
     //
 
     hr = cmdlinePtr->Parse (argc - 1, argv + 1);
-    if (FAILED (hr))
+    if (cmdlinePtr->m_fHelp || FAILED (hr))
     {
         DisplayUsage (consolePtr.get());
     }
+
+    BAIL_OUT_IF (cmdlinePtr->m_fHelp, S_OK);
     CHR (hr);
 
 
@@ -178,7 +132,7 @@ void DisplayUsage (__in CConsole * pConsole)
 {
     static LPCWSTR s_usageLines[] =
     {
-        L"Copyright � 2004-" VERSION_YEAR_WSTRING  L" by Robert Elmer",
+        L"Copyright \x00A9 2004-" VERSION_YEAR_WSTRING  L" by Robert Elmer",
         L"",
         L"TCDIR [drive:][path][filename] [/A[[:]attributes]] [/O[[:]sortorder]] [/S] [/W] [/P] [/M]",
         L"",
