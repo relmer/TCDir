@@ -19,7 +19,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <VCProjectVersion>17.0</VCProjectVersion>
+    <VCProjectVersion>18.0</VCProjectVersion>
     <ProjectGuid>{1723FD3C-92BD-E27E-67A3-92BABFB90E1A}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>UnitTest</RootNamespace>
@@ -145,7 +145,7 @@
       <AdditionalLibraryDirectories>$(VCInstallDir)UnitTest\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
-      <Command>"$(DevEnvDir)CommonExtensions\Microsoft\TestWindow\vstest.console.exe" "$(TargetPath)" /logger:trx</Command>
+      <Command>pwsh -NoProfile -ExecutionPolicy Bypass -File "$(SolutionDir)scripts\Invoke-VSTest.ps1" -TestDll "$(TargetPath)"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -170,7 +170,7 @@
       <AdditionalLibraryDirectories>$(VCInstallDir)UnitTest\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
-      <Command>"$(DevEnvDir)CommonExtensions\Microsoft\TestWindow\vstest.console.exe" "$(TargetPath)" /logger:trx</Command>
+      <Command>pwsh -NoProfile -ExecutionPolicy Bypass -File "$(SolutionDir)scripts\Invoke-VSTest.ps1" -TestDll "$(TargetPath)"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
