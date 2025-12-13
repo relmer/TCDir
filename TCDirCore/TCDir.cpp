@@ -180,7 +180,7 @@ void DisplayUsage (__in CConsole * pConsole)
     {
         L"Copyright � 2004-" VERSION_YEAR_WSTRING  L" by Robert Elmer",
         L"",
-        L"TCDIR [drive:][path][filename] [/A[[:]attributes]] [/O[[:]sortorder]] [/S]",
+        L"TCDIR [drive:][path][filename] [/A[[:]attributes]] [/O[[:]sortorder]] [/S] [/W] [/P] [/M]",
         L"",
         L"  [drive:][path][filename]",
         L"              Specifies drive, directory, and/or files to list.",
@@ -199,6 +199,9 @@ void DisplayUsage (__in CConsole * pConsole)
         L"               -  Prefix to reverse order",
         L"",
         L"  /S          Displays files in specified directory and all subdirectories.",
+        L"  /W          Displays results in a wide listing format.",
+        L"  /P          Displays performance timing information.",
+        L"  /M          Enables multi-threaded enumeration (default). Use /M- to disable.",
         L"",
         L"",
         L"",
