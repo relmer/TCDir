@@ -41,12 +41,6 @@ g_pConsole->Printf (CConfig::Error, L"Error: %s\n", msg);
 
 ## File Modification Rules
 
-### Files Copied From Other Projects
-- **NEVER** modify files that are stated to be "copied from another project"
-- **NEVER** add `using` declarations to headers copied from other projects
-- If those files need types, add `using namespace std;` to `pch.h` instead
-- Examples: `Config.h`, `Config.cpp`, `Console.h`, `Console.cpp`, `Color.h`, `AnsiCodes.h`
-
 ### Scope of Changes
 - **ONLY** modify the files explicitly requested
 - If a change requires modifying other files, **ASK FIRST**

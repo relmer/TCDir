@@ -61,6 +61,8 @@ public:
     WORD              GetTextAttrForFile (const WIN32_FIND_DATA & wfd);
     ValidationResult  ValidateEnvironmentVariable (void);
 
+    WORD              ParseColorName     (wstring_view colorName, bool isBackground);
+
     WORD                                 m_rgAttributes[EAttribute::__count]       = { 0 };
     EAttributeSource                     m_rgAttributeSources[EAttribute::__count] = { EAttributeSource::Default };
     TextAttrMap                          m_mapExtensionToTextAttr;
@@ -76,7 +78,6 @@ protected:
     void         ProcessDisplayAttributeOverride      (wchar_t attrChar, WORD colorAttr);
     HRESULT      ParseKeyAndValue                     (wstring_view entry, wstring_view & keyView, wstring_view & valueView);
     WORD         ParseColorSpec                       (wstring_view colorSpec);
-    WORD         ParseColorName                       (wstring_view colorName, bool isBackground);
     wstring_view TrimWhitespace                       (wstring_view str);
 
     ValidationResult m_lastParseResult;

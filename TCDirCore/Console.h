@@ -21,7 +21,6 @@ public:
     int     Printf                    (WORD attr, LPCWSTR pszFormat, ...);
     void    PrintColorfulString       (LPCWSTR psz);
     void    WriteSeparatorLine        (WORD attr);
-    void    DisplayConfigurationTable (void);
     HRESULT Flush                     (void);
 
     UINT    GetWidth                  (void)     { return m_cxConsoleWidth; }

@@ -153,6 +153,14 @@ HRESULT CCommandLine::HandleSwitch (LPCWSTR pszArg)
 
 
 
+    if (_wcsicmp (pszArg, L"env") == 0)
+    {
+        m_fEnv = true;
+        return S_OK;
+    }
+
+
+
     ch = (WCHAR) towlower (*pszArg);
 
     //

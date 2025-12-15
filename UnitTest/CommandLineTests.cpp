@@ -82,5 +82,36 @@ namespace UnitTest
             Assert::IsTrue(cl.m_fPerfTimer);
         }
 
+
+
+
+        TEST_METHOD(ParseEnvSwitch)
+        {
+            CCommandLine    cl;
+            const wchar_t * e1      = L"/Env";
+            wchar_t       * argv1[] = { const_cast<wchar_t *>(e1) };
+            HRESULT         hr      = cl.Parse(1, argv1);
+
+
+
+            Assert::IsTrue(SUCCEEDED(hr));
+            Assert::IsTrue(cl.m_fEnv);
+        }
+
+
+
+
+        TEST_METHOD(EnvSwitchDoesNotSupportDisable)
+        {
+            CCommandLine    cl;
+            const wchar_t * e1      = L"/Env-";
+            wchar_t       * argv1[] = { const_cast<wchar_t *>(e1) };
+            HRESULT         hr      = cl.Parse(1, argv1);
+
+
+
+            Assert::IsTrue(FAILED(hr));
+        }
+
     };
 }

@@ -60,9 +60,6 @@
     <ClInclude Include="ResultsDisplayerWide.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="TCDir.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="UniqueFindHandle.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -76,6 +73,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="WorkQueue.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Usage.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -120,6 +120,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="MultiThreadedLister.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Usage.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

@@ -162,8 +162,8 @@
     <ClInclude Include="ResultsDisplayerBase.h" />
     <ClInclude Include="ResultsDisplayerNormal.h" />
     <ClInclude Include="ResultsDisplayerWide.h" />
-    <ClInclude Include="TCDir.h" />
     <ClInclude Include="UniqueFindHandle.h" />
+    <ClInclude Include="Usage.h" />
     <ClInclude Include="Version.h" />
     <ClInclude Include="WorkQueue.h" />
   </ItemGroup>
@@ -187,6 +187,7 @@
     <ClCompile Include="ResultsDisplayerNormal.cpp" />
     <ClCompile Include="ResultsDisplayerWide.cpp" />
     <ClCompile Include="TCDir.cpp" />
+    <ClCompile Include="Usage.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

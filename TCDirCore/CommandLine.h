@@ -67,6 +67,7 @@ public:
     bool               m_fWideListing                                      = false;
     bool               m_fPerfTimer                                        = false;    // Enable performance timer
     bool               m_fMultiThreaded                                    = true;     // Enable multi-threaded enumeration
+    bool               m_fEnv                                              = false;    // Display environment variable configuration
     bool               m_fHelp                                             = false;    // Display usage
 
     
