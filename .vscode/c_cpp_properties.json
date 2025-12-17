@@ -4,7 +4,11 @@
             "name": "Win32",
             "includePath": [
                 "${workspaceFolder}/**",
-                "${env:ProgramFiles}\\Microsoft Visual Studio\\2022\\Community\\VC\\Auxiliary\\VS\\UnitTest\\include"
+                "${env:ProgramFiles}\\Microsoft Visual Studio\\2026\\Community\\VC\\Auxiliary\\VS\\UnitTest\\include",
+                "${env:ProgramFiles}\\Microsoft Visual Studio\\2026\\Professional\\VC\\Auxiliary\\VS\\UnitTest\\include",
+                "${env:ProgramFiles}\\Microsoft Visual Studio\\2026\\Enterprise\\VC\\Auxiliary\\VS\\UnitTest\\include",
+                "${env:ProgramFiles}\\Microsoft Visual Studio\\2026\\BuildTools\\VC\\Auxiliary\\VS\\UnitTest\\include",
+                "${env:ProgramFiles}\\Microsoft Visual Studio\\2026\\Preview\\VC\\Auxiliary\\VS\\UnitTest\\include"
             ],
             "defines": [
                 "_DEBUG",
