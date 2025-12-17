@@ -87,6 +87,7 @@ g_pConsole->Printf (CConfig::Error, L"Error: %s\n", msg);
 - Use custom error handling macros (EHM) when present in codebase
 - Follow existing patterns: `CHR`, `CBR`, `CWRA`, etc.
 - Include `Error:` labels for cleanup in functions returning `HRESULT`
+- Functions should only have a single exit point.  Never directly goto Error; always use EHM macros instead.
 
 ---
 
@@ -114,6 +115,7 @@ g_pConsole->Printf (CConfig::Error, L"Error: %s\n", msg);
 
 ### Build Integration
 - Always run build after making changes
+- If using VS Code, always use a build task.  Only call msbuild directly if there's no build task.
 - Use `get_errors` to verify specific files
 - Fix compilation errors before considering task complete
 - Check for both errors (C-codes) and warnings

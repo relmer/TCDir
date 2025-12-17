@@ -277,16 +277,66 @@ void CConfig::ProcessColorOverrideEntry (wstring_view entry)
 
     BAIL_OUT_IF (keyView.empty(), S_OK);
 
-    colorAttr = ParseColorSpec (valueView);
-    if (colorAttr == 0)
     {
-        wstring msg = L"Invalid color specification: '";
-        msg += valueView;
-        msg += L"' in entry '";
-        msg += entry;
-        msg += L"'";
-        m_lastParseResult.errors.push_back(msg);
-        BAIL_OUT_IF(TRUE, S_OK);
+        WORD foreColor = 0;
+        WORD backColor = 0;
+
+
+
+        auto result = std::ranges::search (
+            valueView,
+            L" on "sv,
+            [] (wchar_t a, wchar_t b) { return towlower (a) == towlower (b); }
+        );
+
+        if (result.empty ())
+        {
+            wstring_view foreView = TrimWhitespace (valueView);
+            foreColor = ParseColorName (foreView, false);
+
+            if (foreColor == 0)
+            {
+                wstring msg = L"Invalid foreground color: '";
+                msg += foreView;
+                msg += L"' in entry '";
+                msg += entry;
+                msg += L"'";
+                m_lastParseResult.errors.push_back (msg);
+                BAIL_OUT_IF (TRUE, S_OK);
+            }
+        }
+        else
+        {
+            size_t onPos = result.begin () - valueView.begin ();
+
+            wstring_view foreView = TrimWhitespace (valueView.substr (0, onPos));
+            wstring_view backView = TrimWhitespace (valueView.substr (onPos + 4));
+
+            foreColor = ParseColorName (foreView, false);
+            if (foreColor == 0)
+            {
+                wstring msg = L"Invalid foreground color: '";
+                msg += foreView;
+                msg += L"' in entry '";
+                msg += entry;
+                msg += L"'";
+                m_lastParseResult.errors.push_back (msg);
+                BAIL_OUT_IF (TRUE, S_OK);
+            }
+
+            backColor = ParseColorName (backView, true);
+            if (backColor == 0)
+            {
+                wstring msg = L"Invalid background color: '";
+                msg += backView;
+                msg += L"' in entry '";
+                msg += entry;
+                msg += L"'";
+                m_lastParseResult.warnings.push_back (msg);
+            }
+        }
+
+        colorAttr = foreColor | backColor;
     }
     
     //

@@ -561,6 +561,30 @@ namespace UnitTest
 
 
 
+        TEST_METHOD(ApplyUserColorOverrides_InvalidBackgroundColor_AddsWarning_AppliesForeground)
+        {
+            ConfigProbe config;
+            config.Initialize(FC_LightGrey);
+
+            SetEnvironmentVariableW(TCDIR_ENV_VAR_NAME, L".cpp=White on Bluepickles");
+            config.ApplyUserColorOverrides();
+
+            // Foreground should still be applied
+            Assert::IsTrue(config.m_mapExtensionToTextAttr.contains(L".cpp"));
+            Assert::AreEqual((WORD)FC_White, config.m_mapExtensionToTextAttr[L".cpp"]);
+
+            // Invalid background should produce a warning
+            CConfig::ValidationResult result = config.ValidateEnvironmentVariable();
+            Assert::IsTrue(result.warnings.size() > 0);
+            Assert::IsTrue(result.errors.size() == 0);
+
+            SetEnvironmentVariableW(TCDIR_ENV_VAR_NAME, nullptr);
+        }
+
+
+
+
+
         TEST_METHOD(ProcessColorOverrideEntry_UppercaseExtension_ConvertedToLowercase)
         {
             ConfigProbe config;

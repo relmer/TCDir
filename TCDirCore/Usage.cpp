@@ -19,11 +19,10 @@
 
 bool CUsage::IsEnvVarSet (LPCWSTR kpszEnvVarName)
 {
-    WCHAR buffer[1];
-    DWORD result = GetEnvironmentVariableW (kpszEnvVarName, buffer, ARRAYSIZE(buffer));
+    DWORD cchBufNeeded = GetEnvironmentVariableW (kpszEnvVarName, nullptr, 0);
 
-    // If result > 0, the variable exists (even if buffer is too small)
-    return result > 0;
+    // If cchBufNeeded > 0, the variable exists (even if its value is empty)
+    return cchBufNeeded > 0;
 }
 
 
@@ -139,7 +138,12 @@ HRESULT CUsage::DisplayEnvVarIssues (CConsole & console)
 
 
     validationResult = console.m_configPtr->ValidateEnvironmentVariable();
-    BAIL_OUT_IF (!validationResult.hasIssues(), S_OK);
+    if (!validationResult.hasIssues())
+    {
+        console.Puts (CConfig::EAttribute::Default, L"No TCDIR configuration issues detected.");
+        console.Puts (CConfig::EAttribute::Default, L"");
+        BAIL_OUT_IF (TRUE, S_OK);
+    }
 
     console.Puts (CConfig::EAttribute::Error, L"");
     console.Puts (CConfig::EAttribute::Error, L"TCDIR Configuration Issues Detected:");
@@ -520,6 +524,57 @@ void CUsage::DisplayColorConfiguration (CConsole & console)
 
 ////////////////////////////////////////////////////////////////////////////////
 //
+//  DisplayEnvVarCurrentValue
+//
+////////////////////////////////////////////////////////////////////////////////
+
+static void DisplayEnvVarCurrentValue (CConsole & console, LPCWSTR pszEnvVarName)
+{
+    HRESULT hr               = S_OK;
+    DWORD   cchBufNeeded     = 0;
+    DWORD   cchExcludingNull = 0;
+    DWORD   cchCopied        = 0;
+    wstring envValue;
+
+
+
+    cchBufNeeded = GetEnvironmentVariableW (pszEnvVarName, nullptr, 0);
+    BAIL_OUT_IF (cchBufNeeded == 0, S_OK);
+
+    cchExcludingNull = cchBufNeeded - 1;
+    envValue.resize (cchExcludingNull, L'\0');
+
+    cchCopied = GetEnvironmentVariableW (pszEnvVarName, envValue.data(), cchBufNeeded);
+    CWRA (cchCopied == cchExcludingNull);
+
+    console.Printf (CConfig::EAttribute::Default,     L"Current ");
+    console.Printf (CConfig::EAttribute::Information, pszEnvVarName);
+    console.Printf (CConfig::EAttribute::Default,     L" value: ");
+
+    if (envValue.empty())
+    {
+        console.Puts (CConfig::EAttribute::InformationHighlight, L"<empty>");
+    }
+    else
+    {
+        console.Printf (CConfig::EAttribute::InformationHighlight, L"\"%ls\"", envValue.c_str());
+        console.Puts   (CConfig::EAttribute::Default,              L"");
+    }
+
+    console.Puts (CConfig::EAttribute::Default, L"");
+
+
+
+Error:
+    return;
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
 //  CUsage::DisplayEnvVarConfigurationReport
 //
 ////////////////////////////////////////////////////////////////////////////////
@@ -580,6 +635,7 @@ void CUsage::DisplayEnvVarConfigurationReport (CConsole & console)
 
     if (IsTcdirEnvVarSet ())
     {
+        DisplayEnvVarCurrentValue (console, TCDIR_ENV_VAR_NAME);
         DisplayEnvVarIssues (console);
     }
     else
