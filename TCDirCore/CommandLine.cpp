@@ -159,6 +159,12 @@ HRESULT CCommandLine::HandleSwitch (LPCWSTR pszArg)
         return S_OK;
     }
 
+    if (_wcsicmp (pszArg, L"config") == 0)
+    {
+        m_fConfig = true;
+        return S_OK;
+    }
+
 
 
     ch = (WCHAR) towlower (*pszArg);

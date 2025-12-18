@@ -57,8 +57,14 @@ int wmain (int argc, WCHAR * argv[])
 
     if (cmdlinePtr->m_fEnv)
     {
-        CUsage::DisplayEnvVarConfigurationReport (*consolePtr);
+        CUsage::DisplayEnvVarHelp (*consolePtr);
         BAIL_OUT_IF (cmdlinePtr->m_fEnv, S_OK);
+    }
+
+    if (cmdlinePtr->m_fConfig)
+    {
+        CUsage::DisplayCurrentConfiguration (*consolePtr);
+        BAIL_OUT_IF (cmdlinePtr->m_fConfig, S_OK);
     }
 
     //

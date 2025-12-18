@@ -15,7 +15,8 @@ class CUsage
 public:
 
     static void    DisplayUsage                     (CConsole & console);
-    static void    DisplayEnvVarConfigurationReport (CConsole & console);
+    static void    DisplayEnvVarHelp                (CConsole & console);
+    static void    DisplayCurrentConfiguration      (CConsole & console);
 
 
 

@@ -76,7 +76,7 @@ void CUsage::DisplayUsage (CConsole & console)
     {
         L"Copyright " COPYRIGHT " 2004-" VERSION_YEAR_WSTRING  L" by Robert Elmer",
         L"",
-        L"TCDIR [drive:][path][filename] [/A[[:]attributes]] [/O[[:]sortorder]] [/S] [/W] [/P] [/M] [/Env]",
+        L"TCDIR [drive:][path][filename] [/A[[:]attributes]] [/O[[:]sortorder]] [/S] [/W] [/P] [/M] [/Env] [/Config]",
         L"",
         L"  [drive:][path][filename]",
         L"              Specifies drive, directory, and/or files to list.",
@@ -98,7 +98,8 @@ void CUsage::DisplayUsage (CConsole & console)
         L"  /W          Displays results in a wide listing format.",
         L"  /P          Displays performance timing information.",
         L"  /M          Enables multi-threaded enumeration (default). Use /M- to disable.",
-        L"  /Env        Displays " TCDIR_ENV_VAR_NAME L" help, configuration, and current colors.",
+        L"  /Env        Displays " TCDIR_ENV_VAR_NAME L" help, syntax, and current value.",
+        L"  /Config     Displays current color configuration for all items and extensions.",
         L"",
         L"",
         L""
@@ -723,16 +724,21 @@ Error:
 
 ////////////////////////////////////////////////////////////////////////////////
 //
-//  CUsage::DisplayEnvVarConfigurationReport
+//  CUsage::DisplayEnvVarHelp
+//
+//  Display help for the TCDIR environment variable syntax, available colors,
+//  an example, and the current value with any issues.
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-void CUsage::DisplayEnvVarConfigurationReport (CConsole & console)
+void CUsage::DisplayEnvVarHelp (CConsole & console)
 {
-    static LPCWSTR s_envVarSyntax[] =
+#define ENV_VAR_SYNTAX L"<<Item> | Attr:<fileattr> | <.ext>> = <Fore> [on <Back>][;...]"
+
+    static LPCWSTR s_setEnvVarCommand[] =
     {
-        L"  set " TCDIR_ENV_VAR_NAME L"=<Item | .ext | Attr:<fileattr>> = <Fore>[on <Back>][;...]",           // CMD
-        L"  $env:" TCDIR_ENV_VAR_NAME L" = \"<Item | .ext | Attr:<fileattr>> = <Fore>[on <Back>][;...]\"",    // PowerShell
+        L"  set " TCDIR_ENV_VAR_NAME L"=" ENV_VAR_SYNTAX,               // CMD -- *no spaces around '='*
+        L"  $env:" TCDIR_ENV_VAR_NAME L" = \"" ENV_VAR_SYNTAX L"\"",    // PowerShell -- quoted value
     };
 
     static LPCWSTR s_colorOverrideLines[] =
@@ -773,7 +779,7 @@ void CUsage::DisplayEnvVarConfigurationReport (CConsole & console)
     console.Puts   (CConfig::EAttribute::Default,     L" environment variable to override default colors for display"
                                                       L" items, file attributes, or file extensions:\n");
 
-    console.Puts (CConfig::EAttribute::Default, s_envVarSyntax[isPowerShell]);
+    console.Puts (CConfig::EAttribute::Default, s_setEnvVarCommand[isPowerShell]);
 
     for (LPCWSTR line : s_colorOverrideLines)
     {
@@ -785,17 +791,47 @@ void CUsage::DisplayEnvVarConfigurationReport (CConsole & console)
     console.Puts (CConfig::EAttribute::Default, s_envVarExample[isPowerShell]);
     console.Puts (CConfig::EAttribute::Default, L"");
 
-    if (!IsTcdirEnvVarSet ())
+    if (IsTcdirEnvVarSet ())
     {
-        console.Puts (CConfig::EAttribute::Default, L"  TCDIR environment variable is not set; showing default configuration:");
-        console.Puts (CConfig::EAttribute::Default, L"");
+        DisplayEnvVarCurrentValue (console, TCDIR_ENV_VAR_NAME);
+        DisplayEnvVarIssues (console);
     }
+    else
+    {
+        console.Printf (CConfig::EAttribute::Default,     L"  ");
+        console.Printf (CConfig::EAttribute::Information, TCDIR_ENV_VAR_NAME);
+        console.Puts   (CConfig::EAttribute::Default,     L" environment variable is not set.");
+    }
+}
 
-    DisplayConfigurationTable (console);
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CUsage::DisplayCurrentConfiguration
+//
+//  Display the current color configuration tables for display items,
+//  file attributes, and file extensions.
+//
+////////////////////////////////////////////////////////////////////////////////
+
+void CUsage::DisplayCurrentConfiguration (CConsole & console)
+{
+    console.Puts (CConfig::EAttribute::Default, L"");
 
     if (IsTcdirEnvVarSet ())
     {
         DisplayEnvVarCurrentValue (console, TCDIR_ENV_VAR_NAME);
         DisplayEnvVarIssues (console);
     }
+    else
+    {
+        console.Printf (CConfig::EAttribute::Default,     L"  ");
+        console.Printf (CConfig::EAttribute::Information, TCDIR_ENV_VAR_NAME);
+        console.Puts   (CConfig::EAttribute::Default,     L" environment variable is not set; showing default configuration.");
+    }
+
+    DisplayConfigurationTable (console);
 }
