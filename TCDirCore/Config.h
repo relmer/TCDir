@@ -31,6 +31,14 @@ public:
         Environment
     };
 
+    struct SFileAttributeStyle
+    {
+        WORD             m_wAttr;
+        EAttributeSource m_source;
+    };
+
+    typedef unordered_map<DWORD, SFileAttributeStyle> FileAttrMap;
+
     enum EAttribute
     {
         Default,
@@ -50,9 +58,8 @@ public:
 
     struct ValidationResult
     {
-        vector<wstring> warnings;
         vector<wstring> errors;
-        bool            hasIssues() const { return !warnings.empty() || !errors.empty(); }
+        bool            hasIssues() const { return !errors.empty(); }
     };
 
 
@@ -63,19 +70,23 @@ public:
 
     WORD              ParseColorName     (wstring_view colorName, bool isBackground);
 
-    WORD                                 m_rgAttributes[EAttribute::__count]       = { 0 };
-    EAttributeSource                     m_rgAttributeSources[EAttribute::__count] = { EAttributeSource::Default };
-    TextAttrMap                          m_mapExtensionToTextAttr;
+    WORD                                     m_rgAttributes[EAttribute::__count]       = { 0 };
+    EAttributeSource                         m_rgAttributeSources[EAttribute::__count] = { EAttributeSource::Default };
+    TextAttrMap                              m_mapExtensionToTextAttr;
     unordered_map<wstring, EAttributeSource> m_mapExtensionSources;
+
+    FileAttrMap                              m_mapFileAttributesTextAttr;
 
 
     
 protected:
     void         InitializeExtensionToTextAttrMap     (void);
+    void         InitializeFileAttributeToTextAttrMap (void);
     void         ApplyUserColorOverrides              (void);
     void         ProcessColorOverrideEntry            (wstring_view entry);
     void         ProcessFileExtensionOverride         (wstring_view extension, WORD colorAttr);
     void         ProcessDisplayAttributeOverride      (wchar_t attrChar, WORD colorAttr);
+    void         ProcessFileAttributeOverride         (wstring_view keyView, WORD colorAttr);
     HRESULT      ParseKeyAndValue                     (wstring_view entry, wstring_view & keyView, wstring_view & valueView);
     WORD         ParseColorSpec                       (wstring_view colorSpec);
     wstring_view TrimWhitespace                       (wstring_view str);

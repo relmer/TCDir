@@ -575,8 +575,92 @@ namespace UnitTest
 
             // Invalid background should produce a warning
             CConfig::ValidationResult result = config.ValidateEnvironmentVariable();
-            Assert::IsTrue(result.warnings.size() > 0);
             Assert::IsTrue(result.errors.size() == 0);
+
+            SetEnvironmentVariableW(TCDIR_ENV_VAR_NAME, nullptr);
+        }
+
+
+
+
+
+        TEST_METHOD(Initialize_DefaultFileAttributeColors_HiddenAndEncryptedPresent)
+        {
+            ConfigProbe config;
+
+            SetEnvironmentVariableW(TCDIR_ENV_VAR_NAME, nullptr);
+            config.Initialize(FC_LightGrey);
+
+            Assert::IsTrue(config.m_mapFileAttributesTextAttr.contains(FILE_ATTRIBUTE_HIDDEN));
+            Assert::AreEqual((WORD)FC_DarkGrey, config.m_mapFileAttributesTextAttr[FILE_ATTRIBUTE_HIDDEN].m_wAttr);
+            Assert::IsTrue(config.m_mapFileAttributesTextAttr[FILE_ATTRIBUTE_HIDDEN].m_source == CConfig::EAttributeSource::Default);
+
+            Assert::IsTrue(config.m_mapFileAttributesTextAttr.contains(FILE_ATTRIBUTE_ENCRYPTED));
+            Assert::AreEqual((WORD)FC_LightGreen, config.m_mapFileAttributesTextAttr[FILE_ATTRIBUTE_ENCRYPTED].m_wAttr);
+            Assert::IsTrue(config.m_mapFileAttributesTextAttr[FILE_ATTRIBUTE_ENCRYPTED].m_source == CConfig::EAttributeSource::Default);
+        }
+
+
+
+
+
+        TEST_METHOD(ApplyUserColorOverrides_FileAttributeOverride_ParsedAndStored)
+        {
+            ConfigProbe config;
+
+            SetEnvironmentVariableW(TCDIR_ENV_VAR_NAME, L"AtTr:h=Red");
+            config.Initialize(FC_LightGrey);
+
+            Assert::IsTrue(config.m_mapFileAttributesTextAttr.contains(FILE_ATTRIBUTE_HIDDEN));
+            Assert::AreEqual((WORD)FC_Red, config.m_mapFileAttributesTextAttr[FILE_ATTRIBUTE_HIDDEN].m_wAttr);
+            Assert::IsTrue(config.m_mapFileAttributesTextAttr[FILE_ATTRIBUTE_HIDDEN].m_source == CConfig::EAttributeSource::Environment);
+
+            CConfig::ValidationResult result = config.ValidateEnvironmentVariable();
+            Assert::IsTrue(result.errors.size() == 0);
+
+            SetEnvironmentVariableW(TCDIR_ENV_VAR_NAME, nullptr);
+        }
+
+
+
+
+
+        TEST_METHOD(GetTextAttrForFile_FileAttributeColor_WinsOverDirectoryAndExtension)
+        {
+            ConfigProbe config;
+            WIN32_FIND_DATA wfd = { 0 };
+            WORD expected = static_cast<WORD>(FC_White | BC_Blue);
+
+            SetEnvironmentVariableW(TCDIR_ENV_VAR_NAME, L"attr:H=White;.cpp=Red");
+            config.Initialize(static_cast<WORD>(FC_LightGrey | BC_Blue));
+
+            wfd.dwFileAttributes = FILE_ATTRIBUTE_DIRECTORY | FILE_ATTRIBUTE_HIDDEN;
+            wcscpy_s(wfd.cFileName, L"somedir");
+            Assert::AreEqual(expected, config.GetTextAttrForFile(wfd));
+
+            wfd.dwFileAttributes = FILE_ATTRIBUTE_HIDDEN;
+            wcscpy_s(wfd.cFileName, L"foo.cpp");
+            Assert::AreEqual(expected, config.GetTextAttrForFile(wfd));
+
+            SetEnvironmentVariableW(TCDIR_ENV_VAR_NAME, nullptr);
+        }
+
+
+
+
+
+        TEST_METHOD(GetTextAttrForFile_MultipleAttributeColors_UsesFixedPriorityOrder)
+        {
+            ConfigProbe config;
+            WIN32_FIND_DATA wfd = { 0 };
+
+            SetEnvironmentVariableW(TCDIR_ENV_VAR_NAME, L"attr:s=Green;attr:h=Red");
+            config.Initialize(static_cast<WORD>(FC_LightGrey | BC_Blue));
+
+            wfd.dwFileAttributes = FILE_ATTRIBUTE_HIDDEN | FILE_ATTRIBUTE_SYSTEM;
+            wcscpy_s(wfd.cFileName, L"foo.txt");
+
+            Assert::AreEqual(static_cast<WORD>(FC_Red | BC_Blue), config.GetTextAttrForFile(wfd));
 
             SetEnvironmentVariableW(TCDIR_ENV_VAR_NAME, nullptr);
         }

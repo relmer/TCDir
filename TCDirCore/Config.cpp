@@ -6,6 +6,28 @@
 
 
 
+struct SFileAttributeKeyMap
+{
+    DWORD   m_dwAttribute;
+    wchar_t m_chKey;
+};
+
+static constexpr SFileAttributeKeyMap s_krgFileAttributeKeyMap[] =
+{
+    {  FILE_ATTRIBUTE_READONLY,      L'R' },
+    {  FILE_ATTRIBUTE_HIDDEN,        L'H' },
+    {  FILE_ATTRIBUTE_SYSTEM,        L'S' },
+    {  FILE_ATTRIBUTE_ARCHIVE,       L'A' },
+    {  FILE_ATTRIBUTE_TEMPORARY,     L'T' },
+    {  FILE_ATTRIBUTE_ENCRYPTED,     L'E' },
+    {  FILE_ATTRIBUTE_COMPRESSED,    L'C' },
+    {  FILE_ATTRIBUTE_REPARSE_POINT, L'P' },
+    {  FILE_ATTRIBUTE_SPARSE_FILE,   L'0' },
+};
+
+
+
+
 
 constexpr CConfig::STextAttr CConfig::s_rgTextAttrs[] =
 {
@@ -13,19 +35,44 @@ constexpr CConfig::STextAttr CConfig::s_rgTextAttrs[] =
     // Code
     //
 
+    { L".asm",            FC_LightGreen   },
+    { L".cod",            FC_Green        },
+    { L".i",              FC_Green        },
+
     { L".c",              FC_LightGreen   },
     { L".cpp",            FC_LightGreen   },
     { L".cxx",            FC_LightGreen   },
     { L".h",              FC_LightGreen   },
     { L".hpp",            FC_LightGreen   },
     { L".hxx",            FC_LightGreen   },
-    { L".js",             FC_LightGreen   },
-    { L".ts",             FC_LightGreen   },
-    { L".asm",            FC_LightGreen   },
+    { L".rc",             FC_LightGreen   },
+    
     { L".cs",             FC_LightGreen   },
     { L".resx",           FC_LightGreen   },
-    { L".rc",             FC_LightGreen   },
     { L".rcml",           FC_LightGreen   },
+    
+    { L".js",             FC_LightGreen   },
+    { L".jsx",            FC_LightGreen   },
+    { L".ts",             FC_LightGreen   },
+    { L".tsx",            FC_LightGreen   },
+
+    { L".html",           FC_LightGreen   },
+    { L".htm",            FC_LightGreen   },
+    { L".css",            FC_LightGreen   },
+    { L".scss",           FC_LightGreen   },
+    { L".less",           FC_LightGreen   },
+
+    { L".py",             FC_LightGreen   },
+    { L".pyw",            FC_LightGreen   },
+
+    { L".jar",            FC_LightGreen   },
+    { L".java",           FC_LightGreen   },
+    { L".class",          FC_LightGreen   },
+
+    { L".xml",            FC_Brown       },
+    { L".json",           FC_Brown       },
+    { L".yml",            FC_Brown       },
+    { L".yaml",           FC_Brown       },
 
     //
     // Intermediate files
@@ -35,13 +82,6 @@ constexpr CConfig::STextAttr CConfig::s_rgTextAttrs[] =
     { L".lib",            FC_Green        },
     { L".res",            FC_Green        },
     { L".pch",            FC_Green        },
-
-    //
-    // Miscellaneous code-related files
-    //
-
-    { L".i",              FC_Green        },
-    { L".cod",            FC_Green        },
 
     //
     // Build
@@ -55,13 +95,17 @@ constexpr CConfig::STextAttr CConfig::s_rgTextAttrs[] =
     // Executable files
     //
 
-    { L".cmd",            FC_LightRed     },
+    { L".bash",           FC_LightRed     },
     { L".bat",            FC_LightRed     },
-    { L".btm",            FC_LightRed     },
-    { L".ps1",            FC_LightRed     },
-    { L".wsh",            FC_LightCyan    },
+    { L".cmd",            FC_LightRed     },
+    { L".dll",            FC_LightCyan    },
     { L".exe",            FC_LightCyan    },
-    { L".com",            FC_LightCyan    },
+    { L".ps1",            FC_LightRed     },
+    { L".psd1",           FC_LightRed     },
+    { L".psm1",           FC_LightRed     },
+    { L".sh",             FC_LightRed     },
+    { L".sys",            FC_LightCyan    },
+    
 
     //
     // Visual Studio files
@@ -70,56 +114,40 @@ constexpr CConfig::STextAttr CConfig::s_rgTextAttrs[] =
     { L".sln",            FC_Magenta      },
     { L".vcproj",         FC_Magenta      },
     { L".csproj",         FC_DarkGrey     },
+    { L".vcxproj",        FC_Magenta      },
+    { L".csxproj",        FC_DarkGrey     },
     { L".user",           FC_DarkGrey     },
     { L".ncb",            FC_DarkGrey     },
-
-    //
-    // Source Insight files
-    //
-
-    { L".cf3",            FC_DarkGrey     },
-    { L".iab",            FC_DarkGrey     },
-    { L".iad",            FC_DarkGrey     },
-    { L".imb",            FC_DarkGrey     },
-    { L".imd",            FC_DarkGrey     },
-    { L".pfi",            FC_DarkGrey     },
-    { L".po",             FC_DarkGrey     },
-    { L".pr",             FC_Magenta      },
-    { L".pri",            FC_DarkGrey     },
-    { L".ps",             FC_DarkGrey     },
-    { L".wk3",            FC_DarkGrey     },
-    { L".SearchResults",  FC_DarkGrey     },
 
     //
     // Document types
     //
 
-    { L".txt",            FC_White        },
-    { L".md",             FC_White        },
-    { L".me",             FC_White        },
-    { L".text",           FC_White        },
-    { L".1st",            FC_White        },
-    { L".now",            FC_White        },
     { L".!!!",            FC_White        },
+    { L".1st",            FC_White        },
     { L".doc",            FC_White        },
     { L".docx",           FC_White        },
-    { L".xls",            FC_White        },
-    { L".xlsx",           FC_White        },
+    { L".eml",            FC_White        },
+    { L".md",             FC_White        },
+    { L".me",             FC_White        },
+    { L".now",            FC_White        },
     { L".ppt",            FC_White        },
     { L".pptx",           FC_White        },
-    { L".eml",            FC_White        },
-    { L".html",           FC_White        },
+    { L".text",           FC_White        },
+    { L".txt",            FC_White        },
+    { L".xls",            FC_White        },
+    { L".xlsx",           FC_White        },
 
     //
     // Compressed/archive types
     //
 
-    { L".zip",            FC_Magenta      },
-    { L".rar",            FC_Magenta      },
-    { L".arj",            FC_Magenta      },
     { L".7z",             FC_Magenta      },
+    { L".arj",            FC_Magenta      },
     { L".gz",             FC_Magenta      },
+    { L".rar",            FC_Magenta      },
     { L".tar",            FC_Magenta      },
+    { L".zip",            FC_Magenta      },
 };
 
 
@@ -151,6 +179,7 @@ void CConfig::Initialize (WORD wDefaultAttr)
     
 
     InitializeExtensionToTextAttrMap();
+    InitializeFileAttributeToTextAttrMap();
     ApplyUserColorOverrides();
 }
 
@@ -190,10 +219,29 @@ void CConfig::InitializeExtensionToTextAttrMap (void)
 
 ////////////////////////////////////////////////////////////////////////////////
 //
+//  CConfig::InitializeFileAttributeToTextAttrMap
+//
+////////////////////////////////////////////////////////////////////////////////
+
+void CConfig::InitializeFileAttributeToTextAttrMap (void)
+{
+    // Only default colors requested for now.
+    m_mapFileAttributesTextAttr.clear();
+
+    m_mapFileAttributesTextAttr[FILE_ATTRIBUTE_HIDDEN]    = { FC_DarkGrey,   EAttributeSource::Default };
+    m_mapFileAttributesTextAttr[FILE_ATTRIBUTE_ENCRYPTED] = { FC_LightGreen, EAttributeSource::Default };
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
 //  CConfig::ApplyUserColorOverrides
 //
 //  Parse the TCDIR environment variable for user color overrides.
-//  Format: <attr|.ext>=<fore>[on <back>][;...]
+//  Format: <attr|.ext|attr:fileattr>=<fore>[on <back>][;...]
 //  Example: .cpp=LightGreen;.h=Yellow on Blue
 //
 ////////////////////////////////////////////////////////////////////////////////
@@ -206,7 +254,6 @@ void CConfig::ApplyUserColorOverrides (void)
     wstring envValue;
 
     // Clear previous validation results
-    m_lastParseResult.warnings.clear();
     m_lastParseResult.errors.clear();
 
     //
@@ -250,6 +297,7 @@ Error:
 //  Example: .cpp=Yellow 
 //           .h=LightCyan on Blue
 //           D=Red
+//           attr:h=DarkGrey
 //
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -332,7 +380,7 @@ void CConfig::ProcessColorOverrideEntry (wstring_view entry)
                 msg += L"' in entry '";
                 msg += entry;
                 msg += L"'";
-                m_lastParseResult.warnings.push_back (msg);
+                m_lastParseResult.errors.push_back (msg);
             }
         }
 
@@ -347,6 +395,15 @@ void CConfig::ProcessColorOverrideEntry (wstring_view entry)
     {
         ProcessFileExtensionOverride (keyView, colorAttr);
     }
+    else if (keyView.length() == 6 &&
+             towlower (keyView[0]) == L'a' &&
+             towlower (keyView[1]) == L't' &&
+             towlower (keyView[2]) == L't' &&
+             towlower (keyView[3]) == L'r' &&
+             keyView[4] == L':')
+    {
+        ProcessFileAttributeOverride (keyView, colorAttr);
+    }
     else if (keyView.length() == 1)
     {
         ProcessDisplayAttributeOverride (keyView[0], colorAttr);
@@ -355,7 +412,7 @@ void CConfig::ProcessColorOverrideEntry (wstring_view entry)
     {
         wstring msg = L"Invalid key: '";
         msg += keyView;
-        msg += L"' (expected single character or file extension starting with '.')";
+        msg += L"' (expected single character, file extension starting with '.', or file attribute key like attr:h)";
         m_lastParseResult.errors.push_back(msg);
     }
 
@@ -438,6 +495,57 @@ void CConfig::ProcessDisplayAttributeOverride (wchar_t attrChar, WORD colorAttr)
 
 
 
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CConfig::ProcessFileAttributeOverride
+//
+////////////////////////////////////////////////////////////////////////////////
+
+void CConfig::ProcessFileAttributeOverride (wstring_view keyView, WORD colorAttr)
+{
+    DWORD   dwFileAttribute = 0;
+    bool    found           = false;
+    wchar_t chAttr          = 0;
+    
+
+    // Expected key format: attr:<x> (e.g., attr:h, attr:r, attr:0). Case-insensitive.
+    if (keyView.length() != 6 ||
+        towlower (keyView[0]) != L'a' ||
+        towlower (keyView[1]) != L't' ||
+        towlower (keyView[2]) != L't' ||
+        towlower (keyView[3]) != L'r' ||
+        keyView[4] != L':')
+    {
+        m_lastParseResult.errors.push_back (
+            std::format (L"Invalid file attribute key: '{}' (expected attr:<x>)",
+                         wstring (keyView)));
+        return;
+    }
+
+    chAttr = towupper (keyView[5]);
+
+    for (const SFileAttributeKeyMap & mapping : s_krgFileAttributeKeyMap)
+    {
+        if (mapping.m_chKey == chAttr)
+        {
+            dwFileAttribute = mapping.m_dwAttribute;
+            found = true;
+            break;
+        }
+    }
+
+    if (!found)
+    {
+        m_lastParseResult.errors.push_back (
+            std::format (L"Invalid file attribute key: '{}' (expected attr:<R|H|S|A|T|E|C|P|0>)",
+                         wstring (keyView)));
+        return;
+    }
+
+    m_mapFileAttributesTextAttr[dwFileAttribute] = { colorAttr, EAttributeSource::Environment };
+}
 ////////////////////////////////////////////////////////////////////////////////
 //
 //  CConfig::ParseKeyAndValue
@@ -621,6 +729,29 @@ WORD CConfig::GetTextAttrForFile (const WIN32_FIND_DATA & wfd)
 
 
 
+    //
+    // File attribute colors override everything else (including directory color)
+    // and follow a fixed precedence order.
+    //
+
+    for (const SFileAttributeKeyMap & mapping : s_krgFileAttributeKeyMap)
+    {
+        if ((wfd.dwFileAttributes & mapping.m_dwAttribute) == 0)
+        {
+            continue;
+        }
+
+        auto attrIter = m_mapFileAttributesTextAttr.find (mapping.m_dwAttribute);
+        if (attrIter == m_mapFileAttributesTextAttr.end())
+        {
+            continue;
+        }
+
+        textAttr = attrIter->second.m_wAttr;
+        BAIL_OUT_IF (TRUE, S_OK);
+    }
+
+
 
     if (wfd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
     {
@@ -647,13 +778,14 @@ WORD CConfig::GetTextAttrForFile (const WIN32_FIND_DATA & wfd)
     BAIL_OUT_IF (iter == m_mapExtensionToTextAttr.end(), S_OK);
 
     textAttr = iter->second;
+  
+
+Error:
     if ((textAttr & BC_Mask) == 0)
     {
         textAttr |= m_rgAttributes[EAttribute::Default] & BC_Mask;
     }
-  
 
-Error:
     return textAttr;
 }
 

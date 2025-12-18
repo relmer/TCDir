@@ -38,6 +38,18 @@
             "preLaunchTask": "Build Debug x64"
         },
         {
+            "name": "Debug TCDir /env",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}\\x64\\Debug\\TCDir.exe",
+            "args": ["C:\\Windows\\System32", "/env"],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [ { "name" : "TCDIR", "value" : "D=LightGreen;S=Yellow;.cpp=White on Bluepickles" } ],
+            "console": "integratedTerminal",
+            "preLaunchTask": "Build Debug x64"
+        },
+        {
             "name": "Run Release TCDir",
             "type": "cppvsdbg",
             "request": "launch",

@@ -140,28 +140,18 @@ HRESULT CUsage::DisplayEnvVarIssues (CConsole & console)
     validationResult = console.m_configPtr->ValidateEnvironmentVariable();
     if (!validationResult.hasIssues())
     {
-        console.Puts (CConfig::EAttribute::Default, L"No TCDIR configuration issues detected.");
+        console.Puts (CConfig::EAttribute::Default, L"  No TCDIR configuration issues detected.");
         console.Puts (CConfig::EAttribute::Default, L"");
         BAIL_OUT_IF (TRUE, S_OK);
     }
 
-    console.Puts (CConfig::EAttribute::Error, L"");
-    console.Puts (CConfig::EAttribute::Error, L"TCDIR Configuration Issues Detected:");
-    console.Puts (CConfig::EAttribute::Error, L"");
+    console.Puts (CConfig::EAttribute::Error, L"  TCDIR configuration issues detected:");
 
     for (const auto & error : validationResult.errors)
     {
-        console.Printf (CConfig::EAttribute::Error, L"  ? Error:  %s", error.c_str());
+        console.Printf (CConfig::EAttribute::Error,   L"    Error:  %s", error.c_str());
         console.Puts   (CConfig::EAttribute::Default, L"");
     }
-
-    for (const auto & warning : validationResult.warnings)
-    {
-        console.Printf (CConfig::EAttribute::Information, L"  ? Warning:  %s", warning.c_str());
-        console.Puts   (CConfig::EAttribute::Default, L"");
-    }
-
-    console.Puts (CConfig::EAttribute::Default, L"");
 
 Error:
     return hr;
@@ -191,8 +181,9 @@ void CUsage::DisplayConfigurationTable (CConsole & console)
 
     tableSeparator += wstring (COLUMN_WIDTH_ATTR + COLUMN_WIDTH_SOURCE + 2, UNICODE_LINE_HORIZONTAL);
 
-    DisplayAttributeConfiguration (console, tableSeparator, COLUMN_WIDTH_ATTR, COLUMN_WIDTH_SOURCE);
-    DisplayExtensionConfiguration (console, tableSeparator, COLUMN_WIDTH_ATTR, COLUMN_WIDTH_SOURCE);
+    DisplayAttributeConfiguration     (console, tableSeparator, COLUMN_WIDTH_ATTR, COLUMN_WIDTH_SOURCE);
+    DisplayFileAttributeConfiguration (console, tableSeparator, COLUMN_WIDTH_ATTR, COLUMN_WIDTH_SOURCE);
+    DisplayExtensionConfiguration     (console, tableSeparator, COLUMN_WIDTH_ATTR, COLUMN_WIDTH_SOURCE);
 }
 
 
@@ -233,26 +224,99 @@ void CUsage::DisplayAttributeConfiguration (CConsole & console, const wstring & 
 
 
     tableHeader = format (L"  {:<{}}  {:<{}}",
-                          L"Attribute type", columnWidthAttr,
-                          L"Source",         columnWidthSource);
+                          L"Item",   columnWidthAttr,
+                          L"Source", columnWidthSource);
 
     console.Puts (CConfig::EAttribute::Information, L"");
-    console.Puts (CConfig::EAttribute::Information, L"Current display attribute configuration:");
+    console.Puts (CConfig::EAttribute::Information, L"Current display item configuration:");
 
     console.Puts (CConfig::EAttribute::Information,   tableHeader.c_str());
     console.Puts (CConfig::EAttribute::SeparatorLine, tableSeparator.c_str());
 
     for (const auto & info : s_attrInfos)
     {
-        WORD    attr   = console.m_configPtr->m_rgAttributes[info.attr];
-        bool    isEnv  = (console.m_configPtr->m_rgAttributeSources[info.attr] == CConfig::EAttributeSource::Environment);
-        LPCWSTR source = isEnv ? L"Environment" : L"Default";
-        WORD    bgAttr = console.m_configPtr->m_rgAttributes[CConfig::EAttribute::Default] & BC_Mask;
+        WORD    attr       = console.m_configPtr->m_rgAttributes[info.attr];
+        bool    isEnv      = (console.m_configPtr->m_rgAttributeSources[info.attr] == CConfig::EAttributeSource::Environment);
+        LPCWSTR source     = isEnv ? L"Environment" : L"Default";
+        WORD    bgAttr     = console.m_configPtr->m_rgAttributes[CConfig::EAttribute::Default] & BC_Mask;
         WORD    sourceAttr = static_cast<WORD> (bgAttr | (isEnv ? FC_Cyan : FC_DarkGrey));
-        int     pad    = max (0, columnWidthAttr - static_cast<int> (wcslen (info.name)));
+        int     pad        = max (0, columnWidthAttr - static_cast<int> (wcslen (info.name)));
 
         console.Printf (CConfig::EAttribute::Information, L"  ");
         console.Printf (attr,                             L"%ls", info.name);
+        console.Printf (CConfig::EAttribute::Information, L"%*ls  ", pad, L"");
+        console.Printf (sourceAttr,                       L"%-*ls", columnWidthSource, source);
+        console.Printf (CConfig::EAttribute::Default,     L"\n");
+    }
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CUsage::DisplayFileAttributeConfiguration
+//
+////////////////////////////////////////////////////////////////////////////////
+
+void CUsage::DisplayFileAttributeConfiguration (CConsole & console, const wstring & tableSeparator, int columnWidthAttr, int columnWidthSource)
+{
+    struct FileAttrInfo
+    {
+        LPCWSTR name;
+        DWORD   dwAttribute;
+        WCHAR   ch;
+    };
+
+    static constexpr FileAttrInfo s_attrInfos[] =
+    {
+        { L"Read-only",      FILE_ATTRIBUTE_READONLY,      L'R' },
+        { L"Hidden",         FILE_ATTRIBUTE_HIDDEN,        L'H' },
+        { L"System",         FILE_ATTRIBUTE_SYSTEM,        L'S' },
+        { L"Archive",        FILE_ATTRIBUTE_ARCHIVE,       L'A' },
+        { L"Temporary",      FILE_ATTRIBUTE_TEMPORARY,     L'T' },
+        { L"Encrypted",      FILE_ATTRIBUTE_ENCRYPTED,     L'E' },
+        { L"Compressed",     FILE_ATTRIBUTE_COMPRESSED,    L'C' },
+        { L"Reparse point",  FILE_ATTRIBUTE_REPARSE_POINT, L'P' },
+        { L"Sparse file",    FILE_ATTRIBUTE_SPARSE_FILE,   L'0' },
+    };
+
+    wstring tableHeader;
+    WORD    bgAttr = console.m_configPtr->m_rgAttributes[CConfig::EAttribute::Default] & BC_Mask;
+
+
+
+    tableHeader = format (L"  {:<{}}  {:<{}}",
+                          L"File attribute", columnWidthAttr,
+                          L"Source",         columnWidthSource);
+
+    console.Puts (CConfig::EAttribute::Information, L"");
+    console.Puts (CConfig::EAttribute::Information, L"File attribute color configuration:");
+
+    console.Puts (CConfig::EAttribute::Information,   tableHeader.c_str());
+    console.Puts (CConfig::EAttribute::SeparatorLine, tableSeparator.c_str());
+
+    for (const auto & info : s_attrInfos)
+    {
+        auto iter = console.m_configPtr->m_mapFileAttributesTextAttr.find (info.dwAttribute);
+        if (iter == console.m_configPtr->m_mapFileAttributesTextAttr.end())
+        {
+            continue;
+        }
+
+        WORD    attr   = iter->second.m_wAttr;
+        bool    isEnv  = (iter->second.m_source == CConfig::EAttributeSource::Environment);
+        LPCWSTR source = L"Default";
+
+        source = isEnv ? L"Environment" : L"Default";
+        WORD sourceAttr = static_cast<WORD> (bgAttr | (isEnv ? FC_Cyan : FC_DarkGrey));
+
+        wstring label = format (L"{} {}", info.ch, info.name);
+        int     pad   = max (0, columnWidthAttr - static_cast<int> (label.size()));
+
+        console.Printf (CConfig::EAttribute::Information, L"  ");
+        console.Printf (attr,                             L"%ls", label.c_str());
         console.Printf (CConfig::EAttribute::Information, L"%*ls  ", pad, L"");
         console.Printf (sourceAttr,                       L"%-*ls", columnWidthSource, source);
         console.Printf (CConfig::EAttribute::Default,     L"\n");
@@ -480,7 +544,7 @@ WORD CUsage::GetColorAttribute (CConsole & console, wstring_view colorName)
 
 void CUsage::DisplayColorConfiguration (CConsole & console)
 {
-    static constexpr int COLUMN_WIDTH_COLOR_LEFT = 13;
+    static constexpr int COLUMN_WIDTH_COLOR_LEFT = 18;
 
     struct ColorRow
     {
@@ -502,13 +566,11 @@ void CUsage::DisplayColorConfiguration (CConsole & console)
 
 
 
-    console.Puts (CConfig::EAttribute::Default, L"  Colors:");
-
     for (const auto & row : s_colorRows)
     {
         int pad = max (0, COLUMN_WIDTH_COLOR_LEFT - static_cast<int> (wcslen (row.left)));
 
-        console.Printf (CConfig::EAttribute::Default, L"      ");
+        console.Printf (CConfig::EAttribute::Default, L"                  ");
         console.Printf (GetColorAttribute (console, row.left),  L"%ls", row.left);
         console.Printf (CConfig::EAttribute::Default, L"%*ls", pad, L"");
         console.Printf (GetColorAttribute (console, row.right), L"%ls", row.right);
@@ -547,7 +609,7 @@ static void DisplayEnvVarCurrentValue (CConsole & console, LPCWSTR pszEnvVarName
     cchCopied = GetEnvironmentVariableW (pszEnvVarName, envValue.data(), cchBufNeeded);
     CWRA (cchCopied == cchExcludingNull);
 
-    console.Printf (CConfig::EAttribute::Default,     L"Current ");
+    console.Printf (CConfig::EAttribute::Default,     L"  Current ");
     console.Printf (CConfig::EAttribute::Information, pszEnvVarName);
     console.Printf (CConfig::EAttribute::Default,     L" value: ");
 
@@ -558,12 +620,10 @@ static void DisplayEnvVarCurrentValue (CConsole & console, LPCWSTR pszEnvVarName
     else
     {
         console.Printf (CConfig::EAttribute::InformationHighlight, L"\"%ls\"", envValue.c_str());
-        console.Puts   (CConfig::EAttribute::Default,              L"");
+        console.Puts (CConfig::EAttribute::Default, L"");
     }
 
-    console.Puts (CConfig::EAttribute::Default, L"");
-
-
+    
 
 Error:
     return;
@@ -583,31 +643,36 @@ void CUsage::DisplayEnvVarConfigurationReport (CConsole & console)
 {
     static LPCWSTR s_envVarSyntax[] =
     {
-        L"  set " TCDIR_ENV_VAR_NAME L"=<attr|.ext>=<fore>[on <back>][;...]",           // CMD
-        L"  $env:" TCDIR_ENV_VAR_NAME L" = \"<attr|.ext>=<fore>[on <back>][;...]\"",    // PowerShell
+        L"  set " TCDIR_ENV_VAR_NAME L"=<Item | .ext | Attr:<fileattr>> = <Fore>[on <Back>][;...]",           // CMD
+        L"  $env:" TCDIR_ENV_VAR_NAME L" = \"<Item | .ext | Attr:<fileattr>> = <Fore>[on <Back>][;...]\"",    // PowerShell
     };
 
     static LPCWSTR s_colorOverrideLines[] =
     {
         L"",
-        L"  <attr>  A display attribute (single character)",
-        L"  <.ext>  A file extension, including the leading period.",
-        L"  <fore>  Foreground color",
-        L"  <back>  Background color",
+        L"  <Item>      A display item:",
+        L"                  D  Date           T  Time",
+        L"                  S  Size           R  Directory name",
+        L"                  I  Information    H  Information highlight",
+        L"                  E  Error          F  File (default)",
         L"",
-        L"  Display attributes:",
-        L"      D  Date                   T  Time",
-        L"      A  File attribute present -  File attribute not present",
-        L"      S  Size                   R  Directory name",
-        L"      I  Information            H  Information highlight",
-        L"      E  Error                  F  File (default)",
+        L"  <.ext>      A file extension, including the leading period.",
         L"",
+        L"  <FileAttr>  A file attribute (see file attributes below)",
+        L"                  R  Read-only      H  Hidden",
+        L"                  S  System         A  Archive",
+        L"                  T  Temporary      E  Encrypted",
+        L"                  C  Compressed     P  Reparse point",
+        L"                  0  Sparse file",
+        L"",
+        L"  <Fore>      Foreground color",
+        L"  <Back>      Background color",
     };
 
     static LPCWSTR s_envVarExample[] =
     {
-        L"  Example: set "  TCDIR_ENV_VAR_NAME L"=D=LightGreen;S=Yellow;.cpp=White on Blue",           // CMD
-        L"  Example: $env:" TCDIR_ENV_VAR_NAME L" = \"D=LightGreen;S=Yellow;.cpp=White on Blue\"",    // PowerShell
+        L"  Example: set "  TCDIR_ENV_VAR_NAME L"=D=LightGreen;S=Yellow;Attr:H=DarkGrey;.cpp=White on Blue",           // CMD
+        L"  Example: $env:" TCDIR_ENV_VAR_NAME L" = \"D=LightGreen;S=Yellow;Attr:H=DarkGrey;.cpp=White on Blue\"",    // PowerShell
     };
 
     bool  isPowerShell = IsPowerShell ();
@@ -617,9 +682,8 @@ void CUsage::DisplayEnvVarConfigurationReport (CConsole & console)
     console.Puts   (CConfig::EAttribute::Default,     L"");
     console.Printf (CConfig::EAttribute::Default,     L"Set the ");
     console.Printf (CConfig::EAttribute::Information, TCDIR_ENV_VAR_NAME);
-    console.Printf (CConfig::EAttribute::Default,     L" environment variable to override default colors for file ");
-    console.Puts   (CConfig::EAttribute::Default,     L"extensions or display attributes:");
-    console.Puts   (CConfig::EAttribute::Default,     L"");
+    console.Puts   (CConfig::EAttribute::Default,     L" environment variable to override default colors for display"
+                                                      L" items, file attributes, or file extensions:\n");
 
     console.Puts (CConfig::EAttribute::Default, s_envVarSyntax[isPowerShell]);
 
@@ -641,7 +705,7 @@ void CUsage::DisplayEnvVarConfigurationReport (CConsole & console)
     else
     {
         console.Puts (CConfig::EAttribute::Default, L"");
-        console.Puts (CConfig::EAttribute::Default, L"TCDIR environment variable is not set; showing default configuration:");
+        console.Puts (CConfig::EAttribute::Default, L"  TCDIR environment variable is not set; showing default configuration:");
         console.Puts (CConfig::EAttribute::Default, L"");
     }
 
