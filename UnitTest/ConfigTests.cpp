@@ -879,7 +879,7 @@ namespace UnitTest
             config.Initialize(FC_LightGrey);
             
             WORD originalDate = config.m_rgAttributes[CConfig::EAttribute::Date];
-            config.ProcessDisplayAttributeOverride(L'D', FC_Yellow);
+            config.ProcessDisplayAttributeOverride(L'D', FC_Yellow, L"D=Yellow");
             
             Assert::AreEqual((WORD)FC_Yellow, config.m_rgAttributes[CConfig::EAttribute::Date]);
             Assert::AreNotEqual(originalDate, config.m_rgAttributes[CConfig::EAttribute::Date]);
@@ -894,7 +894,7 @@ namespace UnitTest
             ConfigProbe config;
             config.Initialize(FC_LightGrey);
             
-            config.ProcessDisplayAttributeOverride(L'T', FC_Cyan);
+            config.ProcessDisplayAttributeOverride(L'T', FC_Cyan, L"T=Cyan");
             
             Assert::AreEqual((WORD)FC_Cyan, config.m_rgAttributes[CConfig::EAttribute::Time]);
         }
@@ -908,7 +908,7 @@ namespace UnitTest
             ConfigProbe config;
             config.Initialize(FC_LightGrey);
             
-            config.ProcessDisplayAttributeOverride(L'S', FC_Magenta);
+            config.ProcessDisplayAttributeOverride(L'S', FC_Magenta, L"S=Magenta");
             
             Assert::AreEqual((WORD)FC_Magenta, config.m_rgAttributes[CConfig::EAttribute::Size]);
         }
@@ -922,7 +922,7 @@ namespace UnitTest
             ConfigProbe config;
             config.Initialize(FC_LightGrey);
             
-            config.ProcessDisplayAttributeOverride(L'R', FC_Green);
+            config.ProcessDisplayAttributeOverride(L'R', FC_Green, L"R=Green");
             
             Assert::AreEqual((WORD)FC_Green, config.m_rgAttributes[CConfig::EAttribute::Directory]);
         }
@@ -936,7 +936,7 @@ namespace UnitTest
             ConfigProbe config;
             config.Initialize(FC_LightGrey);
             
-            config.ProcessDisplayAttributeOverride(L'A', FC_LightRed);
+            config.ProcessDisplayAttributeOverride(L'A', FC_LightRed, L"A=LightRed");
             
             Assert::AreEqual((WORD)FC_LightRed, config.m_rgAttributes[CConfig::EAttribute::FileAttributePresent]);
         }
@@ -950,7 +950,7 @@ namespace UnitTest
             ConfigProbe config;
             config.Initialize(FC_LightGrey);
             
-            config.ProcessDisplayAttributeOverride(L'-', FC_DarkGrey);
+            config.ProcessDisplayAttributeOverride(L'-', FC_DarkGrey, L"-=DarkGrey");
             
             Assert::AreEqual((WORD)FC_DarkGrey, config.m_rgAttributes[CConfig::EAttribute::FileAttributeNotPresent]);
         }
@@ -964,7 +964,7 @@ namespace UnitTest
             ConfigProbe config;
             config.Initialize(FC_LightGrey);
             
-            config.ProcessDisplayAttributeOverride(L'I', FC_White);
+            config.ProcessDisplayAttributeOverride(L'I', FC_White, L"I=White");
             
             Assert::AreEqual((WORD)FC_White, config.m_rgAttributes[CConfig::EAttribute::Information]);
         }
@@ -978,7 +978,7 @@ namespace UnitTest
             ConfigProbe config;
             config.Initialize(FC_LightGrey);
             
-            config.ProcessDisplayAttributeOverride(L'H', FC_Yellow);
+            config.ProcessDisplayAttributeOverride(L'H', FC_Yellow, L"H=Yellow");
             
             Assert::AreEqual((WORD)FC_Yellow, config.m_rgAttributes[CConfig::EAttribute::InformationHighlight]);
         }
@@ -992,7 +992,7 @@ namespace UnitTest
             ConfigProbe config;
             config.Initialize(FC_LightGrey);
             
-            config.ProcessDisplayAttributeOverride(L'E', FC_Red);
+            config.ProcessDisplayAttributeOverride(L'E', FC_Red, L"E=Red");
             
             Assert::AreEqual((WORD)FC_Red, config.m_rgAttributes[CConfig::EAttribute::Error]);
         }
@@ -1006,7 +1006,7 @@ namespace UnitTest
             ConfigProbe config;
             config.Initialize(FC_LightGrey);
             
-            config.ProcessDisplayAttributeOverride(L'F', FC_Blue);
+            config.ProcessDisplayAttributeOverride(L'F', FC_Blue, L"F=Blue");
             
             Assert::AreEqual((WORD)FC_Blue, config.m_rgAttributes[CConfig::EAttribute::Default]);
         }
@@ -1020,8 +1020,8 @@ namespace UnitTest
             ConfigProbe config;
             config.Initialize(FC_LightGrey);
             
-            config.ProcessDisplayAttributeOverride(L'd', FC_Yellow);
-            config.ProcessDisplayAttributeOverride(L't', FC_Cyan);
+            config.ProcessDisplayAttributeOverride(L'd', FC_Yellow, L"d=Yellow");
+            config.ProcessDisplayAttributeOverride(L't', FC_Cyan, L"t=Cyan");
             
             Assert::AreEqual((WORD)FC_Yellow, config.m_rgAttributes[CConfig::EAttribute::Date]);
             Assert::AreEqual((WORD)FC_Cyan, config.m_rgAttributes[CConfig::EAttribute::Time]);
@@ -1037,7 +1037,7 @@ namespace UnitTest
             config.Initialize(FC_LightGrey);
             
             WORD colorAttr = FC_White | BC_Blue;
-            config.ProcessDisplayAttributeOverride(L'D', colorAttr);
+            config.ProcessDisplayAttributeOverride(L'D', colorAttr, L"D=White on Blue");
             
             Assert::AreEqual(colorAttr, config.m_rgAttributes[CConfig::EAttribute::Date]);
         }
@@ -1053,9 +1053,9 @@ namespace UnitTest
             
             WORD originalDate = config.m_rgAttributes[CConfig::EAttribute::Date];
             
-            config.ProcessDisplayAttributeOverride(L'X', FC_Yellow);
-            config.ProcessDisplayAttributeOverride(L'Z', FC_Red);
-            config.ProcessDisplayAttributeOverride(L'1', FC_Green);
+            config.ProcessDisplayAttributeOverride(L'X', FC_Yellow, L"X=Yellow");
+            config.ProcessDisplayAttributeOverride(L'Z', FC_Red, L"Z=Red");
+            config.ProcessDisplayAttributeOverride(L'1', FC_Green, L"1=Green");
             
             // Date should remain unchanged
             Assert::AreEqual(originalDate, config.m_rgAttributes[CConfig::EAttribute::Date]);
@@ -1071,16 +1071,16 @@ namespace UnitTest
             config.Initialize(FC_LightGrey);
             
             // Test all valid characters
-            config.ProcessDisplayAttributeOverride(L'D', FC_Black);
-            config.ProcessDisplayAttributeOverride(L'T', FC_Blue);
-            config.ProcessDisplayAttributeOverride(L'A', FC_Green);
-            config.ProcessDisplayAttributeOverride(L'-', FC_Cyan);
-            config.ProcessDisplayAttributeOverride(L'S', FC_Red);
-            config.ProcessDisplayAttributeOverride(L'R', FC_Magenta);
-            config.ProcessDisplayAttributeOverride(L'I', FC_Brown);
-            config.ProcessDisplayAttributeOverride(L'H', FC_LightGrey);
-            config.ProcessDisplayAttributeOverride(L'E', FC_DarkGrey);
-            config.ProcessDisplayAttributeOverride(L'F', FC_LightBlue);
+            config.ProcessDisplayAttributeOverride(L'D', FC_Black, L"D=Black");
+            config.ProcessDisplayAttributeOverride(L'T', FC_Blue, L"T=Blue");
+            config.ProcessDisplayAttributeOverride(L'A', FC_Green, L"A=Green");
+            config.ProcessDisplayAttributeOverride(L'-', FC_Cyan, L"-=Cyan");
+            config.ProcessDisplayAttributeOverride(L'S', FC_Red, L"S=Red");
+            config.ProcessDisplayAttributeOverride(L'R', FC_Magenta, L"R=Magenta");
+            config.ProcessDisplayAttributeOverride(L'I', FC_Brown, L"I=Brown");
+            config.ProcessDisplayAttributeOverride(L'H', FC_LightGrey, L"H=LightGrey");
+            config.ProcessDisplayAttributeOverride(L'E', FC_DarkGrey, L"E=DarkGrey");
+            config.ProcessDisplayAttributeOverride(L'F', FC_LightBlue, L"F=LightBlue");
             
             Assert::AreEqual((WORD)FC_Black, config.m_rgAttributes[CConfig::EAttribute::Date]);
             Assert::AreEqual((WORD)FC_Blue, config.m_rgAttributes[CConfig::EAttribute::Time]);
@@ -1191,6 +1191,166 @@ namespace UnitTest
             
             // Error attribute should be unchanged (X is invalid, no E was set)
             Assert::AreEqual(originalError, config.m_rgAttributes[CConfig::EAttribute::Error]);
+        }
+
+
+
+
+
+        //
+        // ErrorInfo struct population tests
+        //
+
+        TEST_METHOD(ErrorInfo_InvalidEntryFormat_PopulatesCorrectly)
+        {
+            ConfigProbe config;
+            config.Initialize(FC_LightGrey);
+            
+            config.SetEnvVar(TCDIR_ENV_VAR_NAME, L"NoEqualsSign");
+            config.ApplyUserColorOverrides();
+            
+            CConfig::ValidationResult result = config.ValidateEnvironmentVariable();
+            Assert::AreEqual(size_t(1), result.errors.size());
+            
+            const auto& error = result.errors[0];
+            Assert::AreEqual(wstring(L"Invalid entry format (expected key = value)"), error.message);
+            Assert::AreEqual(wstring(L"NoEqualsSign"), error.entry);
+            Assert::AreEqual(wstring(L"NoEqualsSign"), error.invalidText);
+            Assert::AreEqual(size_t(0), error.invalidTextOffset);
+        }
+
+
+
+
+
+        TEST_METHOD(ErrorInfo_InvalidForegroundColor_PopulatesCorrectly)
+        {
+            ConfigProbe config;
+            config.Initialize(FC_LightGrey);
+            
+            config.SetEnvVar(TCDIR_ENV_VAR_NAME, L".cpp=Purplish");
+            config.ApplyUserColorOverrides();
+            
+            CConfig::ValidationResult result = config.ValidateEnvironmentVariable();
+            Assert::AreEqual(size_t(1), result.errors.size());
+            
+            const auto& error = result.errors[0];
+            Assert::AreEqual(wstring(L"Invalid foreground color"), error.message);
+            Assert::AreEqual(wstring(L".cpp=Purplish"), error.entry);
+            Assert::AreEqual(wstring(L"Purplish"), error.invalidText);
+            Assert::AreEqual(size_t(5), error.invalidTextOffset);  // ".cpp=" = 5 chars
+        }
+
+
+
+
+
+        TEST_METHOD(ErrorInfo_InvalidBackgroundColor_PopulatesCorrectly)
+        {
+            ConfigProbe config;
+            config.Initialize(FC_LightGrey);
+            
+            config.SetEnvVar(TCDIR_ENV_VAR_NAME, L".cpp=White on Purplish");
+            config.ApplyUserColorOverrides();
+            
+            CConfig::ValidationResult result = config.ValidateEnvironmentVariable();
+            Assert::AreEqual(size_t(1), result.errors.size());
+            
+            const auto& error = result.errors[0];
+            Assert::AreEqual(wstring(L"Invalid background color"), error.message);
+            Assert::AreEqual(wstring(L".cpp=White on Purplish"), error.entry);
+            Assert::AreEqual(wstring(L"Purplish"), error.invalidText);
+            Assert::AreEqual(size_t(14), error.invalidTextOffset);  // ".cpp=White on " = 14 chars
+        }
+
+
+
+
+
+        TEST_METHOD(ErrorInfo_InvalidKey_PopulatesCorrectly)
+        {
+            ConfigProbe config;
+            config.Initialize(FC_LightGrey);
+            
+            config.SetEnvVar(TCDIR_ENV_VAR_NAME, L"InvalidKey=Yellow");
+            config.ApplyUserColorOverrides();
+            
+            CConfig::ValidationResult result = config.ValidateEnvironmentVariable();
+            Assert::AreEqual(size_t(1), result.errors.size());
+            
+            const auto& error = result.errors[0];
+            Assert::AreEqual(wstring(L"Invalid key (expected single character, .extension, or attr:x)"), error.message);
+            Assert::AreEqual(wstring(L"InvalidKey=Yellow"), error.entry);
+            Assert::AreEqual(wstring(L"InvalidKey"), error.invalidText);
+            Assert::AreEqual(size_t(0), error.invalidTextOffset);
+        }
+
+
+
+
+
+        TEST_METHOD(ErrorInfo_InvalidDisplayAttributeChar_PopulatesCorrectly)
+        {
+            ConfigProbe config;
+            config.Initialize(FC_LightGrey);
+            
+            config.SetEnvVar(TCDIR_ENV_VAR_NAME, L"Q=Yellow");
+            config.ApplyUserColorOverrides();
+            
+            CConfig::ValidationResult result = config.ValidateEnvironmentVariable();
+            Assert::AreEqual(size_t(1), result.errors.size());
+            
+            const auto& error = result.errors[0];
+            Assert::AreEqual(wstring(L"Invalid display attribute character (valid: D,T,A,-,S,R,I,H,E,F)"), error.message);
+            Assert::AreEqual(wstring(L"Q=Yellow"), error.entry);
+            Assert::AreEqual(wstring(L"Q"), error.invalidText);
+            Assert::AreEqual(size_t(0), error.invalidTextOffset);
+        }
+
+
+
+
+
+        TEST_METHOD(ErrorInfo_InvalidFileAttributeChar_PopulatesCorrectly)
+        {
+            ConfigProbe config;
+            config.Initialize(FC_LightGrey);
+            
+            config.SetEnvVar(TCDIR_ENV_VAR_NAME, L"attr:Z=Yellow");
+            config.ApplyUserColorOverrides();
+            
+            CConfig::ValidationResult result = config.ValidateEnvironmentVariable();
+            Assert::AreEqual(size_t(1), result.errors.size());
+            
+            const auto& error = result.errors[0];
+            Assert::AreEqual(wstring(L"Invalid file attribute character (expected R,H,S,A,T,E,C,P,0)"), error.message);
+            Assert::AreEqual(wstring(L"attr:Z=Yellow"), error.entry);
+            Assert::AreEqual(wstring(L"Z"), error.invalidText);
+            Assert::AreEqual(size_t(5), error.invalidTextOffset);  // "attr:" = 5 chars
+        }
+
+
+
+
+
+        TEST_METHOD(ErrorInfo_TildeAlignment_InvalidTextAtOffset)
+        {
+            // This test verifies that invalidTextOffset + invalidText.length() gives the 
+            // correct range within entry for tilde alignment
+            ConfigProbe config;
+            config.Initialize(FC_LightGrey);
+            
+            config.SetEnvVar(TCDIR_ENV_VAR_NAME, L".cpp=White on Badcolor");
+            config.ApplyUserColorOverrides();
+            
+            CConfig::ValidationResult result = config.ValidateEnvironmentVariable();
+            Assert::AreEqual(size_t(1), result.errors.size());
+            
+            const auto& error = result.errors[0];
+            
+            // Verify the invalid text is exactly at the offset position in entry
+            wstring extracted = error.entry.substr(error.invalidTextOffset, error.invalidText.length());
+            Assert::AreEqual(error.invalidText, extracted);
         }
     };
 }

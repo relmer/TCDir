@@ -149,8 +149,30 @@ HRESULT CUsage::DisplayEnvVarIssues (CConsole & console)
 
     for (const auto & error : validationResult.errors)
     {
-        console.Printf (CConfig::EAttribute::Error,   L"    Error:  %s", error.c_str());
+        //
+        // Line 1: Entire error message in red
+        //
+        // Fixed prefix: "    Error:  " = 12 chars
+        // Variable:     message length
+        // Fixed:        ":  \"" = 4 chars
+        // Variable:     invalidTextOffset chars before the invalid text
+        //
+        console.Printf (CConfig::EAttribute::Error, L"    Error:  %s in \"%s\"",
+                        error.message.c_str(), error.entry.c_str());
         console.Puts   (CConfig::EAttribute::Default, L"");
+
+        //
+        // Line 2: Overlines under the invalid portion
+        //
+        // "    Error:  " = 12 chars
+        // message.length() chars
+        // " in \"" = 5 chars
+        // invalidTextOffset chars
+        //
+        size_t prefixLen = 12 + error.message.length() + 5 + error.invalidTextOffset;
+        wstring overlines (error.invalidText.length(), L'\x203E');
+        console.Printf (CConfig::EAttribute::Default, L"%*s", static_cast<int>(prefixLen), L"");
+        console.Puts   (CConfig::EAttribute::Error,   overlines.c_str());
     }
 
 Error:
@@ -181,9 +203,9 @@ void CUsage::DisplayConfigurationTable (CConsole & console)
 
     tableSeparator += wstring (COLUMN_WIDTH_ATTR + COLUMN_WIDTH_SOURCE + 2, UNICODE_LINE_HORIZONTAL);
 
-    DisplayAttributeConfiguration     (console, tableSeparator, COLUMN_WIDTH_ATTR, COLUMN_WIDTH_SOURCE);
-    DisplayFileAttributeConfiguration (console, tableSeparator, COLUMN_WIDTH_ATTR, COLUMN_WIDTH_SOURCE);
-    DisplayExtensionConfiguration     (console, tableSeparator, COLUMN_WIDTH_ATTR, COLUMN_WIDTH_SOURCE);
+    DisplayAttributeConfiguration     (console, COLUMN_WIDTH_ATTR, COLUMN_WIDTH_SOURCE);
+    DisplayFileAttributeConfiguration (console, COLUMN_WIDTH_ATTR, COLUMN_WIDTH_SOURCE);
+    DisplayExtensionConfiguration     (console, COLUMN_WIDTH_ATTR, COLUMN_WIDTH_SOURCE);
 }
 
 
@@ -196,7 +218,7 @@ void CUsage::DisplayConfigurationTable (CConsole & console)
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-void CUsage::DisplayAttributeConfiguration (CConsole & console, const wstring & tableSeparator, int columnWidthAttr, int columnWidthSource)
+void CUsage::DisplayAttributeConfiguration (CConsole & console, int columnWidthAttr, int columnWidthSource)
 {
     struct AttrInfo
     {
@@ -219,19 +241,11 @@ void CUsage::DisplayAttributeConfiguration (CConsole & console, const wstring & 
         { L"Error",                  CConfig::EAttribute::Error                   },
     };
 
-    wstring tableHeader;
 
-
-
-    tableHeader = format (L"  {:<{}}  {:<{}}",
-                          L"Item",   columnWidthAttr,
-                          L"Source", columnWidthSource);
 
     console.Puts (CConfig::EAttribute::Information, L"");
     console.Puts (CConfig::EAttribute::Information, L"Current display item configuration:");
-
-    console.Puts (CConfig::EAttribute::Information,   tableHeader.c_str());
-    console.Puts (CConfig::EAttribute::SeparatorLine, tableSeparator.c_str());
+    console.Puts (CConfig::EAttribute::Information, L"");
 
     for (const auto & info : s_attrInfos)
     {
@@ -260,7 +274,7 @@ void CUsage::DisplayAttributeConfiguration (CConsole & console, const wstring & 
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-void CUsage::DisplayFileAttributeConfiguration (CConsole & console, const wstring & tableSeparator, int columnWidthAttr, int columnWidthSource)
+void CUsage::DisplayFileAttributeConfiguration (CConsole & console, int columnWidthAttr, int columnWidthSource)
 {
     struct FileAttrInfo
     {
@@ -282,20 +296,13 @@ void CUsage::DisplayFileAttributeConfiguration (CConsole & console, const wstrin
         { L"Sparse file",    FILE_ATTRIBUTE_SPARSE_FILE,   L'0' },
     };
 
-    wstring tableHeader;
-    WORD    bgAttr = console.m_configPtr->m_rgAttributes[CConfig::EAttribute::Default] & BC_Mask;
+    WORD bgAttr = console.m_configPtr->m_rgAttributes[CConfig::EAttribute::Default] & BC_Mask;
 
 
-
-    tableHeader = format (L"  {:<{}}  {:<{}}",
-                          L"File attribute", columnWidthAttr,
-                          L"Source",         columnWidthSource);
 
     console.Puts (CConfig::EAttribute::Information, L"");
     console.Puts (CConfig::EAttribute::Information, L"File attribute color configuration:");
-
-    console.Puts (CConfig::EAttribute::Information,   tableHeader.c_str());
-    console.Puts (CConfig::EAttribute::SeparatorLine, tableSeparator.c_str());
+    console.Puts (CConfig::EAttribute::Information, L"");
 
     for (const auto & info : s_attrInfos)
     {
@@ -333,19 +340,15 @@ void CUsage::DisplayFileAttributeConfiguration (CConsole & console, const wstrin
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-void CUsage::DisplayExtensionConfigurationSingleColumn (CConsole & console, const wstring & tableSeparator, int columnWidthAttr, int columnWidthSource, const vector<pair<wstring, WORD>> & extensions)
+void CUsage::DisplayExtensionConfigurationSingleColumn (CConsole & console, int columnWidthAttr, int columnWidthSource, const vector<pair<wstring, WORD>> & extensions)
 {
-    wstring tableHeader;
-    WORD    bgAttr = console.m_configPtr->m_rgAttributes[CConfig::EAttribute::Default] & BC_Mask;
+    WORD bgAttr = console.m_configPtr->m_rgAttributes[CConfig::EAttribute::Default] & BC_Mask;
 
 
 
-    tableHeader = format (L"  {:<{}}  {:<{}}",
-                          L"Extension", columnWidthAttr,
-                          L"Source",    columnWidthSource);
-
-    console.Puts (CConfig::EAttribute::Information,   tableHeader.c_str());
-    console.Puts (CConfig::EAttribute::SeparatorLine, tableSeparator.c_str());
+    console.Puts (CConfig::EAttribute::Information, L"");
+    console.Puts (CConfig::EAttribute::Information, L"File attribute color configuration:");
+    console.Puts (CConfig::EAttribute::Information, L"");
 
     for (const auto & [ext, extAttr] : extensions)
     {
@@ -354,7 +357,7 @@ void CUsage::DisplayExtensionConfigurationSingleColumn (CConsole & console, cons
                               sourceIter->second == CConfig::EAttributeSource::Environment);
         LPCWSTR source     = isEnv ? L"Environment" : L"Default";
         WORD    sourceAttr = static_cast<WORD> (bgAttr | (isEnv ? FC_Cyan : FC_DarkGrey));
-        int pad = max (0, columnWidthAttr - static_cast<int> (ext.size ()));
+        int    pad         = max (0, columnWidthAttr - static_cast<int> (ext.size ()));
 
 
 
@@ -364,8 +367,6 @@ void CUsage::DisplayExtensionConfigurationSingleColumn (CConsole & console, cons
         console.Printf (sourceAttr,                       L"%-*ls", columnWidthSource, source);
         console.Printf (CConfig::EAttribute::Default,     L"\n");
     }
-
-    console.Puts (CConfig::EAttribute::Default, L"");
 }
 
 
@@ -423,9 +424,10 @@ void CUsage::DisplayExtensionConfigurationMultiColumn (CConsole & console, const
             WORD         extAttr = extensions[idx].second;
 
             auto sourceIter = console.m_configPtr->m_mapExtensionSources.find (ext);
-            bool isEnv = (sourceIter         != console.m_configPtr->m_mapExtensionSources.end () &&
-                          sourceIter->second == CConfig::EAttributeSource::Environment);
+            bool isEnv      = (sourceIter         != console.m_configPtr->m_mapExtensionSources.end () &&
+                               sourceIter->second == CConfig::EAttributeSource::Environment);
             WORD sourceAttr = static_cast<WORD> (bgAttr | (isEnv ? FC_Cyan : FC_DarkGrey));
+            
             source = isEnv ? L"Environment" : L"Default";
 
             console.Printf (extAttr,                          L"%ls", ext.c_str ());
@@ -456,16 +458,15 @@ void CUsage::DisplayExtensionConfigurationMultiColumn (CConsole & console, const
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-void CUsage::DisplayExtensionConfiguration (CConsole & console, const wstring & tableSeparator, int columnWidthAttr, int columnWidthSource)
+void CUsage::DisplayExtensionConfiguration (CConsole & console, int columnWidthAttr, int columnWidthSource)
 {
     vector<pair<wstring, WORD>> extensions;
-
-    UINT   cxConsoleWidth  = console.GetWidth ();
-    size_t maxExtLen       = 0;
-    size_t cxIndent        = 2;
-    size_t cxAvailable     = (cxConsoleWidth > cxIndent) ? (cxConsoleWidth - cxIndent) : cxConsoleWidth;
-    size_t cxSourceWidth   = wcslen (L"Environment");
-    size_t cColumns        = 1;
+    UINT                        cxConsoleWidth  = console.GetWidth ();
+    size_t                      maxExtLen       = 0;
+    size_t                      cxIndent        = 2;
+    size_t                      cxAvailable     = (cxConsoleWidth > cxIndent) ? (cxConsoleWidth - cxIndent) : cxConsoleWidth;
+    size_t                      cxSourceWidth   = wcslen (L"Environment");
+    size_t                      cColumns        = 1;
 
 
 
@@ -489,7 +490,7 @@ void CUsage::DisplayExtensionConfiguration (CConsole & console, const wstring & 
     // Minimum width per column: <extension> + "  " + <source> + " "
     // The extra space allows a gap between columns.
     {
-        size_t cxMinColumnWidth = maxExtLen + 2 + cxSourceWidth + 1;
+        size_t cxMinColumnWidth = maxExtLen + 2 + cxSourceWidth + 1 + 2; // +3 for some padding
 
         if (cxMinColumnWidth > 0 && cxMinColumnWidth <= cxAvailable)
         {
@@ -499,7 +500,7 @@ void CUsage::DisplayExtensionConfiguration (CConsole & console, const wstring & 
 
     if (cColumns == 1)
     {
-        DisplayExtensionConfigurationSingleColumn (console, tableSeparator, columnWidthAttr, columnWidthSource, extensions);
+        DisplayExtensionConfigurationSingleColumn (console, columnWidthAttr, columnWidthSource, extensions);
     }
     else
     {
@@ -570,14 +571,79 @@ void CUsage::DisplayColorConfiguration (CConsole & console)
     {
         int pad = max (0, COLUMN_WIDTH_COLOR_LEFT - static_cast<int> (wcslen (row.left)));
 
-        console.Printf (CConfig::EAttribute::Default, L"                  ");
+        console.Printf (CConfig::EAttribute::Default,           L"                  ");
         console.Printf (GetColorAttribute (console, row.left),  L"%ls", row.left);
-        console.Printf (CConfig::EAttribute::Default, L"%*ls", pad, L"");
+        console.Printf (CConfig::EAttribute::Default,           L"%*ls", pad, L"");
         console.Printf (GetColorAttribute (console, row.right), L"%ls", row.right);
-        console.Printf (CConfig::EAttribute::Default, L"\n");
+        console.Printf (CConfig::EAttribute::Default,           L"\n");
     }
 
     console.Puts (CConfig::EAttribute::Default, L"");
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  DisplayEnvVarSegment
+//
+//  Display a single TCDIR segment in its specified color.
+//  Format: Key=ForeColor [on BackColor]
+//
+////////////////////////////////////////////////////////////////////////////////
+
+static HRESULT DisplayEnvVarSegment (CConsole & console, wstring_view segment)
+{
+    HRESULT      hr           = S_OK;
+    size_t       equalPos     = 0;
+    WORD         colorAttr    = 0;
+    wstring_view keyView;
+    wstring_view valueView;
+    wstring_view trimmedValue;
+
+
+
+    equalPos = segment.find(L'=');
+    BAIL_OUT_IF (equalPos == wstring_view::npos, S_OK);
+
+    keyView   = segment.substr(0, equalPos);
+    valueView = segment.substr(equalPos + 1);
+
+    // Trim leading/trailing whitespace from value for color parsing
+    trimmedValue = valueView;
+    while (!trimmedValue.empty() && iswspace (trimmedValue.front()))
+    {
+        trimmedValue.remove_prefix (1);
+    }   
+
+    while (!trimmedValue.empty() && iswspace (trimmedValue.back()))
+    {
+        trimmedValue.remove_suffix (1);
+    }   
+
+    // Parse the color spec to get the actual color
+    colorAttr = console.m_configPtr->ParseColorSpec (trimmedValue);
+
+    if (colorAttr == 0)
+    {
+        // Invalid color - display entire segment in default
+        console.Printf (CConfig::EAttribute::Default, L"%.*s", 
+                        static_cast<int>(segment.length()), segment.data());
+    }
+    else
+    {
+        // Print key in its color, = in default, value in its color
+        console.Printf (colorAttr, L"%.*s", 
+                        static_cast<int>(keyView.length()), keyView.data());
+        console.Printf (CConfig::EAttribute::Default, L"=");
+        console.Printf (colorAttr, L"%.*s", 
+                        static_cast<int>(valueView.length()), valueView.data());
+    }
+
+Error:
+    return hr;
 }
 
 
@@ -597,6 +663,7 @@ static void DisplayEnvVarCurrentValue (CConsole & console, LPCWSTR pszEnvVarName
     DWORD   cchExcludingNull = 0;
     DWORD   cchCopied        = 0;
     wstring envValue;
+    bool    firstSegment     = true;
 
 
 
@@ -615,13 +682,34 @@ static void DisplayEnvVarCurrentValue (CConsole & console, LPCWSTR pszEnvVarName
 
     if (envValue.empty())
     {
-        console.Puts (CConfig::EAttribute::InformationHighlight, L"<empty>");
+        console.Puts (CConfig::EAttribute::InformationHighlight, L"<empty>\n");
+        BAIL_OUT_IF (true, S_OK);
     }
-    else
+
+    console.Printf (CConfig::EAttribute::Default, L"\"");
+
+    // Split by semicolons and display each segment in its specified color
+    for (auto segment : std::views::split(wstring_view(envValue), L';'))
     {
-        console.Printf (CConfig::EAttribute::InformationHighlight, L"\"%ls\"", envValue.c_str());
-        console.Puts (CConfig::EAttribute::Default, L"");
+        wstring_view segView(segment.begin(), segment.end());
+        
+        // Skip empty segments
+        if (segView.empty())
+        {
+            continue;
+        }
+
+        if (!firstSegment)
+        {
+            console.Printf(CConfig::EAttribute::Default, L";");
+        }
+
+        firstSegment = false;
+
+        DisplayEnvVarSegment(console, segView);
     }
+
+    console.Puts (CConfig::EAttribute::Default, L"\"\n");
 
     
 
@@ -697,17 +785,17 @@ void CUsage::DisplayEnvVarConfigurationReport (CConsole & console)
     console.Puts (CConfig::EAttribute::Default, s_envVarExample[isPowerShell]);
     console.Puts (CConfig::EAttribute::Default, L"");
 
-    if (IsTcdirEnvVarSet ())
+    if (!IsTcdirEnvVarSet ())
     {
-        DisplayEnvVarCurrentValue (console, TCDIR_ENV_VAR_NAME);
-        DisplayEnvVarIssues (console);
-    }
-    else
-    {
-        console.Puts (CConfig::EAttribute::Default, L"");
         console.Puts (CConfig::EAttribute::Default, L"  TCDIR environment variable is not set; showing default configuration:");
         console.Puts (CConfig::EAttribute::Default, L"");
     }
 
     DisplayConfigurationTable (console);
+
+    if (IsTcdirEnvVarSet ())
+    {
+        DisplayEnvVarCurrentValue (console, TCDIR_ENV_VAR_NAME);
+        DisplayEnvVarIssues (console);
+    }
 }

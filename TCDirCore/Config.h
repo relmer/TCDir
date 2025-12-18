@@ -55,10 +55,18 @@ public:
         __count
     };
 
+    struct ErrorInfo
+    {
+        wstring message;            // Error description (e.g., "Invalid foreground color")
+        wstring entry;              // Full "Key=Value" segment from TCDIR
+        wstring invalidText;        // The specific invalid portion to underline
+        size_t  invalidTextOffset;  // Position of invalidText within entry
+    };
+
     struct ValidationResult
     {
-        vector<wstring> errors;
-        bool            hasIssues() const { return !errors.empty(); }
+        vector<ErrorInfo> errors;
+        bool              hasIssues() const { return !errors.empty(); }
     };
 
 
@@ -70,6 +78,7 @@ public:
     ValidationResult  ValidateEnvironmentVariable (void);
     void              SetEnvironmentProvider      (const IEnvironmentProvider * pProvider);
     WORD              ParseColorName              (wstring_view colorName, bool isBackground);
+    WORD              ParseColorSpec              (wstring_view colorSpec);
 
     WORD                                       m_rgAttributes[EAttribute::__count]       = { 0 };
     EAttributeSource                           m_rgAttributeSources[EAttribute::__count] = { EAttributeSource::Default };
@@ -87,10 +96,10 @@ protected:
     void         ApplyUserColorOverrides              (void);
     void         ProcessColorOverrideEntry            (wstring_view entry);
     void         ProcessFileExtensionOverride         (wstring_view extension, WORD colorAttr);
-    void         ProcessDisplayAttributeOverride      (wchar_t attrChar, WORD colorAttr);
-    void         ProcessFileAttributeOverride         (wstring_view keyView, WORD colorAttr);
+    void         ProcessDisplayAttributeOverride      (wchar_t attrChar, WORD colorAttr, wstring_view entry);
+    void         ProcessFileAttributeOverride         (wstring_view keyView, WORD colorAttr, wstring_view entry);
     HRESULT      ParseKeyAndValue                     (wstring_view entry, wstring_view & keyView, wstring_view & valueView);
-    WORD         ParseColorSpec                       (wstring_view colorSpec);
+    HRESULT      ParseColorValue                      (wstring_view entry, wstring_view valueView, WORD & colorAttr);
     wstring_view TrimWhitespace                       (wstring_view str);
 
     ValidationResult m_lastParseResult;

@@ -7,6 +7,7 @@
 
 
 
+
 struct SFileAttributeKeyMap
 {
     DWORD   m_dwAttribute;
@@ -337,81 +338,20 @@ void CConfig::ProcessColorOverrideEntry (wstring_view entry)
 
     // Skip empty entries (from trailing semicolons or multiple semicolons)
     entry = TrimWhitespace(entry);
-    BAIL_OUT_IF (entry.empty(), S_OK);
+    CBR (!entry.empty());
         
     hr = ParseKeyAndValue (entry, keyView, valueView);
-    if (FAILED(hr))
+    if (FAILED (hr))
     {
-        wstring msg = L"Invalid entry format: '";
-        msg += entry;
-        msg += L"' (expected format: key=value)";
-        m_lastParseResult.errors.push_back(msg);
-        BAIL_OUT_IF(TRUE, S_OK);
+        m_lastParseResult.errors.push_back( { L"Invalid entry format (expected key = value)", 
+                                              wstring (entry), wstring (entry), 0 } );
+        CHR (hr);
     }
 
-    BAIL_OUT_IF (keyView.empty(), S_OK);
+    CBR (!keyView.empty());
 
-    {
-        WORD foreColor = 0;
-        WORD backColor = 0;
-
-
-
-        auto result = std::ranges::search (
-            valueView,
-            L" on "sv,
-            [] (wchar_t a, wchar_t b) { return towlower (a) == towlower (b); }
-        );
-
-        if (result.empty ())
-        {
-            wstring_view foreView = TrimWhitespace (valueView);
-            foreColor = ParseColorName (foreView, false);
-
-            if (foreColor == 0)
-            {
-                wstring msg = L"Invalid foreground color: '";
-                msg += foreView;
-                msg += L"' in entry '";
-                msg += entry;
-                msg += L"'";
-                m_lastParseResult.errors.push_back (msg);
-                BAIL_OUT_IF (TRUE, S_OK);
-            }
-        }
-        else
-        {
-            size_t onPos = result.begin () - valueView.begin ();
-
-            wstring_view foreView = TrimWhitespace (valueView.substr (0, onPos));
-            wstring_view backView = TrimWhitespace (valueView.substr (onPos + 4));
-
-            foreColor = ParseColorName (foreView, false);
-            if (foreColor == 0)
-            {
-                wstring msg = L"Invalid foreground color: '";
-                msg += foreView;
-                msg += L"' in entry '";
-                msg += entry;
-                msg += L"'";
-                m_lastParseResult.errors.push_back (msg);
-                BAIL_OUT_IF (TRUE, S_OK);
-            }
-
-            backColor = ParseColorName (backView, true);
-            if (backColor == 0)
-            {
-                wstring msg = L"Invalid background color: '";
-                msg += backView;
-                msg += L"' in entry '";
-                msg += entry;
-                msg += L"'";
-                m_lastParseResult.errors.push_back (msg);
-            }
-        }
-
-        colorAttr = foreColor | backColor;
-    }
+    hr = ParseColorValue (entry, valueView, colorAttr);
+    CHR (hr);
     
     //
     // Apply the override based on key type
@@ -428,23 +368,136 @@ void CConfig::ProcessColorOverrideEntry (wstring_view entry)
              towlower (keyView[3]) == L'r' &&
              keyView[4] == L':')
     {
-        ProcessFileAttributeOverride (keyView, colorAttr);
+        ProcessFileAttributeOverride (keyView, colorAttr, entry);
     }
     else if (keyView.length() == 1)
     {
-        ProcessDisplayAttributeOverride (keyView[0], colorAttr);
+        ProcessDisplayAttributeOverride (keyView[0], colorAttr, entry);
     }
     else
     {
-        wstring msg = L"Invalid key: '";
-        msg += keyView;
-        msg += L"' (expected single character, file extension starting with '.', or file attribute key like attr:h)";
-        m_lastParseResult.errors.push_back(msg);
+        m_lastParseResult.errors.push_back( { L"Invalid key (expected single character, .extension, or attr:x)",
+                                              wstring (entry), wstring (keyView), entry.find (keyView) } );
     }
 
 
 Error:
     return;
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CConfig::ParseColorValue
+//
+//  Parse a color value specification in the format: <fore>[on <back>]
+//  Records errors to m_lastParseResult if parsing fails.
+//  Returns S_OK on success, E_FAIL if foreground color is invalid.
+//
+////////////////////////////////////////////////////////////////////////////////
+
+HRESULT CConfig::ParseColorValue (wstring_view entry, wstring_view valueView, WORD & colorAttr)
+{
+    HRESULT      hr          = S_OK;
+    WORD         foreColor   = 0;
+    WORD         backColor   = 0;
+    wstring_view foreView;
+    wstring_view backView;
+    size_t       foreOffset  = 0;
+    size_t       backOffset  = 0;
+
+
+
+    //
+    // Find the '=' position for error reporting
+    //
+
+    size_t equalPos = entry.find(L'=');
+
+    //
+    // Check for " on " separator (case-insensitive)
+    //
+
+    auto result = std::ranges::search (valueView, L" on "sv,
+                                       [] (wchar_t a, wchar_t b) { return towlower (a) == towlower (b); } );
+    if (result.empty ())
+    {
+        // Foreground only
+        foreView = TrimWhitespace (valueView);
+    }
+    else
+    {
+        // Foreground and background
+        size_t onPosValue = result.begin () - valueView.begin ();
+        foreView = TrimWhitespace (valueView.substr (0, onPosValue));
+        backView = TrimWhitespace (valueView.substr (onPosValue + 4));
+
+        // Calculate background offset in entry: skip past " on " and whitespace
+        if (equalPos != wstring_view::npos)
+        {
+            backOffset = equalPos + 1 + onPosValue + 4;  // Skip past "=" and " on "
+            while (backOffset < entry.length() && iswspace(entry[backOffset]))
+            {
+                backOffset++;
+            }
+        }
+    }
+
+    //
+    // Calculate foreground offset in entry: skip past "=" and whitespace
+    //
+
+    if (equalPos != wstring_view::npos)
+    {
+        foreOffset = equalPos + 1;
+        while (foreOffset < entry.length() && iswspace(entry[foreOffset]))
+        {
+            foreOffset++;
+        }
+    }
+
+    //
+    // Parse foreground color
+    //
+
+    foreColor = ParseColorName (foreView, false);
+    if (foreColor == 0)
+    {
+        m_lastParseResult.errors.push_back({
+            L"Invalid foreground color",
+            wstring(entry),
+            wstring(foreView),
+            foreOffset
+        });
+        CBR (FALSE);
+    }
+
+    //
+    // Parse background color if present
+    //
+
+    if (!backView.empty())
+    {
+        backColor = ParseColorName (backView, true);
+        if (backColor == 0)
+        {
+            m_lastParseResult.errors.push_back({
+                L"Invalid background color",
+                wstring(entry),
+                wstring(backView),
+                backOffset
+            });
+            // Continue with foreground only - don't fail
+        }
+    }
+
+    colorAttr = foreColor | backColor;
+
+Error:
+    return hr;
 }
 
 
@@ -463,8 +516,9 @@ void CConfig::ProcessFileExtensionOverride (wstring_view extension, WORD colorAt
     wstring key (extension);
     
     std::ranges::transform (key, key.begin(), towlower);
+
     m_mapExtensionToTextAttr[key] = colorAttr;
-    m_mapExtensionSources[key] = EAttributeSource::Environment;
+    m_mapExtensionSources[key]    = EAttributeSource::Environment;
 }
 
 
@@ -479,7 +533,7 @@ void CConfig::ProcessFileExtensionOverride (wstring_view extension, WORD colorAt
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-void CConfig::ProcessDisplayAttributeOverride (wchar_t attrChar, WORD colorAttr)
+void CConfig::ProcessDisplayAttributeOverride (wchar_t attrChar, WORD colorAttr, wstring_view entry)
 {
     struct AttrMapping
     {
@@ -512,10 +566,14 @@ void CConfig::ProcessDisplayAttributeOverride (wchar_t attrChar, WORD colorAttr)
     }
     else
     {
-        wstring msg = L"Invalid display attribute character: '";
-        msg += attrChar;
-        msg += L"' (valid: D,T,A,-,S,R,I,H,E,F)";
-        m_lastParseResult.errors.push_back(msg);
+        // For single-char key, invalidText is the character, offset is 0 in entry
+        wstring invalidChar(1, attrChar);
+        m_lastParseResult.errors.push_back({
+            L"Invalid display attribute character (valid: D,T,A,-,S,R,I,H,E,F)",
+            wstring(entry),
+            invalidChar,
+            0
+        });
     }
 }
 
@@ -529,7 +587,7 @@ void CConfig::ProcessDisplayAttributeOverride (wchar_t attrChar, WORD colorAttr)
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-void CConfig::ProcessFileAttributeOverride (wstring_view keyView, WORD colorAttr)
+void CConfig::ProcessFileAttributeOverride (wstring_view keyView, WORD colorAttr, wstring_view entry)
 {
     DWORD   dwFileAttribute = 0;
     bool    found           = false;
@@ -544,9 +602,12 @@ void CConfig::ProcessFileAttributeOverride (wstring_view keyView, WORD colorAttr
         towlower (keyView[3]) != L'r' ||
         keyView[4] != L':')
     {
-        m_lastParseResult.errors.push_back (
-            std::format (L"Invalid file attribute key: '{}' (expected attr:<x>)",
-                         wstring (keyView)));
+        m_lastParseResult.errors.push_back({
+            L"Invalid file attribute key (expected attr:<x>)",
+            wstring(entry),
+            wstring(keyView),
+            entry.find(keyView)
+        });
         return;
     }
 
@@ -564,14 +625,26 @@ void CConfig::ProcessFileAttributeOverride (wstring_view keyView, WORD colorAttr
 
     if (!found)
     {
-        m_lastParseResult.errors.push_back (
-            std::format (L"Invalid file attribute key: '{}' (expected attr:<R|H|S|A|T|E|C|P|0>)",
-                         wstring (keyView)));
+        // The invalid character is at position 5 of the key (attr:X)
+        wstring invalidChar(1, keyView[5]);
+        size_t  keyPos = entry.find(keyView);
+        size_t  charOffset = (keyPos != wstring_view::npos) ? keyPos + 5 : 5;
+        m_lastParseResult.errors.push_back({
+            L"Invalid file attribute character (expected R,H,S,A,T,E,C,P,0)",
+            wstring(entry),
+            invalidChar,
+            charOffset
+        });
         return;
     }
 
     m_mapFileAttributesTextAttr[dwFileAttribute] = { colorAttr, EAttributeSource::Environment };
 }
+
+
+
+
+
 ////////////////////////////////////////////////////////////////////////////////
 //
 //  CConfig::ParseKeyAndValue
@@ -734,6 +807,8 @@ WORD CConfig::ParseColorName (wstring_view colorName, bool isBackground)
 
     return 0;  // Default/not found
 }
+
+
 
 
 
