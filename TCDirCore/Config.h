@@ -1,8 +1,7 @@
 #pragma once
 
-
-
-
+#include "EnvironmentProviderBase.h"
+#include "EnvironmentProvider.h"
 
 #define TCDIR_ENV_VAR_NAME L"TCDIR"
 
@@ -63,19 +62,22 @@ public:
     };
 
 
-    
-    void              Initialize         (WORD wDefaultAttr);
-    WORD              GetTextAttrForFile (const WIN32_FIND_DATA & wfd);
+
+    CConfig (void);
+   
+    void              Initialize                  (WORD wDefaultAttr);
+    WORD              GetTextAttrForFile          (const WIN32_FIND_DATA & wfd);
     ValidationResult  ValidateEnvironmentVariable (void);
+    void              SetEnvironmentProvider      (const IEnvironmentProvider * pProvider);
+    WORD              ParseColorName              (wstring_view colorName, bool isBackground);
 
-    WORD              ParseColorName     (wstring_view colorName, bool isBackground);
-
-    WORD                                     m_rgAttributes[EAttribute::__count]       = { 0 };
-    EAttributeSource                         m_rgAttributeSources[EAttribute::__count] = { EAttributeSource::Default };
-    TextAttrMap                              m_mapExtensionToTextAttr;
-    unordered_map<wstring, EAttributeSource> m_mapExtensionSources;
-
-    FileAttrMap                              m_mapFileAttributesTextAttr;
+    WORD                                       m_rgAttributes[EAttribute::__count]       = { 0 };
+    EAttributeSource                           m_rgAttributeSources[EAttribute::__count] = { EAttributeSource::Default };
+    TextAttrMap                                m_mapExtensionToTextAttr;
+    unordered_map<wstring, EAttributeSource>   m_mapExtensionSources;
+    FileAttrMap                                m_mapFileAttributesTextAttr;
+    CEnvironmentProvider                       m_environmentProviderDefault;
+    const IEnvironmentProvider               * m_pEnvironmentProvider             = nullptr;
 
 
     

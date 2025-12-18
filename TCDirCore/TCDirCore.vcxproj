@@ -154,6 +154,8 @@
     <ClInclude Include="DirectoryLister.h" />
     <ClInclude Include="DriveInfo.h" />
     <ClInclude Include="Ehm.h" />
+    <ClInclude Include="EnvironmentProviderBase.h" />
+    <ClInclude Include="EnvironmentProvider.h" />
     <ClInclude Include="FileComparator.h" />
     <ClInclude Include="Flag.h" />
     <ClInclude Include="MultiThreadedLister.h" />
@@ -174,6 +176,7 @@
     <ClCompile Include="DirectoryLister.cpp" />
     <ClCompile Include="DriveInfo.cpp" />
     <ClCompile Include="Ehm.cpp" />
+    <ClCompile Include="EnvironmentProvider.cpp" />
     <ClCompile Include="FileComparator.cpp" />
     <ClCompile Include="MultiThreadedLister.cpp" />
     <ClCompile Include="pch.cpp">

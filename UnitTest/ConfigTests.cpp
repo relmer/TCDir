@@ -15,9 +15,57 @@ using namespace Microsoft::VisualStudio::CppUnitTestFramework;
 
 namespace UnitTest
 {
+    class CTestEnvironmentProvider : public IEnvironmentProvider
+    {
+    public:
+        void Set (LPCWSTR pszName, wstring value)
+        {
+            m_map[pszName] = std::move (value);
+        }
+
+        void Clear (LPCWSTR pszName)
+        {
+            m_map.erase (pszName);
+        }
+
+        virtual bool TryGetEnvironmentVariable (LPCWSTR pszName, wstring & value) const override
+        {
+            auto iter = m_map.find (pszName);
+            if (iter == m_map.end ())
+            {
+                value.clear();
+                return false;
+            }
+
+            value = iter->second;
+            return true;
+        }
+
+    private:
+        unordered_map<wstring, wstring> m_map;
+    };
+
+
+
+
     // Probe class to expose protected CConfig methods for testing
     struct ConfigProbe : public CConfig
     {
+        ConfigProbe (void)
+        {
+            SetEnvironmentProvider (&m_environmentProvider);
+        }
+
+        void SetEnvVar (LPCWSTR pszName, wstring value)
+        {
+            m_environmentProvider.Set (pszName, std::move (value));
+        }
+
+        void ClearEnvVar (LPCWSTR pszName)
+        {
+            m_environmentProvider.Clear (pszName);
+        }
+
         using CConfig::ParseColorName;
         using CConfig::ParseColorSpec;
         using CConfig::TrimWhitespace;
@@ -26,6 +74,10 @@ namespace UnitTest
         using CConfig::ProcessColorOverrideEntry;
         using CConfig::ProcessFileExtensionOverride;
         using CConfig::ProcessDisplayAttributeOverride;
+        using CConfig::ProcessFileAttributeOverride;
+
+    private:
+        CTestEnvironmentProvider m_environmentProvider;
     };
 
 
@@ -38,16 +90,6 @@ namespace UnitTest
         TEST_CLASS_INITIALIZE(ClassInitialize)
         {
             SetupEhmForUnitTests();
-        }
-
-
-
-
-
-        TEST_CLASS_CLEANUP(ClassCleanup)
-        {
-            // Clean up any environment variables set during tests
-            SetEnvironmentVariableW(TCDIR_ENV_VAR_NAME, nullptr);
         }
 
 
@@ -458,7 +500,7 @@ namespace UnitTest
             ConfigProbe config;
             
             // Ensure no TCDIR variable
-            SetEnvironmentVariableW(TCDIR_ENV_VAR_NAME, nullptr);
+            config.ClearEnvVar (TCDIR_ENV_VAR_NAME);
             
             config.Initialize(FC_LightGrey);
             
@@ -476,7 +518,7 @@ namespace UnitTest
             config.Initialize(FC_LightGrey);
             
             // Test adding NEW extensions not in the default set
-            SetEnvironmentVariableW(TCDIR_ENV_VAR_NAME, L".xyz=Yellow;.abc=LightBlue;.test=Red on White");
+            config.SetEnvVar (TCDIR_ENV_VAR_NAME, L".xyz=Yellow;.abc=LightBlue;.test=Red on White");
             
             config.ApplyUserColorOverrides();
             
@@ -488,8 +530,6 @@ namespace UnitTest
             Assert::AreEqual((WORD)FC_Yellow, config.m_mapExtensionToTextAttr[L".xyz"]);
             Assert::AreEqual((WORD)FC_LightBlue, config.m_mapExtensionToTextAttr[L".abc"]);
             Assert::AreEqual((WORD)(FC_Red | BC_White), config.m_mapExtensionToTextAttr[L".test"]);
-            
-            SetEnvironmentVariableW(TCDIR_ENV_VAR_NAME, nullptr);
         }
 
 
@@ -505,14 +545,12 @@ namespace UnitTest
             Assert::AreEqual((WORD)FC_LightGreen, config.m_mapExtensionToTextAttr[L".cpp"]);
             
             // Override it
-            SetEnvironmentVariableW(TCDIR_ENV_VAR_NAME, L".cpp=Red on Yellow");
+            config.SetEnvVar (TCDIR_ENV_VAR_NAME, L".cpp=Red on Yellow");
             config.ApplyUserColorOverrides();
             
             // Verify override took effect
             WORD expected = FC_Red | BC_Yellow;
             Assert::AreEqual(expected, config.m_mapExtensionToTextAttr[L".cpp"]);
-            
-            SetEnvironmentVariableW(TCDIR_ENV_VAR_NAME, nullptr);
         }
 
 
@@ -524,15 +562,13 @@ namespace UnitTest
             ConfigProbe config;
             config.Initialize(FC_LightGrey);
             
-            SetEnvironmentVariableW(TCDIR_ENV_VAR_NAME, L".a=Red;.b=Blue;.c=Green;.d=Yellow");
+            config.SetEnvVar (TCDIR_ENV_VAR_NAME, L".a=Red;.b=Blue;.c=Green;.d=Yellow");
             config.ApplyUserColorOverrides();
             
             Assert::AreEqual((WORD)FC_Red, config.m_mapExtensionToTextAttr[L".a"]);
             Assert::AreEqual((WORD)FC_Blue, config.m_mapExtensionToTextAttr[L".b"]);
             Assert::AreEqual((WORD)FC_Green, config.m_mapExtensionToTextAttr[L".c"]);
             Assert::AreEqual((WORD)FC_Yellow, config.m_mapExtensionToTextAttr[L".d"]);
-            
-            SetEnvironmentVariableW(TCDIR_ENV_VAR_NAME, nullptr);
         }
 
 
@@ -545,7 +581,7 @@ namespace UnitTest
             config.Initialize(FC_LightGrey);
             
             // Mix valid and invalid entries
-            SetEnvironmentVariableW(TCDIR_ENV_VAR_NAME, L".cpp=Yellow;InvalidEntry;.h=Blue;NoEquals;=NoKey");
+            config.SetEnvVar (TCDIR_ENV_VAR_NAME, L".cpp=Yellow;InvalidEntry;.h=Blue;NoEquals;=NoKey");
             config.ApplyUserColorOverrides();
             
             // Valid entries should be applied
@@ -553,8 +589,6 @@ namespace UnitTest
             Assert::IsTrue(config.m_mapExtensionToTextAttr.contains(L".h"));
             Assert::AreEqual((WORD)FC_Yellow, config.m_mapExtensionToTextAttr[L".cpp"]);
             Assert::AreEqual((WORD)FC_Blue, config.m_mapExtensionToTextAttr[L".h"]);
-            
-            SetEnvironmentVariableW(TCDIR_ENV_VAR_NAME, nullptr);
         }
 
 
@@ -566,18 +600,16 @@ namespace UnitTest
             ConfigProbe config;
             config.Initialize(FC_LightGrey);
 
-            SetEnvironmentVariableW(TCDIR_ENV_VAR_NAME, L".cpp=White on Bluepickles");
+            config.SetEnvVar (TCDIR_ENV_VAR_NAME, L".cpp=White on Bluepickles");
             config.ApplyUserColorOverrides();
 
             // Foreground should still be applied
             Assert::IsTrue(config.m_mapExtensionToTextAttr.contains(L".cpp"));
             Assert::AreEqual((WORD)FC_White, config.m_mapExtensionToTextAttr[L".cpp"]);
 
-            // Invalid background should produce a warning
+            // Invalid background should produce a validation issue
             CConfig::ValidationResult result = config.ValidateEnvironmentVariable();
-            Assert::IsTrue(result.errors.size() == 0);
-
-            SetEnvironmentVariableW(TCDIR_ENV_VAR_NAME, nullptr);
+            Assert::IsTrue(result.errors.size() == 1);
         }
 
 
@@ -588,7 +620,7 @@ namespace UnitTest
         {
             ConfigProbe config;
 
-            SetEnvironmentVariableW(TCDIR_ENV_VAR_NAME, nullptr);
+            config.ClearEnvVar (TCDIR_ENV_VAR_NAME);
             config.Initialize(FC_LightGrey);
 
             Assert::IsTrue(config.m_mapFileAttributesTextAttr.contains(FILE_ATTRIBUTE_HIDDEN));
@@ -608,7 +640,7 @@ namespace UnitTest
         {
             ConfigProbe config;
 
-            SetEnvironmentVariableW(TCDIR_ENV_VAR_NAME, L"AtTr:h=Red");
+            config.SetEnvVar (TCDIR_ENV_VAR_NAME, L"AtTr:h=Red");
             config.Initialize(FC_LightGrey);
 
             Assert::IsTrue(config.m_mapFileAttributesTextAttr.contains(FILE_ATTRIBUTE_HIDDEN));
@@ -617,8 +649,6 @@ namespace UnitTest
 
             CConfig::ValidationResult result = config.ValidateEnvironmentVariable();
             Assert::IsTrue(result.errors.size() == 0);
-
-            SetEnvironmentVariableW(TCDIR_ENV_VAR_NAME, nullptr);
         }
 
 
@@ -631,7 +661,7 @@ namespace UnitTest
             WIN32_FIND_DATA wfd = { 0 };
             WORD expected = static_cast<WORD>(FC_White | BC_Blue);
 
-            SetEnvironmentVariableW(TCDIR_ENV_VAR_NAME, L"attr:H=White;.cpp=Red");
+            config.SetEnvVar (TCDIR_ENV_VAR_NAME, L"attr:H=White;.cpp=Red");
             config.Initialize(static_cast<WORD>(FC_LightGrey | BC_Blue));
 
             wfd.dwFileAttributes = FILE_ATTRIBUTE_DIRECTORY | FILE_ATTRIBUTE_HIDDEN;
@@ -641,8 +671,6 @@ namespace UnitTest
             wfd.dwFileAttributes = FILE_ATTRIBUTE_HIDDEN;
             wcscpy_s(wfd.cFileName, L"foo.cpp");
             Assert::AreEqual(expected, config.GetTextAttrForFile(wfd));
-
-            SetEnvironmentVariableW(TCDIR_ENV_VAR_NAME, nullptr);
         }
 
 
@@ -654,15 +682,13 @@ namespace UnitTest
             ConfigProbe config;
             WIN32_FIND_DATA wfd = { 0 };
 
-            SetEnvironmentVariableW(TCDIR_ENV_VAR_NAME, L"attr:s=Green;attr:h=Red");
+            config.SetEnvVar (TCDIR_ENV_VAR_NAME, L"attr:s=Green;attr:h=Red");
             config.Initialize(static_cast<WORD>(FC_LightGrey | BC_Blue));
 
             wfd.dwFileAttributes = FILE_ATTRIBUTE_HIDDEN | FILE_ATTRIBUTE_SYSTEM;
             wcscpy_s(wfd.cFileName, L"foo.txt");
 
             Assert::AreEqual(static_cast<WORD>(FC_Red | BC_Blue), config.GetTextAttrForFile(wfd));
-
-            SetEnvironmentVariableW(TCDIR_ENV_VAR_NAME, nullptr);
         }
 
 
@@ -708,7 +734,7 @@ namespace UnitTest
             config.Initialize(FC_LightGrey);
             
             // Complex real-world scenario
-            SetEnvironmentVariableW(TCDIR_ENV_VAR_NAME, 
+            config.SetEnvVar (TCDIR_ENV_VAR_NAME, 
                 L".cpp=LightGreen;.h=Yellow on Blue;.txt=White;.log=LightRed on Black;.xml=Cyan");
             
             config.ApplyUserColorOverrides();
@@ -719,8 +745,6 @@ namespace UnitTest
             Assert::AreEqual((WORD)FC_White,                 config.m_mapExtensionToTextAttr[L".txt"]);
             Assert::AreEqual((WORD)(FC_LightRed | BC_Black), config.m_mapExtensionToTextAttr[L".log"]);
             Assert::AreEqual((WORD)FC_Cyan,                  config.m_mapExtensionToTextAttr[L".xml"]);
-            
-            SetEnvironmentVariableW(TCDIR_ENV_VAR_NAME, nullptr);
         }
 
 
@@ -732,13 +756,11 @@ namespace UnitTest
             ConfigProbe config;
             config.Initialize(FC_LightGrey);
             
-            SetEnvironmentVariableW(TCDIR_ENV_VAR_NAME, L"");
+            config.SetEnvVar (TCDIR_ENV_VAR_NAME, L"");
             config.ApplyUserColorOverrides();
             
             // Should complete without error
             Assert::IsTrue(true);
-            
-            SetEnvironmentVariableW(TCDIR_ENV_VAR_NAME, nullptr);
         }
 
 
@@ -750,13 +772,11 @@ namespace UnitTest
             ConfigProbe config;
             config.Initialize(FC_LightGrey);
             
-            SetEnvironmentVariableW(TCDIR_ENV_VAR_NAME, L".cpp=Yellow;.h=Blue;");
+            config.SetEnvVar (TCDIR_ENV_VAR_NAME, L".cpp=Yellow;.h=Blue;");
             config.ApplyUserColorOverrides();
             
             Assert::IsTrue(config.m_mapExtensionToTextAttr.contains(L".cpp"));
             Assert::IsTrue(config.m_mapExtensionToTextAttr.contains(L".h"));
-            
-            SetEnvironmentVariableW(TCDIR_ENV_VAR_NAME, nullptr);
         }
 
 
@@ -1087,7 +1107,7 @@ namespace UnitTest
             ConfigProbe config;
             config.Initialize(FC_LightGrey);
             
-            SetEnvironmentVariableW(TCDIR_ENV_VAR_NAME, 
+            config.SetEnvVar (TCDIR_ENV_VAR_NAME, 
                 L"D=LightGreen;S=Yellow;.cpp=White on Blue;T=Cyan;.h=Red");
             
             config.ApplyUserColorOverrides();
@@ -1100,8 +1120,6 @@ namespace UnitTest
             // Verify file extensions
             Assert::AreEqual((WORD)(FC_White | BC_Blue), config.m_mapExtensionToTextAttr[L".cpp"]);
             Assert::AreEqual((WORD)FC_Red, config.m_mapExtensionToTextAttr[L".h"]);
-            
-            SetEnvironmentVariableW(TCDIR_ENV_VAR_NAME, nullptr);
         }
 
 
@@ -1113,7 +1131,7 @@ namespace UnitTest
             ConfigProbe config;
             config.Initialize(FC_LightGrey);
             
-            SetEnvironmentVariableW(TCDIR_ENV_VAR_NAME, 
+            config.SetEnvVar (TCDIR_ENV_VAR_NAME, 
                 L"D=Red;T=Brown;A=Cyan;-=DarkGrey;S=Yellow;R=LightBlue on Black;I=White;H=LightCyan;E=LightRed;F=Green");
             
             config.ApplyUserColorOverrides();
@@ -1128,8 +1146,6 @@ namespace UnitTest
             Assert::AreEqual((WORD)FC_LightCyan, config.m_rgAttributes[CConfig::EAttribute::InformationHighlight]);
             Assert::AreEqual((WORD)FC_LightRed, config.m_rgAttributes[CConfig::EAttribute::Error]);
             Assert::AreEqual((WORD)FC_Green, config.m_rgAttributes[CConfig::EAttribute::Default]);
-            
-            SetEnvironmentVariableW(TCDIR_ENV_VAR_NAME, nullptr);
         }
 
 
@@ -1141,7 +1157,7 @@ namespace UnitTest
             ConfigProbe config;
             config.Initialize(FC_LightGrey);
             
-            SetEnvironmentVariableW(TCDIR_ENV_VAR_NAME, 
+            config.SetEnvVar (TCDIR_ENV_VAR_NAME, 
                 L"d=Yellow;.CPP=Red;T=Blue;.H=Green");
             
             config.ApplyUserColorOverrides();
@@ -1150,8 +1166,6 @@ namespace UnitTest
             Assert::AreEqual((WORD)FC_Blue, config.m_rgAttributes[CConfig::EAttribute::Time]);
             Assert::AreEqual((WORD)FC_Red, config.m_mapExtensionToTextAttr[L".cpp"]);
             Assert::AreEqual((WORD)FC_Green, config.m_mapExtensionToTextAttr[L".h"]);
-            
-            SetEnvironmentVariableW(TCDIR_ENV_VAR_NAME, nullptr);
         }
 
 
@@ -1165,7 +1179,7 @@ namespace UnitTest
             
             WORD originalError = config.m_rgAttributes[CConfig::EAttribute::Error];
             
-            SetEnvironmentVariableW(TCDIR_ENV_VAR_NAME, 
+            config.SetEnvVar (TCDIR_ENV_VAR_NAME, 
                 L"D=Yellow;X=Blue;S=Red;InvalidEntry;T=Green");
             
             config.ApplyUserColorOverrides();
@@ -1177,8 +1191,6 @@ namespace UnitTest
             
             // Error attribute should be unchanged (X is invalid, no E was set)
             Assert::AreEqual(originalError, config.m_rgAttributes[CConfig::EAttribute::Error]);
-            
-            SetEnvironmentVariableW(TCDIR_ENV_VAR_NAME, nullptr);
         }
     };
 }

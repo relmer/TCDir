@@ -2,6 +2,7 @@
 #include "Config.h"
 
 #include "Color.h"
+#include "EnvironmentProvider.h"
 
 
 
@@ -156,6 +157,21 @@ constexpr CConfig::STextAttr CConfig::s_rgTextAttrs[] =
 
 ////////////////////////////////////////////////////////////////////////////////
 //
+//  CConfig::CConfig
+//
+////////////////////////////////////////////////////////////////////////////////
+
+CConfig::CConfig (void)
+{
+    m_pEnvironmentProvider = &m_environmentProviderDefault;
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
 //  CConfig::Initialize
 //
 //  
@@ -181,6 +197,28 @@ void CConfig::Initialize (WORD wDefaultAttr)
     InitializeExtensionToTextAttrMap();
     InitializeFileAttributeToTextAttrMap();
     ApplyUserColorOverrides();
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CConfig::SetEnvironmentProvider
+//
+////////////////////////////////////////////////////////////////////////////////
+
+void CConfig::SetEnvironmentProvider (const IEnvironmentProvider * pProvider)
+{
+    if (pProvider == nullptr)
+    {
+        m_pEnvironmentProvider = &m_environmentProviderDefault;
+    }
+    else
+    {
+        m_pEnvironmentProvider = pProvider;
+    }
 }
 
 
@@ -248,26 +286,14 @@ void CConfig::InitializeFileAttributeToTextAttrMap (void)
 
 void CConfig::ApplyUserColorOverrides (void)
 {
-    HRESULT hr               = S_OK;
-    DWORD   cchBufNeeded     = 0;
-    DWORD   cchExcludingNull = 0;
+    HRESULT hr       = S_OK;
     wstring envValue;
 
     // Clear previous validation results
     m_lastParseResult.errors.clear();
 
-    //
-    // Read environment variable directly into wstring
-    //
-    
-    cchBufNeeded = GetEnvironmentVariableW (TCDIR_ENV_VAR_NAME, nullptr, 0);
-    BAIL_OUT_IF (cchBufNeeded == 0, S_OK);  // Variable not set
-    
-    cchExcludingNull = cchBufNeeded - 1;
-    envValue.resize (cchExcludingNull, L'\0');  // -1 because cchBufNeeded includes null terminator
-    
-    cchBufNeeded = GetEnvironmentVariableW (TCDIR_ENV_VAR_NAME, envValue.data(), cchBufNeeded);
-    CWRA (cchBufNeeded == cchExcludingNull);
+    bool isSet = m_pEnvironmentProvider->TryGetEnvironmentVariable (TCDIR_ENV_VAR_NAME, envValue);
+    BAIL_OUT_IF (!isSet, S_OK);
     
     //
     // Use ranges/views to avoid copies
