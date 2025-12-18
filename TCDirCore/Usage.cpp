@@ -131,53 +131,39 @@ void CUsage::DisplayUsage (CConsole & console)
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-HRESULT CUsage::DisplayEnvVarIssues (CConsole & console)
+void CUsage::DisplayEnvVarIssues (CConsole & console)
 {
-    HRESULT                   hr               = S_OK;
     CConfig::ValidationResult validationResult;
 
 
 
     validationResult = console.m_configPtr->ValidateEnvironmentVariable();
+
     if (!validationResult.hasIssues())
     {
-        console.Puts (CConfig::EAttribute::Default, L"  No TCDIR configuration issues detected.");
-        console.Puts (CConfig::EAttribute::Default, L"");
-        BAIL_OUT_IF (TRUE, S_OK);
+        return;
     }
 
-    console.Puts (CConfig::EAttribute::Error, L"  TCDIR configuration issues detected:");
+    console.Puts   (CConfig::EAttribute::Default, L"");
+    console.Printf (CConfig::EAttribute::Error,   L"There are some problems with your %s environment variable (see /env for help):", 
+                    TCDIR_ENV_VAR_NAME);
+    console.Puts   (CConfig::EAttribute::Default, L"\n");
+
+    DisplayEnvVarCurrentValue (console, TCDIR_ENV_VAR_NAME);
 
     for (const auto & error : validationResult.errors)
     {
-        //
-        // Line 1: Entire error message in red
-        //
-        // Fixed prefix: "    Error:  " = 12 chars
-        // Variable:     message length
-        // Fixed:        ":  \"" = 4 chars
-        // Variable:     invalidTextOffset chars before the invalid text
-        //
-        console.Printf (CConfig::EAttribute::Error, L"    Error:  %s in \"%s\"",
+        console.Printf (CConfig::EAttribute::Error, L"  %s in \"%s\"",
                         error.message.c_str(), error.entry.c_str());
         console.Puts   (CConfig::EAttribute::Default, L"");
 
-        //
-        // Line 2: Overlines under the invalid portion
-        //
-        // "    Error:  " = 12 chars
-        // message.length() chars
-        // " in \"" = 5 chars
-        // invalidTextOffset chars
-        //
-        size_t prefixLen = 12 + error.message.length() + 5 + error.invalidTextOffset;
+        size_t prefixLen = 2 + error.message.length() + 5 + error.invalidTextOffset;
         wstring overlines (error.invalidText.length(), L'\x203E');
         console.Printf (CConfig::EAttribute::Default, L"%*s", static_cast<int>(prefixLen), L"");
         console.Puts   (CConfig::EAttribute::Error,   overlines.c_str());
     }
 
-Error:
-    return hr;
+    console.Puts (CConfig::EAttribute::Default, L"");
 }
 
 
@@ -588,14 +574,14 @@ void CUsage::DisplayColorConfiguration (CConsole & console)
 
 ////////////////////////////////////////////////////////////////////////////////
 //
-//  DisplayEnvVarSegment
+//  CUsage::DisplayEnvVarSegment
 //
 //  Display a single TCDIR segment in its specified color.
 //  Format: Key=ForeColor [on BackColor]
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-static HRESULT DisplayEnvVarSegment (CConsole & console, wstring_view segment)
+HRESULT CUsage::DisplayEnvVarSegment (CConsole & console, wstring_view segment)
 {
     HRESULT      hr           = S_OK;
     size_t       equalPos     = 0;
@@ -607,7 +593,14 @@ static HRESULT DisplayEnvVarSegment (CConsole & console, wstring_view segment)
 
 
     equalPos = segment.find(L'=');
-    BAIL_OUT_IF (equalPos == wstring_view::npos, S_OK);
+
+    if (equalPos == wstring_view::npos)
+    {
+        // No '=' sign - display entire segment in default color
+        console.Printf (CConfig::EAttribute::Default, L"%.*s", 
+                        static_cast<int>(segment.length()), segment.data());
+        BAIL_OUT_IF (TRUE, S_OK);
+    }
 
     keyView   = segment.substr(0, equalPos);
     valueView = segment.substr(equalPos + 1);
@@ -653,11 +646,11 @@ Error:
 
 ////////////////////////////////////////////////////////////////////////////////
 //
-//  DisplayEnvVarCurrentValue
+//  CUsage::DisplayEnvVarCurrentValue
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-static void DisplayEnvVarCurrentValue (CConsole & console, LPCWSTR pszEnvVarName)
+void CUsage::DisplayEnvVarCurrentValue (CConsole & console, LPCWSTR pszEnvVarName)
 {
     HRESULT hr               = S_OK;
     DWORD   cchBufNeeded     = 0;
@@ -677,9 +670,9 @@ static void DisplayEnvVarCurrentValue (CConsole & console, LPCWSTR pszEnvVarName
     cchCopied = GetEnvironmentVariableW (pszEnvVarName, envValue.data(), cchBufNeeded);
     CWRA (cchCopied == cchExcludingNull);
 
-    console.Printf (CConfig::EAttribute::Default,     L"  Current ");
+    console.Printf (CConfig::EAttribute::Default,     L"  ");
     console.Printf (CConfig::EAttribute::Information, pszEnvVarName);
-    console.Printf (CConfig::EAttribute::Default,     L" value: ");
+    console.Printf (CConfig::EAttribute::Default,     L" = ");
 
     if (envValue.empty())
     {
@@ -793,7 +786,6 @@ void CUsage::DisplayEnvVarHelp (CConsole & console)
 
     if (IsTcdirEnvVarSet ())
     {
-        DisplayEnvVarCurrentValue (console, TCDIR_ENV_VAR_NAME);
         DisplayEnvVarIssues (console);
     }
     else
@@ -823,7 +815,6 @@ void CUsage::DisplayCurrentConfiguration (CConsole & console)
 
     if (IsTcdirEnvVarSet ())
     {
-        DisplayEnvVarCurrentValue (console, TCDIR_ENV_VAR_NAME);
         DisplayEnvVarIssues (console);
     }
     else

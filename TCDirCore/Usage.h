@@ -17,6 +17,7 @@ public:
     static void    DisplayUsage                     (CConsole & console);
     static void    DisplayEnvVarHelp                (CConsole & console);
     static void    DisplayCurrentConfiguration      (CConsole & console);
+    static void    DisplayEnvVarIssues              (CConsole & console);
 
 
 
@@ -26,7 +27,6 @@ private:
     static bool    IsPowerShell                              (void);
     static bool    IsTcdirEnvVarSet                          (void);
 
-    static HRESULT DisplayEnvVarIssues                       (CConsole & console);
     static void    DisplayConfigurationTable                 (CConsole & console);
 
     static void    DisplayAttributeConfiguration             (CConsole & console, int columnWidthAttr, int columnWidthSource);
@@ -38,4 +38,7 @@ private:
 
     static void    DisplayColorConfiguration                 (CConsole & console);
     static WORD    GetColorAttribute                         (CConsole & console, wstring_view colorName);
+
+    static HRESULT DisplayEnvVarSegment                      (CConsole & console, wstring_view segment);
+    static void    DisplayEnvVarCurrentValue                 (CConsole & console, LPCWSTR pszEnvVarName);
 };

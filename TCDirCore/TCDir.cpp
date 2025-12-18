@@ -94,6 +94,12 @@ int wmain (int argc, WCHAR * argv[])
         }
     }
 
+    //
+    // Display any TCDIR environment variable issues at the end of the run
+    //
+
+    CUsage::DisplayEnvVarIssues (*consolePtr);
+
 
 Error:      
 
