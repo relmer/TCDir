@@ -2,6 +2,8 @@
 
 #include "CommandLine.h"
 
+#include "Config.h"
+
 
 
 
@@ -46,6 +48,27 @@ CCommandLine::CCommandLine (void)
 
 CCommandLine::~CCommandLine (void)
 {
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CCommandLine::ApplyConfigDefaults
+//
+//  Apply switch defaults from the CConfig (parsed from TCDIR environment var).
+//  These can be overridden by explicit command-line arguments.
+//
+////////////////////////////////////////////////////////////////////////////////
+
+void CCommandLine::ApplyConfigDefaults (const CConfig & config)
+{
+    if (config.m_fWideListing.has_value ())   m_fWideListing   = config.m_fWideListing.value ();
+    if (config.m_fRecurse.has_value ())       m_fRecurse       = config.m_fRecurse.value ();
+    if (config.m_fPerfTimer.has_value ())     m_fPerfTimer     = config.m_fPerfTimer.value ();
+    if (config.m_fMultiThreaded.has_value ()) m_fMultiThreaded = config.m_fMultiThreaded.value ();
 }
 
 

@@ -71,7 +71,14 @@ public:
     bool               m_fConfig                                           = false;    // Display current configuration
     bool               m_fHelp                                             = false;    // Display usage
 
+
+
+    //
+    // Public methods
+    //
     
+    void               ApplyConfigDefaults (const class CConfig & config);
+
 
 protected: 
     //

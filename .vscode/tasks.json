@@ -1,8 +1,9 @@
 {
     "version": "2.0.0",
     "tasks": [
+        // Internal build tasks (used by compound tasks)
         {
-            "label": "Build Debug x64",
+            "label": "Build Debug x64 (no test)",
             "type": "process",
             "command": "pwsh",
             "args": [
@@ -18,10 +19,6 @@
                 "-Target",
                 "Build"
             ],
-            "group": {
-                "kind": "build",
-                "isDefault": true
-            },
             "presentation": {
                 "echo": true,
                 "reveal": "always",
@@ -31,7 +28,7 @@
             "problemMatcher": "$msCompile"
         },
         {
-            "label": "Build Release x64",
+            "label": "Build Release x64 (no test)",
             "type": "process",
             "command": "pwsh",
             "args": [
@@ -47,7 +44,6 @@
                 "-Target",
                 "Build"
             ],
-            "group": "build",
             "presentation": {
                 "echo": true,
                 "reveal": "always",
@@ -55,6 +51,23 @@
                 "panel": "shared"
             },
             "problemMatcher": "$msCompile"
+        },
+
+        // Main build tasks (build then test)
+        {
+            "label": "Build Debug x64",
+            "dependsOn": ["Build Debug x64 (no test)", "Run Tests (no build)"],
+            "dependsOrder": "sequence",
+            "group": "build"
+        },
+        {
+            "label": "Build Release x64",
+            "dependsOn": ["Build Release x64 (no test)", "Run Tests (no build)", "Deploy Release"],
+            "dependsOrder": "sequence",
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
         },
         {
             "label": "Clean Debug x64",
@@ -107,7 +120,7 @@
             }
         },
         {
-            "label": "Rebuild Debug x64",
+            "label": "Rebuild Debug x64 (no test)",
             "type": "process",
             "command": "pwsh",
             "args": [
@@ -123,7 +136,6 @@
                 "-Target",
                 "Rebuild"
             ],
-            "group": "build",
             "presentation": {
                 "echo": true,
                 "reveal": "always",
@@ -133,7 +145,7 @@
             "problemMatcher": "$msCompile"
         },
         {
-            "label": "Rebuild Release x64",
+            "label": "Rebuild Release x64 (no test)",
             "type": "process",
             "command": "pwsh",
             "args": [
@@ -149,7 +161,6 @@
                 "-Target",
                 "Rebuild"
             ],
-            "group": "build",
             "presentation": {
                 "echo": true,
                 "reveal": "always",
@@ -157,6 +168,65 @@
                 "panel": "shared"
             },
             "problemMatcher": "$msCompile"
+        },
+
+        // Rebuild tasks (rebuild then test)
+        {
+            "label": "Rebuild Debug x64",
+            "dependsOn": ["Rebuild Debug x64 (no test)", "Run Tests (no build)"],
+            "dependsOrder": "sequence",
+            "group": "build"
+        },
+        {
+            "label": "Rebuild Release x64",
+            "dependsOn": ["Rebuild Release x64 (no test)", "Run Tests (no build)", "Deploy Release"],
+            "dependsOrder": "sequence",
+            "group": "build"
+        },
+        {
+            "label": "Run Tests",
+            "dependsOn": ["Build Debug x64 (no test)", "Run Tests (no build)"],
+            "dependsOrder": "sequence",
+            "group": {
+                "kind": "test",
+                "isDefault": true
+            }
+        },
+        {
+            "label": "Run Tests (no build)",
+            "type": "process",
+            "command": "pwsh",
+            "args": [
+                "-NoProfile",
+                "-ExecutionPolicy",
+                "Bypass",
+                "-File",
+                "${workspaceFolder}\\RunTests.ps1"
+            ],
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared"
+            }
+        },
+        {
+            "label": "Deploy Release",
+            "type": "process",
+            "command": "pwsh",
+            "args": [
+                "-NoProfile",
+                "-ExecutionPolicy",
+                "Bypass",
+                "-Command",
+                "if ($env:OneDrive) { $dest = Join-Path $env:OneDrive 'Utils'; if (Test-Path $dest) { Copy-Item '${workspaceFolder}\\x64\\Release\\TCDir.exe' $dest -Force; Write-Host \"Deployed to $dest\" } else { Write-Host \"OneDrive\\Utils not found, skipping deploy\" } } else { Write-Host \"OneDrive not set, skipping deploy\" }"
+            ],
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared"
+            }
         }
     ]
 }

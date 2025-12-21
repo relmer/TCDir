@@ -5,7 +5,7 @@
 
 #define VERSION_MAJOR 4
 #define VERSION_MINOR 0
-#define VERSION_BUILD 1061
+#define VERSION_BUILD 1068
 #define VERSION_YEAR 2025
 
 // Helper macros for stringification
@@ -14,6 +14,9 @@
 
 // Full version string as wide string (e.g., L"3.2.1000")
 #define VERSION_WSTRING WIDEN(STRINGIFY(VERSION_MAJOR)) L"." WIDEN(STRINGIFY(VERSION_MINOR)) L"." WIDEN(STRINGIFY(VERSION_BUILD))
+
+// Build timestamp as wide string (uses compiler's __DATE__ and __TIME__)
+#define VERSION_BUILD_TIMESTAMP WIDEN(__DATE__) L" " WIDEN(__TIME__)
 
 // Current year as wide string (e.g., L"2025")
 #define VERSION_YEAR_WSTRING WIDEN(STRINGIFY(VERSION_YEAR))

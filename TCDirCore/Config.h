@@ -88,6 +88,12 @@ public:
     CEnvironmentProvider                       m_environmentProviderDefault;
     const IEnvironmentProvider               * m_pEnvironmentProvider             = nullptr;
 
+    // Switch defaults from environment variable
+    optional<bool>                             m_fWideListing;
+    optional<bool>                             m_fRecurse;
+    optional<bool>                             m_fPerfTimer;
+    optional<bool>                             m_fMultiThreaded;
+
 
     
 protected:
@@ -95,6 +101,7 @@ protected:
     void         InitializeFileAttributeToTextAttrMap (void);
     void         ApplyUserColorOverrides              (void);
     void         ProcessColorOverrideEntry            (wstring_view entry);
+    void         ProcessSwitchOverride                (wstring_view entry);
     void         ProcessFileExtensionOverride         (wstring_view extension, WORD colorAttr);
     void         ProcessDisplayAttributeOverride      (wchar_t attrChar, WORD colorAttr, wstring_view entry);
     void         ProcessFileAttributeOverride         (wstring_view keyView, WORD colorAttr, wstring_view entry);

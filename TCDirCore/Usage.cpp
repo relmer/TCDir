@@ -111,9 +111,13 @@ void CUsage::DisplayUsage (CConsole & console)
     // Display usage
     //
 
+    // Format build timestamp without seconds (drop last 3 chars ":SS" from __TIME__)
+    wstring buildTimestamp = VERSION_BUILD_TIMESTAMP;
+    buildTimestamp.resize (buildTimestamp.length () - 3);
+
     console.Puts (CConfig::EAttribute::Default, L"");
     console.PrintColorfulString (L"Technicolor");
-    console.Puts (CConfig::EAttribute::Default, L" Directory version " VERSION_WSTRING);
+    console.Printf (CConfig::EAttribute::Default, L" Directory version " VERSION_WSTRING L" (%s)\n", buildTimestamp.c_str ());
 
     for (LPCWSTR line : s_usageLines)
     {
@@ -713,7 +717,7 @@ Error:
 
 void CUsage::DisplayEnvVarHelp (CConsole & console)
 {
-#define ENV_VAR_SYNTAX L"<<Item> | Attr:<fileattr> | <.ext>> = <Fore> [on <Back>][;...]"
+#define ENV_VAR_SYNTAX L"[ -<Switch> | /<Switch>] | [<Item> | Attr:<fileattr> | <.ext>] = <Fore> [on <Back>][;...]"
 
     static LPCWSTR s_setEnvVarCommand[] =
     {
@@ -723,6 +727,12 @@ void CUsage::DisplayEnvVarHelp (CConsole & console)
 
     static LPCWSTR s_colorOverrideLines[] =
     {
+        L"",
+        L"  <Switch>    A command-line switch:",
+        L"                  W  Wide listing format",
+        L"                  P  Display performance timing information",
+        L"                  S  Recurse into subdirectories",
+        L"                  M  Enables multi-threaded enumeration (default); use /M- to disable",
         L"",
         L"  <Item>      A display item:",
         L"                  D  Date           T  Time",
@@ -745,8 +755,8 @@ void CUsage::DisplayEnvVarHelp (CConsole & console)
 
     static LPCWSTR s_envVarExample[] =
     {
-        L"  Example: set "  TCDIR_ENV_VAR_NAME L"=D=LightGreen;S=Yellow;Attr:H=DarkGrey;.cpp=White on Blue",           // CMD
-        L"  Example: $env:" TCDIR_ENV_VAR_NAME L" = \"D=LightGreen;S=Yellow;Attr:H=DarkGrey;.cpp=White on Blue\"",    // PowerShell
+        L"  Example: set "  TCDIR_ENV_VAR_NAME L"=-W;D=LightGreen;S=Yellow;Attr:H=DarkGrey;.cpp=White on Blue",           // CMD
+        L"  Example: $env:" TCDIR_ENV_VAR_NAME L" = \"-W;D=LightGreen;S=Yellow;Attr:H=DarkGrey;.cpp=White on Blue\"",    // PowerShell
     };
 
     bool  isPowerShell = IsPowerShell ();

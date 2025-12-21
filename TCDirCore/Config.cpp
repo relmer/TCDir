@@ -325,6 +325,8 @@ Error:
 //           .h=LightCyan on Blue
 //           D=Red
 //           attr:h=DarkGrey
+//           /w (switch)
+//           -s (switch)
 //
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -336,15 +338,22 @@ void CConfig::ProcessColorOverrideEntry (wstring_view entry)
     WORD         colorAttr = 0;
 
 
+
     // Skip empty entries (from trailing semicolons or multiple semicolons)
-    entry = TrimWhitespace(entry);
+    entry = TrimWhitespace (entry);
     CBR (!entry.empty());
+
+    if (entry[0] == L'/' || entry[0] == L'-')
+    {
+        ProcessSwitchOverride (entry);
+        BAIL_OUT_IF (TRUE, S_OK);
+    }
         
     hr = ParseKeyAndValue (entry, keyView, valueView);
     if (FAILED (hr))
     {
-        m_lastParseResult.errors.push_back( { L"Invalid entry format (expected key = value)", 
-                                              wstring (entry), wstring (entry), 0 } );
+        m_lastParseResult.errors.push_back ( { L"Invalid entry format (expected key = value)", 
+                                               wstring (entry), wstring (entry), 0 } );
         CHR (hr);
     }
 
@@ -376,8 +385,8 @@ void CConfig::ProcessColorOverrideEntry (wstring_view entry)
     }
     else
     {
-        m_lastParseResult.errors.push_back( { L"Invalid key (expected single character, .extension, or attr:x)",
-                                              wstring (entry), wstring (keyView), entry.find (keyView) } );
+        m_lastParseResult.errors.push_back ( { L"Invalid key (expected single character, .extension, or attr:x)",
+                                               wstring (entry), wstring (keyView), entry.find (keyView) } );
     }
 
 
@@ -499,6 +508,88 @@ HRESULT CConfig::ParseColorValue (wstring_view entry, wstring_view valueView, WO
 Error:
     return hr;
 }
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CConfig::ProcessSwitchOverride
+//
+//  Process a switch override entry (e.g., /s, /w, /m-, -s, -w)
+//  Supports: /S (recurse), /W (wide), /P (perf timer), /M (multithreaded)
+//  Use trailing '-' to disable (e.g., /M-)
+//
+////////////////////////////////////////////////////////////////////////////////
+
+void CConfig::ProcessSwitchOverride (wstring_view entry)
+{
+    static constexpr LPCWSTR s_krgExample[] =
+    {
+        L"Invalid switch (expected -S, -W, -P, or -M)",
+        L"Invalid switch (expected /S, /W, /P, or /M)",
+    };
+
+    HRESULT      hr                = S_OK;
+    size_t       idxExample        = 0;
+    wstring_view invalidText       = entry;
+    size_t       invalidTextOffset = 0;
+    wchar_t      ch                = 0;
+    bool         fValue            = true;
+
+
+
+    // Entry should be at least 2 characters (e.g., "/s" or "-w")
+    switch (entry.length())
+    {
+        case 2:
+            break;
+
+        case 3:
+            CBR (entry[2] == L'-');
+            fValue = false;
+            break;  
+
+        default:
+            invalidText       = entry;
+            invalidTextOffset = 0;
+            CBR (FALSE);
+            break;
+    }
+
+    idxExample = (entry[0] == L'/');
+
+    ch = towlower (entry[1]);
+    switch (ch)
+    {
+        case L's':  m_fRecurse       = fValue;  break;
+        case L'w':  m_fWideListing   = fValue;  break;
+        case L'p':  m_fPerfTimer     = fValue;  break;
+        case L'm':  m_fMultiThreaded = fValue;  break;
+
+        default:
+            invalidText       = entry.substr (1, 1);
+            invalidTextOffset = 1;
+            CBR (FALSE);
+            break;
+    }
+
+    
+Error:
+    if (FAILED (hr))
+    {
+        m_lastParseResult.errors.push_back ( {
+            s_krgExample[idxExample],
+            wstring (entry), 
+            wstring (invalidText),
+            invalidTextOffset 
+        } );
+    }
+
+    return;
+}
+
 
 
 
@@ -630,7 +721,7 @@ void CConfig::ProcessFileAttributeOverride (wstring_view keyView, WORD colorAttr
         size_t  keyPos = entry.find(keyView);
         size_t  charOffset = (keyPos != wstring_view::npos) ? keyPos + 5 : 5;
         m_lastParseResult.errors.push_back({
-            L"Invalid file attribute character (expected R,H,S,A,T,E,C,P,0)",
+            L"Invalid file attribute character (expected R, H, S, A, T, E, C, P or 0)",
             wstring(entry),
             invalidChar,
             charOffset

@@ -44,6 +44,12 @@ int wmain (int argc, WCHAR * argv[])
     CHR (hr);
 
     //
+    // Apply switch defaults from TCDIR environment variable
+    //
+
+    cmdlinePtr->ApplyConfigDefaults (*configPtr);
+
+    //
     // Process the commandline
     //
 
