@@ -153,14 +153,15 @@ void CUsage::DisplayEnvVarIssues (CConsole & console)
 
     for (const auto & error : validationResult.errors)
     {
-        console.Printf (CConfig::EAttribute::Error, L"  %s in \"%s\"",
-                        error.message.c_str(), error.entry.c_str());
-        console.Puts   (CConfig::EAttribute::Default, L"");
+        size_t  prefixLen = 2 + error.message.length() + 5 + error.invalidTextOffset;
+        wstring underline   (error.invalidText.length(), L'\x203E');  // Unicode overline character
+        
 
-        size_t prefixLen = 2 + error.message.length() + 5 + error.invalidTextOffset;
-        wstring overlines (error.invalidText.length(), L'\x203E');
+
+        console.Printf (CConfig::EAttribute::Error,   L"  %s in \"%s\"", error.message.c_str(), error.entry.c_str());
+        console.Puts   (CConfig::EAttribute::Default, L"");
         console.Printf (CConfig::EAttribute::Default, L"%*s", static_cast<int>(prefixLen), L"");
-        console.Puts   (CConfig::EAttribute::Error,   overlines.c_str());
+        console.Puts   (CConfig::EAttribute::Error,   underline.c_str());
     }
 
     console.Puts (CConfig::EAttribute::Default, L"");
@@ -238,16 +239,8 @@ void CUsage::DisplayAttributeConfiguration (CConsole & console, int columnWidthA
     {
         WORD    attr       = console.m_configPtr->m_rgAttributes[info.attr];
         bool    isEnv      = (console.m_configPtr->m_rgAttributeSources[info.attr] == CConfig::EAttributeSource::Environment);
-        LPCWSTR source     = isEnv ? L"Environment" : L"Default";
-        WORD    bgAttr     = console.m_configPtr->m_rgAttributes[CConfig::EAttribute::Default] & BC_Mask;
-        WORD    sourceAttr = static_cast<WORD> (bgAttr | (isEnv ? FC_Cyan : FC_DarkGrey));
-        int     pad        = max (0, columnWidthAttr - static_cast<int> (wcslen (info.name)));
 
-        console.Printf (CConfig::EAttribute::Information, L"  ");
-        console.Printf (attr,                             L"%ls", info.name);
-        console.Printf (CConfig::EAttribute::Information, L"%*ls  ", pad, L"");
-        console.Printf (sourceAttr,                       L"%-*ls", columnWidthSource, source);
-        console.Printf (CConfig::EAttribute::Default,     L"\n");
+        DisplayItemAndSource (console, info.name, attr, isEnv, columnWidthAttr, columnWidthSource, 0, EItemDisplayMode::SingleColumn);
     }
 }
 
@@ -283,8 +276,6 @@ void CUsage::DisplayFileAttributeConfiguration (CConsole & console, int columnWi
         { L"Sparse file",    FILE_ATTRIBUTE_SPARSE_FILE,   L'0' },
     };
 
-    WORD bgAttr = console.m_configPtr->m_rgAttributes[CConfig::EAttribute::Default] & BC_Mask;
-
 
 
     console.Puts (CConfig::EAttribute::Information, L"");
@@ -299,21 +290,11 @@ void CUsage::DisplayFileAttributeConfiguration (CConsole & console, int columnWi
             continue;
         }
 
-        WORD    attr   = iter->second.m_wAttr;
-        bool    isEnv  = (iter->second.m_source == CConfig::EAttributeSource::Environment);
-        LPCWSTR source = L"Default";
-
-        source = isEnv ? L"Environment" : L"Default";
-        WORD sourceAttr = static_cast<WORD> (bgAttr | (isEnv ? FC_Cyan : FC_DarkGrey));
-
+        WORD    attr  = iter->second.m_wAttr;
+        bool    isEnv = (iter->second.m_source == CConfig::EAttributeSource::Environment);
         wstring label = format (L"{} {}", info.ch, info.name);
-        int     pad   = max (0, columnWidthAttr - static_cast<int> (label.size()));
-
-        console.Printf (CConfig::EAttribute::Information, L"  ");
-        console.Printf (attr,                             L"%ls", label.c_str());
-        console.Printf (CConfig::EAttribute::Information, L"%*ls  ", pad, L"");
-        console.Printf (sourceAttr,                       L"%-*ls", columnWidthSource, source);
-        console.Printf (CConfig::EAttribute::Default,     L"\n");
+        
+        DisplayItemAndSource (console, label, attr, isEnv, columnWidthAttr, columnWidthSource, 0, EItemDisplayMode::SingleColumn);
     }
 }
 
@@ -329,30 +310,55 @@ void CUsage::DisplayFileAttributeConfiguration (CConsole & console, int columnWi
 
 void CUsage::DisplayExtensionConfigurationSingleColumn (CConsole & console, int columnWidthAttr, int columnWidthSource, const vector<pair<wstring, WORD>> & extensions)
 {
-    WORD bgAttr = console.m_configPtr->m_rgAttributes[CConfig::EAttribute::Default] & BC_Mask;
-
-
-
-    console.Puts (CConfig::EAttribute::Information, L"");
-    console.Puts (CConfig::EAttribute::Information, L"File attribute color configuration:");
-    console.Puts (CConfig::EAttribute::Information, L"");
-
     for (const auto & [ext, extAttr] : extensions)
     {
         auto    sourceIter = console.m_configPtr->m_mapExtensionSources.find (ext);
         bool    isEnv      = (sourceIter         != console.m_configPtr->m_mapExtensionSources.end () &&
                               sourceIter->second == CConfig::EAttributeSource::Environment);
-        LPCWSTR source     = isEnv ? L"Environment" : L"Default";
-        WORD    sourceAttr = static_cast<WORD> (bgAttr | (isEnv ? FC_Cyan : FC_DarkGrey));
-        int    pad         = max (0, columnWidthAttr - static_cast<int> (ext.size ()));
+
+        DisplayItemAndSource (console, ext, extAttr, isEnv, columnWidthAttr, columnWidthSource, 0, EItemDisplayMode::SingleColumn);
+    }
+}
 
 
 
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CUsage::DisplayItemAndSource
+//
+////////////////////////////////////////////////////////////////////////////////
+
+void CUsage::DisplayItemAndSource (CConsole & console, wstring_view item, WORD attr, bool isEnv, size_t columnWidthItem, size_t columnWidthSource, size_t cxColumnWidth, EItemDisplayMode mode)
+{
+    WORD    bgAttr     = console.m_configPtr->m_rgAttributes[CConfig::EAttribute::Default] & BC_Mask;
+    WORD    sourceAttr = static_cast<WORD> (bgAttr | (isEnv ? FC_Cyan : FC_DarkGrey));
+    LPCWSTR source     = isEnv ? L"Environment" : L"Default";
+    int     pad        = max (0, static_cast<int> (columnWidthItem) - static_cast<int> (item.size ()));
+    size_t  cxUsed     = columnWidthItem + 2 + columnWidthSource;
+
+
+
+    if (mode == EItemDisplayMode::SingleColumn)
+    {
         console.Printf (CConfig::EAttribute::Information, L"  ");
-        console.Printf (extAttr,                          L"%ls", ext.c_str ());
-        console.Printf (CConfig::EAttribute::Information, L"%*ls  ", pad, L"");
-        console.Printf (sourceAttr,                       L"%-*ls", columnWidthSource, source);
-        console.Printf (CConfig::EAttribute::Default,     L"\n");
+    }
+
+    console.Printf (attr,                             L"%.*ls", static_cast<int> (item.size ()), item.data ());
+    console.Printf (CConfig::EAttribute::Information, L"%*ls  ", pad, L"");
+    console.Printf (sourceAttr,                       L"%-*ls", static_cast<int> (columnWidthSource), source);
+
+    if (mode == EItemDisplayMode::MultiColumn)
+    {
+        if (cxColumnWidth > cxUsed)
+        {
+            console.Printf (CConfig::EAttribute::Information, L"%*ls", static_cast<int> (cxColumnWidth - cxUsed), L"");
+        }
+    }
+    else
+    {
+        console.Printf (CConfig::EAttribute::Default, L"\n");
     }
 }
 
@@ -371,7 +377,7 @@ void CUsage::DisplayExtensionConfigurationMultiColumn (CConsole & console, const
     size_t cxColumnWidth   = max (static_cast<size_t> (1), cxAvailable / cColumns);
     size_t cRows           = (extensions.size () + cColumns - 1) / cColumns;
     size_t cItemsInLastRow = extensions.size () % cColumns;
-    WORD   bgAttr          = console.m_configPtr->m_rgAttributes[CConfig::EAttribute::Default] & BC_Mask;
+    size_t fullRows        = cItemsInLastRow ? cRows - 1 : cRows;
 
 
 
@@ -383,20 +389,13 @@ void CUsage::DisplayExtensionConfigurationMultiColumn (CConsole & console, const
 
         for (size_t nCol = 0; nCol < cColumns; ++nCol)
         {
-            size_t  idx      = 0;
-            size_t  fullRows = cItemsInLastRow ? cRows - 1 : cRows;
-            LPCWSTR source   = nullptr;
-            size_t  cxUsed   = 0;
-
-
-
             if ((nRow * cColumns + nCol) >= extensions.size ())
             {
                 break;
             }
 
             // Column-major ordering (see ResultsDisplayerWide).
-            idx = nRow + (nCol * fullRows);
+            size_t idx = nRow + (nCol * fullRows);
 
             if (nCol < cItemsInLastRow)
             {
@@ -409,24 +408,11 @@ void CUsage::DisplayExtensionConfigurationMultiColumn (CConsole & console, const
 
             const auto & ext     = extensions[idx].first;
             WORD         extAttr = extensions[idx].second;
+            auto      sourceIter = console.m_configPtr->m_mapExtensionSources.find (ext);
+            bool      isEnv      = (sourceIter         != console.m_configPtr->m_mapExtensionSources.end () &&
+                                    sourceIter->second == CConfig::EAttributeSource::Environment);
 
-            auto sourceIter = console.m_configPtr->m_mapExtensionSources.find (ext);
-            bool isEnv      = (sourceIter         != console.m_configPtr->m_mapExtensionSources.end () &&
-                               sourceIter->second == CConfig::EAttributeSource::Environment);
-            WORD sourceAttr = static_cast<WORD> (bgAttr | (isEnv ? FC_Cyan : FC_DarkGrey));
-            
-            source = isEnv ? L"Environment" : L"Default";
-
-            console.Printf (extAttr,                          L"%ls", ext.c_str ());
-            console.Printf (CConfig::EAttribute::Information, L"%*ls", static_cast<int> (maxExtLen - ext.size ()), L"");
-            console.Printf (CConfig::EAttribute::Information, L"  ");
-            console.Printf (sourceAttr,                       L"%-*ls", static_cast<int> (cxSourceWidth), source);
-
-            cxUsed = maxExtLen + 2 + cxSourceWidth;
-            if (cxColumnWidth > cxUsed)
-            {
-                console.Printf (CConfig::EAttribute::Information, L"%*ls", static_cast<int> (cxColumnWidth - cxUsed), L"");
-            }
+            DisplayItemAndSource (console, ext, extAttr, isEnv, maxExtLen, cxSourceWidth, cxColumnWidth, EItemDisplayMode::MultiColumn);
         }
 
         console.Puts (CConfig::EAttribute::Default, L"");
@@ -512,6 +498,7 @@ WORD CUsage::GetColorAttribute (CConsole & console, wstring_view colorName)
     WORD foreAttr    = console.m_configPtr->ParseColorName (colorName, false);
 
 
+
     if (foreAttr == 0)
     {
         foreAttr = FC_LightGrey;
@@ -592,7 +579,7 @@ HRESULT CUsage::DisplayEnvVarSegment (CConsole & console, wstring_view segment)
 
 
 
-    equalPos = segment.find(L'=');
+    equalPos = segment.find (L'=');
 
     if (equalPos == wstring_view::npos)
     {
@@ -602,8 +589,8 @@ HRESULT CUsage::DisplayEnvVarSegment (CConsole & console, wstring_view segment)
         BAIL_OUT_IF (TRUE, S_OK);
     }
 
-    keyView   = segment.substr(0, equalPos);
-    valueView = segment.substr(equalPos + 1);
+    keyView   = segment.substr (0, equalPos);
+    valueView = segment.substr (equalPos + 1);
 
     // Trim leading/trailing whitespace from value for color parsing
     trimmedValue = valueView;
@@ -683,9 +670,9 @@ void CUsage::DisplayEnvVarCurrentValue (CConsole & console, LPCWSTR pszEnvVarNam
     console.Printf (CConfig::EAttribute::Default, L"\"");
 
     // Split by semicolons and display each segment in its specified color
-    for (auto segment : std::views::split(wstring_view(envValue), L';'))
+    for (auto segment : std::views::split (wstring_view (envValue), L';'))
     {
-        wstring_view segView(segment.begin(), segment.end());
+        wstring_view segView (segment.begin(), segment.end());
         
         // Skip empty segments
         if (segView.empty())
@@ -695,12 +682,12 @@ void CUsage::DisplayEnvVarCurrentValue (CConsole & console, LPCWSTR pszEnvVarNam
 
         if (!firstSegment)
         {
-            console.Printf(CConfig::EAttribute::Default, L";");
+            console.Printf (CConfig::EAttribute::Default, L";");
         }
 
         firstSegment = false;
 
-        DisplayEnvVarSegment(console, segView);
+        DisplayEnvVarSegment (console, segView);
     }
 
     console.Puts (CConfig::EAttribute::Default, L"\"\n");

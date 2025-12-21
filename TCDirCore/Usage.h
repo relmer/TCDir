@@ -14,6 +14,12 @@ class CUsage
 {
 public:
 
+    enum class EItemDisplayMode
+    {
+        SingleColumn,   // Indent + newline (for single-column lists)
+        MultiColumn,    // No indent, column padding (for multi-column grids)
+    };
+
     static void    DisplayUsage                     (CConsole & console);
     static void    DisplayEnvVarHelp                (CConsole & console);
     static void    DisplayCurrentConfiguration      (CConsole & console);
@@ -32,6 +38,7 @@ private:
     static void    DisplayAttributeConfiguration             (CConsole & console, int columnWidthAttr, int columnWidthSource);
     static void    DisplayFileAttributeConfiguration         (CConsole & console, int columnWidthAttr, int columnWidthSource);
     static void    DisplayExtensionConfiguration             (CConsole & console, int columnWidthAttr, int columnWidthSource);
+    static void    DisplayItemAndSource                      (CConsole & console, wstring_view item, WORD attr, bool isEnv, size_t columnWidthItem, size_t columnWidthSource, size_t cxColumnWidth, EItemDisplayMode mode);
 
     static void    DisplayExtensionConfigurationSingleColumn (CConsole & console, int columnWidthAttr, int columnWidthSource, const vector<pair<wstring, WORD>> & extensions);
     static void    DisplayExtensionConfigurationMultiColumn  (CConsole & console, const vector<pair<wstring, WORD>> & extensions, size_t maxExtLen, size_t cxSourceWidth, size_t cxAvailable, size_t cColumns);
