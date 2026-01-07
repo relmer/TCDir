@@ -115,9 +115,19 @@ void CUsage::DisplayUsage (CConsole & console)
     wstring buildTimestamp = VERSION_BUILD_TIMESTAMP;
     buildTimestamp.resize (buildTimestamp.length () - 3);
 
+#if defined(_M_X64)
+    static constexpr LPCWSTR s_kpszArch = L"x64";
+#elif defined(_M_ARM64)
+    static constexpr LPCWSTR s_kpszArch = L"ARM64";
+#elif defined(_M_IX86)
+    static constexpr LPCWSTR s_kpszArch = L"x86";
+#else
+    static constexpr LPCWSTR s_kpszArch = L"unknown";
+#endif
+
     console.Puts (CConfig::EAttribute::Default, L"");
     console.PrintColorfulString (L"Technicolor");
-    console.Printf (CConfig::EAttribute::Default, L" Directory version " VERSION_WSTRING L" (%s)\n", buildTimestamp.c_str ());
+    console.Printf (CConfig::EAttribute::Default, L" Directory version " VERSION_WSTRING L" %s (%s)\n", s_kpszArch, buildTimestamp.c_str ());
 
     for (LPCWSTR line : s_usageLines)
     {

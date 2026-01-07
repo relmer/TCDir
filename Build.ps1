@@ -2,10 +2,10 @@ param(
     [ValidateSet('Debug', 'Release')]
     [string]$Configuration = 'Debug',
 
-    [ValidateSet('x64', 'Win32')]
+    [ValidateSet('x64', 'ARM64')]
     [string]$Platform = 'x64',
 
-    [ValidateSet('Build', 'Clean', 'Rebuild')]
+    [ValidateSet('Build', 'Clean', 'Rebuild', 'BuildAllRelease')]
     [string]$Target = 'Build'
 )
 
@@ -32,6 +32,26 @@ if (-not $msbuildPath) {
 
 if (-not $msbuildPath) {
     throw 'VS 2026 (v18.x) MSBuild not found (via vswhere). Install VS 2026 with MSBuild.'
+}
+
+if ($Target -eq 'BuildAllRelease') {
+    foreach ($platformToBuild in @('x64', 'ARM64')) {
+        $msbuildArgs = @(
+            $solutionPath,
+            "-p:Configuration=Release",
+            "-p:Platform=$platformToBuild"
+        )
+
+        Write-Host "Using MSBuild: $msbuildPath"
+        Write-Host "Building: $solutionPath (Release|$platformToBuild) Target=Build"
+
+        & $msbuildPath @msbuildArgs
+        if ($LASTEXITCODE -ne 0) {
+            exit $LASTEXITCODE
+        }
+    }
+
+    exit 0
 }
 
 $msbuildArgs = @(
