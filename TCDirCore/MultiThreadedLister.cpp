@@ -43,9 +43,9 @@ CMultiThreadedLister::CMultiThreadedLister (shared_ptr<CCommandLine> pCmdLine, s
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-CMultiThreadedLister::~CMultiThreadedLister ()
+CMultiThreadedLister::~CMultiThreadedLister()
 {
-    StopWorkers ();
+    StopWorkers();
 }
 
 
@@ -60,19 +60,19 @@ CMultiThreadedLister::~CMultiThreadedLister ()
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-void CMultiThreadedLister::StopWorkers ()
+void CMultiThreadedLister::StopWorkers()
 {
-    m_workQueue.SetDone ();
+    m_workQueue.SetDone();
 
     for (auto & worker : m_workers)
     {
-        if (worker.joinable ())
+        if (worker.joinable())
         {
-            worker.join ();
+            worker.join();
         }
     }
 
-    m_workers.clear ();
+    m_workers.clear();
 }
 
 
@@ -107,11 +107,11 @@ HRESULT CMultiThreadedLister::ProcessDirectoryMultiThreaded (const CDriveInfo & 
     m_workQueue.Push (WorkItem { pRootDirInfo });
 
     // Create worker threads
-    const size_t numThreads = max(1u, thread::hardware_concurrency ());
+    const size_t numThreads = max(1u, thread::hardware_concurrency());
 
     for (size_t i = 0; i < numThreads; ++i)
     {
-        m_workers.emplace_back ([this]() { WorkerThreadFunc (); });
+        m_workers.emplace_back ([this]() { WorkerThreadFunc(); });
     }
 
     // Start consuming immediately (streaming output)
@@ -124,8 +124,10 @@ HRESULT CMultiThreadedLister::ProcessDirectoryMultiThreaded (const CDriveInfo & 
                              cDirectoriesFound);
     CHR (hr);
 
+
+
 Error:
-    StopWorkers ();
+    StopWorkers();
     return hr;
 }
 
@@ -165,7 +167,7 @@ void CMultiThreadedLister::EnumerateDirectoryNode (shared_ptr<CDirectoryInfo> pD
         pDirInfo->m_hr = hr;
     }
     
-    pDirInfo->m_cvStatusChanged.notify_one ();
+    pDirInfo->m_cvStatusChanged.notify_one();
 }
 
 
@@ -201,9 +203,9 @@ HRESULT CMultiThreadedLister::PerformEnumeration (shared_ptr<CDirectoryInfo> pDi
     }
 
     // Search for files matching the file spec
-    hFind.reset (FindFirstFile (pathAndFileSpec.c_str (), &wfd));
+    hFind.reset (FindFirstFile (pathAndFileSpec.c_str(), &wfd));
     
-    if (hFind.get () != INVALID_HANDLE_VALUE)
+    if (hFind.get() != INVALID_HANDLE_VALUE)
     {
         do
         {
@@ -223,17 +225,17 @@ HRESULT CMultiThreadedLister::PerformEnumeration (shared_ptr<CDirectoryInfo> pDi
                 CFlag::IsNotSet (wfd.dwFileAttributes, m_cmdLinePtr->m_dwAttributesExcluded))
             {
                 lock_guard<mutex> lock (pDirInfo->m_mutex);
-                AddMatchToList (const_cast<WIN32_FIND_DATA *> (&wfd), pDirInfo.get());
+                AddMatchToList (wfd, pDirInfo.get());
             }
 
         } 
-        while (FindNextFile (hFind.get (), &wfd));
+        while (FindNextFile (hFind.get(), &wfd));
 
         // Check if loop ended due to error or naturally
-        dwError = GetLastError ();
+        dwError = GetLastError();
         if (dwError != ERROR_NO_MORE_FILES)
         {
-            CWRA (dwError);
+            CHRA (HRESULT_FROM_WIN32 (dwError));
         }
     }
 
@@ -242,9 +244,9 @@ HRESULT CMultiThreadedLister::PerformEnumeration (shared_ptr<CDirectoryInfo> pDi
     if (m_cmdLinePtr->m_fRecurse)
     {
         filesystem::path pathForDirs = pDirInfo->m_dirPath / L"*";
-        hFind.reset (FindFirstFile (pathForDirs.c_str (), &wfd));
+        hFind.reset (FindFirstFile (pathForDirs.c_str(), &wfd));
         
-        if (hFind.get () != INVALID_HANDLE_VALUE)
+        if (hFind.get() != INVALID_HANDLE_VALUE)
         {
             do
             {
@@ -265,7 +267,7 @@ HRESULT CMultiThreadedLister::PerformEnumeration (shared_ptr<CDirectoryInfo> pDi
                     EnqueueChildDirectory (wfd, pDirInfo);
                 }
             }
-            while (FindNextFile (hFind.get (), &wfd));
+            while (FindNextFile (hFind.get(), &wfd));
         }
     }
 
@@ -307,7 +309,7 @@ void CMultiThreadedLister::EnqueueChildDirectory (const WIN32_FIND_DATA & wfd, s
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-void CMultiThreadedLister::WorkerThreadFunc ()
+void CMultiThreadedLister::WorkerThreadFunc()
 {
     while (!m_fCancelRequested.load (memory_order_relaxed))
     {
@@ -370,7 +372,7 @@ HRESULT CMultiThreadedLister::PrintDirectoryTree (shared_ptr<CDirectoryInfo> pDi
         {
             m_consolePtr->Printf (CConfig::EAttribute::Error,
                                   L"  Error accessing directory: %s: HRESULT 0x%08X\n",
-                                  pDirInfo->m_dirPath.c_str (), 
+                                  pDirInfo->m_dirPath.c_str(), 
                                   pDirInfo->m_hr);
             CHR (pDirInfo->m_hr);
         }
@@ -380,7 +382,7 @@ HRESULT CMultiThreadedLister::PrintDirectoryTree (shared_ptr<CDirectoryInfo> pDi
     {
         lock_guard<mutex> lock (pDirInfo->m_mutex);
 
-        std::sort (pDirInfo->m_vMatches.begin (), pDirInfo->m_vMatches.end (), 
+        std::sort (pDirInfo->m_vMatches.begin(), pDirInfo->m_vMatches.end(), 
                    FileComparator (m_cmdLinePtr));
     }
 
@@ -414,6 +416,8 @@ HRESULT CMultiThreadedLister::PrintDirectoryTree (shared_ptr<CDirectoryInfo> pDi
         IGNORE_RETURN_VALUE (hr, S_OK);
     }
 
+
+
 Error:
     return hr;
 }
@@ -430,7 +434,7 @@ Error:
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-void CMultiThreadedLister::AddMatchToList (__in WIN32_FIND_DATA * pwfd, __in CDirectoryInfo * pdi)
+void CMultiThreadedLister::AddMatchToList (const WIN32_FIND_DATA & wfd, __in CDirectoryInfo * pdi)
 {
     size_t  cchFileName  = 0;
 
@@ -438,10 +442,10 @@ void CMultiThreadedLister::AddMatchToList (__in WIN32_FIND_DATA * pwfd, __in CDi
 
     if (m_cmdLinePtr->m_fWideListing)
     {
-        cchFileName = wcslen (pwfd->cFileName);
+        cchFileName = wcslen (wfd.cFileName);
     }
 
-    if (CFlag::IsSet (pwfd->dwFileAttributes, FILE_ATTRIBUTE_DIRECTORY))
+    if (CFlag::IsSet (wfd.dwFileAttributes, FILE_ATTRIBUTE_DIRECTORY))
     {
         //
         // In wide directory listings, directories are shown inside brackets
@@ -462,8 +466,8 @@ void CMultiThreadedLister::AddMatchToList (__in WIN32_FIND_DATA * pwfd, __in CDi
         // Get the two 32-bit halves into a convenient 64-bit type
         //
 
-        uliFileSize.LowPart  = pwfd->nFileSizeLow;
-        uliFileSize.HighPart = pwfd->nFileSizeHigh;
+        uliFileSize.LowPart  = wfd.nFileSizeLow;
+        uliFileSize.HighPart = wfd.nFileSizeHigh;
 
         if (uliFileSize.QuadPart > pdi->m_uliLargestFileSize.QuadPart)
         {
@@ -482,7 +486,7 @@ void CMultiThreadedLister::AddMatchToList (__in WIN32_FIND_DATA * pwfd, __in CDi
         }
     }
 
-    pdi->m_vMatches.push_back (*pwfd);
+    pdi->m_vMatches.push_back (wfd);
 }
 
 
@@ -501,6 +505,7 @@ BOOL CMultiThreadedLister::IsDots (LPCWSTR pszFileName)
 {
     static const WCHAR kchDot  = L'.';
     static const WCHAR kchNull = L'\0';
+
     BOOL               fDots   = FALSE;
 
     

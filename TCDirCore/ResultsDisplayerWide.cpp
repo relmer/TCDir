@@ -50,7 +50,7 @@ void CResultsDisplayerWide::DisplayFileResults (const CDirectoryInfo & di)
     GetColumnInfo (di, cColumns, cxColumnWidth);
 
     cRows           = (di.m_vMatches.size() + cColumns - 1) / cColumns;
-    cItemsInLastRow = di.m_vMatches.size () % cColumns;
+    cItemsInLastRow = di.m_vMatches.size() % cColumns;
    
     //
     // Display the matches in columns
@@ -65,7 +65,7 @@ void CResultsDisplayerWide::DisplayFileResults (const CDirectoryInfo & di)
             
             
 
-            if ((nRow * cColumns + nCol) >= di.m_vMatches.size ())
+            if ((nRow * cColumns + nCol) >= di.m_vMatches.size())
             {
                 break;
             }
@@ -91,6 +91,8 @@ void CResultsDisplayerWide::DisplayFileResults (const CDirectoryInfo & di)
 
         m_consolePtr->Puts (CConfig::EAttribute::Default, L"");
     }
+
+
 
 Error:
     return;
@@ -131,6 +133,8 @@ HRESULT CResultsDisplayerWide::DisplayFile (const WIN32_FIND_DATA & wfd, size_t 
             m_consolePtr->Printf (CConfig::EAttribute::Default, L" ");
         }
     }
+
+
 
 Error:
     return hr;
@@ -181,14 +185,17 @@ void CResultsDisplayerWide::GetColumnInfo (const CDirectoryInfo & di, size_t & c
 
 HRESULT CResultsDisplayerWide::GetWideFormattedName (const WIN32_FIND_DATA & wfd, __deref_out_z LPCWSTR * ppszName)
 {
-    HRESULT      hr                      = S_OK;
     static WCHAR szDirName[MAX_PATH + 2] = L"[";
     
+    HRESULT      hr                      = S_OK;
+    
+
 
     if (wfd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
     {
         LPWSTR pszBufEnd    = szDirName + 1;
         size_t cchRemaining = 0;
+
         
 
         hr = StringCchCopyEx (szDirName + 1, ARRAYSIZE (szDirName) - 2, wfd.cFileName, &pszBufEnd, &cchRemaining, 0);

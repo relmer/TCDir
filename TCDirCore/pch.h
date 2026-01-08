@@ -7,11 +7,6 @@
 
 
 
-//#pragma warning (disable: 4127)		// Conditional expression is constant
-//#pragma warning (disable: 4702)		// Unreachable code (STL list is not clean)
-
-
-
 #ifdef _DEBUG
     #include <crtdbg.h>
 #endif

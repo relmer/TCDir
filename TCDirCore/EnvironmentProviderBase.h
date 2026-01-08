@@ -10,6 +10,3 @@ struct IEnvironmentProvider
     
     virtual bool TryGetEnvironmentVariable (LPCWSTR pszName, wstring & value) const = 0;
 };
-
-
-

@@ -5,6 +5,12 @@
 
 
 
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CDriveInfo::CDriveInfo
+//
+////////////////////////////////////////////////////////////////////////////////
+
 CDriveInfo::CDriveInfo (const filesystem::path & dirPath) :
     m_szVolumeName     { 0 },
     m_szFileSystemName { 0 },
@@ -18,6 +24,12 @@ CDriveInfo::CDriveInfo (const filesystem::path & dirPath) :
 
 
 
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CDriveInfo::InitializeVolumeInfo
+//
+////////////////////////////////////////////////////////////////////////////////
 
 void CDriveInfo::InitializeVolumeInfo (const filesystem::path & dirPath)
 {
@@ -54,6 +66,8 @@ void CDriveInfo::InitializeVolumeInfo (const filesystem::path & dirPath)
                                      m_szFileSystemName, ARRAYSIZE (m_szFileSystemName));
     CWR (fSuccess);  // Worth logging, but expected to fail on bad paths, so don't assert.
 
+
+
 Error:
     return;
 }
@@ -61,6 +75,12 @@ Error:
 
 
 
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CDriveInfo::InitializeUncInfo
+//
+////////////////////////////////////////////////////////////////////////////////
 
 void CDriveInfo::InitializeUncInfo()
 {
@@ -89,6 +109,8 @@ void CDriveInfo::InitializeUncInfo()
 
     // Trim the string to the actual length (remove null terminator and extra space)
     m_remoteName.resize (wcslen (m_remoteName.c_str()));
+
+
 
 Error:
     if (FAILED (hr))

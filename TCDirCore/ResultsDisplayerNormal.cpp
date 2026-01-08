@@ -56,6 +56,7 @@ void CResultsDisplayerNormal::DisplayFileResults (const CDirectoryInfo & di)
     }
     
 
+
 Error:
     return;
 }
@@ -101,6 +102,8 @@ HRESULT CResultsDisplayerNormal::DisplayResultsNormalDateAndTime (const FILETIME
     m_consolePtr->Printf (CConfig::EAttribute::Time,    L"%s", szTime);
     m_consolePtr->Printf (CConfig::EAttribute::Default, L" ");
 
+
+    
 Error:
     return hr;
 }
@@ -184,18 +187,18 @@ void CResultsDisplayerNormal::DisplayResultsNormalFileSize (const WIN32_FIND_DAT
     if ((fileInfo.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) == 0)
     {
         m_consolePtr->Printf (CConfig::EAttribute::Size, 
-                            L" %*s ", 
-                            cchMaxFileSize, 
-                            FormatNumberWithSeparators (uliFileSize.QuadPart));
+                              L" %*s ", 
+                              cchMaxFileSize, 
+                              FormatNumberWithSeparators (uliFileSize.QuadPart));
     }
     else
     {
         size_t cchLeftSidePadding = (cchMaxFileSize - kcchDirSize) / 2;            
         m_consolePtr->Printf (CConfig::EAttribute::Directory, 
-                            L" %*s%-*s ", 
-                            cchLeftSidePadding, 
-                            L"", 
-                            cchMaxFileSize - cchLeftSidePadding, 
-                            kszDirSize);
+                              L" %*s%-*s ", 
+                              cchLeftSidePadding, 
+                              L"", 
+                              cchMaxFileSize - cchLeftSidePadding, 
+                              kszDirSize);
     }        
 }

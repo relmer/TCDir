@@ -6,6 +6,12 @@
 
 
 
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CEnvironmentProvider::TryGetEnvironmentVariable
+//
+////////////////////////////////////////////////////////////////////////////////
+
 bool CEnvironmentProvider::TryGetEnvironmentVariable (LPCWSTR pszName, wstring & value) const
 {
     HRESULT hr         = S_OK;
@@ -33,9 +39,8 @@ bool CEnvironmentProvider::TryGetEnvironmentVariable (LPCWSTR pszName, wstring &
     value.resize (cchWritten);
     fIsSet = true;
 
+
+
 Error:
     return fIsSet;
 }
-
-
-

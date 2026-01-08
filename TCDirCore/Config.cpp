@@ -192,9 +192,7 @@ void CConfig::Initialize (WORD wDefaultAttr)
     m_rgAttributes[EAttribute::Directory]               = FC_LightBlue;
     m_rgAttributes[EAttribute::SeparatorLine]           = FC_LightBlue;
     m_rgAttributes[EAttribute::Error]                   = FC_LightRed;
-
-    
-
+  
     InitializeExtensionToTextAttrMap();
     InitializeFileAttributeToTextAttrMap();
     ApplyUserColorOverrides();
@@ -290,6 +288,8 @@ void CConfig::ApplyUserColorOverrides (void)
     HRESULT hr       = S_OK;
     wstring envValue;
 
+
+
     // Clear previous validation results
     m_lastParseResult.errors.clear();
 
@@ -302,7 +302,7 @@ void CConfig::ApplyUserColorOverrides (void)
     
     for (auto token : envValue | std::views::split (L';'))
     {
-        wstring_view entry (token.begin (), token.end ());
+        wstring_view entry (token.begin(), token.end());
         ProcessColorOverrideEntry (entry);
     }
 
@@ -424,7 +424,7 @@ HRESULT CConfig::ParseColorValue (wstring_view entry, wstring_view valueView, WO
     // Find the '=' position for error reporting
     //
 
-    size_t equalPos = entry.find(L'=');
+    size_t equalPos = entry.find (L'=');
 
     //
     // Check for " on " separator (case-insensitive)
@@ -432,7 +432,7 @@ HRESULT CConfig::ParseColorValue (wstring_view entry, wstring_view valueView, WO
 
     auto result = std::ranges::search (valueView, L" on "sv,
                                        [] (wchar_t a, wchar_t b) { return towlower (a) == towlower (b); } );
-    if (result.empty ())
+    if (result.empty())
     {
         // Foreground only
         foreView = TrimWhitespace (valueView);
@@ -440,7 +440,7 @@ HRESULT CConfig::ParseColorValue (wstring_view entry, wstring_view valueView, WO
     else
     {
         // Foreground and background
-        size_t onPosValue = result.begin () - valueView.begin ();
+        size_t onPosValue = result.begin() - valueView.begin();
         foreView = TrimWhitespace (valueView.substr (0, onPosValue));
         backView = TrimWhitespace (valueView.substr (onPosValue + 4));
 
@@ -758,7 +758,7 @@ HRESULT CConfig::ParseKeyAndValue (wstring_view entry, wstring_view & keyView, w
     keyView   = TrimWhitespace (keyView);
     valueView = TrimWhitespace (valueView);
 
-    CBREx (!keyView.empty () && !valueView.empty (), E_INVALIDARG);
+    CBREx (!keyView.empty() && !valueView.empty(), E_INVALIDARG);
 
 Error:
     return hr;
@@ -790,7 +790,7 @@ WORD CConfig::ParseColorSpec (wstring_view colorSpec)
         [] (wchar_t a, wchar_t b) { return towlower (a) == towlower (b); }
     );
 
-    if (result.empty ())
+    if (result.empty())
     {
         // Only foreground specified
         wstring_view foreView = TrimWhitespace (colorSpec);
@@ -798,7 +798,7 @@ WORD CConfig::ParseColorSpec (wstring_view colorSpec)
     }
     else
     {
-        size_t onPos = result.begin () - colorSpec.begin ();
+        size_t onPos = result.begin() - colorSpec.begin();
 
         // Both foreground and background specified
         wstring_view foreView = TrimWhitespace (colorSpec.substr (0, onPos));

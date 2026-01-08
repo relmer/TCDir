@@ -4,12 +4,6 @@
 
 
 
-#include "pch.h"
-
-
-
-
-
 class CCommandLine
 {
 public:
@@ -77,7 +71,7 @@ public:
     // Public methods
     //
     
-    void               ApplyConfigDefaults (const class CConfig & config);
+    void ApplyConfigDefaults (const class CConfig & config);
 
 
 protected: 

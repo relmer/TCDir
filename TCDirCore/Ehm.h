@@ -38,7 +38,7 @@ typedef void (*EHM_BREAKPOINT_FUNC)(void);
 extern EHM_BREAKPOINT_FUNC g_pfnBreakpoint;
 
 void SetBreakpointFunction (EHM_BREAKPOINT_FUNC func);
-void EhmBreakpoint (void);
+void EhmBreakpoint         (void);
 
 
 

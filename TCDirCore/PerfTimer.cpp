@@ -1,5 +1,4 @@
 #include "pch.h"
-
 #include "PerfTimer.h"
 
 
@@ -13,9 +12,16 @@ using namespace std::chrono;
 
 
 
+////////////////////////////////////////////////////////////////////////////////
+//
+//  PerfTimer::PerfTimer
+//
 // In Automatic mode, the lifetime of the PerfTimer object implicitly controls Start/Stop.
 // In Manual mode, the user calls Start/Stop manually.  The timer may be reused as needed.
 // In Accumulated mode, timing data is accumulated across multiple Start/Stop calls.
+//  
+////////////////////////////////////////////////////////////////////////////////
+
 PerfTimer::PerfTimer (LPCWSTR pszName, TimerMode timerMode, ReportMode reportMode, std::function<void (const wchar_t *)> printFunc) :
     m_pszName       (pszName),
     m_timerMode     (timerMode),
@@ -29,7 +35,7 @@ PerfTimer::PerfTimer (LPCWSTR pszName, TimerMode timerMode, ReportMode reportMod
 {
     if (timerMode == Automatic)
     {
-        Start ();
+        Start();
     }
 }
 
@@ -37,16 +43,22 @@ PerfTimer::PerfTimer (LPCWSTR pszName, TimerMode timerMode, ReportMode reportMod
 
 
 
-PerfTimer::~PerfTimer ()
+////////////////////////////////////////////////////////////////////////////////
+//
+//  PerfTimer::~PerfTimer
+//
+////////////////////////////////////////////////////////////////////////////////
+
+PerfTimer::~PerfTimer()
 {
     if (m_fRunning)
     {
-        Stop ();
+        Stop();
     }
 
     if (!m_fPrinted && m_duration != m_duration.zero())
     {
-        Print ();
+        Print();
     }
 }
 
@@ -54,25 +66,37 @@ PerfTimer::~PerfTimer ()
 
 
 
-void PerfTimer::Start ()
+////////////////////////////////////////////////////////////////////////////////
+//
+//  PerfTimer::Start
+//
+////////////////////////////////////////////////////////////////////////////////
+
+void PerfTimer::Start()
 {
     ASSERT (!m_fRunning);
 
     m_fRunning = true;
     m_fPrinted = false;
-    m_start    = high_resolution_clock::now ();
+    m_start    = high_resolution_clock::now();
 }
 
 
 
 
 
-void PerfTimer::Stop ()
+////////////////////////////////////////////////////////////////////////////////
+//
+//  PerfTimer::Stop
+//
+////////////////////////////////////////////////////////////////////////////////
+
+void PerfTimer::Stop()
 {
     ASSERT (m_fRunning);
 
     m_fRunning = false;
-    m_end      = high_resolution_clock::now ();
+    m_end      = high_resolution_clock::now();
     m_duration = m_end - m_start;
     
     m_totalCalls++;
@@ -83,7 +107,7 @@ void PerfTimer::Stop ()
     }
     else
     {
-        Print ();
+        Print();
     }
 }
 
@@ -91,7 +115,13 @@ void PerfTimer::Stop ()
 
 
 
-void PerfTimer::Print ()
+////////////////////////////////////////////////////////////////////////////////
+//
+//  PerfTimer::Print
+//
+////////////////////////////////////////////////////////////////////////////////
+
+void PerfTimer::Print()
 {
     static const LPCWSTR s_kpszReportMode[] =
     {

@@ -63,51 +63,51 @@ bool FileComparator::operator() (const WIN32_FIND_DATA & lhs, const WIN32_FIND_D
     {
         switch (*pSortAttribute)
         {
-        case CCommandLine::ESortOrder::SO_DEFAULT:
-        case CCommandLine::ESortOrder::SO_NAME:
-            cmp = lstrcmpiW(lhs.cFileName, rhs.cFileName);
-            break;
+            case CCommandLine::ESortOrder::SO_DEFAULT:
+            case CCommandLine::ESortOrder::SO_NAME:
+                cmp = lstrcmpiW(lhs.cFileName, rhs.cFileName);
+                break;
 
-        case CCommandLine::ESortOrder::SO_DATE:
-            cmp = CompareFileTime(&lhs.ftLastWriteTime, &rhs.ftLastWriteTime);
-            break;
+            case CCommandLine::ESortOrder::SO_DATE:
+                cmp = CompareFileTime(&lhs.ftLastWriteTime, &rhs.ftLastWriteTime);
+                break;
 
-        case CCommandLine::ESortOrder::SO_EXTENSION:
-        {
-            filesystem::path lhsPath (lhs.cFileName);
-            filesystem::path rhsPath (rhs.cFileName);
-            cmp = lstrcmpiW(lhsPath.extension().c_str(), rhsPath.extension().c_str());
-            break;
-        }
-
-        case CCommandLine::ESortOrder::SO_SIZE:
-        {
-            ULARGE_INTEGER uliFileSize;
-            ULARGE_INTEGER uliRhsFileSize;
-
-
-
-            // Use explicit relational comparison to avoid signed overflow from subtraction on 64-bit sizes.
-            uliFileSize.HighPart = lhs.nFileSizeHigh;
-            uliFileSize.LowPart  = lhs.nFileSizeLow;
-
-            uliRhsFileSize.HighPart = rhs.nFileSizeHigh;
-            uliRhsFileSize.LowPart  = rhs.nFileSizeLow;
-
-            if (uliFileSize.QuadPart < uliRhsFileSize.QuadPart)
+            case CCommandLine::ESortOrder::SO_EXTENSION:
             {
-                cmp = -1;
+                filesystem::path lhsPath (lhs.cFileName);
+                filesystem::path rhsPath (rhs.cFileName);
+                cmp = lstrcmpiW(lhsPath.extension().c_str(), rhsPath.extension().c_str());
+                break;
             }
-            else if (uliFileSize.QuadPart > uliRhsFileSize.QuadPart)
+
+            case CCommandLine::ESortOrder::SO_SIZE:
             {
-                cmp = 1;
+                ULARGE_INTEGER uliFileSize;
+                ULARGE_INTEGER uliRhsFileSize;
+
+
+
+                // Use explicit relational comparison to avoid signed overflow from subtraction on 64-bit sizes.
+                uliFileSize.HighPart = lhs.nFileSizeHigh;
+                uliFileSize.LowPart  = lhs.nFileSizeLow;
+
+                uliRhsFileSize.HighPart = rhs.nFileSizeHigh;
+                uliRhsFileSize.LowPart  = rhs.nFileSizeLow;
+
+                if (uliFileSize.QuadPart < uliRhsFileSize.QuadPart)
+                {
+                    cmp = -1;
+                }
+                else if (uliFileSize.QuadPart > uliRhsFileSize.QuadPart)
+                {
+                    cmp = 1;
+                }
+                else
+                {
+                    cmp = 0;
+                }
+                break;
             }
-            else
-            {
-                cmp = 0;
-            }
-            break;
-        }
         }
 
         //

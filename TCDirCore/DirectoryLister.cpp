@@ -130,6 +130,8 @@ void CDirectoryLister::List (const wstring & mask)
         }
     }
 
+
+
 Error:
     return;
 }
@@ -193,6 +195,8 @@ HRESULT CDirectoryLister::ProcessDirectory (const CDriveInfo & driveInfo,
         }
     }
 
+
+
 Error:    
     return hr;
 }
@@ -221,8 +225,8 @@ HRESULT CDirectoryLister::CollectMatchingFilesAndDirectories (const std::filesys
 
 
 
-    hFind.reset (FindFirstFile (pathAndFileSpec.c_str (), &wfd));
-    if (hFind.get () != INVALID_HANDLE_VALUE)
+    hFind.reset (FindFirstFile (pathAndFileSpec.c_str(), &wfd));
+    if (hFind.get() != INVALID_HANDLE_VALUE)
     {
         do
         {
@@ -236,16 +240,18 @@ HRESULT CDirectoryLister::CollectMatchingFilesAndDirectories (const std::filesys
                 if (CFlag::IsSet (wfd.dwFileAttributes, m_cmdLinePtr->m_dwAttributesRequired) &&
                     CFlag::IsNotSet (wfd.dwFileAttributes, m_cmdLinePtr->m_dwAttributesExcluded))
                 {
-                    hr = AddMatchToList (&wfd, &di);
+                    hr = AddMatchToList (wfd, &di);
                     CHR (hr);
                 }
             }
 
-            fSuccess = FindNextFile (hFind.get (), &wfd);
+            fSuccess = FindNextFile (hFind.get(), &wfd);
         }
         while (fSuccess);
     }
 
+
+    
 Error:
     return hr;
 }
@@ -341,6 +347,8 @@ HRESULT CDirectoryLister::RecurseIntoSubdirectories (const CDriveInfo & driveInf
     }
     while (fSuccess);
 
+
+
 Error:
     return hr;
 }    
@@ -357,7 +365,7 @@ Error:
 //
 ////////////////////////////////////////////////////////////////////////////////  
 
-HRESULT CDirectoryLister::AddMatchToList (__in WIN32_FIND_DATA * pwfd, __in CDirectoryInfo * pdi)
+HRESULT CDirectoryLister::AddMatchToList (const WIN32_FIND_DATA & wfd, __in CDirectoryInfo * pdi)
 {
     HRESULT hr           = S_OK;
     size_t  cchFileName  = 0; 
@@ -366,10 +374,10 @@ HRESULT CDirectoryLister::AddMatchToList (__in WIN32_FIND_DATA * pwfd, __in CDir
 
     if (m_cmdLinePtr->m_fWideListing)
     {
-        cchFileName = wcslen (pwfd->cFileName);
+        cchFileName = wcslen (wfd.cFileName);
     }
     
-    if (CFlag::IsSet (pwfd->dwFileAttributes, FILE_ATTRIBUTE_DIRECTORY))
+    if (CFlag::IsSet (wfd.dwFileAttributes, FILE_ATTRIBUTE_DIRECTORY))
     {
         //
         // In wide directory listings, directories are shown inside brackets
@@ -391,8 +399,8 @@ HRESULT CDirectoryLister::AddMatchToList (__in WIN32_FIND_DATA * pwfd, __in CDir
         // Get the two 32-bit halves into a convenient 64-bit type
         //
         
-        uliFileSize.LowPart  = pwfd->nFileSizeLow;
-        uliFileSize.HighPart = pwfd->nFileSizeHigh;
+        uliFileSize.LowPart  = wfd.nFileSizeLow;
+        uliFileSize.HighPart = wfd.nFileSizeHigh;
         
         if (uliFileSize.QuadPart > pdi->m_uliLargestFileSize.QuadPart)
         {
@@ -415,7 +423,9 @@ HRESULT CDirectoryLister::AddMatchToList (__in WIN32_FIND_DATA * pwfd, __in CDir
     }
 
     
-    pdi->m_vMatches.push_back (*pwfd);
+    pdi->m_vMatches.push_back (wfd);
+
+
 
 //Error:
     return hr;

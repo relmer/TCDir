@@ -5,9 +5,13 @@
 
 
 
+
+
 class CCommandLine;
 class CConfig;
 class CConsole;
+
+
 
 
 
@@ -38,7 +42,7 @@ protected:
                                                 const filesystem::path & dirPath, 
                                                 const filesystem::path & fileSpec);
 
-    HRESULT AddMatchToList                     (__in WIN32_FIND_DATA * pwfd, __in CDirectoryInfo * pdi);
+    HRESULT AddMatchToList                     (const WIN32_FIND_DATA & wfd, __in CDirectoryInfo * pdi);
     BOOL    IsDots                             (LPCWSTR pszFileName);
 
 

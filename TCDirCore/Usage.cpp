@@ -1,5 +1,4 @@
 #include "pch.h"
-
 #include "Usage.h"
 
 #include "Color.h"
@@ -20,6 +19,8 @@
 bool CUsage::IsEnvVarSet (LPCWSTR kpszEnvVarName)
 {
     DWORD cchBufNeeded = GetEnvironmentVariableW (kpszEnvVarName, nullptr, 0);
+
+
 
     // If cchBufNeeded > 0, the variable exists (even if its value is empty)
     return cchBufNeeded > 0;
@@ -72,6 +73,18 @@ void CUsage::DisplayUsage (CConsole & console)
 {
 #define COPYRIGHT L"\x00A9"
 
+    static constexpr LPCWSTR s_kpszArch = 
+#if defined(_M_X64)
+                                          L"x64";
+#elif defined(_M_ARM64)
+                                          L"ARM64";
+#elif defined(_M_IX86)
+                                          L"x86";
+#else
+                                          L"";
+    #error "unknown architecture"
+#endif
+
     static LPCWSTR s_usageLines[] =
     {
         L"Copyright " COPYRIGHT " 2004-" VERSION_YEAR_WSTRING  L" by Robert Elmer",
@@ -105,25 +118,12 @@ void CUsage::DisplayUsage (CConsole & console)
         L""
     };
 
+    wstring buildTimestamp = VERSION_BUILD_TIMESTAMP;
 
 
-    //
-    // Display usage
-    //
 
     // Format build timestamp without seconds (drop last 3 chars ":SS" from __TIME__)
-    wstring buildTimestamp = VERSION_BUILD_TIMESTAMP;
     buildTimestamp.resize (buildTimestamp.length () - 3);
-
-#if defined(_M_X64)
-    static constexpr LPCWSTR s_kpszArch = L"x64";
-#elif defined(_M_ARM64)
-    static constexpr LPCWSTR s_kpszArch = L"ARM64";
-#elif defined(_M_IX86)
-    static constexpr LPCWSTR s_kpszArch = L"x86";
-#else
-    static constexpr LPCWSTR s_kpszArch = L"unknown";
-#endif
 
     console.Puts (CConfig::EAttribute::Default, L"");
     console.PrintColorfulString (L"Technicolor");
@@ -251,8 +251,10 @@ void CUsage::DisplayAttributeConfiguration (CConsole & console, int columnWidthA
 
     for (const auto & info : s_attrInfos)
     {
-        WORD    attr       = console.m_configPtr->m_rgAttributes[info.attr];
-        bool    isEnv      = (console.m_configPtr->m_rgAttributeSources[info.attr] == CConfig::EAttributeSource::Environment);
+        WORD attr  = console.m_configPtr->m_rgAttributes[info.attr];
+        bool isEnv = (console.m_configPtr->m_rgAttributeSources[info.attr] == CConfig::EAttributeSource::Environment);
+
+
 
         DisplayItemAndSource (console, info.name, attr, isEnv, columnWidthAttr, columnWidthSource, 0, EItemDisplayMode::SingleColumn);
     }
@@ -637,6 +639,8 @@ HRESULT CUsage::DisplayEnvVarSegment (CConsole & console, wstring_view segment)
                         static_cast<int>(valueView.length()), valueView.data());
     }
 
+
+    
 Error:
     return hr;
 }

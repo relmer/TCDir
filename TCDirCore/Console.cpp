@@ -1,6 +1,7 @@
 #include "pch.h"
-#include "Color.h"
 #include "Console.h"
+
+#include "Color.h"
 #include "AnsiCodes.h"
 
 
@@ -14,7 +15,7 @@
 //  
 ////////////////////////////////////////////////////////////////////////////////  
 
-CConsole::CConsole(void)
+CConsole::CConsole (void)
 {  
 }
 
@@ -94,7 +95,7 @@ Error:
 //
 ////////////////////////////////////////////////////////////////////////////////  
 
-HRESULT CConsole::InitializeConsoleMode ()
+HRESULT CConsole::InitializeConsoleMode()
 {
     HRESULT hr       = S_OK;
     BOOL    fSuccess = FALSE;
@@ -165,6 +166,7 @@ void CConsole::Putchar (WORD attr, WCHAR ch)
     SetColor (attr);
     m_strBuffer.push_back (ch);
 }
+
 
 
 
@@ -251,6 +253,8 @@ int CConsole::Printf (WORD attr, LPCWSTR pszFormat, ...)
     CHRA (hr);
 
     ProcessMultiLineStringWithAttribute (s_szBuf, attr);
+
+
 
 Error:
     va_end (vaArgs);
@@ -350,7 +354,7 @@ void CConsole::ProcessMultiLineStringWithAttribute (wstring_view text, WORD attr
         }
 
         // Append the line content
-        wstring_view lineView (line.begin (), line.end ());
+        wstring_view lineView (line.begin(), line.end());
         m_strBuffer.append (lineView);
 
         firstLine = false;
@@ -400,7 +404,7 @@ HRESULT CConsole::Flush (void)
 
     if (!m_fIsRedirected)
     {
-        fSuccess = WriteConsole (m_hStdOut, m_strBuffer.c_str (), cch, &cch, nullptr);
+        fSuccess = WriteConsole (m_hStdOut, m_strBuffer.c_str(), cch, &cch, nullptr);
         CWRA (fSuccess);
     }
     else
@@ -435,7 +439,7 @@ HRESULT CConsole::Flush (void)
                                     nullptr, 
                                     nullptr);
 
-        fSuccess = WriteFile (m_hStdOut, utf8Buffer.data (), cb, &bytesWritten, nullptr);
+        fSuccess = WriteFile (m_hStdOut, utf8Buffer.data(), cb, &bytesWritten, nullptr);
         CWRA (fSuccess);
     }
 
@@ -515,11 +519,3 @@ void CConsole::SetColor (WORD attr)
 
     std::format_to (std::back_inserter (m_strBuffer), AnsiCodes::SGR_COLOR_FORMAT, nAnsiForeground, nAnsiBackground);
 }
-
-
-
-
-
-
-
-

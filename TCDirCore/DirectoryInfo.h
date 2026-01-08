@@ -1,7 +1,15 @@
 #pragma once
 
+
+
+
+
 typedef vector<WIN32_FIND_DATA>  FileInfoVector;
 typedef FileInfoVector::iterator FileInfoVectorIter;
+
+
+
+
 
 class CDirectoryInfo
 {
@@ -18,6 +26,8 @@ public:
         Error
     };
 
+
+    
     CDirectoryInfo (const filesystem::path & dirPath, const filesystem::path & fileSpec) :
         m_dirPath            (dirPath),
         m_fileSpec           (fileSpec),
@@ -30,6 +40,8 @@ public:
         m_uliLargestFileSize.QuadPart = 0;
         m_uliBytesUsed.QuadPart       = 0;
     }
+
+    
 
     FileInfoVector                          m_vMatches;
     filesystem::path                        m_dirPath;

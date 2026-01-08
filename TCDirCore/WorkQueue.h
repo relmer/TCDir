@@ -1,15 +1,18 @@
 #pragma once
 
-#include "pch.h"
+
+
+
 
 template<typename T>
 class CWorkQueue
 {
 public:
-    CWorkQueue () : m_fDone (false) {}
-    
+    CWorkQueue  () : m_fDone (false) {} 
     ~CWorkQueue () {}
     
+
+
     void Push (T item)
     {
         unique_lock<mutex> lock (m_mutex);
@@ -21,6 +24,8 @@ public:
         }
     }
     
+
+
     bool Pop (T & item)
     {
         unique_lock<mutex> lock (m_mutex);
@@ -39,12 +44,16 @@ public:
         return true;
     }
     
+
+
     void SetDone ()
     {
         lock_guard<mutex> lock (m_mutex);
         m_fDone = true;
         m_cv.notify_all ();
     }
+    
+
     
 private:
     queue<T>            m_queue;

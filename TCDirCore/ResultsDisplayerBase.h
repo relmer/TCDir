@@ -3,9 +3,17 @@
 #include "DirectoryInfo.h"
 #include "DriveInfo.h"
 
+
+
+
+
 class CCommandLine;
 class CConfig;
 class CConsole;
+
+
+
+
 
 class CResultsDisplayerBase
 {
@@ -30,6 +38,8 @@ public:
     void    DisplayVolumeFooter             (const CDirectoryInfo & di);
     void    DisplayFooterQuotaInfo          (const ULARGE_INTEGER & uliFreeBytesAvailable);
 
+
+    
 protected:
     UINT    GetStringLengthOfMaxFileSize    (const ULARGE_INTEGER & uli);
     LPCWSTR FormatNumberWithSeparators      (ULONGLONG n);

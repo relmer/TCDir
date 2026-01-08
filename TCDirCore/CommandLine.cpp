@@ -1,5 +1,4 @@
 #include "pch.h"
-
 #include "CommandLine.h"
 
 #include "Config.h"
@@ -37,7 +36,6 @@ CCommandLine::CCommandLine (void)
 
 
 
-
 ////////////////////////////////////////////////////////////////////////////////
 //
 //  CCommandLine::~CCommandLine
@@ -65,10 +63,10 @@ CCommandLine::~CCommandLine (void)
 
 void CCommandLine::ApplyConfigDefaults (const CConfig & config)
 {
-    if (config.m_fWideListing.has_value ())   m_fWideListing   = config.m_fWideListing.value ();
-    if (config.m_fRecurse.has_value ())       m_fRecurse       = config.m_fRecurse.value ();
-    if (config.m_fPerfTimer.has_value ())     m_fPerfTimer     = config.m_fPerfTimer.value ();
-    if (config.m_fMultiThreaded.has_value ()) m_fMultiThreaded = config.m_fMultiThreaded.value ();
+    if (config.m_fWideListing.has_value())   m_fWideListing   = config.m_fWideListing.value();
+    if (config.m_fRecurse.has_value())       m_fRecurse       = config.m_fRecurse.value();
+    if (config.m_fPerfTimer.has_value())     m_fPerfTimer     = config.m_fPerfTimer.value();
+    if (config.m_fMultiThreaded.has_value()) m_fMultiThreaded = config.m_fMultiThreaded.value();
 }
 
 
@@ -254,6 +252,7 @@ HRESULT CCommandLine::OrderByHandler (LPCWSTR pszArg)
     };
 
 
+
     HRESULT hr = S_OK;               
     WCHAR   ch = 0; 
 
@@ -330,6 +329,7 @@ HRESULT CCommandLine::AttributeHandler (LPCWSTR pszArg)
     };
 
 
+
     //
     // Make sure the arg isn't empty
     //
@@ -337,14 +337,11 @@ HRESULT CCommandLine::AttributeHandler (LPCWSTR pszArg)
     CBRAEx (pszArg != NULL, E_INVALIDARG);
     CBRAEx (*pszArg != L'\0', E_INVALIDARG);
 
-
     //
     // By default, any attributes specified will be required to be present
     //
 
     pdwMask = &m_dwAttributesRequired;
-
-    
 
     //
     // Iterate over the arg characters

@@ -17,7 +17,6 @@ struct FindHandleDeleter
 
 
 
+
+
 using UniqueFindHandle = std::unique_ptr<std::remove_pointer<HANDLE>::type, FindHandleDeleter>;
-
-
-

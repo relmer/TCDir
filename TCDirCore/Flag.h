@@ -80,9 +80,3 @@ void CFlag::Clear (DWORD & dwFlags, DWORD dwBitsToClear)
 {
     dwFlags &= ~dwBitsToClear;
 }
-
-
-
-
-
-

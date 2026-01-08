@@ -1,7 +1,6 @@
 {
     "version": "2.0.0",
     "tasks": [
-        // Internal build tasks (used by compound tasks)
         {
             "label": "Build Debug x64 (no test)",
             "type": "process",
@@ -25,7 +24,11 @@
                 "focus": false,
                 "panel": "shared"
             },
-            "problemMatcher": "$msCompile"
+            "problemMatcher": "$msCompile",
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
         },
         {
             "label": "Build Release x64 (no test)",
@@ -74,17 +77,22 @@
             },
             "problemMatcher": "$msCompile"
         },
-
-        // Main build tasks (build then test)
         {
             "label": "Build Debug x64",
-            "dependsOn": ["Build Debug x64 (no test)", "Run Tests (no build)"],
+            "dependsOn": [
+                "Build Debug x64 (no test)",
+                "Run Tests (no build)"
+            ],
             "dependsOrder": "sequence",
             "group": "build"
         },
         {
             "label": "Build Release x64",
-            "dependsOn": ["Build Release x64 (no test)", "Run Tests (no build)", "Deploy Release"],
+            "dependsOn": [
+                "Build Release x64 (no test)",
+                "Run Tests (no build)",
+                "Deploy Release"
+            ],
             "dependsOrder": "sequence",
             "group": {
                 "kind": "build",
@@ -191,23 +199,31 @@
             },
             "problemMatcher": "$msCompile"
         },
-
-        // Rebuild tasks (rebuild then test)
         {
             "label": "Rebuild Debug x64",
-            "dependsOn": ["Rebuild Debug x64 (no test)", "Run Tests (no build)"],
+            "dependsOn": [
+                "Rebuild Debug x64 (no test)",
+                "Run Tests (no build)"
+            ],
             "dependsOrder": "sequence",
             "group": "build"
         },
         {
             "label": "Rebuild Release x64",
-            "dependsOn": ["Rebuild Release x64 (no test)", "Run Tests (no build)", "Deploy Release"],
+            "dependsOn": [
+                "Rebuild Release x64 (no test)",
+                "Run Tests (no build)",
+                "Deploy Release"
+            ],
             "dependsOrder": "sequence",
             "group": "build"
         },
         {
             "label": "Run Tests",
-            "dependsOn": ["Build Debug x64 (no test)", "Run Tests (no build)"],
+            "dependsOn": [
+                "Build Debug x64 (no test)",
+                "Run Tests (no build)"
+            ],
             "dependsOrder": "sequence",
             "group": {
                 "kind": "test",

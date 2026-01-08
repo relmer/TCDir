@@ -304,6 +304,7 @@ void CResultsDisplayerBase::DisplayVolumeFooter (const CDirectoryInfo & di)
     }
     
 
+
 Error:
     return;
 }
@@ -364,6 +365,8 @@ void CResultsDisplayerBase::DisplayFooterQuotaInfo (const ULARGE_INTEGER & uliFr
 UINT CResultsDisplayerBase::GetStringLengthOfMaxFileSize (const ULARGE_INTEGER & uli)
 {
     UINT cch = 1;
+
+    
 
     if (uli.QuadPart != 0)
     {

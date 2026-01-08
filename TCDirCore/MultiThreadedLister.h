@@ -1,10 +1,12 @@
 #pragma once
 
-#include "pch.h"
-
 #include "DirectoryInfo.h"
 #include "ResultsDisplayerBase.h"
 #include "WorkQueue.h"
+
+
+
+
 
 class CCommandLine;
 class CConfig;
@@ -12,10 +14,16 @@ class CConsole;
 class CDriveInfo;
 
 
+
+
+
 struct WorkItem
 {
     shared_ptr<CDirectoryInfo> m_pDirInfo;
 };
+
+
+
 
 
 class CMultiThreadedLister
@@ -45,7 +53,7 @@ protected:
                                            ULARGE_INTEGER & uliSizeOfAllFilesFound,
                                            UINT & cFilesFound,
                                            UINT & cDirectoriesFound);
-    void    AddMatchToList                (__in WIN32_FIND_DATA * pwfd, __in CDirectoryInfo * pdi);
+    void    AddMatchToList                (const WIN32_FIND_DATA & wfd, __in CDirectoryInfo * pdi);
     BOOL    IsDots                        (LPCWSTR pszFileName);
 
 private:
