@@ -23,9 +23,27 @@ if (-not (Test-Path $toolsScript)) {
 
 
 
-$testRunner = Get-VS2026VSTestPath
+
+$platform = 'Any'
+if ($latestDll.FullName -match '(?i)\\ARM64\\') {
+    $platform = 'ARM64'
+}
+
+$testRunner = Get-VS2026VSTestPath -Platform $platform
+if (-not $testRunner) {
+    $testRunner = Get-VS2026VSTestPath -Platform $platform -IncludePrerelease
+}
+
+if (-not $testRunner) {
+    $testRunner = Get-VS2026VSTestPath
+}
+
 if (-not $testRunner) {
     $testRunner = Get-VS2026VSTestPath -IncludePrerelease
+}
+
+if (-not $testRunner) {
+    $testRunner = Get-VS2026VSTestPath -Platform $platform
 }
 
 if ($testRunner) {

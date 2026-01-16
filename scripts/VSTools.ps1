@@ -74,8 +74,22 @@ function Get-VS2026MSBuildPath {
 
 function Get-VS2026VSTestPath {
     param(
+        [ValidateSet('Any', 'x64', 'ARM64')]
+        [string]$Platform = 'Any',
         [switch]$IncludePrerelease
     )
+
+    if ($Platform -eq 'ARM64') {
+        $testRunner = Get-VS2026ToolPath -Find 'Common7\IDE\Extensions\TestPlatform\vstest.console.arm64.exe' -IncludePrerelease:$IncludePrerelease
+        if ($testRunner) {
+            return $testRunner
+        }
+
+        $testRunner = Get-VS2026ToolPath -Find 'Common7\IDE\CommonExtensions\Microsoft\TestWindow\vstest.console.arm64.exe' -IncludePrerelease:$IncludePrerelease
+        if ($testRunner) {
+            return $testRunner
+        }
+    }
 
     $testRunner = Get-VS2026ToolPath -Find 'Common7\IDE\Extensions\TestPlatform\vstest.console.exe' -IncludePrerelease:$IncludePrerelease
     if ($testRunner) {
