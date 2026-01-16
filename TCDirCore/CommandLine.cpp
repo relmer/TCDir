@@ -257,6 +257,22 @@ HRESULT CCommandLine::OrderByHandler (LPCWSTR pszArg)
     WCHAR   ch = 0; 
 
 
+    //
+    // Make sure the arg isn't empty
+    //
+
+    CBRAEx (pszArg != NULL, E_INVALIDARG);
+
+    //
+    // Support optional ':' prefix (DIR-style switch syntax: /o:d)
+    //
+
+    if (*pszArg == L':')
+    {
+        ++pszArg;
+    }
+
+    CBRAEx (*pszArg != L'\0', E_INVALIDARG);
 
     //
     // Check to see if we're reversing the sort order
@@ -271,6 +287,8 @@ HRESULT CCommandLine::OrderByHandler (LPCWSTR pszArg)
         //
 
         ++pszArg;
+
+        CBRAEx (*pszArg != L'\0', E_INVALIDARG);
     }
 
     //
@@ -292,6 +310,9 @@ HRESULT CCommandLine::OrderByHandler (LPCWSTR pszArg)
         }
     }
     
+    return hr;
+
+Error:
     return hr;
 }
 

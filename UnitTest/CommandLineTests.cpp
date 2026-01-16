@@ -63,6 +63,40 @@ namespace UnitTest
 
 
 
+        TEST_METHOD(ParseOrderColonAndDate)
+        {
+            CCommandLine    cl;
+            const wchar_t * a1      = L"/o:d";
+            wchar_t       * argv1[] = { const_cast<wchar_t *>(a1) };
+            HRESULT         hr      = cl.Parse(1, argv1);
+
+
+
+            Assert::IsTrue(SUCCEEDED(hr));
+            Assert::AreEqual(static_cast<int>(CCommandLine::ESortOrder::SO_DATE),          static_cast<int>(cl.m_sortorder));
+            Assert::AreEqual(static_cast<int>(CCommandLine::ESortDirection::SD_ASCENDING), static_cast<int>(cl.m_sortdirection));
+        }
+
+
+
+
+        TEST_METHOD(ParseOrderColonReverseAndDate)
+        {
+            CCommandLine    cl;
+            const wchar_t * a1      = L"/o:-d";
+            wchar_t       * argv1[] = { const_cast<wchar_t *>(a1) };
+            HRESULT         hr      = cl.Parse(1, argv1);
+
+
+
+            Assert::IsTrue(SUCCEEDED(hr));
+            Assert::AreEqual(static_cast<int>(CCommandLine::ESortOrder::SO_DATE),           static_cast<int>(cl.m_sortorder));
+            Assert::AreEqual(static_cast<int>(CCommandLine::ESortDirection::SD_DESCENDING), static_cast<int>(cl.m_sortdirection));
+        }
+
+
+
+
         TEST_METHOD(ParseAttributesAndFlags)
         {
             CCommandLine    cl;
