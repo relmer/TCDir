@@ -44,6 +44,7 @@ private:
     static void    DisplayExtensionConfigurationMultiColumn  (CConsole & console, const vector<pair<wstring, WORD>> & extensions, size_t maxExtLen, size_t cxSourceWidth, size_t cxAvailable, size_t cColumns);
 
     static void    DisplayColorConfiguration                 (CConsole & console);
+    static WORD    EnsureVisibleColorAttr                    (WORD colorAttr, WORD defaultAttr);
     static WORD    GetColorAttribute                         (CConsole & console, wstring_view colorName);
 
     static HRESULT DisplayEnvVarSegment                      (CConsole & console, wstring_view segment);

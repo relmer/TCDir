@@ -503,24 +503,70 @@ void CUsage::DisplayExtensionConfiguration (CConsole & console, int columnWidthA
 
 ////////////////////////////////////////////////////////////////////////////////
 //
+//  CUsage::EnsureVisibleColorAttr
+//
+//  Given a color attribute and a default attribute, returns a modified color
+//  attribute that ensures visibility. If the foreground matches the default
+//  background, a contrasting background is applied.
+//
+////////////////////////////////////////////////////////////////////////////////
+
+WORD CUsage::EnsureVisibleColorAttr (WORD colorAttr, WORD defaultAttr)
+{
+    WORD foreAttr        = colorAttr   & (FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_INTENSITY);
+    WORD backAttr        = colorAttr   & (BACKGROUND_RED | BACKGROUND_GREEN | BACKGROUND_BLUE | BACKGROUND_INTENSITY);
+    WORD defaultBackAttr = defaultAttr & (BACKGROUND_RED | BACKGROUND_GREEN | BACKGROUND_BLUE | BACKGROUND_INTENSITY);
+
+
+
+    //
+    // If no explicit background in colorAttr, use the default background
+    //
+
+    if (backAttr == 0)
+    {
+        backAttr = defaultBackAttr;
+    }
+
+    //
+    // If foreground matches background, use a contrasting background so text is visible.
+    // Compare by shifting foreground bits to background position.
+    //
+
+    if ((foreAttr << 4) == backAttr)
+    {
+        // Use opposite brightness: if dark background, use light; if light, use dark
+        WORD contrastBack = (backAttr & BACKGROUND_INTENSITY) ? static_cast<WORD>(BC_Black) : static_cast<WORD>(BC_LightGrey);
+        return foreAttr | contrastBack;
+    }
+
+    return foreAttr | backAttr;
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
 //  CUsage::GetColorAttribute
 //
 ////////////////////////////////////////////////////////////////////////////////
 
 WORD CUsage::GetColorAttribute (CConsole & console, wstring_view colorName)
 {
-    WORD defaultAttr = console.m_configPtr->m_rgAttributes[CConfig::EAttribute::Default];
-    WORD baseAttr    = defaultAttr & ~(FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_INTENSITY);
-    WORD foreAttr    = console.m_configPtr->ParseColorName (colorName, false);
+    WORD    defaultAttr = console.m_configPtr->m_rgAttributes[CConfig::EAttribute::Default];
+    WORD    foreAttr    = 0;
+    HRESULT hr          = console.m_configPtr->ParseColorName (colorName, false, foreAttr);
 
 
 
-    if (foreAttr == 0)
+    if (FAILED (hr))
     {
         foreAttr = FC_LightGrey;
     }
 
-    return baseAttr | foreAttr;
+    return EnsureVisibleColorAttr (foreAttr, defaultAttr);
 }
 
 
@@ -589,6 +635,9 @@ HRESULT CUsage::DisplayEnvVarSegment (CConsole & console, wstring_view segment)
     HRESULT      hr           = S_OK;
     size_t       equalPos     = 0;
     WORD         colorAttr    = 0;
+    WORD         visibleAttr  = 0;
+    WORD         defaultAttr  = console.m_configPtr->m_rgAttributes[CConfig::EAttribute::Default];
+    HRESULT      hrColor      = S_OK;
     wstring_view keyView;
     wstring_view valueView;
     wstring_view trimmedValue;
@@ -621,9 +670,9 @@ HRESULT CUsage::DisplayEnvVarSegment (CConsole & console, wstring_view segment)
     }   
 
     // Parse the color spec to get the actual color
-    colorAttr = console.m_configPtr->ParseColorSpec (trimmedValue);
+    hrColor = console.m_configPtr->ParseColorSpec (trimmedValue, colorAttr);
 
-    if (colorAttr == 0)
+    if (FAILED (hrColor))
     {
         // Invalid color - display entire segment in default
         console.Printf (CConfig::EAttribute::Default, L"%.*s", 
@@ -631,11 +680,14 @@ HRESULT CUsage::DisplayEnvVarSegment (CConsole & console, wstring_view segment)
     }
     else
     {
+        // Ensure the color is visible against the default background
+        visibleAttr = EnsureVisibleColorAttr (colorAttr, defaultAttr);
+
         // Print key in its color, = in default, value in its color
-        console.Printf (colorAttr, L"%.*s", 
+        console.Printf (visibleAttr, L"%.*s", 
                         static_cast<int>(keyView.length()), keyView.data());
         console.Printf (CConfig::EAttribute::Default, L"=");
-        console.Printf (colorAttr, L"%.*s", 
+        console.Printf (visibleAttr, L"%.*s", 
                         static_cast<int>(valueView.length()), valueView.data());
     }
 
