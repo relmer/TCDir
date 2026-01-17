@@ -5,7 +5,7 @@ param(
     [ValidateSet('x64', 'ARM64', 'Auto')]
     [string]$Platform = 'Auto',
 
-    [ValidateSet('Build', 'Clean', 'Rebuild', 'BuildAllRelease')]
+    [ValidateSet('Build', 'Clean', 'Rebuild', 'BuildAllRelease', 'CleanAll', 'RebuildAllRelease')]
     [string]$Target = 'Build'
 )
 
@@ -126,99 +126,74 @@ if (-not $msbuildPath) {
 
 
 
-function Test-VSVCPlatformInstalled {
-    param(
-        [Parameter(Mandatory = $true)]
-        [string]$MSBuildPath,
-        [Parameter(Mandatory = $true)]
-        [string]$Platform
-    )
-
-    $msbuildDir = Split-Path $MSBuildPath -Parent
-    if (-not $msbuildDir) {
-        return $false
-    }
-
-    # Locate the Visual Studio instance root (e.g. ...\Microsoft Visual Studio\18\Enterprise)
-    # by walking up from MSBuild.exe until we find MSBuild\Microsoft\VC.
-    $vcRoot = $null
-    $cursor = $msbuildDir
-
-    for ($i = 0; $i -lt 10 -and $cursor; $i++) {
-        $candidate = Join-Path $cursor 'MSBuild\Microsoft\VC'
-        if (Test-Path $candidate) {
-            $vcRoot = $candidate
-            break
-        }
-
-        $parent = Split-Path $cursor -Parent
-        if (-not $parent -or $parent -eq $cursor) {
-            break
-        }
-
-        $cursor = $parent
-    }
-
-    if (-not $vcRoot) {
-        return $false
-    }
-
-    $platformPaths = Get-ChildItem $vcRoot -Directory -ErrorAction SilentlyContinue |
-        ForEach-Object { Join-Path $_.FullName ("Platforms\\$Platform") }
-
-    foreach ($platformPath in $platformPaths) {
-        if (Test-Path $platformPath) {
-            return $true
-        }
-    }
-
-    return $false
-}
-
-
-
-
-
 $scriptExitCode = 0
 
 try {
-    if ($Target -eq 'BuildAllRelease') {
+    if ($Target -eq 'BuildAllRelease' -or $Target -eq 'CleanAll' -or $Target -eq 'RebuildAllRelease') {
         $platformsToBuild = @('x64', 'ARM64')
-        if (-not (Test-VSVCPlatformInstalled -MSBuildPath $msbuildPath -Platform 'ARM64')) {
-            Write-Host 'ARM64 C++ build targets not installed; skipping Release|ARM64 build.' -ForegroundColor Cyan
-            Add-BuildResult -Configuration 'Release' -Platform 'ARM64' -Target 'Build' -Status 'Skipped' -Message 'ARM64 C++ build tools not installed'
+        $arm64Installed = Test-VSVCPlatformInstalled -MSBuildPath $msbuildPath -Platform 'ARM64'
+
+        if (-not $arm64Installed) {
+            Write-Host 'ARM64 C++ build targets not installed; skipping ARM64.' -ForegroundColor Cyan
             $platformsToBuild = @('x64')
         }
 
-        foreach ($platformToBuild in $platformsToBuild) {
-            $msbuildArgs = @(
-                $solutionPath,
-                "-p:Configuration=Release",
-                "-p:Platform=$platformToBuild"
-            )
-
-            Write-Host "Using MSBuild: $msbuildPath"
-            Write-Host "Building: $solutionPath (Release|$platformToBuild) Target=Build"
-
-            $stopwatch = [System.Diagnostics.Stopwatch]::StartNew()
-            & $msbuildPath @msbuildArgs
-            $stopwatch.Stop()
-
-            if ($LASTEXITCODE -ne 0) {
-                Add-BuildResult -Configuration 'Release' -Platform $platformToBuild -Target 'Build' -Status 'Failed' -ExitCode $LASTEXITCODE -Duration $stopwatch.Elapsed
-                $scriptExitCode = $LASTEXITCODE
-                break
-            }
-
-            Add-BuildResult -Configuration 'Release' -Platform $platformToBuild -Target 'Build' -Status 'Succeeded' -Duration $stopwatch.Elapsed
+        # Determine configurations based on target
+        if ($Target -eq 'CleanAll') {
+            $configsToBuild = @('Debug', 'Release')
+            $msbuildTarget = 'Clean'
+        }
+        elseif ($Target -eq 'RebuildAllRelease') {
+            $configsToBuild = @('Release')
+            $msbuildTarget = 'Rebuild'
+        }
+        else {
+            # BuildAllRelease
+            $configsToBuild = @('Release')
+            $msbuildTarget = 'Build'
         }
 
-        if ($scriptExitCode -ne 0) {
+        # Determine preferred tool architecture based on OS
+        $preferredArch = 'x64'
+        if ([System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture -eq [System.Runtime.InteropServices.Architecture]::Arm64) {
+            $preferredArch = 'ARM64'
+        }
+
+        # Add skipped results for ARM64 if not installed
+        if (-not $arm64Installed) {
+            foreach ($config in $configsToBuild) {
+                Add-BuildResult -Configuration $config -Platform 'ARM64' -Target $msbuildTarget -Status 'Skipped' -Message 'ARM64 C++ build tools not installed'
+            }
+        }
+
+        foreach ($config in $configsToBuild) {
             foreach ($platformToBuild in $platformsToBuild) {
-                $existing = $script:BuildResults | Where-Object { $_.Configuration -eq 'Release' -and $_.Platform -eq $platformToBuild -and $_.Target -eq 'Build' } | Select-Object -First 1
-                if (-not $existing) {
-                    Add-BuildResult -Configuration 'Release' -Platform $platformToBuild -Target 'Build' -Status 'Skipped' -Message 'Skipped due to previous failure'
+                $msbuildArgs = @(
+                    $solutionPath,
+                    "-p:Configuration=$config",
+                    "-p:Platform=$platformToBuild",
+                    "-p:PreferredToolArchitecture=$preferredArch",
+                    "-t:$msbuildTarget"
+                )
+
+                Write-Host "Using MSBuild: $msbuildPath"
+                Write-Host "Building: $solutionPath ($config|$platformToBuild) Target=$msbuildTarget"
+
+                $stopwatch = [System.Diagnostics.Stopwatch]::StartNew()
+                & $msbuildPath @msbuildArgs
+                $stopwatch.Stop()
+
+                if ($LASTEXITCODE -ne 0) {
+                    Add-BuildResult -Configuration $config -Platform $platformToBuild -Target $msbuildTarget -Status 'Failed' -ExitCode $LASTEXITCODE -Duration $stopwatch.Elapsed
+                    $scriptExitCode = $LASTEXITCODE
+                    break
                 }
+
+                Add-BuildResult -Configuration $config -Platform $platformToBuild -Target $msbuildTarget -Status 'Succeeded' -Duration $stopwatch.Elapsed
+            }
+
+            if ($scriptExitCode -ne 0) {
+                break
             }
         }
     }
@@ -230,10 +205,17 @@ try {
             }
         }
 
+        # Determine preferred tool architecture based on OS
+        $preferredArch = 'x64'
+        if ([System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture -eq [System.Runtime.InteropServices.Architecture]::Arm64) {
+            $preferredArch = 'ARM64'
+        }
+
         $msbuildArgs = @(
             $solutionPath,
             "-p:Configuration=$Configuration",
-            "-p:Platform=$Platform"
+            "-p:Platform=$Platform",
+            "-p:PreferredToolArchitecture=$preferredArch"
         )
 
         if ($Target -ne 'Build') {

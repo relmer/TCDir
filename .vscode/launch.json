@@ -2,7 +2,7 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Debug TCDir",
+            "name": "Debug TCDir (x64)",
             "type": "cppvsdbg",
             "request": "launch",
             "program": "${workspaceFolder}\\x64\\Debug\\TCDir.exe",
@@ -14,7 +14,7 @@
             "preLaunchTask": "Build Debug x64"
         },
         {
-            "name": "Debug TCDir /s",
+            "name": "Debug TCDir /s (x64)",
             "type": "cppvsdbg",
             "request": "launch",
             "program": "${workspaceFolder}\\x64\\Debug\\TCDir.exe",
@@ -26,7 +26,7 @@
             "preLaunchTask": "Build Debug x64"
         },
         {
-            "name": "Debug TCDir /w /s",
+            "name": "Debug TCDir /w /s (x64)",
             "type": "cppvsdbg",
             "request": "launch",
             "program": "${workspaceFolder}\\x64\\Debug\\TCDir.exe",
@@ -38,7 +38,7 @@
             "preLaunchTask": "Build Debug x64"
         },
         {
-            "name": "Debug TCDir /env",
+            "name": "Debug TCDir /env (x64)",
             "type": "cppvsdbg",
             "request": "launch",
             "program": "${workspaceFolder}\\x64\\Debug\\TCDir.exe",
@@ -50,17 +50,76 @@
             "preLaunchTask": "Build Debug x64"
         },
         {
-            "name": "Run Release TCDir",
+            "name": "Run Release TCDir (x64)",
             "type": "cppvsdbg",
             "request": "launch",
             "program": "${workspaceFolder}\\x64\\Release\\TCDir.exe",
             "args": ["C:\\Windows\\System32", "/w", "/s"],
-            //"args": [],
-            "stopAtEntry": true,
+            "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
             "environment": [],
             "console": "integratedTerminal",
             "preLaunchTask": "Build Release x64"
+        },
+        {
+            "name": "Debug TCDir (ARM64)",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}\\ARM64\\Debug\\TCDir.exe",
+            "args": ["\\\\.\\unc\\relmer-blue"],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "console": "integratedTerminal",
+            "preLaunchTask": "Build Debug ARM64"
+        },
+        {
+            "name": "Debug TCDir /s (ARM64)",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}\\ARM64\\Debug\\TCDir.exe",
+            "args": ["C:\\Windows\\System32", "/s"],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "console": "integratedTerminal",
+            "preLaunchTask": "Build Debug ARM64"
+        },
+        {
+            "name": "Debug TCDir /w /s (ARM64)",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}\\ARM64\\Debug\\TCDir.exe",
+            "args": ["C:\\Windows\\System32", "/w", "/s"],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "console": "integratedTerminal",
+            "preLaunchTask": "Build Debug ARM64"
+        },
+        {
+            "name": "Debug TCDir /env (ARM64)",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}\\ARM64\\Debug\\TCDir.exe",
+            "args": ["C:\\Windows\\System32", "/env"],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [ { "name" : "TCDIR", "value" : "D=LightGreen;S=Yellow;.cpp=White on Bluepickles" } ],
+            "console": "integratedTerminal",
+            "preLaunchTask": "Build Debug ARM64"
+        },
+        {
+            "name": "Run Release TCDir (ARM64)",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}\\ARM64\\Release\\TCDir.exe",
+            "args": ["C:\\Windows\\System32", "/w", "/s"],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "console": "integratedTerminal",
+            "preLaunchTask": "Build Release ARM64"
         }
     ]
 }

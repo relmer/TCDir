@@ -1,56 +1,51 @@
-# Simple PowerShell script to run the unit tests
-Write-Host "Looking for UnitTest.dll..."
+[CmdletBinding()]
+param(
+    [ValidateSet('Debug', 'Release')]
+    [string]$Configuration = 'Debug',
 
-# Find the most recent UnitTest.dll
-$dlls = Get-ChildItem -Path . -Recurse -Filter "UnitTest.dll" | Sort-Object LastWriteTime -Descending
-if ($dlls.Count -eq 0) {
-    Write-Host "No UnitTest.dll found!"
-    exit 1
+    [ValidateSet('x64', 'ARM64', 'Auto')]
+    [string]$Platform = 'Auto'
+)
+
+# Resolve 'Auto' platform to actual architecture
+if ($Platform -eq 'Auto') {
+    if ([System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture -eq [System.Runtime.InteropServices.Architecture]::Arm64) {
+        $Platform = 'ARM64'
+    } else {
+        $Platform = 'x64'
+    }
 }
 
-$latestDll = $dlls[0]
-Write-Host "Found latest DLL: $($latestDll.FullName)"
-Write-Host "Last modified: $($latestDll.LastWriteTime)"
+$ErrorActionPreference = 'Stop'
 
-# Try to run the tests
-$toolsScript = Join-Path $PSScriptRoot 'scripts\VSTools.ps1'
+$repoRoot = $PSScriptRoot
+
+$toolsScript = Join-Path $repoRoot 'scripts\VSTools.ps1'
 if (-not (Test-Path $toolsScript)) {
-    Write-Host "Tool helper script not found: $toolsScript"
-    exit 1
+    throw "Tool helper script not found: $toolsScript"
 }
 
 . $toolsScript
 
-
-
-
-# Prefer native runner for the host OS architecture
-$platform = 'Any'
-if ([System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture -eq [System.Runtime.InteropServices.Architecture]::Arm64) {
-    $platform = 'ARM64'
+# Always use native test runner for current OS architecture (not test platform)
+$vstestPath = Get-VS2026VSTestPath
+if (-not $vstestPath) {
+    $vstestPath = Get-VS2026VSTestPath -IncludePrerelease
 }
 
-$testRunner = Get-VS2026VSTestPath -Platform $platform
-if (-not $testRunner) {
-    $testRunner = Get-VS2026VSTestPath -Platform $platform -IncludePrerelease
+if (-not $vstestPath) {
+    throw 'vstest.console.exe not found in VS 2026 (v18.x). Install VS 2026 with Test workload.'
 }
 
-if (-not $testRunner) {
-    $testRunner = Get-VS2026VSTestPath
+$testAssembly = Join-Path -Path $repoRoot -ChildPath "$Platform\$Configuration\UnitTest.dll"
+if (-not (Test-Path -Path $testAssembly)) {
+    throw "Test assembly not found at $testAssembly. Build the tests before running them."
 }
 
-if (-not $testRunner) {
-    $testRunner = Get-VS2026VSTestPath -IncludePrerelease
-}
+Write-Host "Running tests from $testAssembly" -ForegroundColor Cyan
+Write-Host "vstest.console path: $vstestPath" -ForegroundColor DarkGray
 
-if (-not $testRunner) {
-    $testRunner = Get-VS2026VSTestPath -Platform $platform
-}
-
-if ($testRunner) {
-    Write-Host "Running tests with: $testRunner"
-    & $testRunner $latestDll.FullName
-} else {
-    Write-Host "VS 2026 (v18.x) test runner not found (via vswhere)."
-    exit 1
+& $vstestPath $testAssembly
+if ($LASTEXITCODE -ne 0) {
+    exit $LASTEXITCODE
 }
