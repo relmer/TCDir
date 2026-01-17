@@ -2,6 +2,192 @@
     "version": "2.0.0",
     "tasks": [
         {
+            "label": "Build Debug (current arch)",
+            "type": "process",
+            "command": "pwsh",
+            "args": [
+                "-NoProfile",
+                "-ExecutionPolicy",
+                "Bypass",
+                "-File",
+                "${workspaceFolder}\\Build.ps1",
+                "-Configuration",
+                "Debug",
+                "-Platform",
+                "Auto",
+                "-Target",
+                "Build"
+            ],
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared"
+            },
+            "problemMatcher": "$msCompile",
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        },
+        {
+            "label": "Build Release (current arch)",
+            "type": "process",
+            "command": "pwsh",
+            "args": [
+                "-NoProfile",
+                "-ExecutionPolicy",
+                "Bypass",
+                "-File",
+                "${workspaceFolder}\\Build.ps1",
+                "-Configuration",
+                "Release",
+                "-Platform",
+                "Auto",
+                "-Target",
+                "Build"
+            ],
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared"
+            },
+            "problemMatcher": "$msCompile",
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        },
+        {
+            "label": "Clean Debug (current arch)",
+            "type": "process",
+            "command": "pwsh",
+            "args": [
+                "-NoProfile",
+                "-ExecutionPolicy",
+                "Bypass",
+                "-File",
+                "${workspaceFolder}\\Build.ps1",
+                "-Configuration",
+                "Debug",
+                "-Platform",
+                "Auto",
+                "-Target",
+                "Clean"
+            ],
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared"
+            }
+        },
+        {
+            "label": "Clean Release (current arch)",
+            "type": "process",
+            "command": "pwsh",
+            "args": [
+                "-NoProfile",
+                "-ExecutionPolicy",
+                "Bypass",
+                "-File",
+                "${workspaceFolder}\\Build.ps1",
+                "-Configuration",
+                "Release",
+                "-Platform",
+                "Auto",
+                "-Target",
+                "Clean"
+            ],
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared"
+            }
+        },
+        {
+            "label": "Rebuild Debug (current arch)",
+            "type": "process",
+            "command": "pwsh",
+            "args": [
+                "-NoProfile",
+                "-ExecutionPolicy",
+                "Bypass",
+                "-File",
+                "${workspaceFolder}\\Build.ps1",
+                "-Configuration",
+                "Debug",
+                "-Platform",
+                "Auto",
+                "-Target",
+                "Rebuild"
+            ],
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared"
+            },
+            "problemMatcher": "$msCompile"
+        },
+        {
+            "label": "Rebuild Release (current arch)",
+            "type": "process",
+            "command": "pwsh",
+            "args": [
+                "-NoProfile",
+                "-ExecutionPolicy",
+                "Bypass",
+                "-File",
+                "${workspaceFolder}\\Build.ps1",
+                "-Configuration",
+                "Release",
+                "-Platform",
+                "Auto",
+                "-Target",
+                "Rebuild"
+            ],
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared"
+            },
+            "problemMatcher": "$msCompile"
+        },
+        {
+            "label": "Build + Test Debug (current arch)",
+            "dependsOn": [
+                "Build Debug (current arch)",
+                "Run Tests (no build)"
+            ],
+            "dependsOrder": "sequence",
+            "group": "build"
+        },
+        {
+            "label": "Build + Test Release (current arch)",
+            "dependsOn": [
+                "Build Release (current arch)",
+                "Run Tests (no build)"
+            ],
+            "dependsOrder": "sequence",
+            "group": "build"
+        },
+        {
+            "label": "Run Tests (current arch)",
+            "dependsOn": [
+                "Build Debug (current arch)",
+                "Run Tests (no build)"
+            ],
+            "dependsOrder": "sequence",
+            "group": {
+                "kind": "test",
+                "isDefault": true
+            }
+        },
+        {
             "label": "Build Debug x64 (no test)",
             "type": "process",
             "command": "pwsh",
@@ -24,11 +210,7 @@
                 "focus": false,
                 "panel": "shared"
             },
-            "problemMatcher": "$msCompile",
-            "group": {
-                "kind": "build",
-                "isDefault": true
-            }
+            "problemMatcher": "$msCompile"
         },
         {
             "label": "Build Release x64 (no test)",
@@ -153,10 +335,7 @@
                 "Deploy Release"
             ],
             "dependsOrder": "sequence",
-            "group": {
-                "kind": "build",
-                "isDefault": true
-            }
+            "group": "build"
         },
         {
             "label": "Build Release ARM64",
@@ -405,16 +584,13 @@
             "group": "build"
         },
         {
-            "label": "Run Tests",
+            "label": "Run Tests x64",
             "dependsOn": [
                 "Build Debug x64 (no test)",
                 "Run Tests (no build)"
             ],
             "dependsOrder": "sequence",
-            "group": {
-                "kind": "test",
-                "isDefault": true
-            }
+            "group": "test"
         },
         {
             "label": "Run Tests (no build)",

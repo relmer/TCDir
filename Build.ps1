@@ -2,12 +2,21 @@ param(
     [ValidateSet('Debug', 'Release')]
     [string]$Configuration = 'Debug',
 
-    [ValidateSet('x64', 'ARM64')]
-    [string]$Platform = 'x64',
+    [ValidateSet('x64', 'ARM64', 'Auto')]
+    [string]$Platform = 'Auto',
 
     [ValidateSet('Build', 'Clean', 'Rebuild', 'BuildAllRelease')]
     [string]$Target = 'Build'
 )
+
+# Resolve 'Auto' platform to actual architecture
+if ($Platform -eq 'Auto') {
+    if ([System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture -eq [System.Runtime.InteropServices.Architecture]::Arm64) {
+        $Platform = 'ARM64'
+    } else {
+        $Platform = 'x64'
+    }
+}
 
 $ErrorActionPreference = 'Stop'
 

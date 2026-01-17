@@ -24,8 +24,9 @@ if (-not (Test-Path $toolsScript)) {
 
 
 
+# Prefer native runner for the host OS architecture
 $platform = 'Any'
-if ($latestDll.FullName -match '(?i)\\ARM64\\') {
+if ([System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture -eq [System.Runtime.InteropServices.Architecture]::Arm64) {
     $platform = 'ARM64'
 }
 
