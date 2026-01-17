@@ -1,7 +1,8 @@
 # IncrementVersion.ps1
 # Automatically increments the build number and updates the year in Version.h before each build
 
-$versionFile = "$PSScriptRoot\TCDirCore\Version.h"
+$repoRoot = Split-Path $PSScriptRoot -Parent
+$versionFile = "$repoRoot\TCDirCore\Version.h"
 
 # Check if the version file exists
 if (-not (Test-Path $versionFile)) {

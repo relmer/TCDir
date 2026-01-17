@@ -18,7 +18,7 @@ Hat tip to [Chris Kirmse](https://github.com/ckirmse) whose excellent [ZDir](htt
     - **C++ unit test framework** (to build/run the `UnitTest` project)
     - Optional (ARM64 builds/tests): **MSVC v14x ARM64 build tools**
   - The scripts use `vswhere.exe` to locate MSBuild and the test runner
-- Optional: VS Code (the repo includes `.vscode/` tasks wired up to `Build.ps1` and `RunTests.ps1`)
+- Optional: VS Code (the repo includes `.vscode/` tasks wired up to `scripts/Build.ps1` and `scripts/RunTests.ps1`)
 
 ## Quick start
 
@@ -26,7 +26,7 @@ Build:
 
 - Visual Studio: open `TCDir.sln` and **Build Solution**
 - VS Code: run a build task (e.g. **Build Release x64 (no test)**)
-- Command line: `pwsh -NoProfile -ExecutionPolicy Bypass -File .\Build.ps1 -Configuration Release -Platform x64 -Target Build`
+- Command line: `pwsh -NoProfile -ExecutionPolicy Bypass -File .\scripts\Build.ps1 -Configuration Release -Platform x64 -Target Build`
 
 Run:
 
@@ -111,15 +111,15 @@ To see your current color configuration:
 ### Build options
 
 - Visual Studio: open `TCDir.sln` and **Build Solution**
-- VS Code: the repo includes `.vscode/` (tasks/launch/settings), with tasks wired up to `Build.ps1` and `RunTests.ps1`
+- VS Code: the repo includes `.vscode/` (tasks/launch/settings), with tasks wired up to `scripts/Build.ps1` and `scripts/RunTests.ps1`
 - Command line: use the PowerShell build scripts below
 
 ### Build scripts
 
-- Build: `pwsh -File .\Build.ps1 -Configuration <Debug|Release> -Platform <x64|ARM64> -Target Build`
-- Clean: `pwsh -File .\Build.ps1 -Configuration <Debug|Release> -Platform <x64|ARM64> -Target Clean`
-- Rebuild: `pwsh -File .\Build.ps1 -Configuration <Debug|Release> -Platform <x64|ARM64> -Target Rebuild`
-- Build both Release targets: `pwsh -File .\Build.ps1 -Target BuildAllRelease`
+- Build: `pwsh -File .\scripts\Build.ps1 -Configuration <Debug|Release> -Platform <x64|ARM64> -Target Build`
+- Clean: `pwsh -File .\scripts\Build.ps1 -Configuration <Debug|Release> -Platform <x64|ARM64> -Target Clean`
+- Rebuild: `pwsh -File .\scripts\Build.ps1 -Configuration <Debug|Release> -Platform <x64|ARM64> -Target Rebuild`
+- Build both Release targets: `pwsh -File .\scripts\Build.ps1 -Target BuildAllRelease`
 
 Build outputs land under:
 
@@ -130,7 +130,7 @@ Build outputs land under:
 
 Run unit tests:
 
-- `pwsh -File .\RunTests.ps1`
+- `pwsh -File .\scripts\RunTests.ps1`
 
 (Uses Visual Studio’s `vstest.console.exe`, discovered via `vswhere`.)
 

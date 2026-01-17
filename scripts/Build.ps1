@@ -99,10 +99,10 @@ function Write-BuildSummary {
     }
 }
 
-$repoRoot     = $PSScriptRoot
+$repoRoot     = Split-Path $PSScriptRoot -Parent
 $solutionPath = Join-Path $repoRoot 'TCDir.sln'
 
-$toolsScript = Join-Path $repoRoot 'scripts\VSTools.ps1'
+$toolsScript = Join-Path $PSScriptRoot 'VSTools.ps1'
 if (-not (Test-Path $toolsScript)) {
     throw "Tool helper script not found: $toolsScript"
 }

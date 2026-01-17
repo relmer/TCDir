@@ -66,7 +66,7 @@
             "type": "cppvsdbg",
             "request": "launch",
             "program": "${workspaceFolder}\\ARM64\\Debug\\TCDir.exe",
-            "args": ["\\\\.\\unc\\relmer-blue"],
+            "args": ["C:\\"],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
             "environment": [],

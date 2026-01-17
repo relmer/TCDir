@@ -18,9 +18,9 @@ if ($Platform -eq 'Auto') {
 
 $ErrorActionPreference = 'Stop'
 
-$repoRoot = $PSScriptRoot
+$repoRoot = Split-Path $PSScriptRoot -Parent
 
-$toolsScript = Join-Path $repoRoot 'scripts\VSTools.ps1'
+$toolsScript = Join-Path $PSScriptRoot 'VSTools.ps1'
 if (-not (Test-Path $toolsScript)) {
     throw "Tool helper script not found: $toolsScript"
 }
