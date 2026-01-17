@@ -2,7 +2,7 @@
 
 TCDir ("Technicolor Directory") is a fast, colorized directory listing tool for Windows consoles.
 It’s designed as a practical `dir`-style command with useful defaults (color by extension/attributes, sorting, recursion, wide output, and a multi-threaded enumerator).
-
+![TCDir basic listing](Assets/TCDir.png)
 Hat tip to [Chris Kirmse](https://github.com/ckirmse) whose excellent [ZDir](https://github.com/ckirmse/ZDir) from the '90s was the original inspiration for TCDir.
 
 ## Requirements
@@ -38,6 +38,8 @@ Show help:
 
 - `TCDir.exe /?`
 
+![TCDir help](Assets/TCDir%20Help.png)
+
 Basic syntax:
 
 - `TCDIR [drive:][path][filename] [/A[[:]attributes]] [/O[[:]sortorder]] [/S] [/W] [/P] [/M] [/Env] [/Config]`
@@ -62,6 +64,12 @@ Examples:
 - Recurse and sort by extension: `TCDir.exe C:\src /s /o:e`
 - Wide listing: `TCDir.exe /w`
 
+![TCDir wide listing](Assets/TCDir%20Wide.png)
+
+![TCDir recursive listing](Assets/TCDir%20Subdirectories.png)
+
+![TCDir recursive wide listing](Assets/TCDir%20Subdirectories%20Wide.png)
+
 ## Configuration (TCDIR environment variable)
 
 TCDir supports customizing colors (and default switch behavior) via the `TCDIR` environment variable.
@@ -84,9 +92,19 @@ Decoded breakdown of the example:
 - `Attr:H=DarkGrey` sets the **Hidden** file attribute color to DarkGrey
 - `.cpp=White on Blue` sets the `.cpp` extension color to White text on a Blue background
 
+![TCDir with TCDIR environment variable](Assets/TCDir%20Env%20Variable.png)
+
 To see the full list of supported colors and a nicely formatted explanation, run:
 
 - `TCDir.exe /Env`
+
+![TCDir /Env help](Assets/TCDir%20Env.png)
+
+To see your current color configuration:
+
+- `TCDir.exe /Config`
+
+![TCDir /Config output](Assets/TCDir%20Config.png)
 
 ## Building
 
