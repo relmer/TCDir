@@ -102,22 +102,31 @@ namespace UnitTest
             ConfigProbe config;
             
             // Test EVERY foreground color exhaustively
-            Assert::AreEqual((WORD)FC_Black,        config.ParseColorName(L"Black"sv,        false));
-            Assert::AreEqual((WORD)FC_Blue,         config.ParseColorName(L"Blue"sv,         false));
-            Assert::AreEqual((WORD)FC_Green,        config.ParseColorName(L"Green"sv,        false));
-            Assert::AreEqual((WORD)FC_Cyan,         config.ParseColorName(L"Cyan"sv,         false));
-            Assert::AreEqual((WORD)FC_Red,          config.ParseColorName(L"Red"sv,          false));
-            Assert::AreEqual((WORD)FC_Magenta,      config.ParseColorName(L"Magenta"sv,      false));
-            Assert::AreEqual((WORD)FC_Brown,        config.ParseColorName(L"Brown"sv,        false));
-            Assert::AreEqual((WORD)FC_LightGrey,    config.ParseColorName(L"LightGrey"sv,    false));
-            Assert::AreEqual((WORD)FC_DarkGrey,     config.ParseColorName(L"DarkGrey"sv,     false));
-            Assert::AreEqual((WORD)FC_LightBlue,    config.ParseColorName(L"LightBlue"sv,    false));
-            Assert::AreEqual((WORD)FC_LightGreen,   config.ParseColorName(L"LightGreen"sv,   false));
-            Assert::AreEqual((WORD)FC_LightCyan,    config.ParseColorName(L"LightCyan"sv,    false));
-            Assert::AreEqual((WORD)FC_LightRed,     config.ParseColorName(L"LightRed"sv,     false));
-            Assert::AreEqual((WORD)FC_LightMagenta, config.ParseColorName(L"LightMagenta"sv, false));
-            Assert::AreEqual((WORD)FC_Yellow,       config.ParseColorName(L"Yellow"sv,       false));
-            Assert::AreEqual((WORD)FC_White,        config.ParseColorName(L"White"sv,        false));
+            auto AssertParseColorName = [&config] (wstring_view colorName, bool isBackground, WORD expected)
+            {
+                WORD    value = 0;
+                HRESULT hr    = config.ParseColorName (colorName, isBackground, value);
+
+                Assert::AreEqual((HRESULT)S_OK, hr);
+                Assert::AreEqual(expected, value);
+            };
+
+            AssertParseColorName (L"Black"sv,        false, (WORD)FC_Black);
+            AssertParseColorName (L"Blue"sv,         false, (WORD)FC_Blue);
+            AssertParseColorName (L"Green"sv,        false, (WORD)FC_Green);
+            AssertParseColorName (L"Cyan"sv,         false, (WORD)FC_Cyan);
+            AssertParseColorName (L"Red"sv,          false, (WORD)FC_Red);
+            AssertParseColorName (L"Magenta"sv,      false, (WORD)FC_Magenta);
+            AssertParseColorName (L"Brown"sv,        false, (WORD)FC_Brown);
+            AssertParseColorName (L"LightGrey"sv,    false, (WORD)FC_LightGrey);
+            AssertParseColorName (L"DarkGrey"sv,     false, (WORD)FC_DarkGrey);
+            AssertParseColorName (L"LightBlue"sv,    false, (WORD)FC_LightBlue);
+            AssertParseColorName (L"LightGreen"sv,   false, (WORD)FC_LightGreen);
+            AssertParseColorName (L"LightCyan"sv,    false, (WORD)FC_LightCyan);
+            AssertParseColorName (L"LightRed"sv,     false, (WORD)FC_LightRed);
+            AssertParseColorName (L"LightMagenta"sv, false, (WORD)FC_LightMagenta);
+            AssertParseColorName (L"Yellow"sv,       false, (WORD)FC_Yellow);
+            AssertParseColorName (L"White"sv,        false, (WORD)FC_White);
         }
 
 
@@ -129,22 +138,31 @@ namespace UnitTest
             ConfigProbe config;
             
             // Test EVERY background color exhaustively
-            Assert::AreEqual((WORD)BC_Black,        config.ParseColorName(L"Black"sv,        true));
-            Assert::AreEqual((WORD)BC_Blue,         config.ParseColorName(L"Blue"sv,         true));
-            Assert::AreEqual((WORD)BC_Green,        config.ParseColorName(L"Green"sv,        true));
-            Assert::AreEqual((WORD)BC_Cyan,         config.ParseColorName(L"Cyan"sv,         true));
-            Assert::AreEqual((WORD)BC_Red,          config.ParseColorName(L"Red"sv,          true));
-            Assert::AreEqual((WORD)BC_Magenta,      config.ParseColorName(L"Magenta"sv,      true));
-            Assert::AreEqual((WORD)BC_Brown,        config.ParseColorName(L"Brown"sv,        true));
-            Assert::AreEqual((WORD)BC_LightGrey,    config.ParseColorName(L"LightGrey"sv,    true));
-            Assert::AreEqual((WORD)BC_DarkGrey,     config.ParseColorName(L"DarkGrey"sv,     true));
-            Assert::AreEqual((WORD)BC_LightBlue,    config.ParseColorName(L"LightBlue"sv,    true));
-            Assert::AreEqual((WORD)BC_LightGreen,   config.ParseColorName(L"LightGreen"sv,   true));
-            Assert::AreEqual((WORD)BC_LightCyan,    config.ParseColorName(L"LightCyan"sv,    true));
-            Assert::AreEqual((WORD)BC_LightRed,     config.ParseColorName(L"LightRed"sv,     true));
-            Assert::AreEqual((WORD)BC_LightMagenta, config.ParseColorName(L"LightMagenta"sv, true));
-            Assert::AreEqual((WORD)BC_Yellow,       config.ParseColorName(L"Yellow"sv,       true));
-            Assert::AreEqual((WORD)BC_White,        config.ParseColorName(L"White"sv,        true));
+            auto AssertParseColorName = [&config] (wstring_view colorName, bool isBackground, WORD expected)
+            {
+                WORD    value = 0;
+                HRESULT hr    = config.ParseColorName (colorName, isBackground, value);
+
+                Assert::AreEqual((HRESULT)S_OK, hr);
+                Assert::AreEqual(expected, value);
+            };
+
+            AssertParseColorName (L"Black"sv,        true, (WORD)BC_Black);
+            AssertParseColorName (L"Blue"sv,         true, (WORD)BC_Blue);
+            AssertParseColorName (L"Green"sv,        true, (WORD)BC_Green);
+            AssertParseColorName (L"Cyan"sv,         true, (WORD)BC_Cyan);
+            AssertParseColorName (L"Red"sv,          true, (WORD)BC_Red);
+            AssertParseColorName (L"Magenta"sv,      true, (WORD)BC_Magenta);
+            AssertParseColorName (L"Brown"sv,        true, (WORD)BC_Brown);
+            AssertParseColorName (L"LightGrey"sv,    true, (WORD)BC_LightGrey);
+            AssertParseColorName (L"DarkGrey"sv,     true, (WORD)BC_DarkGrey);
+            AssertParseColorName (L"LightBlue"sv,    true, (WORD)BC_LightBlue);
+            AssertParseColorName (L"LightGreen"sv,   true, (WORD)BC_LightGreen);
+            AssertParseColorName (L"LightCyan"sv,    true, (WORD)BC_LightCyan);
+            AssertParseColorName (L"LightRed"sv,     true, (WORD)BC_LightRed);
+            AssertParseColorName (L"LightMagenta"sv, true, (WORD)BC_LightMagenta);
+            AssertParseColorName (L"Yellow"sv,       true, (WORD)BC_Yellow);
+            AssertParseColorName (L"White"sv,        true, (WORD)BC_White);
         }
 
 
@@ -156,10 +174,24 @@ namespace UnitTest
             ConfigProbe config;
             
             // Test various case combinations (only need one color since case logic is color-agnostic)
-            Assert::AreEqual((WORD)FC_Yellow, config.ParseColorName(L"YELLOW"sv, false));
-            Assert::AreEqual((WORD)FC_Yellow, config.ParseColorName(L"yellow"sv, false));
-            Assert::AreEqual((WORD)FC_Yellow, config.ParseColorName(L"YeLLoW"sv, false));
-            Assert::AreEqual((WORD)FC_Yellow, config.ParseColorName(L"yELLOw"sv, false));
+            WORD    value = 0;
+            HRESULT hr    = S_OK;
+
+            hr = config.ParseColorName (L"YELLOW"sv, false, value);
+            Assert::AreEqual((HRESULT)S_OK, hr);
+            Assert::AreEqual((WORD)FC_Yellow, value);
+
+            hr = config.ParseColorName (L"yellow"sv, false, value);
+            Assert::AreEqual((HRESULT)S_OK, hr);
+            Assert::AreEqual((WORD)FC_Yellow, value);
+
+            hr = config.ParseColorName (L"YeLLoW"sv, false, value);
+            Assert::AreEqual((HRESULT)S_OK, hr);
+            Assert::AreEqual((WORD)FC_Yellow, value);
+
+            hr = config.ParseColorName (L"yELLOw"sv, false, value);
+            Assert::AreEqual((HRESULT)S_OK, hr);
+            Assert::AreEqual((WORD)FC_Yellow, value);
         }
 
 
@@ -170,11 +202,28 @@ namespace UnitTest
         {
             ConfigProbe config;
             
-            Assert::AreEqual((WORD)0, config.ParseColorName(L"InvalidColor"sv,  false));
-            Assert::AreEqual((WORD)0, config.ParseColorName(L""sv,              false));
-            Assert::AreEqual((WORD)0, config.ParseColorName(L"Purple"sv,        false));
-            Assert::AreEqual((WORD)0, config.ParseColorName(L"Orange"sv,        false));
-            Assert::AreEqual((WORD)0, config.ParseColorName(L"123"sv,           false));
+            WORD    value = 0;
+            HRESULT hr    = S_OK;
+
+            hr = config.ParseColorName (L"InvalidColor"sv,  false, value);
+            Assert::AreEqual((HRESULT)E_INVALIDARG, hr);
+            Assert::AreEqual((WORD)0, value);
+
+            hr = config.ParseColorName (L""sv,              false, value);
+            Assert::AreEqual((HRESULT)E_INVALIDARG, hr);
+            Assert::AreEqual((WORD)0, value);
+
+            hr = config.ParseColorName (L"Purple"sv,        false, value);
+            Assert::AreEqual((HRESULT)E_INVALIDARG, hr);
+            Assert::AreEqual((WORD)0, value);
+
+            hr = config.ParseColorName (L"Orange"sv,        false, value);
+            Assert::AreEqual((HRESULT)E_INVALIDARG, hr);
+            Assert::AreEqual((WORD)0, value);
+
+            hr = config.ParseColorName (L"123"sv,           false, value);
+            Assert::AreEqual((HRESULT)E_INVALIDARG, hr);
+            Assert::AreEqual((WORD)0, value);
         }
 
 
@@ -185,7 +234,9 @@ namespace UnitTest
         {
             ConfigProbe config;
             
-            WORD result = config.ParseColorSpec(L"Yellow"sv);
+            WORD    result = 0;
+            HRESULT hr     = config.ParseColorSpec (L"Yellow"sv, result);
+            Assert::AreEqual((HRESULT)S_OK, hr);
             Assert::AreEqual((WORD)FC_Yellow, result);
         }
 
@@ -197,10 +248,13 @@ namespace UnitTest
         {
             ConfigProbe config;
             
-            WORD result = config.ParseColorSpec(L"  Yellow"sv);
+            WORD    result = 0;
+            HRESULT hr     = config.ParseColorSpec (L"  Yellow"sv, result);
+            Assert::AreEqual((HRESULT)S_OK, hr);
             Assert::AreEqual((WORD)FC_Yellow, result);
             
-            result = config.ParseColorSpec(L"    Yellow"sv);
+            hr = config.ParseColorSpec (L"    Yellow"sv, result);
+            Assert::AreEqual((HRESULT)S_OK, hr);
             Assert::AreEqual((WORD)FC_Yellow, result);
         }
 
@@ -212,10 +266,13 @@ namespace UnitTest
         {
             ConfigProbe config;
             
-            WORD result = config.ParseColorSpec(L"Yellow  "sv);
+            WORD    result = 0;
+            HRESULT hr     = config.ParseColorSpec (L"Yellow  "sv, result);
+            Assert::AreEqual((HRESULT)S_OK, hr);
             Assert::AreEqual((WORD)FC_Yellow, result);
             
-            result = config.ParseColorSpec(L"Yellow    "sv);
+            hr = config.ParseColorSpec (L"Yellow    "sv, result);
+            Assert::AreEqual((HRESULT)S_OK, hr);
             Assert::AreEqual((WORD)FC_Yellow, result);
         }
 
@@ -227,10 +284,13 @@ namespace UnitTest
         {
             ConfigProbe config;
             
-            WORD result = config.ParseColorSpec(L"  Yellow  "sv);
+            WORD    result = 0;
+            HRESULT hr     = config.ParseColorSpec (L"  Yellow  "sv, result);
+            Assert::AreEqual((HRESULT)S_OK, hr);
             Assert::AreEqual((WORD)FC_Yellow, result);
             
-            result = config.ParseColorSpec(L"    Yellow    "sv);
+            hr = config.ParseColorSpec (L"    Yellow    "sv, result);
+            Assert::AreEqual((HRESULT)S_OK, hr);
             Assert::AreEqual((WORD)FC_Yellow, result);
         }
 
@@ -242,7 +302,9 @@ namespace UnitTest
         {
             ConfigProbe config;
             
-            WORD result = config.ParseColorSpec(L"Yellow on Blue"sv);
+            WORD    result = 0;
+            HRESULT hr     = config.ParseColorSpec (L"Yellow on Blue"sv, result);
+            Assert::AreEqual((HRESULT)S_OK, hr);
             WORD expected = FC_Yellow | BC_Blue;
             Assert::AreEqual(expected, result);
         }
@@ -257,10 +319,13 @@ namespace UnitTest
             
             WORD expected = FC_LightGreen | BC_Red;
             
-            WORD result = config.ParseColorSpec(L"  LightGreen  on  Red  "sv);
+            WORD    result = 0;
+            HRESULT hr     = config.ParseColorSpec (L"  LightGreen  on  Red  "sv, result);
+            Assert::AreEqual((HRESULT)S_OK, hr);
             Assert::AreEqual(expected, result);
                         
-            result = config.ParseColorSpec(L"    LightGreen    on    Red    "sv);
+            hr = config.ParseColorSpec (L"    LightGreen    on    Red    "sv, result);
+            Assert::AreEqual((HRESULT)S_OK, hr);
             Assert::AreEqual(expected, result);
         }
 
@@ -274,11 +339,28 @@ namespace UnitTest
             
             WORD expected = FC_White | BC_Black;
             
-            Assert::AreEqual(expected, config.ParseColorSpec(L"White on Black"sv));
-            Assert::AreEqual(expected, config.ParseColorSpec(L"White ON Black"sv));
-            Assert::AreEqual(expected, config.ParseColorSpec(L"White On Black"sv));
-            Assert::AreEqual(expected, config.ParseColorSpec(L"White oN Black"sv));
-            Assert::AreEqual(expected, config.ParseColorSpec(L"white ON black"sv));
+            WORD    result = 0;
+            HRESULT hr     = S_OK;
+
+            hr = config.ParseColorSpec (L"White on Black"sv, result);
+            Assert::AreEqual((HRESULT)S_OK, hr);
+            Assert::AreEqual(expected, result);
+
+            hr = config.ParseColorSpec (L"White ON Black"sv, result);
+            Assert::AreEqual((HRESULT)S_OK, hr);
+            Assert::AreEqual(expected, result);
+
+            hr = config.ParseColorSpec (L"White On Black"sv, result);
+            Assert::AreEqual((HRESULT)S_OK, hr);
+            Assert::AreEqual(expected, result);
+
+            hr = config.ParseColorSpec (L"White oN Black"sv, result);
+            Assert::AreEqual((HRESULT)S_OK, hr);
+            Assert::AreEqual(expected, result);
+
+            hr = config.ParseColorSpec (L"white ON black"sv, result);
+            Assert::AreEqual((HRESULT)S_OK, hr);
+            Assert::AreEqual(expected, result);
         }
 
 
@@ -290,13 +372,17 @@ namespace UnitTest
             ConfigProbe config;
             
             // Tab characters should NOT be treated as whitespace
-            WORD result = config.ParseColorSpec(L"\tYellow"sv);
+            WORD    result = 0;
+            HRESULT hr     = config.ParseColorSpec (L"\tYellow"sv, result);
+            Assert::AreEqual((HRESULT)E_INVALIDARG, hr);
             Assert::AreEqual((WORD)0, result);
             
-            result = config.ParseColorSpec(L"Yellow\t"sv);
+            hr = config.ParseColorSpec (L"Yellow\t"sv, result);
+            Assert::AreEqual((HRESULT)E_INVALIDARG, hr);
             Assert::AreEqual((WORD)0, result);
             
-            result = config.ParseColorSpec(L"\tYellow\t"sv);
+            hr = config.ParseColorSpec (L"\tYellow\t"sv, result);
+            Assert::AreEqual((HRESULT)E_INVALIDARG, hr);
             Assert::AreEqual((WORD)0, result);
         }
 
@@ -611,6 +697,25 @@ namespace UnitTest
             // Invalid background should produce a validation issue
             CConfig::ValidationResult result = config.ValidateEnvironmentVariable();
             Assert::IsTrue(result.errors.size() == 1);
+        }
+
+
+
+
+
+        TEST_METHOD(ApplyUserColorOverrides_BlackForegroundOnMagenta_IsAccepted)
+        {
+            ConfigProbe config;
+            config.Initialize(FC_LightGrey);
+
+            config.SetEnvVar (TCDIR_ENV_VAR_NAME, L".cpp=Black on Magenta");
+            config.ApplyUserColorOverrides();
+
+            Assert::IsTrue(config.m_mapExtensionToTextAttr.contains(L".cpp"));
+            Assert::AreEqual((WORD)(FC_Black | BC_Magenta), config.m_mapExtensionToTextAttr[L".cpp"]);
+
+            CConfig::ValidationResult result = config.ValidateEnvironmentVariable();
+            Assert::IsTrue(result.errors.size() == 0);
         }
 
 
