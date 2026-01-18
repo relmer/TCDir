@@ -1,3 +1,51 @@
+<#
+.SYNOPSIS
+    Builds the TCDir solution using MSBuild.
+
+.DESCRIPTION
+    This script builds the TCDir.sln solution using Visual Studio 2026's MSBuild.
+    It supports building for x64 and ARM64 platforms in Debug or Release configurations.
+    The script automatically detects the current architecture when using -Platform Auto.
+
+.PARAMETER Configuration
+    The build configuration. Valid values are 'Debug' or 'Release'.
+    Default: Debug
+
+.PARAMETER Platform
+    The target platform. Valid values are 'x64', 'ARM64', or 'Auto'.
+    'Auto' detects the current OS architecture.
+    Default: Auto
+
+.PARAMETER Target
+    The build target. Valid values are:
+      - Build            Build the solution (default)
+      - Clean            Clean build outputs
+      - Rebuild          Clean and rebuild
+      - BuildAllRelease  Build Release for all platforms (x64 and ARM64)
+      - CleanAll         Clean all configurations and platforms
+      - RebuildAllRelease  Rebuild Release for all platforms
+    Default: Build
+
+.EXAMPLE
+    .\Build.ps1
+    Builds Debug configuration for the current architecture.
+
+.EXAMPLE
+    .\Build.ps1 -Configuration Release -Platform x64
+    Builds Release configuration for x64.
+
+.EXAMPLE
+    .\Build.ps1 -Target BuildAllRelease
+    Builds Release configuration for both x64 and ARM64 platforms.
+
+.EXAMPLE
+    .\Build.ps1 -Target Clean
+    Cleans the build outputs for the current configuration and platform.
+
+.NOTES
+    Requires Visual Studio 2026 (v18.x) with the "Desktop development with C++" workload.
+    ARM64 builds require the MSVC ARM64 build tools to be installed.
+#>
 param(
     [ValidateSet('Debug', 'Release')]
     [string]$Configuration = 'Debug',
