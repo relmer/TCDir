@@ -1,7 +1,7 @@
 #pragma once
 
 #include "DirectoryInfo.h"
-#include "ResultsDisplayerBase.h"
+#include "IResultsDisplayer.h"
 
 
 
@@ -27,7 +27,7 @@ protected:
     HRESULT ProcessDirectory                   (const CDriveInfo & driveInfo, 
                                                 const filesystem::path & dirPath, 
                                                 const filesystem::path & fileSpec, 
-                                                CResultsDisplayerBase::EDirectoryLevel level);
+                                                IResultsDisplayer::EDirectoryLevel level);
     
     HRESULT CollectMatchingFilesAndDirectories (const std::filesystem::path & dirPath,
                                                 const std::filesystem::path & fileSpec,
@@ -36,7 +36,7 @@ protected:
     HRESULT ProcessDirectoryMultiThreaded      (const CDriveInfo & driveInfo, 
                                                 const filesystem::path & dirPath, 
                                                 const filesystem::path & fileSpec,
-                                                CResultsDisplayerBase::EDirectoryLevel level);
+                                                IResultsDisplayer::EDirectoryLevel level);
     
     HRESULT RecurseIntoSubdirectories          (const CDriveInfo & driveInfo,
                                                 const filesystem::path & dirPath, 
@@ -50,7 +50,7 @@ protected:
     shared_ptr<CCommandLine>              m_cmdLinePtr; 
     shared_ptr<CConsole>                  m_consolePtr;
     shared_ptr<CConfig>                   m_configPtr;
-    unique_ptr<CResultsDisplayerBase>     m_displayer;
+    unique_ptr<IResultsDisplayer>         m_displayer;
     ULARGE_INTEGER                        m_uliSizeOfAllFilesFound;
     UINT                                  m_cFilesFound;
     UINT                                  m_cDirectoriesFound;

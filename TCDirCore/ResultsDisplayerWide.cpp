@@ -19,7 +19,7 @@
 ////////////////////////////////////////////////////////////////////////////////  
 
 CResultsDisplayerWide::CResultsDisplayerWide (shared_ptr<CCommandLine> cmdLinePtr, shared_ptr<CConsole> consolePtr, shared_ptr<CConfig> configPtr) :
-    CResultsDisplayerBase (cmdLinePtr, consolePtr, configPtr)
+    CResultsDisplayerWithHeaderAndFooter (cmdLinePtr, consolePtr, configPtr)
 {
 }
 

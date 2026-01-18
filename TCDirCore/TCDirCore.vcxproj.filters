@@ -57,7 +57,10 @@
     <ClInclude Include="PerfTimer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="ResultsDisplayerBase.h">
+    <ClInclude Include="IResultsDisplayer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ResultsDisplayerWithHeaderAndFooter.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="ResultsDisplayerNormal.h">
@@ -116,7 +119,7 @@
     <ClCompile Include="PerfTimer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="ResultsDisplayerBase.cpp">
+    <ClCompile Include="ResultsDisplayerWithHeaderAndFooter.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="ResultsDisplayerNormal.cpp">

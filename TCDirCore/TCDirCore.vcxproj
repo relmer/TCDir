@@ -148,6 +148,9 @@
       </SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
+    <PreBuildEvent>
+      <Command>powershell -ExecutionPolicy Bypass -File "$(SolutionDir)scripts\IncrementVersion.ps1"</Command>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'">
     <ClCompile>
@@ -165,6 +168,9 @@
       <SubSystem></SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
+    <PreBuildEvent>
+      <Command>powershell -ExecutionPolicy Bypass -File "$(SolutionDir)scripts\IncrementVersion.ps1"</Command>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -226,9 +232,10 @@
     <ClInclude Include="MultiThreadedLister.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="PerfTimer.h" />
-    <ClInclude Include="ResultsDisplayerBase.h" />
+    <ClInclude Include="IResultsDisplayer.h" />
     <ClInclude Include="ResultsDisplayerNormal.h" />
     <ClInclude Include="ResultsDisplayerWide.h" />
+    <ClInclude Include="ResultsDisplayerWithHeaderAndFooter.h" />
     <ClInclude Include="UniqueFindHandle.h" />
     <ClInclude Include="Usage.h" />
     <ClInclude Include="Version.h" />
@@ -253,9 +260,9 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'">Create</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="PerfTimer.cpp" />
-    <ClCompile Include="ResultsDisplayerBase.cpp" />
     <ClCompile Include="ResultsDisplayerNormal.cpp" />
     <ClCompile Include="ResultsDisplayerWide.cpp" />
+    <ClCompile Include="ResultsDisplayerWithHeaderAndFooter.cpp" />
     <ClCompile Include="TCDir.cpp" />
     <ClCompile Include="Usage.cpp" />
   </ItemGroup>

@@ -1,12 +1,12 @@
 #pragma once
 
-#include "ResultsDisplayerBase.h"
+#include "ResultsDisplayerWithHeaderAndFooter.h"
 
 
 
 
 
-class CResultsDisplayerNormal : public CResultsDisplayerBase
+class CResultsDisplayerNormal : public CResultsDisplayerWithHeaderAndFooter
 {
 public:
     CResultsDisplayerNormal                 (shared_ptr<CCommandLine> cmdLinePtr, shared_ptr<CConsole> consolePtr, shared_ptr<CConfig> configPtr);

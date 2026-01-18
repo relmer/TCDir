@@ -7,7 +7,6 @@
 #include "DriveInfo.h"
 #include "FileComparator.h"
 #include "Flag.h"
-#include "ResultsDisplayerBase.h"
 #include "UniqueFindHandle.h"
 #include "WorkQueue.h"
 
@@ -90,8 +89,8 @@ void CMultiThreadedLister::StopWorkers()
 HRESULT CMultiThreadedLister::ProcessDirectoryMultiThreaded (const CDriveInfo & driveInfo,
                                                              const filesystem::path & dirPath,
                                                              const filesystem::path & fileSpec,
-                                                             CResultsDisplayerBase & displayer,
-                                                             CResultsDisplayerBase::EDirectoryLevel level,
+                                                             IResultsDisplayer & displayer,
+                                                             IResultsDisplayer::EDirectoryLevel level,
                                                              ULARGE_INTEGER & uliSizeOfAllFilesFound,
                                                              UINT & cFilesFound,
                                                              UINT & cDirectoriesFound)
@@ -341,8 +340,8 @@ void CMultiThreadedLister::WorkerThreadFunc()
 
 HRESULT CMultiThreadedLister::PrintDirectoryTree (shared_ptr<CDirectoryInfo> pDirInfo,
                                                   const CDriveInfo & driveInfo,
-                                                  CResultsDisplayerBase & displayer,
-                                                  CResultsDisplayerBase::EDirectoryLevel level,
+                                                  IResultsDisplayer & displayer,
+                                                  IResultsDisplayer::EDirectoryLevel level,
                                                   ULARGE_INTEGER & uliSizeOfAllFilesFound,
                                                   UINT & cFilesFound,
                                                   UINT & cDirectoriesFound)
@@ -409,7 +408,7 @@ HRESULT CMultiThreadedLister::PrintDirectoryTree (shared_ptr<CDirectoryInfo> pDi
         hr = PrintDirectoryTree (pChild, 
                                  driveInfo, 
                                  displayer, 
-                                 CResultsDisplayerBase::EDirectoryLevel::Subdirectory,
+                                 IResultsDisplayer::EDirectoryLevel::Subdirectory,
                                  uliSizeOfAllFilesFound, 
                                  cFilesFound, 
                                  cDirectoriesFound);

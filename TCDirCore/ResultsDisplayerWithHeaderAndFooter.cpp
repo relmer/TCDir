@@ -1,5 +1,5 @@
 #include "pch.h"
-#include "ResultsDisplayerBase.h"
+#include "ResultsDisplayerWithHeaderAndFooter.h"
 
 #include "CommandLine.h"
 #include "Config.h"
@@ -11,13 +11,13 @@
 
 ////////////////////////////////////////////////////////////////////////////////
 //
-//  CResultsDisplayerBase::CResultsDisplayerBase
+//  CResultsDisplayerWithHeaderAndFooter::CResultsDisplayerWithHeaderAndFooter
 //
 //  
 //
 ////////////////////////////////////////////////////////////////////////////////  
 
-CResultsDisplayerBase::CResultsDisplayerBase (shared_ptr<CCommandLine> cmdLinePtr, shared_ptr<CConsole> consolePtr, shared_ptr<CConfig> configPtr) :
+CResultsDisplayerWithHeaderAndFooter::CResultsDisplayerWithHeaderAndFooter (shared_ptr<CCommandLine> cmdLinePtr, shared_ptr<CConsole> consolePtr, shared_ptr<CConfig> configPtr) :
     m_cmdLinePtr (cmdLinePtr),
     m_consolePtr (consolePtr),
     m_configPtr  (configPtr)
@@ -30,13 +30,13 @@ CResultsDisplayerBase::CResultsDisplayerBase (shared_ptr<CCommandLine> cmdLinePt
 
 ////////////////////////////////////////////////////////////////////////////////
 //
-//  CResultsDisplayerBase::~CResultsDisplayerBase
+//  CResultsDisplayerWithHeaderAndFooter::~CResultsDisplayerWithHeaderAndFooter
 //
 //  
 //
 ////////////////////////////////////////////////////////////////////////////////  
 
-CResultsDisplayerBase::~CResultsDisplayerBase (void)
+CResultsDisplayerWithHeaderAndFooter::~CResultsDisplayerWithHeaderAndFooter (void)
 {
 }
 
@@ -46,13 +46,13 @@ CResultsDisplayerBase::~CResultsDisplayerBase (void)
 
 ////////////////////////////////////////////////////////////////////////////////
 //
-//  CResultsDisplayerBase::DisplayResults
+//  CResultsDisplayerWithHeaderAndFooter::DisplayResults
 //
 //  
 //
 ////////////////////////////////////////////////////////////////////////////////  
 
-void CResultsDisplayerBase::DisplayResults (const CDriveInfo & driveInfo, const CDirectoryInfo & di, EDirectoryLevel level)
+void CResultsDisplayerWithHeaderAndFooter::DisplayResults (const CDriveInfo & driveInfo, const CDirectoryInfo & di, EDirectoryLevel level)
 {
     // For subdirectories with no matches, skip displaying entirely
     if (level == EDirectoryLevel::Subdirectory && di.m_vMatches.size() == 0)
@@ -120,7 +120,24 @@ void CResultsDisplayerBase::DisplayResults (const CDriveInfo & driveInfo, const 
 
 ////////////////////////////////////////////////////////////////////////////////
 //
-//  CResultsDisplayerBase::DisplayDriveHeader
+//  CResultsDisplayerWithHeaderAndFooter::DisplayRecursiveSummary
+//
+//  
+//
+////////////////////////////////////////////////////////////////////////////////  
+
+void CResultsDisplayerWithHeaderAndFooter::DisplayRecursiveSummary (const CDirectoryInfo & diInitial, UINT cFilesFound, UINT cDirectoriesFound, const ULARGE_INTEGER & uliSizeOfAllFilesFound)
+{
+    DisplayListingSummary (diInitial, cFilesFound, cDirectoriesFound, uliSizeOfAllFilesFound);
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CResultsDisplayerWithHeaderAndFooter::DisplayDriveHeader
 //
 //  Displays information about the drive, eg: 
 // 
@@ -129,7 +146,7 @@ void CResultsDisplayerBase::DisplayResults (const CDriveInfo & driveInfo, const 
 //
 ////////////////////////////////////////////////////////////////////////////////  
 
-void CResultsDisplayerBase::DisplayDriveHeader (const CDriveInfo & driveInfo)
+void CResultsDisplayerWithHeaderAndFooter::DisplayDriveHeader (const CDriveInfo & driveInfo)
 {
     m_consolePtr->Printf (CConfig::EAttribute::Information, L" Volume ");
 
@@ -180,13 +197,13 @@ void CResultsDisplayerBase::DisplayDriveHeader (const CDriveInfo & driveInfo)
 
 ////////////////////////////////////////////////////////////////////////////////
 //
-//  CResultsDisplayerBase::DisplayPathHeader
+//  CResultsDisplayerWithHeaderAndFooter::DisplayPathHeader
 //
 //  
 //
 ////////////////////////////////////////////////////////////////////////////////  
 
-void CResultsDisplayerBase::DisplayPathHeader (const filesystem::path & dirPath)
+void CResultsDisplayerWithHeaderAndFooter::DisplayPathHeader (const filesystem::path & dirPath)
 {
     m_consolePtr->Printf (CConfig::EAttribute::Information,          L" Directory of ");
     m_consolePtr->Printf (CConfig::EAttribute::InformationHighlight, L"%s", dirPath.c_str());
@@ -199,7 +216,7 @@ void CResultsDisplayerBase::DisplayPathHeader (const filesystem::path & dirPath)
 
 ////////////////////////////////////////////////////////////////////////////////
 //
-//  CResultsDisplayerBase::DisplayListingSummary
+//  CResultsDisplayerWithHeaderAndFooter::DisplayListingSummary
 //
 //  Display full recursive summary information:
 // 
@@ -212,7 +229,7 @@ void CResultsDisplayerBase::DisplayPathHeader (const filesystem::path & dirPath)
 //
 ////////////////////////////////////////////////////////////////////////////////  
 
-void CResultsDisplayerBase::DisplayListingSummary (const CDirectoryInfo & di, UINT cFilesFound, UINT cDirectoriesFound, const ULARGE_INTEGER & uliSizeOfAllFilesFound)
+void CResultsDisplayerWithHeaderAndFooter::DisplayListingSummary (const CDirectoryInfo & di, UINT cFilesFound, UINT cDirectoriesFound, const ULARGE_INTEGER & uliSizeOfAllFilesFound)
 {
     int cMaxDigits = 1;
 
@@ -247,7 +264,7 @@ void CResultsDisplayerBase::DisplayListingSummary (const CDirectoryInfo & di, UI
 
 ////////////////////////////////////////////////////////////////////////////////
 //
-//  CResultsDisplayerBase::DisplayDirectorySummary
+//  CResultsDisplayerWithHeaderAndFooter::DisplayDirectorySummary
 //
 //  Display summary information for the directory:
 //
@@ -255,7 +272,7 @@ void CResultsDisplayerBase::DisplayListingSummary (const CDirectoryInfo & di, UI
 //
 ////////////////////////////////////////////////////////////////////////////////  
 
-void CResultsDisplayerBase::DisplayDirectorySummary (const CDirectoryInfo & di)
+void CResultsDisplayerWithHeaderAndFooter::DisplayDirectorySummary (const CDirectoryInfo & di)
 {
     m_consolePtr->Printf (CConfig::EAttribute::Information,          L"\n ");
     m_consolePtr->Printf (CConfig::EAttribute::InformationHighlight, L"%d", di.m_cSubDirectories);
@@ -273,7 +290,7 @@ void CResultsDisplayerBase::DisplayDirectorySummary (const CDirectoryInfo & di)
 
 ////////////////////////////////////////////////////////////////////////////////
 //
-//  CResultsDisplayerBase::DisplayVolumeFooter
+//  CResultsDisplayerWithHeaderAndFooter::DisplayVolumeFooter
 //
 //  Display free space info for volume:
 //
@@ -282,7 +299,7 @@ void CResultsDisplayerBase::DisplayDirectorySummary (const CDirectoryInfo & di)
 //
 ////////////////////////////////////////////////////////////////////////////////  
 
-void CResultsDisplayerBase::DisplayVolumeFooter (const CDirectoryInfo & di)
+void CResultsDisplayerWithHeaderAndFooter::DisplayVolumeFooter (const CDirectoryInfo & di)
 {
     HRESULT        hr                     = S_OK;
     BOOL           fSuccess;              
@@ -315,7 +332,7 @@ Error:
 
 ////////////////////////////////////////////////////////////////////////////////
 //
-//  CResultsDisplayerBase::DisplayFooterQuotaInfo
+//  CResultsDisplayerWithHeaderAndFooter::DisplayFooterQuotaInfo
 //
 //  Display free space info for volume:
 //
@@ -323,7 +340,7 @@ Error:
 //
 ////////////////////////////////////////////////////////////////////////////////  
 
-void CResultsDisplayerBase::DisplayFooterQuotaInfo (const ULARGE_INTEGER & uliFreeBytesAvailable)
+void CResultsDisplayerWithHeaderAndFooter::DisplayFooterQuotaInfo (const ULARGE_INTEGER & uliFreeBytesAvailable)
 {
     BOOL    fSuccess    = FALSE;
     DWORD   cchUsername = UNLEN + 1;     // Use Windows constant for max username length
@@ -356,13 +373,13 @@ void CResultsDisplayerBase::DisplayFooterQuotaInfo (const ULARGE_INTEGER & uliFr
 
 ////////////////////////////////////////////////////////////////////////////////
 //
-//  CResultsDisplayerBase::GetStringLengthOfMaxFileSize
+//  CResultsDisplayerWithHeaderAndFooter::GetStringLengthOfMaxFileSize
 //
 //  
 //
 ////////////////////////////////////////////////////////////////////////////////  
 
-UINT CResultsDisplayerBase::GetStringLengthOfMaxFileSize (const ULARGE_INTEGER & uli)
+UINT CResultsDisplayerWithHeaderAndFooter::GetStringLengthOfMaxFileSize (const ULARGE_INTEGER & uli)
 {
     UINT cch = 1;
 
@@ -388,13 +405,13 @@ UINT CResultsDisplayerBase::GetStringLengthOfMaxFileSize (const ULARGE_INTEGER &
 
 ////////////////////////////////////////////////////////////////////////////////
 //
-//  CResultsDisplayerBase::FormatNumberWithSeparators
+//  CResultsDisplayerWithHeaderAndFooter::FormatNumberWithSeparators
 //
 //  
 //
 ////////////////////////////////////////////////////////////////////////////////  
 
-LPCWSTR CResultsDisplayerBase::FormatNumberWithSeparators (ULONGLONG n)
+LPCWSTR CResultsDisplayerWithHeaderAndFooter::FormatNumberWithSeparators (ULONGLONG n)
 {
     static WCHAR szFileSize[27];  // 2^64 = 1.84467440737096E+19 = 18,446,744,073,709,600,000 = 18 chars + 6 commas + 1 null
     LPWSTR       pszSize;

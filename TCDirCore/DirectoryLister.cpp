@@ -120,12 +120,12 @@ void CDirectoryLister::List (const wstring & mask)
 
         if (m_cmdLinePtr->m_fMultiThreaded && m_cmdLinePtr->m_fRecurse)
         {
-            hr = ProcessDirectoryMultiThreaded (driveInfo, dirPath, fileSpec, CResultsDisplayerBase::EDirectoryLevel::Initial);
+            hr = ProcessDirectoryMultiThreaded (driveInfo, dirPath, fileSpec, IResultsDisplayer::EDirectoryLevel::Initial);
             CHR (hr);
         }
         else
         {
-            hr = ProcessDirectory (driveInfo, dirPath, fileSpec, CResultsDisplayerBase::EDirectoryLevel::Initial);
+            hr = ProcessDirectory (driveInfo, dirPath, fileSpec, IResultsDisplayer::EDirectoryLevel::Initial);
             CHR (hr);
         }
     }
@@ -151,7 +151,7 @@ Error:
 HRESULT CDirectoryLister::ProcessDirectory (const CDriveInfo & driveInfo, 
                                             const filesystem::path & dirPath, 
                                             const filesystem::path & fileSpec, 
-                                            CResultsDisplayerBase::EDirectoryLevel level)
+                                            IResultsDisplayer::EDirectoryLevel level)
 {
     HRESULT          hr = S_OK;
     CDirectoryInfo   di   (dirPath, fileSpec);
@@ -189,9 +189,9 @@ HRESULT CDirectoryLister::ProcessDirectory (const CDriveInfo & driveInfo,
         // If this is the end of the initial directory, show the summary too
         //
 
-        if (level == CResultsDisplayerBase::EDirectoryLevel::Initial)
+        if (level == IResultsDisplayer::EDirectoryLevel::Initial)
         {
-            m_displayer->DisplayListingSummary (di, m_cFilesFound, m_cDirectoriesFound, m_uliSizeOfAllFilesFound);
+            m_displayer->DisplayRecursiveSummary (di, m_cFilesFound, m_cDirectoriesFound, m_uliSizeOfAllFilesFound);
         }
     }
 
@@ -271,7 +271,7 @@ Error:
 HRESULT CDirectoryLister::ProcessDirectoryMultiThreaded (const CDriveInfo & driveInfo,
                                                          const filesystem::path & dirPath,
                                                          const filesystem::path & fileSpec,
-                                                         CResultsDisplayerBase::EDirectoryLevel level)
+                                                         IResultsDisplayer::EDirectoryLevel level)
 {
     HRESULT              hr             = S_OK;
     CMultiThreadedLister mtLister         (m_cmdLinePtr, m_consolePtr, m_configPtr);
@@ -289,7 +289,7 @@ HRESULT CDirectoryLister::ProcessDirectoryMultiThreaded (const CDriveInfo & driv
                                                  m_cDirectoriesFound);
     CHR (hr);
 
-    m_displayer->DisplayListingSummary (summaryDirInfo, m_cFilesFound, m_cDirectoriesFound, m_uliSizeOfAllFilesFound);
+    m_displayer->DisplayRecursiveSummary (summaryDirInfo, m_cFilesFound, m_cDirectoriesFound, m_uliSizeOfAllFilesFound);
 
     
 
@@ -338,7 +338,7 @@ HRESULT CDirectoryLister::RecurseIntoSubdirectories (const CDriveInfo & driveInf
             if (CFlag::IsSet (wfd.dwFileAttributes, FILE_ATTRIBUTE_DIRECTORY))
             {
                 filesystem::path subdirPath = dirPath / wfd.cFileName;            
-                hr = ProcessDirectory (driveInfo, subdirPath, fileSpec, CResultsDisplayerBase::EDirectoryLevel::Subdirectory);
+                hr = ProcessDirectory (driveInfo, subdirPath, fileSpec, IResultsDisplayer::EDirectoryLevel::Subdirectory);
                 IGNORE_RETURN_VALUE (hr, S_OK);
             }
         }
