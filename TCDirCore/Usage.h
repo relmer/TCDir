@@ -20,10 +20,10 @@ public:
         MultiColumn,    // No indent, column padding (for multi-column grids)
     };
 
-    static void    DisplayUsage                     (CConsole & console);
-    static void    DisplayEnvVarHelp                (CConsole & console);
-    static void    DisplayCurrentConfiguration      (CConsole & console);
-    static void    DisplayEnvVarIssues              (CConsole & console);
+    static void    DisplayUsage                     (CConsole & console, wchar_t chPrefix = L'-');
+    static void    DisplayEnvVarHelp                (CConsole & console, wchar_t chPrefix = L'-');
+    static void    DisplayCurrentConfiguration      (CConsole & console, wchar_t chPrefix = L'-');
+    static void    DisplayEnvVarIssues              (CConsole & console, wchar_t chPrefix = L'-');
 
 
 

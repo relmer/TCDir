@@ -38,33 +38,33 @@ Run:
 
 Show help:
 
-- `TCDir.exe /?`
+- `TCDir.exe -?`
 ![TCDir help](Assets/TCDir%20Help.png)
 
 Basic syntax:
 
-- `TCDIR [drive:][path][filename] [/A[[:]attributes]] [/O[[:]sortorder]] [/S] [/W] [/B] [/P] [/M] [/Env] [/Config]`
+- `TCDIR [drive:][path][filename] [-A[[:]attributes]] [-O[[:]sortorder]] [-S] [-W] [-B] [-P] [-M] [--Env] [--Config]`
 
 Common switches:
 
-- `/A[:]<attributes>`: filter by file attributes
-- `/O[:]<sortorder>`: sort results
-  - both `/oe` and `/o:e` forms are supported
+- `-A[:]<attributes>`: filter by file attributes
+- `-O[:]<sortorder>`: sort results
+  - both `-oe` and `-o:e` forms are supported
   - `N` name, `E` extension, `S` size, `D` date/time
   - prefix `-` to reverse
-- `/S`: recurse into subdirectories
-- `/W`: wide listing format
-- `/B`: bare listing format
-- `/P`: show performance timing information
-- `/M`: enable multi-threaded enumeration (default); use `/M-` to disable
-- `/Env`: show `TCDIR` environment variable help/syntax/current value
-- `/Config`: show current color configuration
+- `-S`: recurse into subdirectories
+- `-W`: wide listing format
+- `-B`: bare listing format
+- `-P`: show performance timing information
+- `-M`: enable multi-threaded enumeration (default); use `-M-` to disable
+- `--Env`: show `TCDIR` environment variable help/syntax/current value
+- `--Config`: show current color configuration
 
 Examples:
-- Recurse through subdirectories: `TCDir.exe /s`
+- Recurse through subdirectories: `TCDir.exe -s`
 ![TCDir recursive listing](Assets/TCDir%20Subdirectories.png)
 
-- Wide listing: `TCDir.exe /w`
+- Wide listing: `TCDir.exe -w`
 ![TCDir wide listing](Assets/TCDir%20Wide.png)
 
 ## Configuration (TCDIR environment variable)
@@ -73,8 +73,8 @@ TCDir supports customizing colors (and default switch behavior) via the `TCDIR` 
 
 Syntax:
 
-- PowerShell: `$env:TCDIR = "[ -<Switch> | /<Switch>] | [<Item> | Attr:<fileattr> | <.ext>] = <Fore> [on <Back>][;...]"`
-- CMD: `set TCDIR=[ -<Switch> | /<Switch>] | [<Item> | Attr:<fileattr> | <.ext>] = <Fore> [on <Back>][;...]`
+- PowerShell: `$env:TCDIR = "[ -<Switch>] | [<Item> | Attr:<fileattr> | <.ext>] = <Fore> [on <Back>][;...]"`
+- CMD: `set TCDIR=[ -<Switch>] | [<Item> | Attr:<fileattr> | <.ext>] = <Fore> [on <Back>][;...]`
 
 Example:
 
@@ -92,15 +92,15 @@ Decoded breakdown of the example:
 - Here's an example of the default output, setting the TCDIR environment variable, then showing its effects:
 ![TCDir with TCDIR environment variable](Assets/TCDir%20Env%20Variable.png)
 
-To see the full list of supported colors and a nicely formatted explanation, use /Env.  
+To see the full list of supported colors and a nicely formatted explanation, use --Env.  
 - Any errors in the TCDIR variable are shown at the end.
-- `TCDir.exe /Env`:
-![TCDir /Env help](Assets/TCDir%20Env.png)
+- `TCDir.exe --Env`:
+![TCDir --Env help](Assets/TCDir%20Env.png)
 
-To see your current color configuration, use /Config:
+To see your current color configuration, use --Config:
 - All configuration settings are displayed along with the source of that configuration.
-- `TCDir.exe /Config`:
-![TCDir /Config output](Assets/TCDir%20Config.png)
+- `TCDir.exe --Config`:
+![TCDir --Config output](Assets/TCDir%20Config.png)
 
 ## Building
 

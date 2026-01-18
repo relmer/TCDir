@@ -65,6 +65,7 @@ public:
     bool               m_fEnv                                              = false;    // Display environment variable help
     bool               m_fConfig                                           = false;    // Display current configuration
     bool               m_fHelp                                             = false;    // Display usage
+    wchar_t            m_chSwitchPrefix                                    = L'-';     // Switch prefix character (default: '-')
 
 
 
@@ -72,7 +73,8 @@ public:
     // Public methods
     //
     
-    void ApplyConfigDefaults (const class CConfig & config);
+    void    ApplyConfigDefaults (const class CConfig & config);
+    wchar_t GetSwitchPrefix     (void) const { return m_chSwitchPrefix; }
 
 
 protected: 
@@ -87,7 +89,7 @@ protected:
     // Protected methods
     //
     
-    HRESULT HandleSwitch     (LPCWSTR pszArg);
+    HRESULT HandleSwitch     (LPCWSTR pszArg, bool fLongOption);
     HRESULT OrderByHandler   (LPCWSTR pszArg);
     HRESULT AttributeHandler (LPCWSTR pszArg);
 

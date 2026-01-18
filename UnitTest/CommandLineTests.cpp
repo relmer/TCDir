@@ -130,6 +130,122 @@ namespace UnitTest
 
             Assert::IsTrue(SUCCEEDED(hr));
             Assert::IsTrue(cl.m_fEnv);
+            Assert::AreEqual(L'/', cl.GetSwitchPrefix());
+        }
+
+
+
+
+        TEST_METHOD(ParseEnvSwitchDoubleDash)
+        {
+            CCommandLine    cl;
+            const wchar_t * e1      = L"--env";
+            wchar_t       * argv1[] = { const_cast<wchar_t *>(e1) };
+            HRESULT         hr      = cl.Parse(1, argv1);
+
+
+
+            Assert::IsTrue(SUCCEEDED(hr));
+            Assert::IsTrue(cl.m_fEnv);
+            Assert::AreEqual(L'-', cl.GetSwitchPrefix());
+        }
+
+
+
+
+        TEST_METHOD(ParseEnvSwitchSingleDashFails)
+        {
+            CCommandLine    cl;
+            const wchar_t * e1      = L"-env";
+            wchar_t       * argv1[] = { const_cast<wchar_t *>(e1) };
+            HRESULT         hr      = cl.Parse(1, argv1);
+
+
+
+            Assert::IsTrue(FAILED(hr));
+        }
+
+
+
+
+        TEST_METHOD(ParseConfigSwitchSlash)
+        {
+            CCommandLine    cl;
+            const wchar_t * c1      = L"/Config";
+            wchar_t       * argv1[] = { const_cast<wchar_t *>(c1) };
+            HRESULT         hr      = cl.Parse(1, argv1);
+
+
+
+            Assert::IsTrue(SUCCEEDED(hr));
+            Assert::IsTrue(cl.m_fConfig);
+            Assert::AreEqual(L'/', cl.GetSwitchPrefix());
+        }
+
+
+
+
+        TEST_METHOD(ParseConfigSwitchDoubleDash)
+        {
+            CCommandLine    cl;
+            const wchar_t * c1      = L"--config";
+            wchar_t       * argv1[] = { const_cast<wchar_t *>(c1) };
+            HRESULT         hr      = cl.Parse(1, argv1);
+
+
+
+            Assert::IsTrue(SUCCEEDED(hr));
+            Assert::IsTrue(cl.m_fConfig);
+            Assert::AreEqual(L'-', cl.GetSwitchPrefix());
+        }
+
+
+
+
+        TEST_METHOD(ParseConfigSwitchSingleDashFails)
+        {
+            CCommandLine    cl;
+            const wchar_t * c1      = L"-config";
+            wchar_t       * argv1[] = { const_cast<wchar_t *>(c1) };
+            HRESULT         hr      = cl.Parse(1, argv1);
+
+
+
+            Assert::IsTrue(FAILED(hr));
+        }
+
+
+
+
+        TEST_METHOD(ParseHelpSwitchWithDash)
+        {
+            CCommandLine    cl;
+            const wchar_t * h1      = L"-?";
+            wchar_t       * argv1[] = { const_cast<wchar_t *>(h1) };
+            HRESULT         hr      = cl.Parse(1, argv1);
+
+
+
+            Assert::IsTrue(SUCCEEDED(hr));
+            Assert::IsTrue(cl.m_fHelp);
+            Assert::AreEqual(L'-', cl.GetSwitchPrefix());
+        }
+
+
+
+
+        TEST_METHOD(ParseHelpSwitchWithSlash)
+        {
+            CCommandLine    cl;
+            const wchar_t * h1      = L"/?";
+            wchar_t       * argv1[] = { const_cast<wchar_t *>(h1) };
+            HRESULT         hr      = cl.Parse(1, argv1);
+
+
+
+            Assert::IsTrue(SUCCEEDED(hr));
+            Assert::IsTrue(cl.m_fHelp);
+            Assert::AreEqual(L'/', cl.GetSwitchPrefix());
         }
 
 

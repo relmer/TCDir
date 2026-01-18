@@ -110,11 +110,23 @@ HRESULT CCommandLine::Parse (int cArg, WCHAR ** ppszArg)
         {
             //
             // Switches start with a '-' or a '/'
+            // Long switches use '--' prefix (e.g., --env, --config)
             //
             
             case L'-':
             case L'/':
-                hr = HandleSwitch (pszArg + 1);
+                m_chSwitchPrefix = *pszArg;
+
+                // Check for '--' prefix (long option style)
+                if (*pszArg == L'-' && *(pszArg + 1) == L'-')
+                {
+                    hr = HandleSwitch (pszArg + 2, true);
+                }
+                else
+                {
+                    hr = HandleSwitch (pszArg + 1, false);
+                }
+
                 CHR (hr);
                 
                 break;
@@ -145,11 +157,13 @@ Error:
 //
 //  CCommandLine::HandleSwitch
 //
-//  
+//  fLongOption: true if the switch was prefixed with '--' (or '/' for multi-char)
+//               Long options like 'env' and 'config' require '--' when using dash
+//               prefix, but can use single '/' when using slash prefix.
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-HRESULT CCommandLine::HandleSwitch (LPCWSTR pszArg)
+HRESULT CCommandLine::HandleSwitch (LPCWSTR pszArg, bool fLongOption)
 {
     struct SwitchEntry
     {
@@ -176,14 +190,33 @@ HRESULT CCommandLine::HandleSwitch (LPCWSTR pszArg)
 
 
 
+    //
+    // Multi-character switches (env, config) require '--' when using dash prefix,
+    // but can use single '/' when using slash prefix.
+    //
+
     if (_wcsicmp (pszArg, L"env") == 0)
     {
+        // With dash prefix, require '--env' (fLongOption must be true)
+        // With slash prefix, '/env' is fine (fLongOption is false, but that's ok)
+        if (!fLongOption && m_chSwitchPrefix == L'-')
+        {
+            return E_INVALIDARG;
+        }
+
         m_fEnv = true;
         return S_OK;
     }
 
     if (_wcsicmp (pszArg, L"config") == 0)
     {
+        // With dash prefix, require '--config' (fLongOption must be true)
+        // With slash prefix, '/config' is fine (fLongOption is false, but that's ok)
+        if (!fLongOption && m_chSwitchPrefix == L'-')
+        {
+            return E_INVALIDARG;
+        }
+
         m_fConfig = true;
         return S_OK;
     }
