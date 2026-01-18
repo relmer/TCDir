@@ -90,6 +90,7 @@ public:
 
     // Switch defaults from environment variable
     optional<bool>                             m_fWideListing;
+    optional<bool>                             m_fBareListing;
     optional<bool>                             m_fRecurse;
     optional<bool>                             m_fPerfTimer;
     optional<bool>                             m_fMultiThreaded;

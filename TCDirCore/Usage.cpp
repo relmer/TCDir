@@ -89,7 +89,7 @@ void CUsage::DisplayUsage (CConsole & console)
     {
         L"Copyright " COPYRIGHT " 2004-" VERSION_YEAR_WSTRING  L" by Robert Elmer",
         L"",
-        L"TCDIR [drive:][path][filename] [/A[[:]attributes]] [/O[[:]sortorder]] [/S] [/W] [/P] [/M] [/Env] [/Config]",
+        L"TCDIR [drive:][path][filename] [/A[[:]attributes]] [/O[[:]sortorder]] [/S] [/W] [/B] [/P] [/M] [/Env] [/Config]",
         L"",
         L"  [drive:][path][filename]",
         L"              Specifies drive, directory, and/or files to list.",
@@ -109,6 +109,7 @@ void CUsage::DisplayUsage (CConsole & console)
         L"",
         L"  /S          Displays files in specified directory and all subdirectories.",
         L"  /W          Displays results in a wide listing format.",
+        L"  /B          Displays bare file names only (no headers, footers, or details).",
         L"  /P          Displays performance timing information.",
         L"  /M          Enables multi-threaded enumeration (default). Use /M- to disable.",
         L"  /Env        Displays " TCDIR_ENV_VAR_NAME L" help, syntax, and current value.",

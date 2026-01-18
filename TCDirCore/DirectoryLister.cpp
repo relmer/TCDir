@@ -7,6 +7,7 @@
 #include "FileComparator.h"
 #include "Flag.h"
 #include "MultiThreadedLister.h"
+#include "ResultsDisplayerBare.h"
 #include "ResultsDisplayerNormal.h"
 #include "ResultsDisplayerWide.h"
 #include "UniqueFindHandle.h"
@@ -32,8 +33,13 @@ CDirectoryLister::CDirectoryLister (shared_ptr<CCommandLine> pCmdLine, shared_pt
 {
     m_uliSizeOfAllFilesFound.QuadPart = 0;
 
-    // Create the appropriate displayer based on wide listing flag
-    if (m_cmdLinePtr->m_fWideListing)
+    // Create the appropriate displayer based on listing mode flags
+    // Bare mode takes precedence over wide mode
+    if (m_cmdLinePtr->m_fBareListing)
+    {
+        m_displayer = make_unique<CResultsDisplayerBare>(m_cmdLinePtr, m_consolePtr, m_configPtr);
+    }
+    else if (m_cmdLinePtr->m_fWideListing)
     {
         m_displayer = make_unique<CResultsDisplayerWide>(m_cmdLinePtr, m_consolePtr, m_configPtr);
     }

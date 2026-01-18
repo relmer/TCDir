@@ -566,6 +566,7 @@ void CConfig::ProcessSwitchOverride (wstring_view entry)
     {
         case L's':  m_fRecurse       = fValue;  break;
         case L'w':  m_fWideListing   = fValue;  break;
+        case L'b':  m_fBareListing   = fValue;  break;
         case L'p':  m_fPerfTimer     = fValue;  break;
         case L'm':  m_fMultiThreaded = fValue;  break;
 

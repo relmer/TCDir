@@ -59,6 +59,7 @@ public:
     ESortDirection     m_sortdirection                                     = ESortDirection::SD_ASCENDING;
     list<std::wstring> m_listMask;
     bool               m_fWideListing                                      = false;
+    bool               m_fBareListing                                      = false;
     bool               m_fPerfTimer                                        = false;    // Enable performance timer
     bool               m_fMultiThreaded                                    = true;     // Enable multi-threaded enumeration
     bool               m_fEnv                                              = false;    // Display environment variable help

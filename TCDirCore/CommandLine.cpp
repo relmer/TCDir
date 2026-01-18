@@ -64,6 +64,7 @@ CCommandLine::~CCommandLine (void)
 void CCommandLine::ApplyConfigDefaults (const CConfig & config)
 {
     if (config.m_fWideListing.has_value())   m_fWideListing   = config.m_fWideListing.value();
+    if (config.m_fBareListing.has_value())   m_fBareListing   = config.m_fBareListing.value();
     if (config.m_fRecurse.has_value())       m_fRecurse       = config.m_fRecurse.value();
     if (config.m_fPerfTimer.has_value())     m_fPerfTimer     = config.m_fPerfTimer.value();
     if (config.m_fMultiThreaded.has_value()) m_fMultiThreaded = config.m_fMultiThreaded.value();
@@ -163,6 +164,7 @@ HRESULT CCommandLine::HandleSwitch (LPCWSTR pszArg)
         {  L'o',   NULL,               &CCommandLine::OrderByHandler    },
         {  L'a',   NULL,               &CCommandLine::AttributeHandler  },
         {  L'w',   &m_fWideListing,    NULL                             },
+        {  L'b',   &m_fBareListing,    NULL                             },
         {  L'p',   &m_fPerfTimer,      NULL                             },
         {  L'm',   &m_fMultiThreaded,  NULL                             },
         {  L'?',   &m_fHelp,           NULL                             },
