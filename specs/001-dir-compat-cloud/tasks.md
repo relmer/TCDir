@@ -58,7 +58,13 @@ Project structure per plan.md:
 - [ ] T013 [US1] Suppress cloud status in bare mode check in TCDirCore/ResultsDisplayerBare.cpp (verify no changes needed)
 - [ ] T014 [P] [US1] Add cloud status display unit tests in UnitTest/ResultsDisplayerTests.cpp
 
-**Checkpoint**: Cloud status symbols visible in normal directory listings
+### Documentation for User Story 1
+
+- [ ] T014a [US1] Document cloud status symbols in help output (/?`) in TCDirCore/Usage.cpp
+- [ ] T014b [US1] Add CloudOnly/Local/Pinned items to --Env help in TCDirCore/Usage.cpp
+- [ ] T014c [US1] Update --Config output to display cloud status colors in TCDirCore/Config.cpp (FR-024)
+
+**Checkpoint**: Cloud status symbols visible in normal directory listings, fully documented
 
 ---
 
@@ -73,7 +79,11 @@ Project structure per plan.md:
 - [ ] T015 [US2] Add unit tests for /A:O, /A:F, /A:U, /A:-O filtering in UnitTest/CommandLineTests.cpp
 - [ ] T016 [US2] Verify attribute negation works for new cloud attributes in UnitTest/CommandLineTests.cpp
 
-**Checkpoint**: Cloud filtering works independently (uses T006-T008 infrastructure)
+### Documentation for User Story 2
+
+- [ ] T016a [US2] Document /A:O, /A:F, /A:U cloud attribute filters in help output (/?`) in TCDirCore/Usage.cpp
+
+**Checkpoint**: Cloud filtering works independently, fully documented
 
 ---
 
@@ -88,10 +98,15 @@ Project structure per plan.md:
 - [ ] T017 [US3] Parse /T:C|A|W switch and set m_timeField in TCDirCore/CommandLine.cpp
 - [ ] T018 [US3] Add /T: parsing unit tests in UnitTest/CommandLineTests.cpp
 - [ ] T019 [US3] Modify DisplayResultsNormalDateAndTime to use selected time field in TCDirCore/ResultsDisplayerNormal.cpp
+- [ ] T019a [US3] Modify DisplayResultsWideDateAndTime to use selected time field in TCDirCore/ResultsDisplayerWide.cpp (if wide mode shows dates)
 - [ ] T020 [US3] Modify FileComparator SO_DATE handling to respect m_timeField in TCDirCore/FileComparator.cpp
 - [ ] T021 [US3] Add time field sorting unit tests in UnitTest/FileComparatorTests.cpp
 
-**Checkpoint**: Time field selection works for both display and sorting
+### Documentation for User Story 3
+
+- [ ] T021a [US3] Document /T:C|A|W switch in help output (/?`) in TCDirCore/Usage.cpp
+
+**Checkpoint**: Time field selection works for both display and sorting, fully documented
 
 ---
 
@@ -106,7 +121,11 @@ Project structure per plan.md:
 - [ ] T022 [US4] Add filesystem validation for /A:I and /A:B (warn if not ReFS) in TCDirCore/CommandLine.cpp or TCDirCore/TCDir.cpp
 - [ ] T023 [US4] Add unit tests for /A:X, /A:I, /A:B filtering in UnitTest/CommandLineTests.cpp
 
-**Checkpoint**: Extended attribute filtering works with appropriate filesystem warnings
+### Documentation for User Story 4
+
+- [ ] T023a [US4] Document /A:X, /A:I, /A:B attribute filters in help output (/?`) in TCDirCore/Usage.cpp
+
+**Checkpoint**: Extended attribute filtering works with appropriate filesystem warnings, fully documented
 
 ---
 
@@ -124,7 +143,12 @@ Project structure per plan.md:
 - [ ] T027 [US5] Integrate owner column into file display in TCDirCore/ResultsDisplayerNormal.cpp
 - [ ] T028 [US5] Handle access denied gracefully (display "Unknown") in TCDirCore/ResultsDisplayerNormal.cpp
 
-**Checkpoint**: Ownership display works for accessible files
+### Documentation for User Story 5
+
+- [ ] T028a [US5] Document --owner switch in help output (/?`) in TCDirCore/Usage.cpp
+- [ ] T028b [US5] Update --Env help to mention --owner can be set via TCDIR env var in TCDirCore/Usage.cpp
+
+**Checkpoint**: Ownership display works for accessible files, fully documented
 
 ---
 
@@ -142,20 +166,22 @@ Project structure per plan.md:
 - [ ] T032 [US6] Implement EnumerateStreams() using FindFirstStreamW/FindNextStreamW in TCDirCore/ResultsDisplayerNormal.cpp
 - [ ] T033 [US6] Display streams indented below main file entry in TCDirCore/ResultsDisplayerNormal.cpp
 
-**Checkpoint**: ADS enumeration works on NTFS volumes
+### Documentation for User Story 6
+
+- [ ] T033a [US6] Document --streams switch in help output (/?`) in TCDirCore/Usage.cpp
+- [ ] T033b [US6] Update --Env help to mention --streams can be set via TCDIR env var in TCDirCore/Usage.cpp
+
+**Checkpoint**: ADS enumeration works on NTFS volumes, fully documented
 
 ---
 
-## Phase 9: Polish & Documentation
+## Phase 9: Final Documentation & Validation
 
-**Purpose**: Help text, documentation, and final validation
+**Purpose**: README update and final validation across all stories
 
-- [ ] T034 [P] Update help text for new switches and attributes in TCDirCore/Usage.cpp
-- [ ] T035 [P] Document cloud status symbols in help output in TCDirCore/Usage.cpp
-- [ ] T036 [P] Update --Env help for --owner and --streams options in TCDirCore/Usage.cpp
-- [ ] T037 [P] Update README.md with all new switches and attributes
-- [ ] T038 Build and run full test suite to verify no regressions
-- [ ] T039 Manual validation per quickstart.md test scenarios
+- [ ] T034 [P] Update README.md with all new switches and attributes
+- [ ] T035 Run scripts/RunTests.ps1 to verify all existing tests pass (SC-010 regression check)
+- [ ] T036 Manual validation per quickstart.md test scenarios
 
 ---
 
@@ -194,8 +220,8 @@ Phase 9 (Polish)
 Within Phase 1:
 - T003 and T004 can run in parallel (different files)
 
-Within Phase 9:
-- T034, T035, T036, T037 can all run in parallel (different files/sections)
+Within each User Story:
+- Implementation and documentation tasks are sequential (docs depend on implementation)
 
 Across User Stories:
 - US1 and US2 share foundational work but modify different code paths
@@ -210,8 +236,8 @@ Across User Stories:
 
 1. ✅ Phase 1: Setup
 2. ✅ Phase 2: Foundational
-3. ✅ Phase 3: Cloud Visualization (US1)
-4. ✅ Phase 4: Cloud Filtering (US2)
+3. ✅ Phase 3: Cloud Visualization (US1) — includes docs
+4. ✅ Phase 4: Cloud Filtering (US2) — includes docs
 5. **STOP**: Test cloud features, demo OneDrive folder browsing
 6. Continue with P2/P3 stories as needed
 
@@ -221,14 +247,14 @@ Across User Stories:
 |-------|-------|----------------|
 | Setup | 5 | 2 |
 | Foundational | 4 | 0 |
-| US1 (Cloud Viz) | 5 | 1 |
-| US2 (Cloud Filter) | 2 | 0 |
-| US3 (Time Field) | 5 | 0 |
-| US4 (Extended Attr) | 2 | 0 |
-| US5 (Ownership) | 5 | 0 |
-| US6 (Streams) | 5 | 0 |
-| Polish | 6 | 4 |
-| **Total** | **39** | **7** |
+| US1 (Cloud Viz) | 8 | 1 |
+| US2 (Cloud Filter) | 3 | 0 |
+| US3 (Time Field) | 7 | 0 |
+| US4 (Extended Attr) | 3 | 0 |
+| US5 (Ownership) | 7 | 0 |
+| US6 (Streams) | 7 | 0 |
+| Final | 3 | 1 |
+| **Total** | **47** | **4** |
 
 ---
 
@@ -236,6 +262,6 @@ Across User Stories:
 
 - All tasks include explicit file paths per project conventions
 - Unit tests are included per SC-011 requirement
-- Each user story can be implemented and tested independently
+- Each user story includes its own documentation tasks — "done-done" with docs
 - Cloud features (US1+US2) are MVP priority for immediate value
 - P3 features (ownership, streams) are opt-in and slower by design

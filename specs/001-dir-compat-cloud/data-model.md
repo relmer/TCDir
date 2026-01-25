@@ -121,18 +121,29 @@ enum EAttribute
 {
     // ... existing entries ...
     
-    CloudStatusCloudOnly,    // ☁ symbol color (blue)
-    CloudStatusLocal,        // ✓ symbol color (green)
-    CloudStatusPinned,       // ● symbol color (dark green)
+    CloudStatusCloudOnly,    // ☁ symbol color (configurable, default: bright blue)
+    CloudStatusLocal,        // ✓ symbol color (configurable, default: bright green)
+    CloudStatusPinned,       // ● symbol color (configurable, default: green)
     
     __count
 };
 ```
 
-**Default colors**:
+**Default colors** (user-configurable via TCDIR env var):
 - `CloudStatusCloudOnly`: `FOREGROUND_BLUE | FOREGROUND_INTENSITY` (bright blue)
-- `CloudStatusLocal`: `FOREGROUND_GREEN` (green)
-- `CloudStatusPinned`: `FOREGROUND_GREEN | FOREGROUND_INTENSITY` (bright green)
+- `CloudStatusLocal`: `FOREGROUND_GREEN | FOREGROUND_INTENSITY` (bright green)
+- `CloudStatusPinned`: `FOREGROUND_GREEN` (green, non-bright)
+
+**TCDIR env var format** (follows existing `<Item>=<Fore> [on <Back>]` pattern):
+```
+$env:TCDIR = "CloudOnly=LightBlue;Local=LightGreen;Pinned=Green"
+```
+Or in cmd:
+```
+set TCDIR=CloudOnly=LightBlue;Local=LightGreen;Pinned=Green
+```
+
+These new items will be added to the `<Item>` list in `--Env` help output.
 
 ---
 

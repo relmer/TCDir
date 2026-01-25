@@ -17,9 +17,9 @@ As a user browsing a cloud-synced folder, I want to see visual indicators showin
 
 **Acceptance Scenarios**:
 
-1. **Given** a cloud-only placeholder file, **When** displayed in TCDir, **Then** a cloud symbol (☁) appears in blue
-2. **Given** a locally available file that can be dehydrated, **When** displayed in TCDir, **Then** a checkmark symbol (✓) appears in green
-3. **Given** a pinned (always available) file, **When** displayed in TCDir, **Then** a solid circle symbol (●) appears in dark green
+1. **Given** a cloud-only placeholder file, **When** displayed in TCDir, **Then** a cloud symbol (☁) appears in the configured color (default: bright blue)
+2. **Given** a locally available file that can be dehydrated, **When** displayed in TCDir, **Then** a checkmark symbol (✓) appears in the configured color (default: bright green)
+3. **Given** a pinned (always available) file, **When** displayed in TCDir, **Then** a solid circle symbol (●) appears in the configured color (default: green)
 4. **Given** a file with no cloud attributes, **When** displayed in TCDir, **Then** no cloud status symbol is displayed
 5. **Given** bare mode (`/B`) is enabled, **When** displaying cloud-synced files, **Then** cloud status symbols are suppressed
 
@@ -145,9 +145,9 @@ As a power user or security analyst, I want to see NTFS alternate data streams s
 #### Cloud Status Visualization
 
 - **FR-014**: System MUST display cloud status symbols for files with cloud-related attributes
-- **FR-015**: Cloud-only files (RECALL_* attributes) MUST display ☁ symbol in blue
-- **FR-016**: Locally available files (UNPINNED, no RECALL) MUST display ✓ symbol in green
-- **FR-017**: Pinned files (PINNED attribute) MUST display ● symbol in dark green
+- **FR-015**: Cloud-only files (RECALL_* attributes) MUST display ☁ symbol; default color: bright blue (`FOREGROUND_BLUE | FOREGROUND_INTENSITY`), configurable via TCDIR env var
+- **FR-016**: Locally available files (UNPINNED, no RECALL) MUST display ✓ symbol; default color: bright green (`FOREGROUND_GREEN | FOREGROUND_INTENSITY`), configurable via TCDIR env var
+- **FR-017**: Pinned files (PINNED attribute) MUST display ● symbol; default color: green (`FOREGROUND_GREEN`), configurable via TCDIR env var
 - **FR-018**: Files with no cloud attributes MUST NOT display any cloud status symbol
 - **FR-019**: Cloud status symbols MUST be suppressed in bare mode (`/B`)
 - **FR-020**: Cloud status MUST be displayed in a dedicated column between file size and filename
@@ -186,5 +186,5 @@ As a power user or security analyst, I want to see NTFS alternate data streams s
 - Users have Windows 10 version 1709 or later (Cloud Files API support)
 - OneDrive and iCloud use Windows Cloud Files API and set standard placeholder attributes
 - `--streams` only produces output on NTFS volumes; other filesystems do not support alternate data streams
-- Terminal supports UTF-8/Unicode for cloud status symbols
+- Terminal supports UTF-8/Unicode for cloud status symbols (Windows Terminal, ConEmu, modern cmd.exe with UTF-8 codepage). No ASCII fallback provided; users with legacy terminals see raw Unicode codepoints.
 - Existing TCDir color configuration infrastructure can be extended for cloud status colors
