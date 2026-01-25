@@ -44,13 +44,15 @@ void CResultsDisplayerNormal::DisplayFileResults (const CDirectoryInfo & di)
 
     for (const WIN32_FIND_DATA & fileInfo : di.m_vMatches)
     {
-        WORD textAttr = m_configPtr->GetTextAttrForFile (fileInfo);
+        WORD         textAttr    = m_configPtr->GetTextAttrForFile (fileInfo);
+        ECloudStatus cloudStatus = GetCloudStatus (fileInfo.dwFileAttributes);
 
         hr = DisplayResultsNormalDateAndTime (fileInfo.ftLastWriteTime);
         CHR (hr);
 
-        DisplayResultsNormalAttributes (fileInfo.dwFileAttributes);
-        DisplayResultsNormalFileSize   (fileInfo, cchStringLengthOfMaxFileSize);
+        DisplayResultsNormalAttributes  (fileInfo.dwFileAttributes);
+        DisplayResultsNormalFileSize    (fileInfo, cchStringLengthOfMaxFileSize);
+        DisplayCloudStatusSymbol        (cloudStatus);
 
         m_consolePtr->Printf (textAttr, L"%s\n", fileInfo.cFileName);
     }
@@ -201,4 +203,102 @@ void CResultsDisplayerNormal::DisplayResultsNormalFileSize (const WIN32_FIND_DAT
                               cchMaxFileSize - cchLeftSidePadding, 
                               kszDirSize);
     }        
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CResultsDisplayerNormal::GetCloudStatus
+//
+//  Determines cloud sync status from file attributes
+// 
+////////////////////////////////////////////////////////////////////////////////  
+
+ECloudStatus CResultsDisplayerNormal::GetCloudStatus (DWORD dwFileAttributes)
+{
+    ECloudStatus status = ECloudStatus::CS_NONE;
+
+
+
+    //
+    // Pinned takes priority - always available locally
+    //
+    
+    if (dwFileAttributes & FILE_ATTRIBUTE_PINNED)
+    {
+        status = ECloudStatus::CS_PINNED;
+    }
+
+    //
+    // Cloud-only: placeholder that requires download
+    //
+    
+    else if (dwFileAttributes & (FILE_ATTRIBUTE_RECALL_ON_DATA_ACCESS | 
+                                 FILE_ATTRIBUTE_RECALL_ON_OPEN | 
+                                 FILE_ATTRIBUTE_OFFLINE))
+    {
+        status = ECloudStatus::CS_CLOUD_ONLY;
+    }
+
+    //
+    // Unpinned means locally available but can be dehydrated
+    //
+    
+    else if (dwFileAttributes & FILE_ATTRIBUTE_UNPINNED)
+    {
+        status = ECloudStatus::CS_LOCAL;
+    }
+
+    return status;
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CResultsDisplayerNormal::DisplayCloudStatusSymbol
+//
+//  Displays cloud status symbol with appropriate color
+// 
+////////////////////////////////////////////////////////////////////////////////  
+
+void CResultsDisplayerNormal::DisplayCloudStatusSymbol (ECloudStatus status)
+{
+    static constexpr WCHAR kchCloudOnly = L'\x25CB';  // ○ (hollow circle - not locally available)
+    static constexpr WCHAR kchLocal     = L'\x25D0';  // ◐ (half-filled - local but can dehydrate)
+    static constexpr WCHAR kchPinned    = L'\x25CF';  // ● (filled - always local)
+
+    CConfig::EAttribute    attr         = CConfig::EAttribute::Default;
+    WCHAR                  symbol       = L' ';
+
+
+
+    switch (status)
+    {
+        case ECloudStatus::CS_CLOUD_ONLY:
+            attr   = CConfig::EAttribute::CloudStatusCloudOnly;
+            symbol = kchCloudOnly;
+            break;
+
+        case ECloudStatus::CS_LOCAL:
+            attr   = CConfig::EAttribute::CloudStatusLocal;
+            symbol = kchLocal;
+            break;
+
+        case ECloudStatus::CS_PINNED:
+            attr   = CConfig::EAttribute::CloudStatusPinned;
+            symbol = kchPinned;
+            break;
+
+        case ECloudStatus::CS_NONE:
+        default:
+            break;
+    }
+
+    m_consolePtr->Printf (attr, L"%c ", symbol);
 }

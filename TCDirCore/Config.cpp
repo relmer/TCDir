@@ -194,7 +194,7 @@ void CConfig::Initialize (WORD wDefaultAttr)
     m_rgAttributes[EAttribute::Error]                   = FC_LightRed;
     m_rgAttributes[EAttribute::CloudStatusCloudOnly]    = FC_LightBlue;
     m_rgAttributes[EAttribute::CloudStatusLocal]        = FC_LightGreen;
-    m_rgAttributes[EAttribute::CloudStatusPinned]       = FC_Green;
+    m_rgAttributes[EAttribute::CloudStatusPinned]       = FC_LightGreen;
   
     InitializeExtensionToTextAttrMap();
     InitializeFileAttributeToTextAttrMap();

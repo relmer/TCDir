@@ -52,17 +52,17 @@ Project structure per plan.md:
 
 ### Implementation for User Story 1
 
-- [ ] T010 [US1] Add GetCloudStatus() helper function in TCDirCore/ResultsDisplayerNormal.cpp
-- [ ] T011 [US1] Add DisplayCloudStatusSymbol() helper in TCDirCore/ResultsDisplayerNormal.cpp
-- [ ] T012 [US1] Integrate cloud status column into file display (between size and filename) in TCDirCore/ResultsDisplayerNormal.cpp
-- [ ] T013 [US1] Suppress cloud status in bare mode check in TCDirCore/ResultsDisplayerBare.cpp (verify no changes needed)
-- [ ] T014 [P] [US1] Add cloud status display unit tests in UnitTest/ResultsDisplayerTests.cpp
+- [x] T010 [US1] Add GetCloudStatus() helper function in TCDirCore/ResultsDisplayerNormal.cpp
+- [x] T011 [US1] Add DisplayCloudStatusSymbol() helper in TCDirCore/ResultsDisplayerNormal.cpp
+- [x] T012 [US1] Integrate cloud status column into file display (between size and filename) in TCDirCore/ResultsDisplayerNormal.cpp
+- [x] T013 [US1] Suppress cloud status in bare mode check in TCDirCore/ResultsDisplayerBare.cpp (verify no changes needed)
+- [x] T014 [P] [US1] Add cloud status display unit tests in UnitTest/ResultsDisplayerTests.cpp
 
 ### Documentation for User Story 1
 
-- [ ] T014a [US1] Document cloud status symbols in help output (/?`) in TCDirCore/Usage.cpp
-- [ ] T014b [US1] Add CloudOnly/Local/Pinned items to --Env help in TCDirCore/Usage.cpp
-- [ ] T014c [US1] Update --Config output to display cloud status colors in TCDirCore/Config.cpp (FR-024)
+- [x] T014a [US1] Document cloud status symbols in help output (/?`) in TCDirCore/Usage.cpp
+- [x] T014b [US1] Add CloudOnly/Local/Pinned items to --Env help in TCDirCore/Usage.cpp
+- [x] T014c [US1] Update --Config output to display cloud status colors in TCDirCore/Config.cpp (FR-024)
 
 **Checkpoint**: Cloud status symbols visible in normal directory listings, fully documented
 
@@ -76,12 +76,12 @@ Project structure per plan.md:
 
 ### Implementation for User Story 2
 
-- [ ] T015 [US2] Add unit tests for /A:O, /A:F, /A:U, /A:-O filtering in UnitTest/CommandLineTests.cpp
-- [ ] T016 [US2] Verify attribute negation works for new cloud attributes in UnitTest/CommandLineTests.cpp
+- [x] T015 [US2] Add unit tests for /A:O, /A:F, /A:U, /A:-O filtering in UnitTest/CommandLineTests.cpp
+- [x] T016 [US2] Verify attribute negation works for new cloud attributes in UnitTest/CommandLineTests.cpp
 
 ### Documentation for User Story 2
 
-- [ ] T016a [US2] Document /A:O, /A:F, /A:U cloud attribute filters in help output (/?`) in TCDirCore/Usage.cpp
+- [x] T016a [US2] Document /A:O, /A:F, /A:U cloud attribute filters in help output (/?`) in TCDirCore/Usage.cpp
 
 **Checkpoint**: Cloud filtering works independently, fully documented
 

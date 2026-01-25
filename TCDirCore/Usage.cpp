@@ -115,7 +115,15 @@ void CUsage::DisplayUsage (CConsole & console, wchar_t chPrefix)
     console.Printf (CConfig::EAttribute::Default, L"               S  System files               T  Temporary files\n");
     console.Printf (CConfig::EAttribute::Default, L"               E  Encrypted files            C  Compressed files\n");
     console.Printf (CConfig::EAttribute::Default, L"               P  Reparse points             0  Sparse files\n");
+    console.Printf (CConfig::EAttribute::Default, L"               X  Not content indexed        I  Integrity stream (ReFS)\n");
+    console.Printf (CConfig::EAttribute::Default, L"               B  No scrub data (ReFS)       O  Cloud-only (placeholder)\n");
+    console.Printf (CConfig::EAttribute::Default, L"               F  Pinned (always local)      U  Unpinned (can dehydrate)\n");
     console.Printf (CConfig::EAttribute::Default, L"               -  Prefix meaning not\n");
+    console.Printf (CConfig::EAttribute::Default, L"\n");
+    console.Printf (CConfig::EAttribute::Default, L"  Cloud status symbols shown between file size and name:\n");
+    console.Printf (CConfig::EAttribute::Default, L"               \x25CB  Cloud-only (not locally available)\n");
+    console.Printf (CConfig::EAttribute::Default, L"               \x25D0  Local (synced, can be dehydrated)\n");
+    console.Printf (CConfig::EAttribute::Default, L"               \x25CF  Pinned (always available locally)\n");
     console.Printf (CConfig::EAttribute::Default, L"\n");
     console.Printf (CConfig::EAttribute::Default, L"  %sO          List by files in sorted order.\n", szShort);
     console.Printf (CConfig::EAttribute::Default, L"  sortorder    N  By name (alphabetic)       S  By size (smallest first)\n");
@@ -243,6 +251,9 @@ void CUsage::DisplayAttributeConfiguration (CConsole & console, int columnWidthA
         { L"Info highlight",         CConfig::EAttribute::InformationHighlight    },
         { L"Separator line",         CConfig::EAttribute::SeparatorLine           },
         { L"Error",                  CConfig::EAttribute::Error                   },
+        { L"CloudOnly (\x25CB)",       CConfig::EAttribute::CloudStatusCloudOnly    },
+        { L"Local (\x25D0)",           CConfig::EAttribute::CloudStatusLocal        },
+        { L"Pinned (\x25CF)",        CConfig::EAttribute::CloudStatusPinned       },
     };
 
 
@@ -826,6 +837,7 @@ void CUsage::DisplayEnvVarHelp (CConsole & console, wchar_t chPrefix)
     console.Printf (CConfig::EAttribute::Default, L"                  S  Size           R  Directory name\n");
     console.Printf (CConfig::EAttribute::Default, L"                  I  Information    H  Information highlight\n");
     console.Printf (CConfig::EAttribute::Default, L"                  E  Error          F  File (default)\n");
+    console.Printf (CConfig::EAttribute::Default, L"                  CloudOnly        Local          Pinned\n");
     console.Printf (CConfig::EAttribute::Default, L"\n");
     console.Printf (CConfig::EAttribute::Default, L"  <.ext>      A file extension, including the leading period.\n");
     console.Printf (CConfig::EAttribute::Default, L"\n");
