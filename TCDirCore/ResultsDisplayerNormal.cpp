@@ -54,6 +54,11 @@ void CResultsDisplayerNormal::DisplayFileResults (const CDirectoryInfo & di)
         DisplayResultsNormalFileSize    (fileInfo, cchStringLengthOfMaxFileSize);
         DisplayCloudStatusSymbol        (cloudStatus);
 
+        if (m_cmdLinePtr->m_fDebug)
+        {
+            DisplayRawAttributes (fileInfo.dwFileAttributes);
+        }
+
         m_consolePtr->Printf (textAttr, L"%s\n", fileInfo.cFileName);
     }
     
@@ -301,4 +306,21 @@ void CResultsDisplayerNormal::DisplayCloudStatusSymbol (ECloudStatus status)
     }
 
     m_consolePtr->Printf (attr, L"%c ", symbol);
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CResultsDisplayerNormal::DisplayRawAttributes
+//
+//  Displays raw file attributes in hex format for debugging
+// 
+////////////////////////////////////////////////////////////////////////////////  
+
+void CResultsDisplayerNormal::DisplayRawAttributes (DWORD dwFileAttributes)
+{
+    m_consolePtr->Printf (CConfig::EAttribute::Information, L"[%08X] ", dwFileAttributes);
 }

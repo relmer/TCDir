@@ -76,6 +76,7 @@ public:
     ETimeField         m_timeField                                         = ETimeField::TF_WRITTEN;  // /T: time field selection
     bool               m_fShowOwner                                        = false;    // --owner switch
     bool               m_fShowStreams                                      = false;    // --streams switch
+    bool               m_fDebug                                            = false;    // --debug switch (raw hex attributes)
 
 
 
@@ -99,7 +100,8 @@ protected:
     // Protected methods
     //
     
-    HRESULT HandleSwitch     (LPCWSTR pszArg, bool fLongOption);
+    HRESULT HandleSwitch     (LPCWSTR pszArg);
+    HRESULT HandleLongSwitch (LPCWSTR pszArg);
     HRESULT OrderByHandler   (LPCWSTR pszArg);
     HRESULT AttributeHandler (LPCWSTR pszArg);
 

@@ -87,6 +87,30 @@ Project structure per plan.md:
 
 ---
 
+## Phase 4a: User Story 2a - Debug/Diagnostic Mode (P1)
+
+**Goal**: Display raw file attributes in hex for diagnosing cloud sync state edge cases
+
+**Note**: `--debug` is only available in debug builds (compiled out of release builds)
+
+**Independent Test**: Run `tcdir --debug` (debug build) and verify hex attribute values appear before each filename
+
+### Implementation for User Story 2a
+
+- [x] T016b [US2a] Add m_fDebug member to CCommandLine in TCDirCore/CommandLine.h
+- [x] T016c [US2a] Parse --debug switch in TCDirCore/CommandLine.cpp (debug builds only)
+- [x] T016d [US2a] Add --debug parsing unit tests in UnitTest/CommandLineTests.cpp
+- [x] T016e [US2a] Implement DisplayRawAttributes() helper in TCDirCore/ResultsDisplayerNormal.cpp
+- [x] T016f [US2a] Integrate raw attribute display into file output (before filename) in TCDirCore/ResultsDisplayerNormal.cpp
+
+### Documentation for User Story 2a
+
+- [x] T016g [US2a] Document --debug switch in help output (debug builds only) in TCDirCore/Usage.cpp
+
+**Checkpoint**: Raw hex attributes visible for debugging cloud sync edge cases (debug builds only)
+
+---
+
 ## Phase 5: User Story 3 - Time Field Selection (P2)
 
 **Goal**: Display and sort by creation, access, or modified time using /T: switch
@@ -197,6 +221,7 @@ Phase 2 (Foundational) ← BLOCKS all user stories
 ┌───────────────────────────────────────────────────────────┐
 │  Phase 3 (US1: Cloud Viz)     ← P1, MVP                   │
 │  Phase 4 (US2: Cloud Filter)  ← P1, can parallel with US1 │
+│  Phase 4a (US2a: Debug Mode)  ← P1, diagnostic feature    │
 │  Phase 5 (US3: Time Field)    ← P2                        │
 │  Phase 6 (US4: Extended Attr) ← P2, can parallel with US3 │
 │  Phase 7 (US5: Ownership)     ← P3                        │
@@ -210,6 +235,7 @@ Phase 9 (Polish)
 
 - **US1 (Cloud Viz)**: Depends only on Setup + Foundational
 - **US2 (Cloud Filter)**: Depends only on Setup + Foundational (uses same attribute arrays)
+- **US2a (Debug Mode)**: Depends only on Setup (new member variable)
 - **US3 (Time Field)**: Depends only on Setup (new enum)
 - **US4 (Extended Attr)**: Depends only on Foundational (attribute arrays)
 - **US5 (Ownership)**: Depends only on Setup (new member variable)
@@ -249,12 +275,13 @@ Across User Stories:
 | Foundational | 4 | 0 |
 | US1 (Cloud Viz) | 8 | 1 |
 | US2 (Cloud Filter) | 3 | 0 |
+| US2a (Debug Mode) | 6 | 0 |
 | US3 (Time Field) | 7 | 0 |
 | US4 (Extended Attr) | 3 | 0 |
 | US5 (Ownership) | 7 | 0 |
 | US6 (Streams) | 7 | 0 |
 | Final | 3 | 1 |
-| **Total** | **47** | **4** |
+| **Total** | **53** | **4** |
 
 ---
 

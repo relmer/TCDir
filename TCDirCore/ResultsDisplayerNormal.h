@@ -33,4 +33,5 @@ protected:
 
     static ECloudStatus GetCloudStatus      (DWORD dwFileAttributes);
     void   DisplayCloudStatusSymbol         (ECloudStatus status);
+    void   DisplayRawAttributes             (DWORD dwFileAttributes);
 };

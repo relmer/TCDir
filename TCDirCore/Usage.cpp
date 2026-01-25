@@ -103,8 +103,13 @@ void CUsage::DisplayUsage (CConsole & console, wchar_t chPrefix)
 
     console.Printf (CConfig::EAttribute::Default, L"Copyright " COPYRIGHT " 2004-" VERSION_YEAR_WSTRING  L" by Robert Elmer\n");
     console.Printf (CConfig::EAttribute::Default, L"\n");
+#ifdef _DEBUG
+    console.Printf (CConfig::EAttribute::Default, L"TCDIR [drive:][path][filename] [%sA[[:]attributes]] [%sO[[:]sortorder]] [%sS] [%sW] [%sB] [%sP] [%sM] [%sEnv] [%sConfig] [%sDebug]\n",
+                    szShort, szShort, szShort, szShort, szShort, szShort, szShort, pszLong, pszLong, pszLong);
+#else
     console.Printf (CConfig::EAttribute::Default, L"TCDIR [drive:][path][filename] [%sA[[:]attributes]] [%sO[[:]sortorder]] [%sS] [%sW] [%sB] [%sP] [%sM] [%sEnv] [%sConfig]\n",
                     szShort, szShort, szShort, szShort, szShort, szShort, szShort, pszLong, pszLong);
+#endif
     console.Printf (CConfig::EAttribute::Default, L"\n");
     console.Printf (CConfig::EAttribute::Default, L"  [drive:][path][filename]\n");
     console.Printf (CConfig::EAttribute::Default, L"              Specifies drive, directory, and/or files to list.\n");
@@ -137,6 +142,9 @@ void CUsage::DisplayUsage (CConsole & console, wchar_t chPrefix)
     console.Printf (CConfig::EAttribute::Default, L"  %sM          Enables multi-threaded enumeration (default). Use%s to disable.\n", szShort, pszMDisable);
     console.Printf (CConfig::EAttribute::Default, L"  %sEnv        Displays " TCDIR_ENV_VAR_NAME L" help, syntax, and current value.\n", pszLong);
     console.Printf (CConfig::EAttribute::Default, L"  %sConfig     Displays current color configuration for all items and extensions.\n", pszLong);
+#ifdef _DEBUG
+    console.Printf (CConfig::EAttribute::Default, L"  %sDebug      Displays raw file attributes in hex for diagnosing edge cases.\n", pszLong);
+#endif
     console.Printf (CConfig::EAttribute::Default, L"\n");
     console.Printf (CConfig::EAttribute::Default, L"\n");
     console.Printf (CConfig::EAttribute::Default, L"\n");

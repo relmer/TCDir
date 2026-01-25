@@ -381,5 +381,54 @@ namespace UnitTest
             Assert::IsTrue(FAILED(hr));
         }
 
+
+
+
+        TEST_METHOD(ParseDebugSwitchDoubleDash)
+        {
+            CCommandLine    cl;
+            const wchar_t * d1      = L"--debug";
+            wchar_t       * argv1[] = { const_cast<wchar_t *>(d1) };
+            HRESULT         hr      = cl.Parse(1, argv1);
+
+
+
+            Assert::IsTrue(SUCCEEDED(hr));
+            Assert::IsTrue(cl.m_fDebug);
+            Assert::AreEqual(L'-', cl.GetSwitchPrefix());
+        }
+
+
+
+
+        TEST_METHOD(ParseDebugSwitchSlash)
+        {
+            CCommandLine    cl;
+            const wchar_t * d1      = L"/Debug";
+            wchar_t       * argv1[] = { const_cast<wchar_t *>(d1) };
+            HRESULT         hr      = cl.Parse(1, argv1);
+
+
+
+            Assert::IsTrue(SUCCEEDED(hr));
+            Assert::IsTrue(cl.m_fDebug);
+            Assert::AreEqual(L'/', cl.GetSwitchPrefix());
+        }
+
+
+
+
+        TEST_METHOD(ParseDebugSwitchSingleDashFails)
+        {
+            CCommandLine    cl;
+            const wchar_t * d1      = L"-debug";
+            wchar_t       * argv1[] = { const_cast<wchar_t *>(d1) };
+            HRESULT         hr      = cl.Parse(1, argv1);
+
+
+
+            Assert::IsTrue(FAILED(hr));
+        }
+
     };
 }
