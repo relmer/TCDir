@@ -51,6 +51,9 @@ public:
         InformationHighlight,
         SeparatorLine,
         Error,
+        CloudStatusCloudOnly,       // ☁ symbol color (configurable, default: bright blue)
+        CloudStatusLocal,           // ✓ symbol color (configurable, default: bright green)
+        CloudStatusPinned,          // ● symbol color (configurable, default: green)
         
         __count
     };

@@ -21,11 +21,11 @@ Project structure per plan.md:
 
 **Purpose**: Shared infrastructure changes needed before any user story
 
-- [ ] T001 Add ETimeField enum to TCDirCore/CommandLine.h
-- [ ] T002 Add m_timeField, m_fShowOwner, m_fShowStreams members to CCommandLine in TCDirCore/CommandLine.h
-- [ ] T003 [P] Add IsNTFS() and IsReFS() helper methods to TCDirCore/DriveInfo.h
-- [ ] T004 [P] Add cloud status color entries (CloudStatusCloudOnly, CloudStatusLocal, CloudStatusPinned) to EAttribute enum in TCDirCore/Config.h
-- [ ] T005 Add default cloud status colors to CConfig initialization in TCDirCore/Config.cpp
+- [x] T001 Add ETimeField enum to TCDirCore/CommandLine.h
+- [x] T002 Add m_timeField, m_fShowOwner, m_fShowStreams members to CCommandLine in TCDirCore/CommandLine.h
+- [x] T003 [P] Add IsNTFS() and IsReFS() helper methods to TCDirCore/DriveInfo.h
+- [x] T004 [P] Add cloud status color entries (CloudStatusCloudOnly, CloudStatusLocal, CloudStatusPinned) to EAttribute enum in TCDirCore/Config.h
+- [x] T005 Add default cloud status colors to CConfig initialization in TCDirCore/Config.cpp
 
 ---
 
