@@ -119,6 +119,124 @@ namespace UnitTest
 
 
 
+        TEST_METHOD(ParseAttributeNotContentIndexed)
+        {
+            CCommandLine    cl;
+            const wchar_t * a1      = L"/a:x";
+            wchar_t       * argv1[] = { const_cast<wchar_t *>(a1) };
+            HRESULT         hr      = cl.Parse(1, argv1);
+
+
+
+            Assert::IsTrue(SUCCEEDED(hr));
+            Assert::IsTrue((cl.m_dwAttributesRequired & FILE_ATTRIBUTE_NOT_CONTENT_INDEXED) != 0);
+        }
+
+
+
+
+        TEST_METHOD(ParseAttributeCloudOnlyComposite)
+        {
+            CCommandLine    cl;
+            const wchar_t * a1      = L"/a:o";
+            wchar_t       * argv1[] = { const_cast<wchar_t *>(a1) };
+            HRESULT         hr      = cl.Parse(1, argv1);
+
+
+
+            Assert::IsTrue(SUCCEEDED(hr));
+            // 'o' is a composite: OFFLINE | RECALL_ON_OPEN | RECALL_ON_DATA_ACCESS
+            Assert::IsTrue((cl.m_dwAttributesRequired & FILE_ATTRIBUTE_OFFLINE)               != 0);
+            Assert::IsTrue((cl.m_dwAttributesRequired & FILE_ATTRIBUTE_RECALL_ON_OPEN)        != 0);
+            Assert::IsTrue((cl.m_dwAttributesRequired & FILE_ATTRIBUTE_RECALL_ON_DATA_ACCESS) != 0);
+        }
+
+
+
+
+        TEST_METHOD(ParseAttributeIntegrityStream)
+        {
+            CCommandLine    cl;
+            const wchar_t * a1      = L"/a:i";
+            wchar_t       * argv1[] = { const_cast<wchar_t *>(a1) };
+            HRESULT         hr      = cl.Parse(1, argv1);
+
+
+
+            Assert::IsTrue(SUCCEEDED(hr));
+            Assert::IsTrue((cl.m_dwAttributesRequired & FILE_ATTRIBUTE_INTEGRITY_STREAM) != 0);
+        }
+
+
+
+
+        TEST_METHOD(ParseAttributeNoScrubData)
+        {
+            CCommandLine    cl;
+            const wchar_t * a1      = L"/a:b";
+            wchar_t       * argv1[] = { const_cast<wchar_t *>(a1) };
+            HRESULT         hr      = cl.Parse(1, argv1);
+
+
+
+            Assert::IsTrue(SUCCEEDED(hr));
+            Assert::IsTrue((cl.m_dwAttributesRequired & FILE_ATTRIBUTE_NO_SCRUB_DATA) != 0);
+        }
+
+
+
+
+        TEST_METHOD(ParseAttributePinned)
+        {
+            CCommandLine    cl;
+            const wchar_t * a1      = L"/a:f";
+            wchar_t       * argv1[] = { const_cast<wchar_t *>(a1) };
+            HRESULT         hr      = cl.Parse(1, argv1);
+
+
+
+            Assert::IsTrue(SUCCEEDED(hr));
+            Assert::IsTrue((cl.m_dwAttributesRequired & FILE_ATTRIBUTE_PINNED) != 0);
+        }
+
+
+
+
+        TEST_METHOD(ParseAttributeUnpinned)
+        {
+            CCommandLine    cl;
+            const wchar_t * a1      = L"/a:u";
+            wchar_t       * argv1[] = { const_cast<wchar_t *>(a1) };
+            HRESULT         hr      = cl.Parse(1, argv1);
+
+
+
+            Assert::IsTrue(SUCCEEDED(hr));
+            Assert::IsTrue((cl.m_dwAttributesRequired & FILE_ATTRIBUTE_UNPINNED) != 0);
+        }
+
+
+
+
+        TEST_METHOD(ParseAttributeCloudOnlyNegated)
+        {
+            CCommandLine    cl;
+            const wchar_t * a1      = L"/a:-o";
+            wchar_t       * argv1[] = { const_cast<wchar_t *>(a1) };
+            HRESULT         hr      = cl.Parse(1, argv1);
+
+
+
+            Assert::IsTrue(SUCCEEDED(hr));
+            // Negated 'o' should exclude all cloud-only attributes
+            Assert::IsTrue((cl.m_dwAttributesExcluded & FILE_ATTRIBUTE_OFFLINE)               != 0);
+            Assert::IsTrue((cl.m_dwAttributesExcluded & FILE_ATTRIBUTE_RECALL_ON_OPEN)        != 0);
+            Assert::IsTrue((cl.m_dwAttributesExcluded & FILE_ATTRIBUTE_RECALL_ON_DATA_ACCESS) != 0);
+        }
+
+
+
+
         TEST_METHOD(ParseEnvSwitch)
         {
             CCommandLine    cl;

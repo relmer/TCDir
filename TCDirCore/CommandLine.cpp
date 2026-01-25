@@ -369,7 +369,7 @@ HRESULT CCommandLine::AttributeHandler (LPCWSTR pszArg)
     DWORD                  * pdwMask; 
     const WCHAR            * pchAttribute;       
     int                      idxAttribute;       
-    static constexpr WCHAR   s_kszAttributes[] = L"dhsratecp0";
+    static constexpr WCHAR   s_kszAttributes[] = L"dhsratecp0xoibfu";
     static constexpr DWORD   s_kdwAttributes[] =
     { 
         FILE_ATTRIBUTE_DIRECTORY, 
@@ -382,6 +382,12 @@ HRESULT CCommandLine::AttributeHandler (LPCWSTR pszArg)
         FILE_ATTRIBUTE_COMPRESSED,
         FILE_ATTRIBUTE_REPARSE_POINT,
         FILE_ATTRIBUTE_SPARSE_FILE,
+        FILE_ATTRIBUTE_NOT_CONTENT_INDEXED,
+        FILE_ATTRIBUTE_OFFLINE | FILE_ATTRIBUTE_RECALL_ON_OPEN | FILE_ATTRIBUTE_RECALL_ON_DATA_ACCESS,  // 'o' - cloud-only (composite)
+        FILE_ATTRIBUTE_INTEGRITY_STREAM,
+        FILE_ATTRIBUTE_NO_SCRUB_DATA,
+        FILE_ATTRIBUTE_PINNED,
+        FILE_ATTRIBUTE_UNPINNED,
     };
 
 

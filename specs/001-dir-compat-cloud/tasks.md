@@ -35,10 +35,10 @@ Project structure per plan.md:
 
 **⚠️ CRITICAL**: Cloud filtering (US2) and extended attributes (US4) both depend on this
 
-- [ ] T006 Extend s_kszAttributes[] to add "xoibfu" in TCDirCore/CommandLine.cpp
-- [ ] T007 Extend s_kdwAttributes[] with corresponding FILE_ATTRIBUTE_* values in TCDirCore/CommandLine.cpp
-- [ ] T008 Add special handling for /A:O composite attribute (OFFLINE | RECALL_ON_DATA_ACCESS | RECALL_ON_OPEN) in TCDirCore/CommandLine.cpp
-- [ ] T009 Add unit tests for new attribute letters in UnitTest/CommandLineTests.cpp
+- [x] T006 Extend s_kszAttributes[] to add "xoibfu" in TCDirCore/CommandLine.cpp
+- [x] T007 Extend s_kdwAttributes[] with corresponding FILE_ATTRIBUTE_* values in TCDirCore/CommandLine.cpp
+- [x] T008 Add special handling for /A:O composite attribute (OFFLINE | RECALL_ON_DATA_ACCESS | RECALL_ON_OPEN) in TCDirCore/CommandLine.cpp
+- [x] T009 Add unit tests for new attribute letters in UnitTest/CommandLineTests.cpp
 
 **Checkpoint**: Attribute infrastructure ready - user story implementation can begin
 
