@@ -384,6 +384,7 @@ namespace UnitTest
 
 
 
+#ifdef _DEBUG
         TEST_METHOD(ParseDebugSwitchDoubleDash)
         {
             CCommandLine    cl;
@@ -414,6 +415,7 @@ namespace UnitTest
             Assert::IsTrue(cl.m_fDebug);
             Assert::AreEqual(L'/', cl.GetSwitchPrefix());
         }
+#endif
 
 
 

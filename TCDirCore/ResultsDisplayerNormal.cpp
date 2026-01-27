@@ -39,13 +39,14 @@ void CResultsDisplayerNormal::DisplayFileResults (const CDirectoryInfo & di)
 {
     HRESULT hr                           = S_OK;
     size_t  cchStringLengthOfMaxFileSize = GetStringLengthOfMaxFileSize (di.m_uliLargestFileSize);
+    bool    fInSyncRoot                  = IsUnderSyncRoot (di.m_dirPath.c_str());
     
 
 
     for (const WIN32_FIND_DATA & fileInfo : di.m_vMatches)
     {
         WORD         textAttr    = m_configPtr->GetTextAttrForFile (fileInfo);
-        ECloudStatus cloudStatus = GetCloudStatus (fileInfo.dwFileAttributes);
+        ECloudStatus cloudStatus = GetCloudStatus (fileInfo, fInSyncRoot);
 
         hr = DisplayResultsNormalDateAndTime (fileInfo.ftLastWriteTime);
         CHR (hr);
@@ -56,7 +57,7 @@ void CResultsDisplayerNormal::DisplayFileResults (const CDirectoryInfo & di)
 
         if (m_cmdLinePtr->m_fDebug)
         {
-            DisplayRawAttributes (fileInfo.dwFileAttributes);
+            DisplayRawAttributes (fileInfo);
         }
 
         m_consolePtr->Printf (textAttr, L"%s\n", fileInfo.cFileName);
@@ -216,44 +217,76 @@ void CResultsDisplayerNormal::DisplayResultsNormalFileSize (const WIN32_FIND_DAT
 
 ////////////////////////////////////////////////////////////////////////////////
 //
-//  CResultsDisplayerNormal::GetCloudStatus
+//  CResultsDisplayerNormal::IsUnderSyncRoot
 //
-//  Determines cloud sync status from file attributes
+//  Checks if a path is under a cloud storage sync root (OneDrive, etc.)
+//  using the Cloud Files API. This is called once per directory.
 // 
 ////////////////////////////////////////////////////////////////////////////////  
 
-ECloudStatus CResultsDisplayerNormal::GetCloudStatus (DWORD dwFileAttributes)
+bool CResultsDisplayerNormal::IsUnderSyncRoot (LPCWSTR pszPath)
+{
+    //
+    // CfGetSyncRootInfoByPath fails if the path is not under a sync root,
+    // so we just need to check if it succeeds. We don't need the actual info.
+    //
+
+    HRESULT                 hr   = S_OK;
+    CF_SYNC_ROOT_BASIC_INFO info = {};
+    
+
+
+    hr = CfGetSyncRootInfoByPath (pszPath, CF_SYNC_ROOT_INFO_BASIC, &info, sizeof (info), nullptr);
+
+    return SUCCEEDED (hr);
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CResultsDisplayerNormal::GetCloudStatus
+//
+//  Determines cloud sync status using a hybrid approach:
+//  1. Check explicit file attributes (PINNED, UNPINNED, RECALL_*, OFFLINE)
+//  2. If no explicit attributes but we're in a sync root, the file is
+//     locally synced (fully hydrated files lose their placeholder metadata)
+//
+//  The fInSyncRoot parameter is determined once per directory using
+//  CfGetSyncRootInfoByPath to avoid per-file overhead.
+// 
+////////////////////////////////////////////////////////////////////////////////  
+
+ECloudStatus CResultsDisplayerNormal::GetCloudStatus (const WIN32_FIND_DATA & wfd, bool fInSyncRoot)
 {
     ECloudStatus status = ECloudStatus::CS_NONE;
 
 
 
-    //
-    // Pinned takes priority - always available locally
-    //
-    
-    if (dwFileAttributes & FILE_ATTRIBUTE_PINNED)
+    if (wfd.dwFileAttributes & FILE_ATTRIBUTE_PINNED)
     {
+        // Pinned takes priority - always available locally
         status = ECloudStatus::CS_PINNED;
     }
-
-    //
-    // Cloud-only: placeholder that requires download
-    //
-    
-    else if (dwFileAttributes & (FILE_ATTRIBUTE_RECALL_ON_DATA_ACCESS | 
-                                 FILE_ATTRIBUTE_RECALL_ON_OPEN | 
-                                 FILE_ATTRIBUTE_OFFLINE))
+    else if (wfd.dwFileAttributes & (FILE_ATTRIBUTE_RECALL_ON_DATA_ACCESS | 
+                                     FILE_ATTRIBUTE_RECALL_ON_OPEN | 
+                                     FILE_ATTRIBUTE_OFFLINE))
     {
+        // Cloud-only: placeholder that requires download
         status = ECloudStatus::CS_CLOUD_ONLY;
     }
-
-    //
-    // Unpinned means locally available but can be dehydrated
-    //
-    
-    else if (dwFileAttributes & FILE_ATTRIBUTE_UNPINNED)
+    else if (wfd.dwFileAttributes & FILE_ATTRIBUTE_UNPINNED)
     {
+        // Unpinned means locally available but can be dehydrated
+        status = ECloudStatus::CS_LOCAL;
+    }
+    else if (fInSyncRoot)
+    {
+        // No cloud attributes set - if we're in a sync root, the file is
+        // fully hydrated (locally synced). OneDrive removes placeholder
+        // metadata from fully hydrated files.
         status = ECloudStatus::CS_LOCAL;
     }
 
@@ -316,11 +349,16 @@ void CResultsDisplayerNormal::DisplayCloudStatusSymbol (ECloudStatus status)
 //
 //  CResultsDisplayerNormal::DisplayRawAttributes
 //
-//  Displays raw file attributes in hex format for debugging
+//  Displays raw file attributes and cfapi state in hex format for debugging.
+//  Format: [XXXXXXXX:YY] where X = file attributes, Y = cfapi placeholder state
 // 
 ////////////////////////////////////////////////////////////////////////////////  
 
-void CResultsDisplayerNormal::DisplayRawAttributes (DWORD dwFileAttributes)
+void CResultsDisplayerNormal::DisplayRawAttributes (const WIN32_FIND_DATA & wfd)
 {
-    m_consolePtr->Printf (CConfig::EAttribute::Information, L"[%08X] ", dwFileAttributes);
+    CF_PLACEHOLDER_STATE cfState = CfGetPlaceholderStateFromFindData (&wfd);
+
+    m_consolePtr->Printf (CConfig::EAttribute::Information, L"[%08X:%02X] ", 
+                          wfd.dwFileAttributes, 
+                          static_cast<DWORD>(cfState));
 }

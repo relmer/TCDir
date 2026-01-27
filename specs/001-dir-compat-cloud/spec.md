@@ -17,10 +17,10 @@ As a user browsing a cloud-synced folder, I want to see visual indicators showin
 
 **Acceptance Scenarios**:
 
-1. **Given** a cloud-only placeholder file, **When** displayed in TCDir, **Then** a cloud symbol (☁) appears in the configured color (default: bright blue)
-2. **Given** a locally available file that can be dehydrated, **When** displayed in TCDir, **Then** a checkmark symbol (✓) appears in the configured color (default: bright green)
+1. **Given** a cloud-only placeholder file, **When** displayed in TCDir, **Then** a hollow circle symbol (○) appears in the configured color (default: bright blue)
+2. **Given** a locally available file in a sync root (can be dehydrated), **When** displayed in TCDir, **Then** a half-filled circle symbol (◐) appears in the configured color (default: bright green)
 3. **Given** a pinned (always available) file, **When** displayed in TCDir, **Then** a solid circle symbol (●) appears in the configured color (default: green)
-4. **Given** a file with no cloud attributes, **When** displayed in TCDir, **Then** no cloud status symbol is displayed
+4. **Given** a file not in a cloud sync root and with no cloud attributes, **When** displayed in TCDir, **Then** no cloud status symbol is displayed
 5. **Given** bare mode (`/B`) is enabled, **When** displaying cloud-synced files, **Then** cloud status symbols are suppressed
 
 ---

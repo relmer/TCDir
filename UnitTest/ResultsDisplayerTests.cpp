@@ -29,8 +29,8 @@ namespace UnitTest
         void DisplayFileResults (const CDirectoryInfo &) override {}
 
         // Expose protected members for testing
-        LPCWSTR      WrapFormatNumber (ULONGLONG n)          { return FormatNumberWithSeparators (n); }
-        ECloudStatus WrapGetCloudStatus (DWORD dwAttr)       { return GetCloudStatus (dwAttr); }
+        LPCWSTR      WrapFormatNumber   (ULONGLONG n)                                            { return FormatNumberWithSeparators (n);    }
+        ECloudStatus WrapGetCloudStatus (const WIN32_FIND_DATA & wfd, bool fInSyncRoot = false)  { return GetCloudStatus (wfd, fInSyncRoot); }
     };
 
 
@@ -137,7 +137,7 @@ namespace UnitTest
 
 
 
-            ECloudStatus status = probe.WrapGetCloudStatus(fd.dwFileAttributes);
+            ECloudStatus status = probe.WrapGetCloudStatus(fd);
 
             Assert::AreEqual(static_cast<int>(ECloudStatus::CS_NONE), static_cast<int>(status));
         }
@@ -157,7 +157,7 @@ namespace UnitTest
 
 
 
-            ECloudStatus status = probe.WrapGetCloudStatus(fd.dwFileAttributes);
+            ECloudStatus status = probe.WrapGetCloudStatus(fd);
 
             Assert::AreEqual(static_cast<int>(ECloudStatus::CS_CLOUD_ONLY), static_cast<int>(status));
         }
@@ -177,7 +177,7 @@ namespace UnitTest
 
 
 
-            ECloudStatus status = probe.WrapGetCloudStatus(fd.dwFileAttributes);
+            ECloudStatus status = probe.WrapGetCloudStatus(fd);
 
             Assert::AreEqual(static_cast<int>(ECloudStatus::CS_CLOUD_ONLY), static_cast<int>(status));
         }
@@ -197,7 +197,7 @@ namespace UnitTest
 
 
 
-            ECloudStatus status = probe.WrapGetCloudStatus(fd.dwFileAttributes);
+            ECloudStatus status = probe.WrapGetCloudStatus(fd);
 
             Assert::AreEqual(static_cast<int>(ECloudStatus::CS_CLOUD_ONLY), static_cast<int>(status));
         }
@@ -217,7 +217,7 @@ namespace UnitTest
 
 
 
-            ECloudStatus status = probe.WrapGetCloudStatus(fd.dwFileAttributes);
+            ECloudStatus status = probe.WrapGetCloudStatus(fd);
 
             Assert::AreEqual(static_cast<int>(ECloudStatus::CS_LOCAL), static_cast<int>(status));
         }
@@ -237,7 +237,7 @@ namespace UnitTest
 
 
 
-            ECloudStatus status = probe.WrapGetCloudStatus(fd.dwFileAttributes);
+            ECloudStatus status = probe.WrapGetCloudStatus(fd);
 
             Assert::AreEqual(static_cast<int>(ECloudStatus::CS_PINNED), static_cast<int>(status));
         }
@@ -259,7 +259,7 @@ namespace UnitTest
 
 
 
-            ECloudStatus status = probe.WrapGetCloudStatus(fd.dwFileAttributes);
+            ECloudStatus status = probe.WrapGetCloudStatus(fd);
 
             Assert::AreEqual(static_cast<int>(ECloudStatus::CS_PINNED), static_cast<int>(status));
         }
@@ -397,7 +397,7 @@ namespace UnitTest
 
 
             // PINNED should take priority for display
-            ECloudStatus status = probe.WrapGetCloudStatus(fd.dwFileAttributes);
+            ECloudStatus status = probe.WrapGetCloudStatus(fd);
             Assert::AreEqual(static_cast<int>(ECloudStatus::CS_PINNED), static_cast<int>(status));
         }
 

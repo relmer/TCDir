@@ -46,7 +46,7 @@ Project structure per plan.md:
 
 ## Phase 3: User Story 1 - Visualize Cloud Sync Status (P1) 🎯 MVP
 
-**Goal**: Display ☁/✓/● symbols with colors for cloud-synced files
+**Goal**: Display ○/◐/● symbols with colors for cloud-synced files
 
 **Independent Test**: Run `tcdir` in a OneDrive folder and observe cloud status symbols between size and filename
 
@@ -57,6 +57,14 @@ Project structure per plan.md:
 - [x] T012 [US1] Integrate cloud status column into file display (between size and filename) in TCDirCore/ResultsDisplayerNormal.cpp
 - [x] T013 [US1] Suppress cloud status in bare mode check in TCDirCore/ResultsDisplayerBare.cpp (verify no changes needed)
 - [x] T014 [P] [US1] Add cloud status display unit tests in UnitTest/ResultsDisplayerTests.cpp
+
+### Cloud Files API Enhancement (US1b)
+
+- [x] T014d [US1b] Add cfapi.h include and cldapi.lib pragma to TCDirCore/pch.h
+- [x] T014e [US1b] Add IsUnderSyncRoot() helper using CfGetSyncRootInfoByPath in TCDirCore/ResultsDisplayerNormal.cpp
+- [x] T014f [US1b] Update GetCloudStatus() to use hybrid approach (attributes + sync root detection) in TCDirCore/ResultsDisplayerNormal.cpp
+- [x] T014g [US1b] Update DisplayRawAttributes() to show cfapi state for debugging in TCDirCore/ResultsDisplayerNormal.cpp
+- [x] T014h [US1b] Update tests to use new GetCloudStatus signature in UnitTest/ResultsDisplayerTests.cpp
 
 ### Documentation for User Story 1
 

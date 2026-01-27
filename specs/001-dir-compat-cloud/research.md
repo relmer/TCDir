@@ -1,26 +1,55 @@
 # Research: CMD Dir Compatibility & Cloud File Visualization
 
 **Feature**: 001-dir-compat-cloud  
-**Date**: 2026-01-24
+**Date**: 2026-01-24  
+**Updated**: 2026-01-26
 
 ## Cloud File Attributes
 
-### Decision: Use standard Windows file attributes for cloud status detection
+### Decision: Use Hybrid Approach - Attributes + Sync Root Detection
 
-**Rationale**: Windows Cloud Files API (cfapi) uses standard `FILE_ATTRIBUTE_*` flags that are returned by `FindFirstFile`/`FindNextFile`. No additional API calls needed for attribute-based filtering or status display.
+**Rationale**: OneDrive removes all placeholder metadata from fully-hydrated files, making them indistinguishable from regular local files via attributes or `CfGetPlaceholderStateFromFindData`. The solution is to combine:
+1. File attribute checks for explicit cloud states (PINNED, UNPINNED, RECALL_*, OFFLINE)
+2. Sync root detection via `CfGetSyncRootInfoByPath` (called once per directory)
 
-**Alternatives considered**:
-- Cloud Filter API (`CfGetPlaceholderStateFromFindData`) — more precise but requires cfapi.h and adds complexity
-- Direct registry/config detection of sync providers — too fragile
+**Key Discovery**: Files marked "Available on this device" in Explorer have only `FILE_ATTRIBUTE_ARCHIVE` (0x20) - no cloud bits whatsoever. `CfGetPlaceholderStateFromFindData` returns `CF_PLACEHOLDER_STATE_NO_STATES` for these files because OneDrive fully strips placeholder reparse data.
 
-### Attribute Mappings
+**Implementation**:
+1. Call `CfGetSyncRootInfoByPath(dirPath, ...)` once per directory
+2. If it succeeds → directory is under a cloud sync root (OneDrive, etc.)
+3. For each file in that directory:
+   - `PINNED` attribute → Pinned (●)
+   - `RECALL_ON_*` or `OFFLINE` → Cloud-only (○)
+   - `UNPINNED` attribute → Local (◐)
+   - No cloud bits BUT in sync root → Local (◐) ← **This is the key fix**
+   - No cloud bits AND not in sync root → Not a cloud file (blank)
 
-| Cloud Status | Attributes | Display |
-|--------------|------------|---------|
-| Cloud-only (placeholder) | `RECALL_ON_DATA_ACCESS` or `RECALL_ON_OPEN` or `OFFLINE` | ☁ (blue) |
-| Locally available | `UNPINNED` and no RECALL attributes | ✓ (green) |
-| Pinned (always local) | `PINNED` | ● (dark green) |
-| Not a cloud file | None of the above | (no symbol) |
+**Requirements**: Windows 10 1709+, `#include <cfapi.h>`, `#pragma comment(lib, "cldapi.lib")`
+
+### Attribute Mappings (Final)
+
+| Cloud Status | Detection Method | Display |
+|--------------|------------------|---------|
+| Pinned (always local) | `FILE_ATTRIBUTE_PINNED` | ● (green) |
+| Cloud-only (placeholder) | `RECALL_ON_*` or `OFFLINE` attributes | ○ (blue) |
+| Locally synced | `UNPINNED` attr OR (no attrs + in sync root) | ◐ (green) |
+| Not a cloud file | No cloud attrs + not in sync root | (no symbol) |
+
+### APIs Used
+
+```cpp
+// Once per directory - check if under a cloud sync root
+CF_SYNC_ROOT_BASIC_INFO info = {};
+HRESULT hr = CfGetSyncRootInfoByPath(pszPath, CF_SYNC_ROOT_INFO_BASIC, &info, sizeof(info), nullptr);
+bool fInSyncRoot = SUCCEEDED(hr);
+
+// Per-file - check explicit cloud attributes
+if (dwAttr & FILE_ATTRIBUTE_PINNED)           → CS_PINNED
+else if (dwAttr & (RECALL_ON_* | OFFLINE))    → CS_CLOUD_ONLY  
+else if (dwAttr & FILE_ATTRIBUTE_UNPINNED)    → CS_LOCAL
+else if (fInSyncRoot)                         → CS_LOCAL  // Key: hydrated files in sync root
+else                                          → CS_NONE
+```
 
 ### Attribute Constants (from Windows SDK)
 

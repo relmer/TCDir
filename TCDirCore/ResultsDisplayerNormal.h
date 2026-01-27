@@ -22,16 +22,17 @@ enum class ECloudStatus
 class CResultsDisplayerNormal : public CResultsDisplayerWithHeaderAndFooter
 {
 public:
-    CResultsDisplayerNormal                 (shared_ptr<CCommandLine> cmdLinePtr, shared_ptr<CConsole> consolePtr, shared_ptr<CConfig> configPtr);
+    CResultsDisplayerNormal (shared_ptr<CCommandLine> cmdLinePtr, shared_ptr<CConsole> consolePtr, shared_ptr<CConfig> configPtr);
 
-    void DisplayFileResults                 (const CDirectoryInfo & di) override;
+    void DisplayFileResults (const CDirectoryInfo & di) override;
 
 protected:
+    static bool         IsUnderSyncRoot (LPCWSTR pszPath);
+    static ECloudStatus GetCloudStatus  (const WIN32_FIND_DATA & wfd, bool fInSyncRoot);
+
     HRESULT DisplayResultsNormalDateAndTime (const FILETIME & ftLastWriteTime);
     void    DisplayResultsNormalAttributes  (DWORD dwFileAttributes);
     void    DisplayResultsNormalFileSize    (const WIN32_FIND_DATA & fileInfo, size_t cchStringLengthOfMaxFileSize);
-
-    static ECloudStatus GetCloudStatus      (DWORD dwFileAttributes);
-    void   DisplayCloudStatusSymbol         (ECloudStatus status);
-    void   DisplayRawAttributes             (DWORD dwFileAttributes);
+    void    DisplayCloudStatusSymbol        (ECloudStatus status);
+    void    DisplayRawAttributes            (const WIN32_FIND_DATA & wfd);
 };

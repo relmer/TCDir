@@ -29,19 +29,26 @@ msbuild TCDir.sln /p:Configuration=Debug /p:Platform=ARM64
 
 **File**: `TCDirCore/ResultsDisplayerNormal.cpp`
 
-1. Add helper function to compute cloud status:
+1. Add helper function to detect sync root (called once per directory):
    ```cpp
-   static ECloudStatus GetCloudStatus(DWORD dwFileAttributes);
+   static bool IsUnderSyncRoot(LPCWSTR pszPath);
    ```
 
-2. Add helper to display cloud symbol with color:
+2. Add helper function to compute cloud status (uses hybrid approach):
    ```cpp
-   static void DisplayCloudStatusSymbol(CConsole* pConsole, CConfig* pConfig, ECloudStatus status);
+   static ECloudStatus GetCloudStatus(const WIN32_FIND_DATA & wfd, bool fInSyncRoot);
    ```
 
-3. Modify `DisplayResultsNormalFileSize` to insert cloud column after size, before filename.
+3. Add helper to display cloud symbol with color:
+   ```cpp
+   void DisplayCloudStatusSymbol(ECloudStatus status);
+   ```
 
-**Testing**: Create OneDrive test files with Files On-Demand enabled. Verify ☁/✓/● symbols appear correctly.
+4. In `DisplayFileResults`, call `IsUnderSyncRoot` once, then pass result to `GetCloudStatus` for each file.
+
+**Key Insight**: OneDrive removes placeholder metadata from fully-hydrated files. We use `CfGetSyncRootInfoByPath` to detect sync root membership, then treat files in sync roots as "locally synced" even without explicit cloud attributes.
+
+**Testing**: Create OneDrive test files with Files On-Demand enabled. Verify ○/◐/● symbols appear correctly.
 
 #### Step 2: Add Cloud Attribute Filtering
 
@@ -215,6 +222,15 @@ Use `CConsole` class methods:
 
 ### Cloud symbols not displaying
 **Solution**: Ensure console output is UTF-8. Check `CConsole::SetMode` is called with appropriate flags.
+
+### Fully-hydrated OneDrive files show no symbol
+**Cause**: OneDrive removes all cloud metadata from fully-hydrated files. They have only `FILE_ATTRIBUTE_ARCHIVE` (0x20).
+**Solution**: Use `CfGetSyncRootInfoByPath` to detect sync root membership, then treat files in sync roots as locally synced even without explicit attributes.
+
+### Using `--debug` to diagnose cloud status
+**Command**: `tcdir --debug <path>` (debug builds only)
+**Output**: Shows `[XXXXXXXX:YY]` before each filename where X = file attributes in hex, Y = cfapi placeholder state.
+**Values**: cfapi state `00` = not a placeholder or fully hydrated; higher values indicate cloud file states.
 
 ### Owner lookup returns "Unknown"
 **Solution**: This is expected for files where access is denied. Not an error condition.

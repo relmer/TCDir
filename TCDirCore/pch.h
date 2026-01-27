@@ -16,8 +16,11 @@
 // Windows headers
 #include <windows.h>
 
+#include <cfapi.h>
 #include <lmcons.h>
 #include <strsafe.h>
+
+#pragma comment(lib, "cldapi.lib")
 
 
 

@@ -32,23 +32,39 @@ enum class ECloudStatus
 };
 ```
 
-**Usage**: Computed from file attributes at display time. Not stored in CCommandLine.
+**Usage**: Computed at display time from file attributes and sync root membership. Not stored in CCommandLine.
 
-**Computation logic**:
+**Computation logic** (hybrid approach):
 ```cpp
-ECloudStatus GetCloudStatus(DWORD dwFileAttributes)
+// Called once per directory
+bool IsUnderSyncRoot(LPCWSTR pszPath)
 {
-    if (dwFileAttributes & FILE_ATTRIBUTE_PINNED)
+    CF_SYNC_ROOT_BASIC_INFO info = {};
+    HRESULT hr = CfGetSyncRootInfoByPath(pszPath, CF_SYNC_ROOT_INFO_BASIC, 
+                                          &info, sizeof(info), nullptr);
+    return SUCCEEDED(hr);
+}
+
+// Called for each file
+ECloudStatus GetCloudStatus(const WIN32_FIND_DATA & wfd, bool fInSyncRoot)
+{
+    DWORD dwAttr = wfd.dwFileAttributes;
+    
+    if (dwAttr & FILE_ATTRIBUTE_PINNED)
         return CS_PINNED;
-    if (dwFileAttributes & (FILE_ATTRIBUTE_RECALL_ON_DATA_ACCESS | 
-                            FILE_ATTRIBUTE_RECALL_ON_OPEN | 
-                            FILE_ATTRIBUTE_OFFLINE))
+    if (dwAttr & (FILE_ATTRIBUTE_RECALL_ON_DATA_ACCESS | 
+                  FILE_ATTRIBUTE_RECALL_ON_OPEN | 
+                  FILE_ATTRIBUTE_OFFLINE))
         return CS_CLOUD_ONLY;
-    if (dwFileAttributes & FILE_ATTRIBUTE_UNPINNED)
+    if (dwAttr & FILE_ATTRIBUTE_UNPINNED)
+        return CS_LOCAL;
+    if (fInSyncRoot)  // Hydrated files in sync root have no explicit cloud attrs
         return CS_LOCAL;
     return CS_NONE;
 }
 ```
+
+**Note**: OneDrive removes all placeholder metadata from fully-hydrated files, making them indistinguishable from regular files via attributes alone. The `CfGetSyncRootInfoByPath` call detects if we're in a cloud sync folder.
 
 ---
 
