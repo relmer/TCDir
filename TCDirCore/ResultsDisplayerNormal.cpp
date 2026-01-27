@@ -45,10 +45,11 @@ void CResultsDisplayerNormal::DisplayFileResults (const CDirectoryInfo & di)
 
     for (const WIN32_FIND_DATA & fileInfo : di.m_vMatches)
     {
-        WORD         textAttr    = m_configPtr->GetTextAttrForFile (fileInfo);
-        ECloudStatus cloudStatus = GetCloudStatus (fileInfo, fInSyncRoot);
+        WORD             textAttr    = m_configPtr->GetTextAttrForFile (fileInfo);
+        ECloudStatus     cloudStatus = GetCloudStatus (fileInfo, fInSyncRoot);
+        const FILETIME & ftDisplay   = GetTimeFieldForDisplay (fileInfo);
 
-        hr = DisplayResultsNormalDateAndTime (fileInfo.ftLastWriteTime);
+        hr = DisplayResultsNormalDateAndTime (ftDisplay);
         CHR (hr);
 
         DisplayResultsNormalAttributes  (fileInfo.dwFileAttributes);
@@ -114,6 +115,34 @@ HRESULT CResultsDisplayerNormal::DisplayResultsNormalDateAndTime (const FILETIME
     
 Error:
     return hr;
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CResultsDisplayerNormal::GetTimeFieldForDisplay
+//
+//  Returns the appropriate FILETIME based on the /T: switch setting
+// 
+////////////////////////////////////////////////////////////////////////////////  
+
+const FILETIME & CResultsDisplayerNormal::GetTimeFieldForDisplay (const WIN32_FIND_DATA & wfd) const
+{
+    switch (m_cmdLinePtr->m_timeField)
+    {
+        case CCommandLine::ETimeField::TF_CREATION:
+            return wfd.ftCreationTime;
+
+        case CCommandLine::ETimeField::TF_ACCESS:
+            return wfd.ftLastAccessTime;
+
+        case CCommandLine::ETimeField::TF_WRITTEN:
+        default:
+            return wfd.ftLastWriteTime;
+    }
 }
 
 

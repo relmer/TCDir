@@ -104,11 +104,11 @@ void CUsage::DisplayUsage (CConsole & console, wchar_t chPrefix)
     console.Printf (CConfig::EAttribute::Default, L"Copyright " COPYRIGHT " 2004-" VERSION_YEAR_WSTRING  L" by Robert Elmer\n");
     console.Printf (CConfig::EAttribute::Default, L"\n");
 #ifdef _DEBUG
-    console.Printf (CConfig::EAttribute::Default, L"TCDIR [drive:][path][filename] [%sA[[:]attributes]] [%sO[[:]sortorder]] [%sS] [%sW] [%sB] [%sP] [%sM] [%sEnv] [%sConfig] [%sDebug]\n",
-                    szShort, szShort, szShort, szShort, szShort, szShort, szShort, pszLong, pszLong, pszLong);
+    console.Printf (CConfig::EAttribute::Default, L"TCDIR [drive:][path][filename] [%sA[[:]attributes]] [%sO[[:]sortorder]] [%sT[[:]timefield]] [%sS] [%sW] [%sB] [%sP] [%sM] [%sEnv] [%sConfig] [%sDebug]\n",
+                    szShort, szShort, szShort, szShort, szShort, szShort, szShort, szShort, pszLong, pszLong, pszLong);
 #else
-    console.Printf (CConfig::EAttribute::Default, L"TCDIR [drive:][path][filename] [%sA[[:]attributes]] [%sO[[:]sortorder]] [%sS] [%sW] [%sB] [%sP] [%sM] [%sEnv] [%sConfig]\n",
-                    szShort, szShort, szShort, szShort, szShort, szShort, szShort, pszLong, pszLong);
+    console.Printf (CConfig::EAttribute::Default, L"TCDIR [drive:][path][filename] [%sA[[:]attributes]] [%sO[[:]sortorder]] [%sT[[:]timefield]] [%sS] [%sW] [%sB] [%sP] [%sM] [%sEnv] [%sConfig]\n",
+                    szShort, szShort, szShort, szShort, szShort, szShort, szShort, szShort, pszLong, pszLong);
 #endif
     console.Printf (CConfig::EAttribute::Default, L"\n");
     console.Printf (CConfig::EAttribute::Default, L"  [drive:][path][filename]\n");
@@ -134,6 +134,10 @@ void CUsage::DisplayUsage (CConsole & console, wchar_t chPrefix)
     console.Printf (CConfig::EAttribute::Default, L"  sortorder    N  By name (alphabetic)       S  By size (smallest first)\n");
     console.Printf (CConfig::EAttribute::Default, L"               E  By extension (alphabetic)  D  By date/time (oldest first)\n");
     console.Printf (CConfig::EAttribute::Default, L"               -  Prefix to reverse order\n");
+    console.Printf (CConfig::EAttribute::Default, L"\n");
+    console.Printf (CConfig::EAttribute::Default, L"  %sT          Selects the time field for display and sorting.\n", szShort);
+    console.Printf (CConfig::EAttribute::Default, L"  timefield    C  Creation time              A  Last access time\n");
+    console.Printf (CConfig::EAttribute::Default, L"               W  Last write time (default)\n");
     console.Printf (CConfig::EAttribute::Default, L"\n");
     console.Printf (CConfig::EAttribute::Default, L"  %sS          Displays files in specified directory and all subdirectories.\n", szShort);
     console.Printf (CConfig::EAttribute::Default, L"  %sW          Displays results in a wide listing format.\n", szShort);

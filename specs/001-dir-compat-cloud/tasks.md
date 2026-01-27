@@ -127,16 +127,16 @@ Project structure per plan.md:
 
 ### Implementation for User Story 3
 
-- [ ] T017 [US3] Parse /T:C|A|W switch and set m_timeField in TCDirCore/CommandLine.cpp
-- [ ] T018 [US3] Add /T: parsing unit tests in UnitTest/CommandLineTests.cpp
-- [ ] T019 [US3] Modify DisplayResultsNormalDateAndTime to use selected time field in TCDirCore/ResultsDisplayerNormal.cpp
-- [ ] T019a [US3] Modify DisplayResultsWideDateAndTime to use selected time field in TCDirCore/ResultsDisplayerWide.cpp (if wide mode shows dates)
-- [ ] T020 [US3] Modify FileComparator SO_DATE handling to respect m_timeField in TCDirCore/FileComparator.cpp
-- [ ] T021 [US3] Add time field sorting unit tests in UnitTest/FileComparatorTests.cpp
+- [x] T017 [US3] Parse /T:C|A|W switch and set m_timeField in TCDirCore/CommandLine.cpp
+- [x] T018 [US3] Add /T: parsing unit tests in UnitTest/CommandLineTests.cpp
+- [x] T019 [US3] Modify DisplayResultsNormalDateAndTime to use selected time field in TCDirCore/ResultsDisplayerNormal.cpp
+- [x] T019a [US3] Modify DisplayResultsWideDateAndTime to use selected time field in TCDirCore/ResultsDisplayerWide.cpp (N/A - wide mode doesn't show dates)
+- [x] T020 [US3] Modify FileComparator SO_DATE handling to respect m_timeField in TCDirCore/FileComparator.cpp
+- [x] T021 [US3] Add time field sorting unit tests in UnitTest/FileComparatorTests.cpp
 
 ### Documentation for User Story 3
 
-- [ ] T021a [US3] Document /T:C|A|W switch in help output (/?`) in TCDirCore/Usage.cpp
+- [x] T021a [US3] Document /T:C|A|W switch in help output (/?`) in TCDirCore/Usage.cpp
 
 **Checkpoint**: Time field selection works for both display and sorting, fully documented
 

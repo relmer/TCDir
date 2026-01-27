@@ -195,6 +195,7 @@ HRESULT CCommandLine::HandleSwitch (LPCWSTR pszArg)
         {  L's',   &CCommandLine::m_fRecurse,        nullptr                          },
         {  L'o',   nullptr,                          &CCommandLine::OrderByHandler    },
         {  L'a',   nullptr,                          &CCommandLine::AttributeHandler  },
+        {  L't',   nullptr,                          &CCommandLine::TimeFieldHandler  },
         {  L'w',   &CCommandLine::m_fWideListing,    nullptr                          },
         {  L'b',   &CCommandLine::m_fBareListing,    nullptr                          },
         {  L'p',   &CCommandLine::m_fPerfTimer,      nullptr                          },
@@ -504,6 +505,77 @@ HRESULT CCommandLine::AttributeHandler (LPCWSTR pszArg)
     }
 
 
+Error:
+    return hr;
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CCommandLine::TimeFieldHandler
+//
+//  Handles /T: switch to select which time field to display and sort by
+//  /T:C = Creation time
+//  /T:A = Access time
+//  /T:W = Last write time (default)
+//
+////////////////////////////////////////////////////////////////////////////////
+
+HRESULT CCommandLine::TimeFieldHandler (LPCWSTR pszArg)
+{
+    struct STimeFieldMap
+    {
+        WCHAR      ch;
+        ETimeField timeField;
+    };
+
+    static constexpr STimeFieldMap s_krgTimeFieldMap[] =
+    {
+        { L'c', ETimeField::TF_CREATION },
+        { L'a', ETimeField::TF_ACCESS   },
+        { L'w', ETimeField::TF_WRITTEN  }
+    };
+
+    HRESULT hr = S_OK;
+    WCHAR   ch = 0;
+
+
+
+    CBRAEx (pszArg != NULL, E_INVALIDARG);
+
+    //
+    // Support optional ':' prefix (DIR-style switch syntax: /T:C)
+    //
+
+    if (*pszArg == L':')
+    {
+        ++pszArg;
+    }
+
+    CBRAEx (*pszArg != L'\0', E_INVALIDARG);
+
+    //
+    // Find the time field character in the map array
+    //
+
+    hr = E_INVALIDARG; // If there's no match, we'll return this
+
+    ch = towlower (*pszArg);
+    for (STimeFieldMap entry : s_krgTimeFieldMap)
+    {
+        if (ch == entry.ch)
+        {
+            m_timeField = entry.timeField;
+            hr = S_OK;
+            break;
+        }
+    }
+
+
+    
 Error:
     return hr;
 }

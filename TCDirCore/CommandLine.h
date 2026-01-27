@@ -104,6 +104,7 @@ protected:
     HRESULT HandleLongSwitch (LPCWSTR pszArg);
     HRESULT OrderByHandler   (LPCWSTR pszArg);
     HRESULT AttributeHandler (LPCWSTR pszArg);
+    HRESULT TimeFieldHandler (LPCWSTR pszArg);
 
     
 };

@@ -432,5 +432,128 @@ namespace UnitTest
             Assert::IsTrue(FAILED(hr));
         }
 
+
+
+
+        TEST_METHOD(ParseTimeFieldCreation)
+        {
+            CCommandLine    cl;
+            const wchar_t * t1      = L"/T:C";
+            wchar_t       * argv1[] = { const_cast<wchar_t *>(t1) };
+            HRESULT         hr      = cl.Parse(1, argv1);
+
+
+
+            Assert::IsTrue(SUCCEEDED(hr));
+            Assert::AreEqual(static_cast<int>(CCommandLine::ETimeField::TF_CREATION), static_cast<int>(cl.m_timeField));
+        }
+
+
+
+
+        TEST_METHOD(ParseTimeFieldAccess)
+        {
+            CCommandLine    cl;
+            const wchar_t * t1      = L"/T:A";
+            wchar_t       * argv1[] = { const_cast<wchar_t *>(t1) };
+            HRESULT         hr      = cl.Parse(1, argv1);
+
+
+
+            Assert::IsTrue(SUCCEEDED(hr));
+            Assert::AreEqual(static_cast<int>(CCommandLine::ETimeField::TF_ACCESS), static_cast<int>(cl.m_timeField));
+        }
+
+
+
+
+        TEST_METHOD(ParseTimeFieldWritten)
+        {
+            CCommandLine    cl;
+            const wchar_t * t1      = L"/T:W";
+            wchar_t       * argv1[] = { const_cast<wchar_t *>(t1) };
+            HRESULT         hr      = cl.Parse(1, argv1);
+
+
+
+            Assert::IsTrue(SUCCEEDED(hr));
+            Assert::AreEqual(static_cast<int>(CCommandLine::ETimeField::TF_WRITTEN), static_cast<int>(cl.m_timeField));
+        }
+
+
+
+
+        TEST_METHOD(ParseTimeFieldDefaultIsWritten)
+        {
+            CCommandLine cl;
+
+
+
+            Assert::AreEqual(static_cast<int>(CCommandLine::ETimeField::TF_WRITTEN), static_cast<int>(cl.m_timeField));
+        }
+
+
+
+
+        TEST_METHOD(ParseTimeFieldNoColon)
+        {
+            CCommandLine    cl;
+            const wchar_t * t1      = L"/TC";
+            wchar_t       * argv1[] = { const_cast<wchar_t *>(t1) };
+            HRESULT         hr      = cl.Parse(1, argv1);
+
+
+
+            Assert::IsTrue(SUCCEEDED(hr));
+            Assert::AreEqual(static_cast<int>(CCommandLine::ETimeField::TF_CREATION), static_cast<int>(cl.m_timeField));
+        }
+
+
+
+
+        TEST_METHOD(ParseTimeFieldWithDash)
+        {
+            CCommandLine    cl;
+            const wchar_t * t1      = L"-T:C";
+            wchar_t       * argv1[] = { const_cast<wchar_t *>(t1) };
+            HRESULT         hr      = cl.Parse(1, argv1);
+
+
+
+            Assert::IsTrue(SUCCEEDED(hr));
+            Assert::AreEqual(static_cast<int>(CCommandLine::ETimeField::TF_CREATION), static_cast<int>(cl.m_timeField));
+        }
+
+
+
+
+        TEST_METHOD(ParseTimeFieldCaseInsensitive)
+        {
+            CCommandLine    cl;
+            const wchar_t * t1      = L"/t:c";
+            wchar_t       * argv1[] = { const_cast<wchar_t *>(t1) };
+            HRESULT         hr      = cl.Parse(1, argv1);
+
+
+
+            Assert::IsTrue(SUCCEEDED(hr));
+            Assert::AreEqual(static_cast<int>(CCommandLine::ETimeField::TF_CREATION), static_cast<int>(cl.m_timeField));
+        }
+
+
+
+
+        TEST_METHOD(ParseTimeFieldInvalidValue)
+        {
+            CCommandLine    cl;
+            const wchar_t * t1      = L"/T:X";
+            wchar_t       * argv1[] = { const_cast<wchar_t *>(t1) };
+            HRESULT         hr      = cl.Parse(1, argv1);
+
+
+
+            Assert::IsTrue(FAILED(hr));
+        }
+
     };
 }

@@ -30,9 +30,10 @@ protected:
     static bool         IsUnderSyncRoot (LPCWSTR pszPath);
     static ECloudStatus GetCloudStatus  (const WIN32_FIND_DATA & wfd, bool fInSyncRoot);
 
-    HRESULT DisplayResultsNormalDateAndTime (const FILETIME & ftLastWriteTime);
-    void    DisplayResultsNormalAttributes  (DWORD dwFileAttributes);
-    void    DisplayResultsNormalFileSize    (const WIN32_FIND_DATA & fileInfo, size_t cchStringLengthOfMaxFileSize);
-    void    DisplayCloudStatusSymbol        (ECloudStatus status);
-    void    DisplayRawAttributes            (const WIN32_FIND_DATA & wfd);
+    const FILETIME & GetTimeFieldForDisplay          (const WIN32_FIND_DATA & wfd) const;
+    HRESULT          DisplayResultsNormalDateAndTime (const FILETIME & ftLastWriteTime);
+    void             DisplayResultsNormalAttributes  (DWORD dwFileAttributes);
+    void             DisplayResultsNormalFileSize    (const WIN32_FIND_DATA & fileInfo, size_t cchStringLengthOfMaxFileSize);
+    void             DisplayCloudStatusSymbol        (ECloudStatus status);
+    void             DisplayRawAttributes            (const WIN32_FIND_DATA & wfd);
 };
