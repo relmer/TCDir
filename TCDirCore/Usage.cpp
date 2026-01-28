@@ -829,13 +829,8 @@ Error:
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-void CUsage::DisplayEnvVarHelp (CConsole & console, wchar_t chPrefix)
+void CUsage::DisplayEnvVarHelp (CConsole & console)
 {
-    // Determine prefix strings for single-char switches
-    wchar_t szShort[2]  = { chPrefix, L'\0' };                      // "-" or "/"
-    LPCWSTR szLong      = (chPrefix == L'-') ? L"--" : L"/";        // "--" or "/"
-    LPCWSTR pszMDisable = (chPrefix == L'-') ? L"-M-" : L"/M-";     // "-M-" or "/M-"
-
     static LPCWSTR s_setEnvVarCommandCmd        = L"  set "  TCDIR_ENV_VAR_NAME L"=";
     static LPCWSTR s_setEnvVarCommandPowerShell = L"  $env:" TCDIR_ENV_VAR_NAME L" = \"";
 
@@ -852,23 +847,23 @@ void CUsage::DisplayEnvVarHelp (CConsole & console, wchar_t chPrefix)
     // Display the syntax line with dynamic switch prefix
     if (isPowerShell)
     {
-        console.Printf (CConfig::EAttribute::Default, L"%s[ %s<Switch>] | [<Item> | Attr:<fileattr> | <.ext>] = <Fore> [on <Back>][;...]\"\n",
-                        s_setEnvVarCommandPowerShell, szShort);
+        console.Printf (CConfig::EAttribute::Default, L"%s[<Switch>] | [<Item> | Attr:<fileattr> | <.ext>] = <Fore> [on <Back>][;...]\"\n",
+                        s_setEnvVarCommandPowerShell);
     }
     else
     {
-        console.Printf (CConfig::EAttribute::Default, L"%s[ %s<Switch>] | [<Item> | Attr:<fileattr> | <.ext>] = <Fore> [on <Back>][;...]\n",
-                        s_setEnvVarCommandCmd, szShort);
+        console.Printf (CConfig::EAttribute::Default, L"%s[<Switch>] | [<Item> | Attr:<fileattr> | <.ext>] = <Fore> [on <Back>][;...]\n",
+                        s_setEnvVarCommandCmd);
     }
 
     console.Printf (CConfig::EAttribute::Default, L"\n");
     console.Printf (CConfig::EAttribute::Default, L"  <Switch>    A command-line switch:\n");
-    console.Printf (CConfig::EAttribute::Default, L"                  W  Wide listing format\n");
-    console.Printf (CConfig::EAttribute::Default, L"                  P  Display performance timing information\n");
-    console.Printf (CConfig::EAttribute::Default, L"                  S  Recurse into subdirectories\n");
-    console.Printf (CConfig::EAttribute::Default, L"                  M  Enables multi-threaded enumeration (default); use %s to disable\n", pszMDisable);
-    console.Printf (CConfig::EAttribute::Default, L"                  %sOwner  Display file ownership\n", szLong);
-    console.Printf (CConfig::EAttribute::Default, L"                  %sStreams  Display alternate data streams (NTFS)\n", szLong);
+    console.Printf (CConfig::EAttribute::Default, L"                  W        Wide listing format\n");
+    console.Printf (CConfig::EAttribute::Default, L"                  P        Display performance timing information\n");
+    console.Printf (CConfig::EAttribute::Default, L"                  S        Recurse into subdirectories\n");
+    console.Printf (CConfig::EAttribute::Default, L"                  M        Enables multi-threaded enumeration (default); use M- to disable\n");
+    console.Printf (CConfig::EAttribute::Default, L"                  Owner    Display file ownership\n");
+    console.Printf (CConfig::EAttribute::Default, L"                  Streams  Display alternate data streams (NTFS)\n");
     console.Printf (CConfig::EAttribute::Default, L"\n");
     console.Printf (CConfig::EAttribute::Default, L"  <Item>      A display item:\n");
     console.Printf (CConfig::EAttribute::Default, L"                  D  Date                     T  Time\n");
@@ -898,18 +893,18 @@ void CUsage::DisplayEnvVarHelp (CConsole & console, wchar_t chPrefix)
     // Display the example line with dynamic switch prefix
     if (isPowerShell)
     {
-        console.Printf (CConfig::EAttribute::Default, L"  Example: $env:" TCDIR_ENV_VAR_NAME L" = \"%sW;D=LightGreen;S=Yellow;Attr:H=DarkGrey;.cpp=White on Blue\"\n", szShort);
+        console.Printf (CConfig::EAttribute::Default, L"  Example: $env:" TCDIR_ENV_VAR_NAME L" = \"W;D=LightGreen;S=Yellow;Attr:H=DarkGrey;.cpp=White on Blue\"\n");
     }
     else
     {
-        console.Printf (CConfig::EAttribute::Default, L"  Example: set "  TCDIR_ENV_VAR_NAME L"=%sW;D=LightGreen;S=Yellow;Attr:H=DarkGrey;.cpp=White on Blue\n", szShort);
+        console.Printf (CConfig::EAttribute::Default, L"  Example: set "  TCDIR_ENV_VAR_NAME L"=W;D=LightGreen;S=Yellow;Attr:H=DarkGrey;.cpp=White on Blue\n");
     }
 
     console.Puts (CConfig::EAttribute::Default, L"");
 
     if (IsTcdirEnvVarSet ())
     {
-        DisplayEnvVarIssues (console, chPrefix);
+        DisplayEnvVarIssues (console);
     }
     else
     {

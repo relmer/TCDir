@@ -348,7 +348,19 @@ void CConfig::ProcessColorOverrideEntry (wstring_view entry)
     entry = TrimWhitespace (entry);
     CBR (!entry.empty());
 
+    //
+    // Check if this is a switch (W, S, P, M, M-, Owner, Streams)
+    // Prefixes (/, -, --) are NOT allowed in the env var - give helpful error
+    //
+
     if (entry[0] == L'/' || entry[0] == L'-')
+    {
+        m_lastParseResult.errors.push_back ( { L"Switch prefixes (/, -, --) are not allowed in env var",
+                                               wstring (entry), wstring (entry.substr (0, entry.starts_with (L"--") ? 2 : 1)), 0 } );
+        BAIL_OUT_IF (TRUE, S_OK);
+    }
+
+    if (IsSwitchName (entry))
     {
         ProcessSwitchOverride (entry);
         BAIL_OUT_IF (TRUE, S_OK);
@@ -532,14 +544,9 @@ Error:
 
 void CConfig::ProcessSwitchOverride (wstring_view entry)
 {
-    static constexpr LPCWSTR s_krgExample[] =
-    {
-        L"Invalid switch (expected -S, -W, -P, -M, --owner, or --streams)",
-        L"Invalid switch (expected /S, /W, /P, /M, /owner, or /streams)",
-    };
+    static constexpr LPCWSTR s_kpszInvalidSwitch = L"Invalid switch (expected W, S, P, M, Owner, or Streams)";
 
     HRESULT      hr                = S_OK;
-    size_t       idxExample        = 0;
     wstring_view invalidText       = entry;
     size_t       invalidTextOffset = 0;
     wchar_t      ch                = 0;
@@ -548,26 +555,29 @@ void CConfig::ProcessSwitchOverride (wstring_view entry)
 
 
     //
-    // Check for long switch format (--owner or /owner)
+    // Check for long switch names first (owner, streams)
     //
 
-    if (entry.length() >= 3)
+    if (entry.length() >= 5)
     {
-        hr = ProcessLongSwitchOverride (entry, idxExample);
+        hr = ProcessLongSwitchOverride (entry);
         BAIL_OUT_IF (SUCCEEDED (hr), S_OK);  // Success - skip short switch processing
 
         // Not a recognized long switch, fall through to try short switch
         hr = S_OK;
     }
 
-    // Entry should be at least 2 characters (e.g., "/s" or "-w")
+    //
+    // Short switch: single letter, optionally followed by '-' to disable
+    //
+
     switch (entry.length())
     {
-        case 2:
+        case 1:
             break;
 
-        case 3:
-            CBR (entry[2] == L'-');
+        case 2:
+            CBR (entry[1] == L'-');
             fValue = false;
             break;  
 
@@ -578,9 +588,7 @@ void CConfig::ProcessSwitchOverride (wstring_view entry)
             break;
     }
 
-    idxExample = (entry[0] == L'/');
-
-    ch = towlower (entry[1]);
+    ch = towlower (entry[0]);
     switch (ch)
     {
         case L's':  m_fRecurse       = fValue;  break;
@@ -590,8 +598,8 @@ void CConfig::ProcessSwitchOverride (wstring_view entry)
         case L'm':  m_fMultiThreaded = fValue;  break;
 
         default:
-            invalidText       = entry.substr (1, 1);
-            invalidTextOffset = 1;
+            invalidText       = entry.substr (0, 1);
+            invalidTextOffset = 0;
             CBR (FALSE);
             break;
     }
@@ -601,7 +609,7 @@ Error:
     if (FAILED (hr))
     {
         m_lastParseResult.errors.push_back ( {
-            s_krgExample[idxExample],
+            s_kpszInvalidSwitch,
             wstring (entry), 
             wstring (invalidText),
             invalidTextOffset 
@@ -609,6 +617,42 @@ Error:
     }
 
     return;
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CConfig::IsSwitchName
+//
+//  Check if entry is a valid switch name without prefix.
+//  Returns true for: W, S, P, M, B, M-, Owner, Streams (case-insensitive)
+//
+////////////////////////////////////////////////////////////////////////////////
+
+bool CConfig::IsSwitchName (wstring_view entry)
+{
+    // Single-letter switches (optionally with '-' suffix)
+    if (entry.length() == 1 || (entry.length() == 2 && entry[1] == L'-'))
+    {
+        wchar_t ch = towlower (entry[0]);
+        return ch == L'w' || ch == L's' || ch == L'p' || ch == L'm' || ch == L'b';
+    }
+
+    // Long switch names
+    if (entry.length() == 5 && _wcsnicmp (entry.data(), L"owner", 5) == 0)
+    {
+        return true;
+    }
+
+    if (entry.length() == 7 && _wcsnicmp (entry.data(), L"streams", 7) == 0)
+    {
+        return true;
+    }
+
+    return false;
 }
 
 
@@ -625,32 +669,11 @@ Error:
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-HRESULT CConfig::ProcessLongSwitchOverride (wstring_view entry, size_t & idxExample)
+HRESULT CConfig::ProcessLongSwitchOverride (wstring_view switchName)
 {
-    HRESULT      hr         = E_INVALIDARG;
-    wstring_view switchName;
+    HRESULT hr = E_INVALIDARG;
 
 
-
-    //
-    // Extract the switch name from the entry
-    //
-
-    if (entry.starts_with (L"--"))
-    {
-        idxExample = 0;
-        switchName = entry.substr (2);
-    }
-    else if (entry[0] == L'/')
-    {
-        idxExample = 1;
-        switchName = entry.substr (1);
-    }
-    else
-    {
-        // Not a valid long switch format
-        CHR (E_INVALIDARG);
-    }
 
     //
     // Match against known long switch names (case-insensitive)
@@ -667,8 +690,6 @@ HRESULT CConfig::ProcessLongSwitchOverride (wstring_view entry, size_t & idxExam
         hr             = S_OK;
     }
 
-
-Error:
     return hr;
 }
 

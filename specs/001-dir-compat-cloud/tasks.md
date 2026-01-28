@@ -192,16 +192,16 @@ Project structure per plan.md:
 
 ### Implementation for User Story 6
 
-- [ ] T029 [US6] Parse --streams switch in TCDirCore/CommandLine.cpp
-- [ ] T030 [US6] Add --streams parsing unit test in UnitTest/CommandLineTests.cpp
-- [ ] T031 [US6] Add filesystem validation for --streams (warn if not NTFS) in TCDirCore/TCDir.cpp
-- [ ] T032 [US6] Implement EnumerateStreams() using FindFirstStreamW/FindNextStreamW in TCDirCore/ResultsDisplayerNormal.cpp
-- [ ] T033 [US6] Display streams indented below main file entry in TCDirCore/ResultsDisplayerNormal.cpp
+- [x] T029 [US6] Parse --streams switch in TCDirCore/CommandLine.cpp
+- [x] T030 [US6] Add --streams parsing unit test in UnitTest/CommandLineTests.cpp
+- [x] T031 [US6] Add filesystem validation for --streams (warn if not NTFS) in TCDirCore/TCDir.cpp
+- [x] T032 [US6] Implement EnumerateStreams() using FindFirstStreamW/FindNextStreamW in TCDirCore/DirectoryLister.cpp
+- [x] T033 [US6] Display streams indented below main file entry in TCDirCore/ResultsDisplayerNormal.cpp
 
 ### Documentation for User Story 6
 
-- [ ] T033a [US6] Document --streams switch in help output (/?`) in TCDirCore/Usage.cpp
-- [ ] T033b [US6] Update --Env help to mention --streams can be set via TCDIR env var in TCDirCore/Usage.cpp
+- [x] T033a [US6] Document --streams switch in help output (/?`) in TCDirCore/Usage.cpp
+- [x] T033b [US6] Update --Env help to mention --streams can be set via TCDIR env var in TCDirCore/Usage.cpp
 
 **Checkpoint**: ADS enumeration works on NTFS volumes, fully documented
 

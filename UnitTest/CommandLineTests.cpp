@@ -1,6 +1,8 @@
 #include "pch.h"
 #include "EhmTestHelper.h"
+#include "../TCDirCore/Color.h"
 #include "../TCDirCore/CommandLine.h"
+#include "../TCDirCore/Config.h"
 
 
 
@@ -651,6 +653,90 @@ namespace UnitTest
 
 
             Assert::IsTrue(FAILED(hr));
+        }
+
+
+
+
+        //
+        // ApplyConfigDefaults tests - verify env var settings transfer to command line
+        //
+
+        TEST_METHOD(ApplyConfigDefaults_Streams_TransfersToCommandLine)
+        {
+            CConfig      config;
+            CCommandLine cl;
+
+            config.Initialize (FC_LightGrey);
+            config.m_fShowStreams = true;
+
+            cl.ApplyConfigDefaults (config);
+
+            Assert::IsTrue (cl.m_fShowStreams);
+        }
+
+
+
+
+        TEST_METHOD(ApplyConfigDefaults_Owner_TransfersToCommandLine)
+        {
+            CConfig      config;
+            CCommandLine cl;
+
+            config.Initialize (FC_LightGrey);
+            config.m_fShowOwner = true;
+
+            cl.ApplyConfigDefaults (config);
+
+            Assert::IsTrue (cl.m_fShowOwner);
+        }
+
+
+
+
+        TEST_METHOD(ApplyConfigDefaults_AllSwitches_TransferToCommandLine)
+        {
+            CConfig      config;
+            CCommandLine cl;
+
+            config.Initialize (FC_LightGrey);
+            config.m_fWideListing   = true;
+            config.m_fBareListing   = true;
+            config.m_fRecurse       = true;
+            config.m_fPerfTimer     = true;
+            config.m_fMultiThreaded = false;  // Explicitly disable
+            config.m_fShowOwner     = true;
+            config.m_fShowStreams   = true;
+
+            cl.ApplyConfigDefaults (config);
+
+            Assert::IsTrue (cl.m_fWideListing);
+            Assert::IsTrue (cl.m_fBareListing);
+            Assert::IsTrue (cl.m_fRecurse);
+            Assert::IsTrue (cl.m_fPerfTimer);
+            Assert::IsFalse (cl.m_fMultiThreaded);
+            Assert::IsTrue (cl.m_fShowOwner);
+            Assert::IsTrue (cl.m_fShowStreams);
+        }
+
+
+
+
+        TEST_METHOD(ApplyConfigDefaults_UnsetValues_DoNotOverrideDefaults)
+        {
+            CConfig      config;
+            CCommandLine cl;
+
+            config.Initialize (FC_LightGrey);
+            // Don't set any switch values - they should remain as optional<> without value
+
+            // Set some non-default values on command line first
+            cl.m_fWideListing = true;
+
+            cl.ApplyConfigDefaults (config);
+
+            // Command line value should be preserved since config didn't have a value
+            Assert::IsTrue (cl.m_fWideListing);
         }
 
     };

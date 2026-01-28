@@ -546,7 +546,6 @@ void CMultiThreadedLister::HandleFileMatch (const WIN32_FIND_DATA & wfd, FileInf
 HRESULT CMultiThreadedLister::HandleFileMatchStreams (const WIN32_FIND_DATA & wfd, FileInfo & fileEntry, CDirectoryInfo * pdi)
 {
     HRESULT                hr         = S_OK;
-    DWORD                  dwError    = ERROR_SUCCESS;
     filesystem::path       fullPath   = pdi->m_dirPath / wfd.cFileName;
     WIN32_FIND_STREAM_DATA streamData = {};
     HANDLE                 hFind      = NULL;

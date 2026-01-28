@@ -110,7 +110,8 @@ protected:
     void         ApplyUserColorOverrides              (void);
     void         ProcessColorOverrideEntry            (wstring_view entry);
     void         ProcessSwitchOverride                (wstring_view entry);
-    HRESULT      ProcessLongSwitchOverride            (wstring_view entry, size_t & idxExample);
+    bool         IsSwitchName                         (wstring_view entry);
+    HRESULT      ProcessLongSwitchOverride            (wstring_view switchName);
     void         ProcessFileExtensionOverride         (wstring_view extension, WORD colorAttr);
     void         ProcessDisplayAttributeOverride      (wchar_t attrChar, WORD colorAttr, wstring_view entry);
     void         ProcessFileAttributeOverride         (wstring_view keyView, WORD colorAttr, wstring_view entry);
