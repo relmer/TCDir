@@ -604,5 +604,54 @@ namespace UnitTest
             Assert::IsTrue(FAILED(hr));
         }
 
+
+
+
+        TEST_METHOD(ParseStreamsSwitchDoubleDash)
+        {
+            CCommandLine    cl;
+            const wchar_t * o1      = L"--streams";
+            wchar_t       * argv1[] = { const_cast<wchar_t *>(o1) };
+            HRESULT         hr      = cl.Parse(1, argv1);
+
+
+
+            Assert::IsTrue(SUCCEEDED(hr));
+            Assert::IsTrue(cl.m_fShowStreams);
+            Assert::AreEqual(L'-', cl.GetSwitchPrefix());
+        }
+
+
+
+
+        TEST_METHOD(ParseStreamsSwitchSlash)
+        {
+            CCommandLine    cl;
+            const wchar_t * o1      = L"/Streams";
+            wchar_t       * argv1[] = { const_cast<wchar_t *>(o1) };
+            HRESULT         hr      = cl.Parse(1, argv1);
+
+
+
+            Assert::IsTrue(SUCCEEDED(hr));
+            Assert::IsTrue(cl.m_fShowStreams);
+            Assert::AreEqual(L'/', cl.GetSwitchPrefix());
+        }
+
+
+
+
+        TEST_METHOD(ParseStreamsSwitchSingleDashFails)
+        {
+            CCommandLine    cl;
+            const wchar_t * o1      = L"-streams";
+            wchar_t       * argv1[] = { const_cast<wchar_t *>(o1) };
+            HRESULT         hr      = cl.Parse(1, argv1);
+
+
+
+            Assert::IsTrue(FAILED(hr));
+        }
+
     };
 }

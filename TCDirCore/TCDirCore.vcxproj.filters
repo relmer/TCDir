@@ -54,6 +54,9 @@
     <ClInclude Include="Flag.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="ListingTotals.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="PerfTimer.h">
       <Filter>Header Files</Filter>
     </ClInclude>

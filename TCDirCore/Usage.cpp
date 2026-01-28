@@ -103,11 +103,11 @@ void CUsage::DisplayUsage (CConsole & console, wchar_t chPrefix)
     console.Printf (CConfig::EAttribute::Default, L"Copyright %c 2004-" VERSION_YEAR_WSTRING  L" by Robert Elmer\n", UnicodeSymbols::Copyright);
     console.Printf (CConfig::EAttribute::Default, L"\n");
 #ifdef _DEBUG
-    console.Printf (CConfig::EAttribute::Default, L"TCDIR [drive:][path][filename] [%sA[[:]attributes]] [%sO[[:]sortorder]] [%sT[[:]timefield]] [%sS] [%sW] [%sB] [%sP] [%sM] [%sEnv] [%sConfig] [%sOwner] [%sDebug]\n",
-                    szShort, szShort, szShort, szShort, szShort, szShort, szShort, szShort, pszLong, pszLong, pszLong, pszLong);
+    console.Printf (CConfig::EAttribute::Default, L"TCDIR [drive:][path][filename] [%sA[[:]attributes]] [%sO[[:]sortorder]] [%sT[[:]timefield]] [%sS] [%sW] [%sB] [%sP] [%sM] [%sEnv] [%sConfig] [%sOwner] [%sStreams] [%sDebug]\n",
+                    szShort, szShort, szShort, szShort, szShort, szShort, szShort, szShort, pszLong, pszLong, pszLong, pszLong, pszLong);
 #else
-    console.Printf (CConfig::EAttribute::Default, L"TCDIR [drive:][path][filename] [%sA[[:]attributes]] [%sO[[:]sortorder]] [%sT[[:]timefield]] [%sS] [%sW] [%sB] [%sP] [%sM] [%sEnv] [%sConfig] [%sOwner]\n",
-                    szShort, szShort, szShort, szShort, szShort, szShort, szShort, szShort, pszLong, pszLong, pszLong);
+    console.Printf (CConfig::EAttribute::Default, L"TCDIR [drive:][path][filename] [%sA[[:]attributes]] [%sO[[:]sortorder]] [%sT[[:]timefield]] [%sS] [%sW] [%sB] [%sP] [%sM] [%sEnv] [%sConfig] [%sOwner] [%sStreams]\n",
+                    szShort, szShort, szShort, szShort, szShort, szShort, szShort, szShort, pszLong, pszLong, pszLong, pszLong);
 #endif
     console.Printf (CConfig::EAttribute::Default, L"\n");
     console.Printf (CConfig::EAttribute::Default, L"  [drive:][path][filename]\n");
@@ -146,6 +146,7 @@ void CUsage::DisplayUsage (CConsole & console, wchar_t chPrefix)
     console.Printf (CConfig::EAttribute::Default, L"  %sEnv        Displays " TCDIR_ENV_VAR_NAME L" help, syntax, and current value.\n", pszLong);
     console.Printf (CConfig::EAttribute::Default, L"  %sConfig     Displays current color configuration for all items and extensions.\n", pszLong);
     console.Printf (CConfig::EAttribute::Default, L"  %sOwner      Displays file owner (DOMAIN\\User) for each file.\n", pszLong);
+    console.Printf (CConfig::EAttribute::Default, L"  %sStreams    Displays alternate data streams (NTFS only).\n", pszLong);
 #ifdef _DEBUG
     console.Printf (CConfig::EAttribute::Default, L"  %sDebug      Displays raw file attributes in hex for diagnosing edge cases.\n", pszLong);
 #endif
@@ -263,6 +264,7 @@ void CUsage::DisplayAttributeConfiguration (CConsole & console, int columnWidthA
         { L"Separator line",         CConfig::EAttribute::SeparatorLine           },
         { L"Error",                  CConfig::EAttribute::Error                   },
         { L"Owner",                  CConfig::EAttribute::Owner                   },
+        { L"Stream",                 CConfig::EAttribute::Stream                  },
     };
 
     // Build cloud status display names with symbols
@@ -866,13 +868,14 @@ void CUsage::DisplayEnvVarHelp (CConsole & console, wchar_t chPrefix)
     console.Printf (CConfig::EAttribute::Default, L"                  S  Recurse into subdirectories\n");
     console.Printf (CConfig::EAttribute::Default, L"                  M  Enables multi-threaded enumeration (default); use %s to disable\n", pszMDisable);
     console.Printf (CConfig::EAttribute::Default, L"                  %sOwner  Display file ownership\n", szLong);
+    console.Printf (CConfig::EAttribute::Default, L"                  %sStreams  Display alternate data streams (NTFS)\n", szLong);
     console.Printf (CConfig::EAttribute::Default, L"\n");
     console.Printf (CConfig::EAttribute::Default, L"  <Item>      A display item:\n");
     console.Printf (CConfig::EAttribute::Default, L"                  D  Date                     T  Time\n");
     console.Printf (CConfig::EAttribute::Default, L"                  S  Size                     R  Directory name\n");
     console.Printf (CConfig::EAttribute::Default, L"                  I  Information              H  Information highlight\n");
     console.Printf (CConfig::EAttribute::Default, L"                  E  Error                    F  File (default)\n");
-    console.Printf (CConfig::EAttribute::Default, L"                  O  Owner\n");
+    console.Printf (CConfig::EAttribute::Default, L"                  O  Owner                    M  Stream\n");
     console.Printf (CConfig::EAttribute::Default, L"\n");
     console.Printf (CConfig::EAttribute::Default, L"              Cloud status (use full name, e.g., CloudOnly=Blue):\n");
     console.Printf (CConfig::EAttribute::Default, L"                  CloudOnly                   LocallyAvailable\n");

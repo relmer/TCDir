@@ -282,11 +282,12 @@ HRESULT CCommandLine::HandleLongSwitch (LPCWSTR pszArg)
 
     static const LongSwitchEntry s_krgLongSwitches[] =
     {
-        {  L"env",     &CCommandLine::m_fEnv       },
-        {  L"config",  &CCommandLine::m_fConfig    },
-        {  L"owner",   &CCommandLine::m_fShowOwner },
+        {  L"env",     &CCommandLine::m_fEnv         },
+        {  L"config",  &CCommandLine::m_fConfig      },
+        {  L"owner",   &CCommandLine::m_fShowOwner   },
+        {  L"streams", &CCommandLine::m_fShowStreams },
 #ifdef _DEBUG
-        {  L"debug",   &CCommandLine::m_fDebug     },
+        {  L"debug",   &CCommandLine::m_fDebug       },
 #endif
     };
 

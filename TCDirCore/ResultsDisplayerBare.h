@@ -20,7 +20,7 @@ public:
     CResultsDisplayerBare        (shared_ptr<CCommandLine> cmdLinePtr, shared_ptr<CConsole> consolePtr, shared_ptr<CConfig> configPtr);
 
     void DisplayResults          (const CDriveInfo & driveInfo, const CDirectoryInfo & di, EDirectoryLevel level) override;
-    void DisplayRecursiveSummary (const CDirectoryInfo & diInitial, UINT cFilesFound, UINT cDirectoriesFound, const ULARGE_INTEGER & uliSizeOfAllFilesFound) override;
+    void DisplayRecursiveSummary (const CDirectoryInfo & diInitial, const SListingTotals & totals) override;
 
 protected:
     shared_ptr<CCommandLine> m_cmdLinePtr; 

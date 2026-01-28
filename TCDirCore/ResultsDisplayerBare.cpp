@@ -43,7 +43,7 @@ void CResultsDisplayerBare::DisplayResults (const CDriveInfo & driveInfo, const 
 
 
 
-    for (const WIN32_FIND_DATA & fileInfo : di.m_vMatches)
+    for (const FileInfo & fileInfo : di.m_vMatches)
     {
         WORD textAttr = m_configPtr->GetTextAttrForFile (fileInfo);
 
@@ -75,12 +75,10 @@ void CResultsDisplayerBare::DisplayResults (const CDriveInfo & driveInfo, const 
 //
 ////////////////////////////////////////////////////////////////////////////////  
 
-void CResultsDisplayerBare::DisplayRecursiveSummary (const CDirectoryInfo & diInitial, UINT cFilesFound, UINT cDirectoriesFound, const ULARGE_INTEGER & uliSizeOfAllFilesFound)
+void CResultsDisplayerBare::DisplayRecursiveSummary (const CDirectoryInfo & diInitial, const SListingTotals & totals)
 {
     // Bare mode doesn't display summary
     UNREFERENCED_PARAMETER (diInitial);
-    UNREFERENCED_PARAMETER (cFilesFound);
-    UNREFERENCED_PARAMETER (cDirectoriesFound);
-    UNREFERENCED_PARAMETER (uliSizeOfAllFilesFound);
+    UNREFERENCED_PARAMETER (totals);
 }
 

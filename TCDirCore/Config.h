@@ -52,6 +52,7 @@ public:
         SeparatorLine,
         Error,
         Owner,                             // File owner (DOMAIN\User)
+        Stream,                            // Alternate data stream name
         CloudStatusCloudOnly,              // ○ symbol color (configurable, default: bright blue)
         CloudStatusLocallyAvailable,       // ◐ symbol color (configurable, default: bright green)
         CloudStatusAlwaysLocallyAvailable, // ● symbol color (configurable, default: green)
@@ -99,6 +100,7 @@ public:
     optional<bool>                             m_fPerfTimer;
     optional<bool>                             m_fMultiThreaded;
     optional<bool>                             m_fShowOwner;
+    optional<bool>                             m_fShowStreams;
 
 
     

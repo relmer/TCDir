@@ -126,9 +126,9 @@ void CResultsDisplayerWithHeaderAndFooter::DisplayResults (const CDriveInfo & dr
 //
 ////////////////////////////////////////////////////////////////////////////////  
 
-void CResultsDisplayerWithHeaderAndFooter::DisplayRecursiveSummary (const CDirectoryInfo & diInitial, UINT cFilesFound, UINT cDirectoriesFound, const ULARGE_INTEGER & uliSizeOfAllFilesFound)
+void CResultsDisplayerWithHeaderAndFooter::DisplayRecursiveSummary (const CDirectoryInfo & diInitial, const SListingTotals & totals)
 {
-    DisplayListingSummary (diInitial, cFilesFound, cDirectoriesFound, uliSizeOfAllFilesFound);
+    DisplayListingSummary (diInitial, totals);
 }
 
 
@@ -222,6 +222,7 @@ void CResultsDisplayerWithHeaderAndFooter::DisplayPathHeader (const filesystem::
 // 
 //   Total files listed:
 //         143 files using 123,456 bytes
+//           3 streams using 1,234 bytes (if streams found)
 //           7 subdirectories
 // 
 //   123,123,123,123 bytes free on volume
@@ -229,29 +230,35 @@ void CResultsDisplayerWithHeaderAndFooter::DisplayPathHeader (const filesystem::
 //
 ////////////////////////////////////////////////////////////////////////////////  
 
-void CResultsDisplayerWithHeaderAndFooter::DisplayListingSummary (const CDirectoryInfo & di, UINT cFilesFound, UINT cDirectoriesFound, const ULARGE_INTEGER & uliSizeOfAllFilesFound)
+void CResultsDisplayerWithHeaderAndFooter::DisplayListingSummary (const CDirectoryInfo & di, const SListingTotals & totals)
 {
     int cMaxDigits = 1;
 
-    if (cFilesFound > 0 || cDirectoriesFound > 0)
+    if (totals.m_cFiles > 0 || totals.m_cDirectories > 0)
     { 
-        cMaxDigits = (int) log10 (max (cFilesFound, cDirectoriesFound)) + 1;
+        cMaxDigits = (int) log10 (max (totals.m_cFiles, totals.m_cDirectories)) + 1;
         cMaxDigits += cMaxDigits / 3;  // add space for each comma
     }
 
     m_consolePtr->Printf (CConfig::EAttribute::Information,          L" Total files listed:");
     m_consolePtr->Puts   (CConfig::EAttribute::Default,              L"\n");
 
-    m_consolePtr->Printf (CConfig::EAttribute::InformationHighlight, L"    %*s", cMaxDigits, FormatNumberWithSeparators (cFilesFound));
-    m_consolePtr->Printf (CConfig::EAttribute::Information,          cFilesFound == 1 ? L" file using " : L" files using ");
-    m_consolePtr->Printf (CConfig::EAttribute::InformationHighlight, FormatNumberWithSeparators (uliSizeOfAllFilesFound.QuadPart));
-    m_consolePtr->Printf (CConfig::EAttribute::Information,          uliSizeOfAllFilesFound.QuadPart == 1 ? L" byte\n" : L" bytes\n");
+    m_consolePtr->Printf (CConfig::EAttribute::InformationHighlight, L"    %*s", cMaxDigits, FormatNumberWithSeparators (totals.m_cFiles));
+    m_consolePtr->Printf (CConfig::EAttribute::Information,          totals.m_cFiles == 1 ? L" file using " : L" files using ");
+    m_consolePtr->Printf (CConfig::EAttribute::InformationHighlight, FormatNumberWithSeparators (totals.m_uliFileBytes.QuadPart));
+    m_consolePtr->Printf (CConfig::EAttribute::Information,          totals.m_uliFileBytes.QuadPart == 1 ? L" byte\n" : L" bytes\n");
 
-    m_consolePtr->Printf (CConfig::EAttribute::InformationHighlight, L"    %*s", cMaxDigits, FormatNumberWithSeparators (cDirectoriesFound));
-    m_consolePtr->Puts   (CConfig::EAttribute::Information,          cDirectoriesFound == 1 ? L" subdirectory" : L" subdirectories");
+    m_consolePtr->Printf (CConfig::EAttribute::InformationHighlight, L"    %*s", cMaxDigits, FormatNumberWithSeparators (totals.m_cDirectories));
+    m_consolePtr->Printf (CConfig::EAttribute::Information,          totals.m_cDirectories == 1 ? L" subdirectory\n" : L" subdirectories\n");
 
-    m_consolePtr->Puts   (CConfig::EAttribute::Default,              L"");
-    
+    if (totals.m_cStreams > 0)
+    {
+        m_consolePtr->Printf (CConfig::EAttribute::InformationHighlight, L"    %*s", cMaxDigits, FormatNumberWithSeparators (totals.m_cStreams));
+        m_consolePtr->Printf (CConfig::EAttribute::Information,          totals.m_cStreams == 1 ? L" stream using " : L" streams using ");
+        m_consolePtr->Printf (CConfig::EAttribute::InformationHighlight, FormatNumberWithSeparators (totals.m_uliStreamBytes.QuadPart));
+        m_consolePtr->Printf (CConfig::EAttribute::Information,          totals.m_uliStreamBytes.QuadPart == 1 ? L" byte\n" : L" bytes\n");
+    }
+
     DisplayVolumeFooter (di);
 
     m_consolePtr->WriteSeparatorLine (m_configPtr->m_rgAttributes[CConfig::EAttribute::SeparatorLine]);
@@ -269,6 +276,7 @@ void CResultsDisplayerWithHeaderAndFooter::DisplayListingSummary (const CDirecto
 //  Display summary information for the directory:
 //
 //   4 directories, 27 files using 284,475 bytes
+//   (optionally: , 3 streams using 1,234 bytes)
 //
 ////////////////////////////////////////////////////////////////////////////////  
 
@@ -281,7 +289,18 @@ void CResultsDisplayerWithHeaderAndFooter::DisplayDirectorySummary (const CDirec
     m_consolePtr->Printf (CConfig::EAttribute::InformationHighlight, L"%d", di.m_cFiles);
     m_consolePtr->Printf (CConfig::EAttribute::Information,          di.m_cFiles == 1 ? L" file using " : L" files using ");
     m_consolePtr->Printf (CConfig::EAttribute::InformationHighlight, FormatNumberWithSeparators (di.m_uliBytesUsed.QuadPart));
-    m_consolePtr->Printf (CConfig::EAttribute::Information,          di.m_uliBytesUsed.QuadPart == 1 ? L" byte\n" : L" bytes\n");
+    m_consolePtr->Printf (CConfig::EAttribute::Information,          di.m_uliBytesUsed.QuadPart == 1 ? L" byte" : L" bytes");
+
+    if (di.m_cStreams > 0)
+    {
+        m_consolePtr->Printf (CConfig::EAttribute::Information,          L", ");
+        m_consolePtr->Printf (CConfig::EAttribute::InformationHighlight, L"%d", di.m_cStreams);
+        m_consolePtr->Printf (CConfig::EAttribute::Information,          di.m_cStreams == 1 ? L" stream using " : L" streams using ");
+        m_consolePtr->Printf (CConfig::EAttribute::InformationHighlight, FormatNumberWithSeparators (di.m_uliStreamBytesUsed.QuadPart));
+        m_consolePtr->Printf (CConfig::EAttribute::Information,          di.m_uliStreamBytesUsed.QuadPart == 1 ? L" byte" : L" bytes");
+    }
+
+    m_consolePtr->Printf (CConfig::EAttribute::Information,          L"\n");
 }
 
 

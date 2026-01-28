@@ -193,6 +193,7 @@ void CConfig::Initialize (WORD wDefaultAttr)
     m_rgAttributes[EAttribute::SeparatorLine]                     = FC_LightBlue;
     m_rgAttributes[EAttribute::Error]                             = FC_LightRed;
     m_rgAttributes[EAttribute::Owner]                             = FC_Green;
+    m_rgAttributes[EAttribute::Stream]                            = FC_DarkGrey;
     m_rgAttributes[EAttribute::CloudStatusCloudOnly]              = FC_LightBlue;
     m_rgAttributes[EAttribute::CloudStatusLocallyAvailable]       = FC_LightGreen;
     m_rgAttributes[EAttribute::CloudStatusAlwaysLocallyAvailable] = FC_LightGreen;
@@ -533,8 +534,8 @@ void CConfig::ProcessSwitchOverride (wstring_view entry)
 {
     static constexpr LPCWSTR s_krgExample[] =
     {
-        L"Invalid switch (expected -S, -W, -P, -M, or --owner)",
-        L"Invalid switch (expected /S, /W, /P, /M, or /owner)",
+        L"Invalid switch (expected -S, -W, -P, -M, --owner, or --streams)",
+        L"Invalid switch (expected /S, /W, /P, /M, /owner, or /streams)",
     };
 
     HRESULT      hr                = S_OK;
@@ -660,6 +661,11 @@ HRESULT CConfig::ProcessLongSwitchOverride (wstring_view entry, size_t & idxExam
         m_fShowOwner = true;
         hr           = S_OK;
     }
+    else if (switchName.length() == 7 && _wcsnicmp (switchName.data(), L"streams", 7) == 0)
+    {
+        m_fShowStreams = true;
+        hr             = S_OK;
+    }
 
 
 Error:
@@ -722,6 +728,7 @@ void CConfig::ProcessDisplayAttributeOverride (wchar_t attrChar, WORD colorAttr,
         { L'E', EAttribute::Error                   },
         { L'F', EAttribute::Default                 },
         { L'O', EAttribute::Owner                   },
+        { L'M', EAttribute::Stream                  },
     };
     
     attrChar = towupper (attrChar);

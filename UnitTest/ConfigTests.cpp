@@ -1623,6 +1623,34 @@ namespace UnitTest
 
 
 
+        TEST_METHOD(ProcessSwitchOverride_DoubleDashStreams_SetsShowStreams)
+        {
+            ConfigProbe config;
+            config.Initialize (FC_LightGrey);
+
+            config.ProcessSwitchOverride (L"--streams");
+
+            Assert::IsTrue (config.m_fShowStreams.has_value ());
+            Assert::IsTrue (config.m_fShowStreams.value ());
+        }
+
+
+
+
+        TEST_METHOD(ProcessSwitchOverride_SlashStreams_SetsShowStreams)
+        {
+            ConfigProbe config;
+            config.Initialize (FC_LightGrey);
+
+            config.ProcessSwitchOverride (L"/streams");
+
+            Assert::IsTrue (config.m_fShowStreams.has_value ());
+            Assert::IsTrue (config.m_fShowStreams.value ());
+        }
+
+
+
+
         TEST_METHOD(ProcessSwitchOverride_InvalidSwitch_AddsError)
         {
             ConfigProbe config;
@@ -1632,7 +1660,7 @@ namespace UnitTest
 
             CConfig::ValidationResult result = config.ValidateEnvironmentVariable ();
             Assert::AreEqual (size_t (1), result.errors.size ());
-            Assert::AreEqual (wstring (L"Invalid switch (expected /S, /W, /P, /M, or /owner)"), result.errors[0].message);
+            Assert::AreEqual (wstring (L"Invalid switch (expected /S, /W, /P, /M, /owner, or /streams)"), result.errors[0].message);
         }
 
 
@@ -1649,7 +1677,7 @@ namespace UnitTest
             CConfig::ValidationResult result = config.ValidateEnvironmentVariable ();
             Assert::AreEqual (size_t (1), result.errors.size ());
             // With just "/", length check fails before idxExample is set, so idxExample=0 (default), uses the -S message
-            Assert::AreEqual (wstring (L"Invalid switch (expected -S, -W, -P, -M, or --owner)"), result.errors[0].message);
+            Assert::AreEqual (wstring (L"Invalid switch (expected -S, -W, -P, -M, --owner, or --streams)"), result.errors[0].message);
         }
 
 
@@ -1666,7 +1694,7 @@ namespace UnitTest
             CConfig::ValidationResult result = config.ValidateEnvironmentVariable ();
             Assert::AreEqual (size_t (1), result.errors.size ());
             // With just "-", entry[0] is '-' so idxExample=0, uses the -S message
-            Assert::AreEqual (wstring (L"Invalid switch (expected -S, -W, -P, -M, or --owner)"), result.errors[0].message);
+            Assert::AreEqual (wstring (L"Invalid switch (expected -S, -W, -P, -M, --owner, or --streams)"), result.errors[0].message);
         }
 
 

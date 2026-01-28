@@ -39,4 +39,5 @@ protected:
     void             DisplayFileOwner                (const wstring & owner, size_t cchColumnWidth);
     static wstring   GetFileOwner                    (LPCWSTR pszFilePath);
     void             GetFileOwners                   (const CDirectoryInfo & di, vector<wstring> & owners, size_t & cchMaxOwnerLength);
+    void             DisplayFileStreams              (const FileInfo & fileEntry, size_t cchStringLengthOfMaxFileSize, size_t cchOwnerWidth);
 };

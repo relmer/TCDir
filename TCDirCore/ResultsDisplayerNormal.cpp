@@ -83,6 +83,15 @@ void CResultsDisplayerNormal::DisplayFileResults (const CDirectoryInfo & di)
         }
 
         m_consolePtr->Printf (textAttr, L"%s\n", fileInfo.cFileName);
+
+        //
+        // If showing streams and this is a file (not a directory), display any alternate data streams
+        //
+
+        if (m_cmdLinePtr->m_fShowStreams && !(fileInfo.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY))
+        {
+            DisplayFileStreams (fileInfo, cchStringLengthOfMaxFileSize, cchMaxOwnerLength);
+        }
     }
     
 
@@ -510,12 +519,58 @@ void CResultsDisplayerNormal::GetFileOwners (const CDirectoryInfo & di, vector<w
     owners.reserve (di.m_vMatches.size ());
     cchMaxOwnerLength = 0;
 
-    for (const WIN32_FIND_DATA & fileInfo : di.m_vMatches)
+    for (const auto & fileInfo : di.m_vMatches)
     {
         filesystem::path fullPath = di.m_dirPath / fileInfo.cFileName;
         wstring          owner    = GetFileOwner (fullPath.c_str ());
         
         cchMaxOwnerLength = max (cchMaxOwnerLength, owner.length ());
         owners.push_back (move (owner));
+    }
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CResultsDisplayerNormal::DisplayFileStreams
+//
+//  Displays pre-collected alternate data streams for a file.
+//  Format matches CMD.exe /R output: indented stream size and name.
+// 
+////////////////////////////////////////////////////////////////////////////////  
+
+void CResultsDisplayerNormal::DisplayFileStreams (const FileInfo & fileEntry, size_t cchStringLengthOfMaxFileSize, size_t cchOwnerWidth)
+{
+    //
+    // Format: indentation + size + filename:streamname
+    //
+    // Match normal file output format:
+    //   Date/time: 21 chars (10 date + 2 spaces + 8 time + 1 space)
+    //   Attributes: 9 chars
+    //   Size: " %*s " (1 leading space + width + 1 trailing space)
+    //   Cloud status: 2 chars (symbol + space)
+    //   Owner: cchOwnerWidth + 1 for trailing space (if showing owner)
+    // Use same width calculation as DisplayResultsNormalFileSize (max of file size or 5 for "<DIR>")
+    //
+
+    size_t cchMaxFileSize = max (cchStringLengthOfMaxFileSize, size_t (5));
+
+    for (const SStreamInfo & si : fileEntry.m_vStreams)
+    {
+        LPCWSTR pszStreamSize = FormatNumberWithSeparators (si.m_liSize.QuadPart);
+
+        m_consolePtr->Printf (CConfig::EAttribute::Default, L"%*c", 30, L' ');                      // 30 spaces (21 + 9)
+        m_consolePtr->Printf (CConfig::EAttribute::Size,    L" %*s ", static_cast<int>(cchMaxFileSize), pszStreamSize);
+        m_consolePtr->Printf (CConfig::EAttribute::Default, L"  ");                                 // Cloud status placeholder
+
+        if (cchOwnerWidth > 0)
+        {
+            m_consolePtr->Printf (CConfig::EAttribute::Default, L"%*c", static_cast<int>(cchOwnerWidth + 1), L' ');
+        }
+
+        m_consolePtr->Printf (CConfig::EAttribute::Stream,  L"%s%s\n", fileEntry.cFileName, si.m_strName.c_str ());
     }
 }
