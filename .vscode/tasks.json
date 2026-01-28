@@ -288,7 +288,7 @@
             "problemMatcher": "$msCompile"
         },
         {
-            "label": "Build All Release (x64 + ARM64)",
+            "label": "Build All Release (x64 + ARM64) (no deploy)",
             "type": "process",
             "command": "pwsh",
             "args": [
@@ -308,6 +308,15 @@
                 "panel": "shared"
             },
             "problemMatcher": "$msCompile"
+        },
+        {
+            "label": "Build All Release and Deploy (x64 + ARM64)",
+            "dependsOn": [
+                "Build All Release (x64 + ARM64) (no deploy)",
+                "Deploy Release"
+            ],
+            "dependsOrder": "sequence",
+            "group": "build"
         },
         {
             "label": "Build Debug x64",
@@ -792,7 +801,8 @@
                 "reveal": "always",
                 "focus": false,
                 "panel": "shared"
-            }
+            },
+            "problemMatcher": []
         }
     ]
 }

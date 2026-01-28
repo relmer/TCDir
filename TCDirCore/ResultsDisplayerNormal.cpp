@@ -5,6 +5,7 @@
 #include "Config.h"
 #include "Console.h"
 #include "Flag.h"
+#include "UnicodeSymbols.h"
 
 
 
@@ -37,13 +38,28 @@ CResultsDisplayerNormal::CResultsDisplayerNormal (shared_ptr<CCommandLine> cmdLi
 
 void CResultsDisplayerNormal::DisplayFileResults (const CDirectoryInfo & di)
 {
-    HRESULT hr                           = S_OK;
-    size_t  cchStringLengthOfMaxFileSize = GetStringLengthOfMaxFileSize (di.m_uliLargestFileSize);
-    bool    fInSyncRoot                  = IsUnderSyncRoot (di.m_dirPath.c_str());
+    HRESULT         hr                           = S_OK;
+    size_t          cchStringLengthOfMaxFileSize = GetStringLengthOfMaxFileSize (di.m_uliLargestFileSize);
+    bool            fInSyncRoot                  = IsUnderSyncRoot (di.m_dirPath.c_str());
+    vector<wstring> owners;
+    size_t          cchMaxOwnerLength            = 0;
     
 
 
-    for (const WIN32_FIND_DATA & fileInfo : di.m_vMatches)
+    //
+    // If showing owners, pre-calculate all owner strings to determine column width
+    //
+
+    if (m_cmdLinePtr->m_fShowOwner)
+    {
+        GetFileOwners (di, owners, cchMaxOwnerLength);
+    }
+
+    //
+    // Display each file
+    //
+
+    for (auto && [idxFile, fileInfo] : views::enumerate (di.m_vMatches))
     {
         WORD             textAttr    = m_configPtr->GetTextAttrForFile (fileInfo);
         ECloudStatus     cloudStatus = GetCloudStatus (fileInfo, fInSyncRoot);
@@ -59,6 +75,11 @@ void CResultsDisplayerNormal::DisplayFileResults (const CDirectoryInfo & di)
         if (m_cmdLinePtr->m_fDebug)
         {
             DisplayRawAttributes (fileInfo);
+        }
+
+        if (m_cmdLinePtr->m_fShowOwner)
+        {
+            DisplayFileOwner (owners[idxFile], cchMaxOwnerLength);
         }
 
         m_consolePtr->Printf (textAttr, L"%s\n", fileInfo.cFileName);
@@ -336,10 +357,6 @@ ECloudStatus CResultsDisplayerNormal::GetCloudStatus (const WIN32_FIND_DATA & wf
 
 void CResultsDisplayerNormal::DisplayCloudStatusSymbol (ECloudStatus status)
 {
-    static constexpr WCHAR kchCloudOnly = L'\x25CB';  // ○ (hollow circle - not locally available)
-    static constexpr WCHAR kchLocal     = L'\x25D0';  // ◐ (half-filled - local but can dehydrate)
-    static constexpr WCHAR kchPinned    = L'\x25CF';  // ● (filled - always local)
-
     CConfig::EAttribute    attr         = CConfig::EAttribute::Default;
     WCHAR                  symbol       = L' ';
 
@@ -349,17 +366,17 @@ void CResultsDisplayerNormal::DisplayCloudStatusSymbol (ECloudStatus status)
     {
         case ECloudStatus::CS_CLOUD_ONLY:
             attr   = CConfig::EAttribute::CloudStatusCloudOnly;
-            symbol = kchCloudOnly;
+            symbol = UnicodeSymbols::CircleHollow;
             break;
 
         case ECloudStatus::CS_LOCAL:
-            attr   = CConfig::EAttribute::CloudStatusLocal;
-            symbol = kchLocal;
+            attr   = CConfig::EAttribute::CloudStatusLocallyAvailable;
+            symbol = UnicodeSymbols::CircleHalfFilled;
             break;
 
         case ECloudStatus::CS_PINNED:
-            attr   = CConfig::EAttribute::CloudStatusPinned;
-            symbol = kchPinned;
+            attr   = CConfig::EAttribute::CloudStatusAlwaysLocallyAvailable;
+            symbol = UnicodeSymbols::CircleFilled;
             break;
 
         case ECloudStatus::CS_NONE:
@@ -390,4 +407,115 @@ void CResultsDisplayerNormal::DisplayRawAttributes (const WIN32_FIND_DATA & wfd)
     m_consolePtr->Printf (CConfig::EAttribute::Information, L"[%08X:%02X] ", 
                           wfd.dwFileAttributes, 
                           static_cast<DWORD>(cfState));
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CResultsDisplayerNormal::GetFileOwner
+//
+//  Retrieves the file owner in DOMAIN\User format.
+//  Returns "Unknown" if access is denied or the owner cannot be determined.
+// 
+////////////////////////////////////////////////////////////////////////////////  
+
+wstring CResultsDisplayerNormal::GetFileOwner (LPCWSTR pszFilePath)
+{
+    static constexpr LPCWSTR kszUnknown = L"Unknown";
+    
+    HRESULT               hr            = S_OK;
+    PSID                  pSidOwner     = nullptr;
+    PSECURITY_DESCRIPTOR  pSD           = nullptr;
+    DWORD                 dwResult      = ERROR_SUCCESS;
+    BOOL                  fSuccess      = FALSE;
+    WCHAR                 szName[256]   = { 0 };
+    WCHAR                 szDomain[256] = { 0 };
+    DWORD                 cchName       = ARRAYSIZE (szName);
+    DWORD                 cchDomain     = ARRAYSIZE (szDomain);
+    SID_NAME_USE          sidUse        = SidTypeUnknown;
+    wstring               result          (kszUnknown);
+
+
+
+    //
+    // Get the owner SID from the file's security descriptor
+    //
+    dwResult = GetNamedSecurityInfoW (pszFilePath, SE_FILE_OBJECT, OWNER_SECURITY_INFORMATION,
+                                      &pSidOwner, nullptr, nullptr, nullptr, &pSD);
+    CHRA (HRESULT_FROM_WIN32 (dwResult));
+
+    //
+    // Look up the account name for the SID
+    //
+    fSuccess = LookupAccountSidW (nullptr, pSidOwner, szName, &cchName, szDomain, &cchDomain, &sidUse);
+    CWRA (fSuccess);
+
+    //
+    // Format as DOMAIN\User or just User if domain is empty
+    //
+    if (cchDomain > 1 && szDomain[0] != L'\0')
+    {
+        result = format (L"{}\\{}", szDomain, szName);
+    }
+    else
+    {
+        result = szName;
+    }
+
+
+Error:
+    if (pSD != nullptr)
+    {
+        LocalFree (pSD);
+    }
+
+    return result;
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CResultsDisplayerNormal::DisplayFileOwner
+//
+//  Displays the file owner column with the specified width
+// 
+////////////////////////////////////////////////////////////////////////////////  
+
+void CResultsDisplayerNormal::DisplayFileOwner (const wstring & owner, size_t cchColumnWidth)
+{
+    m_consolePtr->Printf (CConfig::EAttribute::Owner, L"%-*s ", static_cast<int>(cchColumnWidth), owner.c_str ());
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CResultsDisplayerNormal::GetFileOwners
+//
+//  Pre-calculates owner strings for all files in the directory.
+//  Returns the owners vector and the maximum owner string length for column sizing.
+// 
+////////////////////////////////////////////////////////////////////////////////  
+
+void CResultsDisplayerNormal::GetFileOwners (const CDirectoryInfo & di, vector<wstring> & owners, size_t & cchMaxOwnerLength)
+{
+    owners.reserve (di.m_vMatches.size ());
+    cchMaxOwnerLength = 0;
+
+    for (const WIN32_FIND_DATA & fileInfo : di.m_vMatches)
+    {
+        filesystem::path fullPath = di.m_dirPath / fileInfo.cFileName;
+        wstring          owner    = GetFileOwner (fullPath.c_str ());
+        
+        cchMaxOwnerLength = max (cchMaxOwnerLength, owner.length ());
+        owners.push_back (move (owner));
+    }
 }

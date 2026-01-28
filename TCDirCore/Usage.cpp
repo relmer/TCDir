@@ -4,6 +4,7 @@
 #include "Color.h"
 #include "Config.h"
 #include "Console.h"
+#include "UnicodeSymbols.h"
 #include "Version.h"
 
 
@@ -71,8 +72,6 @@ bool CUsage::IsTcdirEnvVarSet (void)
 
 void CUsage::DisplayUsage (CConsole & console, wchar_t chPrefix)
 {
-#define COPYRIGHT L"\x00A9"
-
     static constexpr LPCWSTR s_kpszArch = 
 #if defined(_M_X64)
                                           L"x64";
@@ -101,14 +100,14 @@ void CUsage::DisplayUsage (CConsole & console, wchar_t chPrefix)
     console.PrintColorfulString (L"Technicolor");
     console.Printf (CConfig::EAttribute::Default, L" Directory version " VERSION_WSTRING L" %s (%s)\n", s_kpszArch, buildTimestamp.c_str ());
 
-    console.Printf (CConfig::EAttribute::Default, L"Copyright " COPYRIGHT " 2004-" VERSION_YEAR_WSTRING  L" by Robert Elmer\n");
+    console.Printf (CConfig::EAttribute::Default, L"Copyright %c 2004-" VERSION_YEAR_WSTRING  L" by Robert Elmer\n", UnicodeSymbols::Copyright);
     console.Printf (CConfig::EAttribute::Default, L"\n");
 #ifdef _DEBUG
-    console.Printf (CConfig::EAttribute::Default, L"TCDIR [drive:][path][filename] [%sA[[:]attributes]] [%sO[[:]sortorder]] [%sT[[:]timefield]] [%sS] [%sW] [%sB] [%sP] [%sM] [%sEnv] [%sConfig] [%sDebug]\n",
-                    szShort, szShort, szShort, szShort, szShort, szShort, szShort, szShort, pszLong, pszLong, pszLong);
+    console.Printf (CConfig::EAttribute::Default, L"TCDIR [drive:][path][filename] [%sA[[:]attributes]] [%sO[[:]sortorder]] [%sT[[:]timefield]] [%sS] [%sW] [%sB] [%sP] [%sM] [%sEnv] [%sConfig] [%sOwner] [%sDebug]\n",
+                    szShort, szShort, szShort, szShort, szShort, szShort, szShort, szShort, pszLong, pszLong, pszLong, pszLong);
 #else
-    console.Printf (CConfig::EAttribute::Default, L"TCDIR [drive:][path][filename] [%sA[[:]attributes]] [%sO[[:]sortorder]] [%sT[[:]timefield]] [%sS] [%sW] [%sB] [%sP] [%sM] [%sEnv] [%sConfig]\n",
-                    szShort, szShort, szShort, szShort, szShort, szShort, szShort, szShort, pszLong, pszLong);
+    console.Printf (CConfig::EAttribute::Default, L"TCDIR [drive:][path][filename] [%sA[[:]attributes]] [%sO[[:]sortorder]] [%sT[[:]timefield]] [%sS] [%sW] [%sB] [%sP] [%sM] [%sEnv] [%sConfig] [%sOwner]\n",
+                    szShort, szShort, szShort, szShort, szShort, szShort, szShort, szShort, pszLong, pszLong, pszLong);
 #endif
     console.Printf (CConfig::EAttribute::Default, L"\n");
     console.Printf (CConfig::EAttribute::Default, L"  [drive:][path][filename]\n");
@@ -121,14 +120,14 @@ void CUsage::DisplayUsage (CConsole & console, wchar_t chPrefix)
     console.Printf (CConfig::EAttribute::Default, L"               E  Encrypted files            C  Compressed files\n");
     console.Printf (CConfig::EAttribute::Default, L"               P  Reparse points             0  Sparse files\n");
     console.Printf (CConfig::EAttribute::Default, L"               X  Not content indexed        I  Integrity stream (ReFS)\n");
-    console.Printf (CConfig::EAttribute::Default, L"               B  No scrub data (ReFS)       O  Cloud-only (placeholder)\n");
-    console.Printf (CConfig::EAttribute::Default, L"               F  Pinned (always local)      U  Unpinned (can dehydrate)\n");
+    console.Printf (CConfig::EAttribute::Default, L"               B  No scrub data (ReFS)       O  Cloud-only (not local)\n");
+    console.Printf (CConfig::EAttribute::Default, L"               L  Locally available          V  Always locally available\n");
     console.Printf (CConfig::EAttribute::Default, L"               -  Prefix meaning not\n");
     console.Printf (CConfig::EAttribute::Default, L"\n");
     console.Printf (CConfig::EAttribute::Default, L"  Cloud status symbols shown between file size and name:\n");
-    console.Printf (CConfig::EAttribute::Default, L"               \x25CB  Cloud-only (not locally available)\n");
-    console.Printf (CConfig::EAttribute::Default, L"               \x25D0  Local (synced, can be dehydrated)\n");
-    console.Printf (CConfig::EAttribute::Default, L"               \x25CF  Pinned (always available locally)\n");
+    console.Printf (CConfig::EAttribute::Default, L"               %c  Cloud-only (not locally available)\n", UnicodeSymbols::CircleHollow);
+    console.Printf (CConfig::EAttribute::Default, L"               %c  Locally available (can be freed)\n", UnicodeSymbols::CircleHalfFilled);
+    console.Printf (CConfig::EAttribute::Default, L"               %c  Always locally available (pinned)\n", UnicodeSymbols::CircleFilled);
     console.Printf (CConfig::EAttribute::Default, L"\n");
     console.Printf (CConfig::EAttribute::Default, L"  %sO          List by files in sorted order.\n", szShort);
     console.Printf (CConfig::EAttribute::Default, L"  sortorder    N  By name (alphabetic)       S  By size (smallest first)\n");
@@ -146,6 +145,7 @@ void CUsage::DisplayUsage (CConsole & console, wchar_t chPrefix)
     console.Printf (CConfig::EAttribute::Default, L"  %sM          Enables multi-threaded enumeration (default). Use%s to disable.\n", szShort, pszMDisable);
     console.Printf (CConfig::EAttribute::Default, L"  %sEnv        Displays " TCDIR_ENV_VAR_NAME L" help, syntax, and current value.\n", pszLong);
     console.Printf (CConfig::EAttribute::Default, L"  %sConfig     Displays current color configuration for all items and extensions.\n", pszLong);
+    console.Printf (CConfig::EAttribute::Default, L"  %sOwner      Displays file owner (DOMAIN\\User) for each file.\n", pszLong);
 #ifdef _DEBUG
     console.Printf (CConfig::EAttribute::Default, L"  %sDebug      Displays raw file attributes in hex for diagnosing edge cases.\n", pszLong);
 #endif
@@ -190,7 +190,7 @@ void CUsage::DisplayEnvVarIssues (CConsole & console, wchar_t chPrefix)
     for (const auto & error : validationResult.errors)
     {
         size_t  prefixLen = 2 + error.message.length() + 5 + error.invalidTextOffset;
-        wstring underline   (error.invalidText.length(), L'\x203E');  // Unicode overline character
+        wstring underline   (error.invalidText.length(), UnicodeSymbols::Overline);
         
 
 
@@ -217,15 +217,14 @@ void CUsage::DisplayEnvVarIssues (CConsole & console, wchar_t chPrefix)
 
 void CUsage::DisplayConfigurationTable (CConsole & console)
 {
-    static constexpr WCHAR UNICODE_LINE_HORIZONTAL = L'\x2500';
-    static constexpr int   COLUMN_WIDTH_ATTR       = 25;
+    static constexpr int   COLUMN_WIDTH_ATTR       = 27;  // Sized for "AlwaysLocallyAvailable (●)"
     static constexpr int   COLUMN_WIDTH_SOURCE     = 15;
 
     wstring tableSeparator = L"  ";
 
 
 
-    tableSeparator += wstring (COLUMN_WIDTH_ATTR + COLUMN_WIDTH_SOURCE + 2, UNICODE_LINE_HORIZONTAL);
+    tableSeparator += wstring (COLUMN_WIDTH_ATTR + COLUMN_WIDTH_SOURCE + 2, UnicodeSymbols::LineHorizontal);
 
     DisplayAttributeConfiguration     (console, COLUMN_WIDTH_ATTR, COLUMN_WIDTH_SOURCE);
     DisplayFileAttributeConfiguration (console, COLUMN_WIDTH_ATTR, COLUMN_WIDTH_SOURCE);
@@ -263,9 +262,25 @@ void CUsage::DisplayAttributeConfiguration (CConsole & console, int columnWidthA
         { L"Info highlight",         CConfig::EAttribute::InformationHighlight    },
         { L"Separator line",         CConfig::EAttribute::SeparatorLine           },
         { L"Error",                  CConfig::EAttribute::Error                   },
-        { L"CloudOnly (\x25CB)",       CConfig::EAttribute::CloudStatusCloudOnly    },
-        { L"Local (\x25D0)",           CConfig::EAttribute::CloudStatusLocal        },
-        { L"Pinned (\x25CF)",        CConfig::EAttribute::CloudStatusPinned       },
+        { L"Owner",                  CConfig::EAttribute::Owner                   },
+    };
+
+    // Build cloud status display names with symbols
+    wstring cloudOnlyName              = format (L"CloudOnly ({})",              UnicodeSymbols::CircleHollow);
+    wstring locallyAvailableName       = format (L"LocallyAvailable ({})",       UnicodeSymbols::CircleHalfFilled);
+    wstring alwaysLocallyAvailableName = format (L"AlwaysLocallyAvailable ({})", UnicodeSymbols::CircleFilled);
+
+    struct CloudAttrInfo
+    {
+        const wstring &       name;
+        CConfig::EAttribute   attr;
+    };
+
+    CloudAttrInfo s_cloudAttrInfos[] =
+    {
+        { cloudOnlyName,              CConfig::EAttribute::CloudStatusCloudOnly              },
+        { locallyAvailableName,       CConfig::EAttribute::CloudStatusLocallyAvailable       },
+        { alwaysLocallyAvailableName, CConfig::EAttribute::CloudStatusAlwaysLocallyAvailable },
     };
 
 
@@ -279,9 +294,15 @@ void CUsage::DisplayAttributeConfiguration (CConsole & console, int columnWidthA
         WORD attr  = console.m_configPtr->m_rgAttributes[info.attr];
         bool isEnv = (console.m_configPtr->m_rgAttributeSources[info.attr] == CConfig::EAttributeSource::Environment);
 
-
-
         DisplayItemAndSource (console, info.name, attr, isEnv, columnWidthAttr, columnWidthSource, 0, EItemDisplayMode::SingleColumn);
+    }
+
+    for (const auto & info : s_cloudAttrInfos)
+    {
+        WORD attr  = console.m_configPtr->m_rgAttributes[info.attr];
+        bool isEnv = (console.m_configPtr->m_rgAttributeSources[info.attr] == CConfig::EAttributeSource::Environment);
+
+        DisplayItemAndSource (console, info.name.c_str(), attr, isEnv, columnWidthAttr, columnWidthSource, 0, EItemDisplayMode::SingleColumn);
     }
 }
 
@@ -810,9 +831,10 @@ void CUsage::DisplayEnvVarHelp (CConsole & console, wchar_t chPrefix)
 {
     // Determine prefix strings for single-char switches
     wchar_t szShort[2]  = { chPrefix, L'\0' };                      // "-" or "/"
+    LPCWSTR szLong      = (chPrefix == L'-') ? L"--" : L"/";        // "--" or "/"
     LPCWSTR pszMDisable = (chPrefix == L'-') ? L"-M-" : L"/M-";     // "-M-" or "/M-"
 
-    static LPCWSTR s_setEnvVarCommandCmd        = L"  set " TCDIR_ENV_VAR_NAME L"=";
+    static LPCWSTR s_setEnvVarCommandCmd        = L"  set "  TCDIR_ENV_VAR_NAME L"=";
     static LPCWSTR s_setEnvVarCommandPowerShell = L"  $env:" TCDIR_ENV_VAR_NAME L" = \"";
 
     bool  isPowerShell = IsPowerShell ();
@@ -843,21 +865,26 @@ void CUsage::DisplayEnvVarHelp (CConsole & console, wchar_t chPrefix)
     console.Printf (CConfig::EAttribute::Default, L"                  P  Display performance timing information\n");
     console.Printf (CConfig::EAttribute::Default, L"                  S  Recurse into subdirectories\n");
     console.Printf (CConfig::EAttribute::Default, L"                  M  Enables multi-threaded enumeration (default); use %s to disable\n", pszMDisable);
+    console.Printf (CConfig::EAttribute::Default, L"                  %sOwner  Display file ownership\n", szLong);
     console.Printf (CConfig::EAttribute::Default, L"\n");
     console.Printf (CConfig::EAttribute::Default, L"  <Item>      A display item:\n");
-    console.Printf (CConfig::EAttribute::Default, L"                  D  Date           T  Time\n");
-    console.Printf (CConfig::EAttribute::Default, L"                  S  Size           R  Directory name\n");
-    console.Printf (CConfig::EAttribute::Default, L"                  I  Information    H  Information highlight\n");
-    console.Printf (CConfig::EAttribute::Default, L"                  E  Error          F  File (default)\n");
-    console.Printf (CConfig::EAttribute::Default, L"                  CloudOnly        Local          Pinned\n");
+    console.Printf (CConfig::EAttribute::Default, L"                  D  Date                     T  Time\n");
+    console.Printf (CConfig::EAttribute::Default, L"                  S  Size                     R  Directory name\n");
+    console.Printf (CConfig::EAttribute::Default, L"                  I  Information              H  Information highlight\n");
+    console.Printf (CConfig::EAttribute::Default, L"                  E  Error                    F  File (default)\n");
+    console.Printf (CConfig::EAttribute::Default, L"                  O  Owner\n");
+    console.Printf (CConfig::EAttribute::Default, L"\n");
+    console.Printf (CConfig::EAttribute::Default, L"              Cloud status (use full name, e.g., CloudOnly=Blue):\n");
+    console.Printf (CConfig::EAttribute::Default, L"                  CloudOnly                   LocallyAvailable\n");
+    console.Printf (CConfig::EAttribute::Default, L"                  AlwaysLocallyAvailable\n");
     console.Printf (CConfig::EAttribute::Default, L"\n");
     console.Printf (CConfig::EAttribute::Default, L"  <.ext>      A file extension, including the leading period.\n");
     console.Printf (CConfig::EAttribute::Default, L"\n");
     console.Printf (CConfig::EAttribute::Default, L"  <FileAttr>  A file attribute (see file attributes below)\n");
-    console.Printf (CConfig::EAttribute::Default, L"                  R  Read-only      H  Hidden\n");
-    console.Printf (CConfig::EAttribute::Default, L"                  S  System         A  Archive\n");
-    console.Printf (CConfig::EAttribute::Default, L"                  T  Temporary      E  Encrypted\n");
-    console.Printf (CConfig::EAttribute::Default, L"                  C  Compressed     P  Reparse point\n");
+    console.Printf (CConfig::EAttribute::Default, L"                  R  Read-only                H  Hidden\n");
+    console.Printf (CConfig::EAttribute::Default, L"                  S  System                   A  Archive\n");
+    console.Printf (CConfig::EAttribute::Default, L"                  T  Temporary                E  Encrypted\n");
+    console.Printf (CConfig::EAttribute::Default, L"                  C  Compressed               P  Reparse point\n");
     console.Printf (CConfig::EAttribute::Default, L"                  0  Sparse file\n");
     console.Printf (CConfig::EAttribute::Default, L"\n");
     console.Printf (CConfig::EAttribute::Default, L"  <Fore>      Foreground color\n");

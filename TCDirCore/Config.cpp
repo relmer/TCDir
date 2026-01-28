@@ -181,20 +181,21 @@ CConfig::CConfig (void)
 
 void CConfig::Initialize (WORD wDefaultAttr)
 {
-    m_rgAttributes[EAttribute::Default]                 = wDefaultAttr;
-    m_rgAttributes[EAttribute::Date]                    = FC_Red;
-    m_rgAttributes[EAttribute::Time]                    = FC_Brown;
-    m_rgAttributes[EAttribute::FileAttributePresent]    = FC_Cyan;
-    m_rgAttributes[EAttribute::FileAttributeNotPresent] = FC_DarkGrey;
-    m_rgAttributes[EAttribute::Information]             = FC_Cyan;
-    m_rgAttributes[EAttribute::InformationHighlight]    = FC_White;
-    m_rgAttributes[EAttribute::Size]                    = FC_Yellow;
-    m_rgAttributes[EAttribute::Directory]               = FC_LightBlue;
-    m_rgAttributes[EAttribute::SeparatorLine]           = FC_LightBlue;
-    m_rgAttributes[EAttribute::Error]                   = FC_LightRed;
-    m_rgAttributes[EAttribute::CloudStatusCloudOnly]    = FC_LightBlue;
-    m_rgAttributes[EAttribute::CloudStatusLocal]        = FC_LightGreen;
-    m_rgAttributes[EAttribute::CloudStatusPinned]       = FC_LightGreen;
+    m_rgAttributes[EAttribute::Default]                           = wDefaultAttr;
+    m_rgAttributes[EAttribute::Date]                              = FC_Red;
+    m_rgAttributes[EAttribute::Time]                              = FC_Brown;
+    m_rgAttributes[EAttribute::FileAttributePresent]              = FC_Cyan;
+    m_rgAttributes[EAttribute::FileAttributeNotPresent]           = FC_DarkGrey;
+    m_rgAttributes[EAttribute::Information]                       = FC_Cyan;
+    m_rgAttributes[EAttribute::InformationHighlight]              = FC_White;
+    m_rgAttributes[EAttribute::Size]                              = FC_Yellow;
+    m_rgAttributes[EAttribute::Directory]                         = FC_LightBlue;
+    m_rgAttributes[EAttribute::SeparatorLine]                     = FC_LightBlue;
+    m_rgAttributes[EAttribute::Error]                             = FC_LightRed;
+    m_rgAttributes[EAttribute::Owner]                             = FC_Green;
+    m_rgAttributes[EAttribute::CloudStatusCloudOnly]              = FC_LightBlue;
+    m_rgAttributes[EAttribute::CloudStatusLocallyAvailable]       = FC_LightGreen;
+    m_rgAttributes[EAttribute::CloudStatusAlwaysLocallyAvailable] = FC_LightGreen;
   
     InitializeExtensionToTextAttrMap();
     InitializeFileAttributeToTextAttrMap();
@@ -521,8 +522,9 @@ Error:
 //
 //  CConfig::ProcessSwitchOverride
 //
-//  Process a switch override entry (e.g., /s, /w, /m-, -s, -w)
-//  Supports: /S (recurse), /W (wide), /P (perf timer), /M (multithreaded)
+//  Process a switch override entry (e.g., /s, /w, /m-, -s, -w, --owner)
+//  Short switches: /S (recurse), /W (wide), /P (perf timer), /M (multithreaded)
+//  Long switches: --owner
 //  Use trailing '-' to disable (e.g., /M-)
 //
 ////////////////////////////////////////////////////////////////////////////////
@@ -531,8 +533,8 @@ void CConfig::ProcessSwitchOverride (wstring_view entry)
 {
     static constexpr LPCWSTR s_krgExample[] =
     {
-        L"Invalid switch (expected -S, -W, -P, or -M)",
-        L"Invalid switch (expected /S, /W, /P, or /M)",
+        L"Invalid switch (expected -S, -W, -P, -M, or --owner)",
+        L"Invalid switch (expected /S, /W, /P, /M, or /owner)",
     };
 
     HRESULT      hr                = S_OK;
@@ -543,6 +545,19 @@ void CConfig::ProcessSwitchOverride (wstring_view entry)
     bool         fValue            = true;
 
 
+
+    //
+    // Check for long switch format (--owner or /owner)
+    //
+
+    if (entry.length() >= 3)
+    {
+        hr = ProcessLongSwitchOverride (entry, idxExample);
+        BAIL_OUT_IF (SUCCEEDED (hr), S_OK);  // Success - skip short switch processing
+
+        // Not a recognized long switch, fall through to try short switch
+        hr = S_OK;
+    }
 
     // Entry should be at least 2 characters (e.g., "/s" or "-w")
     switch (entry.length())
@@ -601,6 +616,62 @@ Error:
 
 ////////////////////////////////////////////////////////////////////////////////
 //
+//  CConfig::ProcessLongSwitchOverride
+//
+//  Process a long switch entry (e.g., "--owner" or "/owner").
+//  Sets idxExample for error reporting (0 = dash prefix, 1 = slash prefix).
+//  Returns S_OK if recognized, E_INVALIDARG if not.
+//
+////////////////////////////////////////////////////////////////////////////////
+
+HRESULT CConfig::ProcessLongSwitchOverride (wstring_view entry, size_t & idxExample)
+{
+    HRESULT      hr         = E_INVALIDARG;
+    wstring_view switchName;
+
+
+
+    //
+    // Extract the switch name from the entry
+    //
+
+    if (entry.starts_with (L"--"))
+    {
+        idxExample = 0;
+        switchName = entry.substr (2);
+    }
+    else if (entry[0] == L'/')
+    {
+        idxExample = 1;
+        switchName = entry.substr (1);
+    }
+    else
+    {
+        // Not a valid long switch format
+        CHR (E_INVALIDARG);
+    }
+
+    //
+    // Match against known long switch names (case-insensitive)
+    //
+
+    if (switchName.length() == 5 && _wcsnicmp (switchName.data(), L"owner", 5) == 0)
+    {
+        m_fShowOwner = true;
+        hr           = S_OK;
+    }
+
+
+Error:
+    return hr;
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
 //  CConfig::ProcessFileExtensionOverride
 //
 //  Apply color override for a file extension (e.g., ".cpp")
@@ -650,6 +721,7 @@ void CConfig::ProcessDisplayAttributeOverride (wchar_t attrChar, WORD colorAttr,
         // { L'L', EAttribute::SeparatorLine        }, // Currently unused
         { L'E', EAttribute::Error                   },
         { L'F', EAttribute::Default                 },
+        { L'O', EAttribute::Owner                   },
     };
     
     attrChar = towupper (attrChar);
@@ -665,7 +737,7 @@ void CConfig::ProcessDisplayAttributeOverride (wchar_t attrChar, WORD colorAttr,
         // For single-char key, invalidText is the character, offset is 0 in entry
         wstring invalidChar(1, attrChar);
         m_lastParseResult.errors.push_back({
-            L"Invalid display attribute character (valid: D,T,A,-,S,R,I,H,E,F)",
+            L"Invalid display attribute character (valid: D,T,A,-,S,R,I,H,E,F,O)",
             wstring(entry),
             invalidChar,
             0

@@ -68,6 +68,7 @@ void CCommandLine::ApplyConfigDefaults (const CConfig & config)
     if (config.m_fRecurse.has_value())       m_fRecurse       = config.m_fRecurse.value();
     if (config.m_fPerfTimer.has_value())     m_fPerfTimer     = config.m_fPerfTimer.value();
     if (config.m_fMultiThreaded.has_value()) m_fMultiThreaded = config.m_fMultiThreaded.value();
+    if (config.m_fShowOwner.has_value())     m_fShowOwner     = config.m_fShowOwner.value();
 }
 
 
@@ -281,10 +282,11 @@ HRESULT CCommandLine::HandleLongSwitch (LPCWSTR pszArg)
 
     static const LongSwitchEntry s_krgLongSwitches[] =
     {
-        {  L"env",    &CCommandLine::m_fEnv    },
-        {  L"config", &CCommandLine::m_fConfig },
+        {  L"env",     &CCommandLine::m_fEnv       },
+        {  L"config",  &CCommandLine::m_fConfig    },
+        {  L"owner",   &CCommandLine::m_fShowOwner },
 #ifdef _DEBUG
-        {  L"debug",  &CCommandLine::m_fDebug  },
+        {  L"debug",   &CCommandLine::m_fDebug     },
 #endif
     };
 
@@ -416,7 +418,7 @@ HRESULT CCommandLine::AttributeHandler (LPCWSTR pszArg)
     DWORD                  * pdwMask; 
     const WCHAR            * pchAttribute;       
     int                      idxAttribute;       
-    static constexpr WCHAR   s_kszAttributes[] = L"dhsratecp0xoibfu";
+    static constexpr WCHAR   s_kszAttributes[] = L"dhsratecp0xoiblv";
     static constexpr DWORD   s_kdwAttributes[] =
     { 
         FILE_ATTRIBUTE_DIRECTORY, 
@@ -433,8 +435,8 @@ HRESULT CCommandLine::AttributeHandler (LPCWSTR pszArg)
         FILE_ATTRIBUTE_OFFLINE | FILE_ATTRIBUTE_RECALL_ON_OPEN | FILE_ATTRIBUTE_RECALL_ON_DATA_ACCESS,  // 'o' - cloud-only (composite)
         FILE_ATTRIBUTE_INTEGRITY_STREAM,
         FILE_ATTRIBUTE_NO_SCRUB_DATA,
-        FILE_ATTRIBUTE_PINNED,
-        FILE_ATTRIBUTE_UNPINNED,
+        FILE_ATTRIBUTE_UNPINNED,      // 'l' - locally available
+        FILE_ATTRIBUTE_PINNED,        // 'v' - always locally available
     };
 
 
@@ -575,7 +577,7 @@ HRESULT CCommandLine::TimeFieldHandler (LPCWSTR pszArg)
     }
 
 
-    
+
 Error:
     return hr;
 }

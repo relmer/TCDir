@@ -16,6 +16,7 @@
 // Windows headers
 #include <windows.h>
 
+#include <aclapi.h>
 #include <cfapi.h>
 #include <lmcons.h>
 #include <strsafe.h>

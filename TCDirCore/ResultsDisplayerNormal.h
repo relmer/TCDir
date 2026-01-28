@@ -36,4 +36,7 @@ protected:
     void             DisplayResultsNormalFileSize    (const WIN32_FIND_DATA & fileInfo, size_t cchStringLengthOfMaxFileSize);
     void             DisplayCloudStatusSymbol        (ECloudStatus status);
     void             DisplayRawAttributes            (const WIN32_FIND_DATA & wfd);
+    void             DisplayFileOwner                (const wstring & owner, size_t cchColumnWidth);
+    static wstring   GetFileOwner                    (LPCWSTR pszFilePath);
+    void             GetFileOwners                   (const CDirectoryInfo & di, vector<wstring> & owners, size_t & cchMaxOwnerLength);
 };

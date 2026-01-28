@@ -186,10 +186,10 @@ namespace UnitTest
 
 
 
-        TEST_METHOD(ParseAttributePinned)
+        TEST_METHOD(ParseAttributeAlwaysLocallyAvailable)
         {
             CCommandLine    cl;
-            const wchar_t * a1      = L"/a:f";
+            const wchar_t * a1      = L"/a:v";
             wchar_t       * argv1[] = { const_cast<wchar_t *>(a1) };
             HRESULT         hr      = cl.Parse(1, argv1);
 
@@ -202,10 +202,10 @@ namespace UnitTest
 
 
 
-        TEST_METHOD(ParseAttributeUnpinned)
+        TEST_METHOD(ParseAttributeLocallyAvailable)
         {
             CCommandLine    cl;
-            const wchar_t * a1      = L"/a:u";
+            const wchar_t * a1      = L"/a:l";
             wchar_t       * argv1[] = { const_cast<wchar_t *>(a1) };
             HRESULT         hr      = cl.Parse(1, argv1);
 
@@ -548,6 +548,55 @@ namespace UnitTest
             CCommandLine    cl;
             const wchar_t * t1      = L"/T:X";
             wchar_t       * argv1[] = { const_cast<wchar_t *>(t1) };
+            HRESULT         hr      = cl.Parse(1, argv1);
+
+
+
+            Assert::IsTrue(FAILED(hr));
+        }
+
+
+
+
+        TEST_METHOD(ParseOwnerSwitchDoubleDash)
+        {
+            CCommandLine    cl;
+            const wchar_t * o1      = L"--owner";
+            wchar_t       * argv1[] = { const_cast<wchar_t *>(o1) };
+            HRESULT         hr      = cl.Parse(1, argv1);
+
+
+
+            Assert::IsTrue(SUCCEEDED(hr));
+            Assert::IsTrue(cl.m_fShowOwner);
+            Assert::AreEqual(L'-', cl.GetSwitchPrefix());
+        }
+
+
+
+
+        TEST_METHOD(ParseOwnerSwitchSlash)
+        {
+            CCommandLine    cl;
+            const wchar_t * o1      = L"/Owner";
+            wchar_t       * argv1[] = { const_cast<wchar_t *>(o1) };
+            HRESULT         hr      = cl.Parse(1, argv1);
+
+
+
+            Assert::IsTrue(SUCCEEDED(hr));
+            Assert::IsTrue(cl.m_fShowOwner);
+            Assert::AreEqual(L'/', cl.GetSwitchPrefix());
+        }
+
+
+
+
+        TEST_METHOD(ParseOwnerSwitchSingleDashFails)
+        {
+            CCommandLine    cl;
+            const wchar_t * o1      = L"-owner";
+            wchar_t       * argv1[] = { const_cast<wchar_t *>(o1) };
             HRESULT         hr      = cl.Parse(1, argv1);
 
 

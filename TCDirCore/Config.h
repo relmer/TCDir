@@ -51,9 +51,10 @@ public:
         InformationHighlight,
         SeparatorLine,
         Error,
-        CloudStatusCloudOnly,       // ☁ symbol color (configurable, default: bright blue)
-        CloudStatusLocal,           // ✓ symbol color (configurable, default: bright green)
-        CloudStatusPinned,          // ● symbol color (configurable, default: green)
+        Owner,                             // File owner (DOMAIN\User)
+        CloudStatusCloudOnly,              // ○ symbol color (configurable, default: bright blue)
+        CloudStatusLocallyAvailable,       // ◐ symbol color (configurable, default: bright green)
+        CloudStatusAlwaysLocallyAvailable, // ● symbol color (configurable, default: green)
         
         __count
     };
@@ -97,6 +98,7 @@ public:
     optional<bool>                             m_fRecurse;
     optional<bool>                             m_fPerfTimer;
     optional<bool>                             m_fMultiThreaded;
+    optional<bool>                             m_fShowOwner;
 
 
     
@@ -106,6 +108,7 @@ protected:
     void         ApplyUserColorOverrides              (void);
     void         ProcessColorOverrideEntry            (wstring_view entry);
     void         ProcessSwitchOverride                (wstring_view entry);
+    HRESULT      ProcessLongSwitchOverride            (wstring_view entry, size_t & idxExample);
     void         ProcessFileExtensionOverride         (wstring_view extension, WORD colorAttr);
     void         ProcessDisplayAttributeOverride      (wchar_t attrChar, WORD colorAttr, wstring_view entry);
     void         ProcessFileAttributeOverride         (wstring_view keyView, WORD colorAttr, wstring_view entry);

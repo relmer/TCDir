@@ -1407,7 +1407,7 @@ namespace UnitTest
             Assert::AreEqual(size_t(1), result.errors.size());
             
             const auto& error = result.errors[0];
-            Assert::AreEqual(wstring(L"Invalid display attribute character (valid: D,T,A,-,S,R,I,H,E,F)"), error.message);
+            Assert::AreEqual(wstring(L"Invalid display attribute character (valid: D,T,A,-,S,R,I,H,E,F,O)"), error.message);
             Assert::AreEqual(wstring(L"Q=Yellow"), error.entry);
             Assert::AreEqual(wstring(L"Q"), error.invalidText);
             Assert::AreEqual(size_t(0), error.invalidTextOffset);
@@ -1595,6 +1595,33 @@ namespace UnitTest
 
 
 
+        TEST_METHOD(ProcessSwitchOverride_DoubleDashOwner_SetsShowOwner)
+        {
+            ConfigProbe config;
+            config.Initialize (FC_LightGrey);
+
+            config.ProcessSwitchOverride (L"--owner");
+
+            Assert::IsTrue (config.m_fShowOwner.has_value ());
+            Assert::IsTrue (config.m_fShowOwner.value ());
+        }
+
+
+
+
+        TEST_METHOD(ProcessSwitchOverride_SlashOwner_SetsShowOwner)
+        {
+            ConfigProbe config;
+            config.Initialize (FC_LightGrey);
+
+            config.ProcessSwitchOverride (L"/owner");
+
+            Assert::IsTrue (config.m_fShowOwner.has_value ());
+            Assert::IsTrue (config.m_fShowOwner.value ());
+        }
+
+
+
 
         TEST_METHOD(ProcessSwitchOverride_InvalidSwitch_AddsError)
         {
@@ -1605,7 +1632,7 @@ namespace UnitTest
 
             CConfig::ValidationResult result = config.ValidateEnvironmentVariable ();
             Assert::AreEqual (size_t (1), result.errors.size ());
-            Assert::AreEqual (wstring (L"Invalid switch (expected /S, /W, /P, or /M)"), result.errors[0].message);
+            Assert::AreEqual (wstring (L"Invalid switch (expected /S, /W, /P, /M, or /owner)"), result.errors[0].message);
         }
 
 
@@ -1622,7 +1649,7 @@ namespace UnitTest
             CConfig::ValidationResult result = config.ValidateEnvironmentVariable ();
             Assert::AreEqual (size_t (1), result.errors.size ());
             // With just "/", length check fails before idxExample is set, so idxExample=0 (default), uses the -S message
-            Assert::AreEqual (wstring (L"Invalid switch (expected -S, -W, -P, or -M)"), result.errors[0].message);
+            Assert::AreEqual (wstring (L"Invalid switch (expected -S, -W, -P, -M, or --owner)"), result.errors[0].message);
         }
 
 
@@ -1639,7 +1666,7 @@ namespace UnitTest
             CConfig::ValidationResult result = config.ValidateEnvironmentVariable ();
             Assert::AreEqual (size_t (1), result.errors.size ());
             // With just "-", entry[0] is '-' so idxExample=0, uses the -S message
-            Assert::AreEqual (wstring (L"Invalid switch (expected -S, -W, -P, or -M)"), result.errors[0].message);
+            Assert::AreEqual (wstring (L"Invalid switch (expected -S, -W, -P, -M, or --owner)"), result.errors[0].message);
         }
 
 

@@ -313,10 +313,10 @@ namespace UnitTest
 
 
 
-        TEST_METHOD(AttributeFilter_Pinned_MatchesPinnedFile)
+        TEST_METHOD(AttributeFilter_AlwaysLocallyAvailable_MatchesPinnedFile)
         {
             CCommandLine cl;
-            const wchar_t* arg = L"/A:F";
+            const wchar_t* arg = L"/A:V";
             wchar_t* argv[] = { const_cast<wchar_t*>(arg) };
             HRESULT hr = cl.Parse(1, argv);
 
@@ -333,10 +333,10 @@ namespace UnitTest
 
 
 
-        TEST_METHOD(AttributeFilter_Unpinned_MatchesLocalFile)
+        TEST_METHOD(AttributeFilter_LocallyAvailable_MatchesLocalFile)
         {
             CCommandLine cl;
-            const wchar_t* arg = L"/A:U";
+            const wchar_t* arg = L"/A:L";
             wchar_t* argv[] = { const_cast<wchar_t*>(arg) };
             HRESULT hr = cl.Parse(1, argv);
 
@@ -404,31 +404,31 @@ namespace UnitTest
 
 
 
-        TEST_METHOD(AttributeFilter_BothPinnedAndUnpinned_MatchesBothFilters)
+        TEST_METHOD(AttributeFilter_BothAlwaysAndLocallyAvailable_MatchesBothFilters)
         {
-            // Files with both bits set match both /A:F and /A:U (bitwise match)
+            // Files with both bits set match both /A:V and /A:L (bitwise match)
             WIN32_FIND_DATA fd = CreateMockFileData(L"desktop.ini", 
                 FILE_ATTRIBUTE_ARCHIVE | FILE_ATTRIBUTE_PINNED | FILE_ATTRIBUTE_UNPINNED);
 
-            CCommandLine clF;
-            const wchar_t* argF = L"/A:F";
-            wchar_t* argvF[] = { const_cast<wchar_t*>(argF) };
-            clF.Parse(1, argvF);
+            CCommandLine clV;
+            const wchar_t* argV = L"/A:V";
+            wchar_t* argvV[] = { const_cast<wchar_t*>(argV) };
+            clV.Parse(1, argvV);
 
-            CCommandLine clU;
-            const wchar_t* argU = L"/A:U";
-            wchar_t* argvU[] = { const_cast<wchar_t*>(argU) };
-            clU.Parse(1, argvU);
+            CCommandLine clL;
+            const wchar_t* argL = L"/A:L";
+            wchar_t* argvL[] = { const_cast<wchar_t*>(argL) };
+            clL.Parse(1, argvL);
 
 
 
-            // Should match /A:F (PINNED bit is set)
-            bool matchesF = (fd.dwFileAttributes & clF.m_dwAttributesRequired) != 0;
-            Assert::IsTrue(matchesF);
+            // Should match /A:V (PINNED bit is set)
+            bool matchesV = (fd.dwFileAttributes & clV.m_dwAttributesRequired) != 0;
+            Assert::IsTrue(matchesV);
 
-            // Should also match /A:U (UNPINNED bit is also set)
-            bool matchesU = (fd.dwFileAttributes & clU.m_dwAttributesRequired) != 0;
-            Assert::IsTrue(matchesU);
+            // Should also match /A:L (UNPINNED bit is also set)
+            bool matchesL = (fd.dwFileAttributes & clL.m_dwAttributesRequired) != 0;
+            Assert::IsTrue(matchesL);
         }
 
     };
