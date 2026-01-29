@@ -13,6 +13,90 @@
 
 ////////////////////////////////////////////////////////////////////////////////
 //
+//  Shared data structures for display items, file attributes, and switches
+//
+////////////////////////////////////////////////////////////////////////////////
+
+struct SDisplayItemInfo
+{
+    LPCWSTR             name;
+    CConfig::EAttribute attr;
+};
+
+static constexpr SDisplayItemInfo s_kDisplayItemInfos[] =
+{
+    { L"Default",                CConfig::EAttribute::Default                 },
+    { L"Date",                   CConfig::EAttribute::Date                    },
+    { L"Time",                   CConfig::EAttribute::Time                    },
+    { L"File attribute present", CConfig::EAttribute::FileAttributePresent    },
+    { L"File attribute absent",  CConfig::EAttribute::FileAttributeNotPresent },
+    { L"Size",                   CConfig::EAttribute::Size                    },
+    { L"Directory",              CConfig::EAttribute::Directory               },
+    { L"Information",            CConfig::EAttribute::Information             },
+    { L"Info highlight",         CConfig::EAttribute::InformationHighlight    },
+    { L"Separator line",         CConfig::EAttribute::SeparatorLine           },
+    { L"Error",                  CConfig::EAttribute::Error                   },
+    { L"Owner",                  CConfig::EAttribute::Owner                   },
+    { L"Stream",                 CConfig::EAttribute::Stream                  },
+};
+
+struct SCloudStatusInfo
+{
+    CConfig::EAttribute attr;
+    LPCWSTR             baseName;
+    wchar_t             symbol;
+};
+
+static constexpr SCloudStatusInfo s_kCloudStatusInfos[] =
+{
+    { CConfig::EAttribute::CloudStatusCloudOnly,              L"CloudOnly",              UnicodeSymbols::CircleHollow     },
+    { CConfig::EAttribute::CloudStatusLocallyAvailable,       L"LocallyAvailable",       UnicodeSymbols::CircleHalfFilled },
+    { CConfig::EAttribute::CloudStatusAlwaysLocallyAvailable, L"AlwaysLocallyAvailable", UnicodeSymbols::CircleFilled     },
+};
+
+struct SFileAttrInfo
+{
+    LPCWSTR name;
+    wchar_t letter;
+    DWORD   dwAttribute;
+};
+
+static constexpr SFileAttrInfo s_kFileAttrInfos[] =
+{
+    { L"Read-only",      L'R', FILE_ATTRIBUTE_READONLY      },
+    { L"Hidden",         L'H', FILE_ATTRIBUTE_HIDDEN        },
+    { L"System",         L'S', FILE_ATTRIBUTE_SYSTEM        },
+    { L"Archive",        L'A', FILE_ATTRIBUTE_ARCHIVE       },
+    { L"Temporary",      L'T', FILE_ATTRIBUTE_TEMPORARY     },
+    { L"Encrypted",      L'E', FILE_ATTRIBUTE_ENCRYPTED     },
+    { L"Compressed",     L'C', FILE_ATTRIBUTE_COMPRESSED    },
+    { L"Reparse point",  L'P', FILE_ATTRIBUTE_REPARSE_POINT },
+    { L"Sparse file",    L'0', FILE_ATTRIBUTE_SPARSE_FILE   },
+};
+
+struct SSwitchInfo
+{
+    LPCWSTR name;
+    LPCWSTR description;
+};
+
+static constexpr SSwitchInfo s_kSwitchInfos[] =
+{
+    { L"W",       L"Wide listing format"            },
+    { L"S",       L"Recurse into subdirectories"    },
+    { L"P",       L"Display performance timing"     },
+    { L"M",       L"Multi-threaded enumeration"     },
+    { L"B",       L"Bare listing format"            },
+    { L"Owner",   L"Display file ownership"         },
+    { L"Streams", L"Display alternate data streams" },
+};
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
 //  CUsage::IsEnvVarSet
 //
 ////////////////////////////////////////////////////////////////////////////////
@@ -186,8 +270,6 @@ void CUsage::DisplayEnvVarIssues (CConsole & console, wchar_t chPrefix)
                     TCDIR_ENV_VAR_NAME, pszLong);
     console.Puts   (CConfig::EAttribute::Default, L"\n");
 
-    DisplayEnvVarCurrentValue (console, TCDIR_ENV_VAR_NAME);
-
     for (const auto & error : validationResult.errors)
     {
         size_t  prefixLen = 2 + error.message.length() + 5 + error.invalidTextOffset;
@@ -244,54 +326,11 @@ void CUsage::DisplayConfigurationTable (CConsole & console)
 
 void CUsage::DisplayAttributeConfiguration (CConsole & console, int columnWidthAttr, int columnWidthSource)
 {
-    struct AttrInfo
-    {
-        LPCWSTR             name;
-        CConfig::EAttribute attr;
-    };
-
-    static constexpr AttrInfo s_attrInfos[] =
-    {
-        { L"Default",                CConfig::EAttribute::Default                 },
-        { L"Date",                   CConfig::EAttribute::Date                    },
-        { L"Time",                   CConfig::EAttribute::Time                    },
-        { L"File attribute present", CConfig::EAttribute::FileAttributePresent    },
-        { L"File attribute absent",  CConfig::EAttribute::FileAttributeNotPresent },
-        { L"Size",                   CConfig::EAttribute::Size                    },
-        { L"Directory",              CConfig::EAttribute::Directory               },
-        { L"Information",            CConfig::EAttribute::Information             },
-        { L"Info highlight",         CConfig::EAttribute::InformationHighlight    },
-        { L"Separator line",         CConfig::EAttribute::SeparatorLine           },
-        { L"Error",                  CConfig::EAttribute::Error                   },
-        { L"Owner",                  CConfig::EAttribute::Owner                   },
-        { L"Stream",                 CConfig::EAttribute::Stream                  },
-    };
-
-    // Build cloud status display names with symbols
-    wstring cloudOnlyName              = format (L"CloudOnly ({})",              UnicodeSymbols::CircleHollow);
-    wstring locallyAvailableName       = format (L"LocallyAvailable ({})",       UnicodeSymbols::CircleHalfFilled);
-    wstring alwaysLocallyAvailableName = format (L"AlwaysLocallyAvailable ({})", UnicodeSymbols::CircleFilled);
-
-    struct CloudAttrInfo
-    {
-        const wstring &       name;
-        CConfig::EAttribute   attr;
-    };
-
-    CloudAttrInfo s_cloudAttrInfos[] =
-    {
-        { cloudOnlyName,              CConfig::EAttribute::CloudStatusCloudOnly              },
-        { locallyAvailableName,       CConfig::EAttribute::CloudStatusLocallyAvailable       },
-        { alwaysLocallyAvailableName, CConfig::EAttribute::CloudStatusAlwaysLocallyAvailable },
-    };
-
-
-
     console.Puts (CConfig::EAttribute::Information, L"");
     console.Puts (CConfig::EAttribute::Information, L"Current display item configuration:");
     console.Puts (CConfig::EAttribute::Information, L"");
 
-    for (const auto & info : s_attrInfos)
+    for (const auto & info : s_kDisplayItemInfos)
     {
         WORD attr  = console.m_configPtr->m_rgAttributes[info.attr];
         bool isEnv = (console.m_configPtr->m_rgAttributeSources[info.attr] == CConfig::EAttributeSource::Environment);
@@ -299,12 +338,13 @@ void CUsage::DisplayAttributeConfiguration (CConsole & console, int columnWidthA
         DisplayItemAndSource (console, info.name, attr, isEnv, columnWidthAttr, columnWidthSource, 0, EItemDisplayMode::SingleColumn);
     }
 
-    for (const auto & info : s_cloudAttrInfos)
+    for (const auto & info : s_kCloudStatusInfos)
     {
-        WORD attr  = console.m_configPtr->m_rgAttributes[info.attr];
-        bool isEnv = (console.m_configPtr->m_rgAttributeSources[info.attr] == CConfig::EAttributeSource::Environment);
+        WORD    attr    = console.m_configPtr->m_rgAttributes[info.attr];
+        bool    isEnv   = (console.m_configPtr->m_rgAttributeSources[info.attr] == CConfig::EAttributeSource::Environment);
+        wstring display = format (L"{} ({})", info.baseName, info.symbol);
 
-        DisplayItemAndSource (console, info.name.c_str(), attr, isEnv, columnWidthAttr, columnWidthSource, 0, EItemDisplayMode::SingleColumn);
+        DisplayItemAndSource (console, display, attr, isEnv, columnWidthAttr, columnWidthSource, 0, EItemDisplayMode::SingleColumn);
     }
 }
 
@@ -320,33 +360,11 @@ void CUsage::DisplayAttributeConfiguration (CConsole & console, int columnWidthA
 
 void CUsage::DisplayFileAttributeConfiguration (CConsole & console, int columnWidthAttr, int columnWidthSource)
 {
-    struct FileAttrInfo
-    {
-        LPCWSTR name;
-        DWORD   dwAttribute;
-        WCHAR   ch;
-    };
-
-    static constexpr FileAttrInfo s_attrInfos[] =
-    {
-        { L"Read-only",      FILE_ATTRIBUTE_READONLY,      L'R' },
-        { L"Hidden",         FILE_ATTRIBUTE_HIDDEN,        L'H' },
-        { L"System",         FILE_ATTRIBUTE_SYSTEM,        L'S' },
-        { L"Archive",        FILE_ATTRIBUTE_ARCHIVE,       L'A' },
-        { L"Temporary",      FILE_ATTRIBUTE_TEMPORARY,     L'T' },
-        { L"Encrypted",      FILE_ATTRIBUTE_ENCRYPTED,     L'E' },
-        { L"Compressed",     FILE_ATTRIBUTE_COMPRESSED,    L'C' },
-        { L"Reparse point",  FILE_ATTRIBUTE_REPARSE_POINT, L'P' },
-        { L"Sparse file",    FILE_ATTRIBUTE_SPARSE_FILE,   L'0' },
-    };
-
-
-
     console.Puts (CConfig::EAttribute::Information, L"");
     console.Puts (CConfig::EAttribute::Information, L"File attribute color configuration:");
     console.Puts (CConfig::EAttribute::Information, L"");
 
-    for (const auto & info : s_attrInfos)
+    for (const auto & info : s_kFileAttrInfos)
     {
         auto iter = console.m_configPtr->m_mapFileAttributesTextAttr.find (info.dwAttribute);
         if (iter == console.m_configPtr->m_mapFileAttributesTextAttr.end())
@@ -356,7 +374,7 @@ void CUsage::DisplayFileAttributeConfiguration (CConsole & console, int columnWi
 
         WORD    attr  = iter->second.m_wAttr;
         bool    isEnv = (iter->second.m_source == CConfig::EAttributeSource::Environment);
-        wstring label = format (L"{} {}", info.ch, info.name);
+        wstring label = format (L"{} {}", info.letter, info.name);
         
         DisplayItemAndSource (console, label, attr, isEnv, columnWidthAttr, columnWidthSource, 0, EItemDisplayMode::SingleColumn);
     }
@@ -822,6 +840,283 @@ Error:
 
 ////////////////////////////////////////////////////////////////////////////////
 //
+//  CUsage::HasEnvVarSwitches
+//
+////////////////////////////////////////////////////////////////////////////////
+
+static bool HasEnvVarSwitches (const CConfig & config)
+{
+    return config.m_fWideListing.has_value()   ||
+           config.m_fRecurse.has_value()       ||
+           config.m_fPerfTimer.has_value()     ||
+           config.m_fMultiThreaded.has_value() ||
+           config.m_fBareListing.has_value()   ||
+           config.m_fShowOwner.has_value()     ||
+           config.m_fShowStreams.has_value();
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CUsage::HasEnvVarDisplayItems
+//
+////////////////////////////////////////////////////////////////////////////////
+
+static bool HasEnvVarDisplayItems (const CConfig & config)
+{
+    auto isFromEnv = [&config](const auto & info)
+    {
+        return config.m_rgAttributeSources[info.attr] == CConfig::EAttributeSource::Environment;
+    };
+
+    return ranges::any_of (s_kDisplayItemInfos, isFromEnv) ||
+           ranges::any_of (s_kCloudStatusInfos, isFromEnv);
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CUsage::HasEnvVarFileAttrs
+//
+////////////////////////////////////////////////////////////////////////////////
+
+static bool HasEnvVarFileAttrs (const CConfig & config)
+{
+    return ranges::any_of (config.m_mapFileAttributesTextAttr, [](const auto & pair)
+    {
+        return pair.second.m_source == CConfig::EAttributeSource::Environment;
+    });
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CUsage::HasEnvVarExtensions
+//
+////////////////////////////////////////////////////////////////////////////////
+
+static bool HasEnvVarExtensions (const CConfig & config)
+{
+    return ranges::any_of (config.m_mapExtensionSources, [](const auto & pair)
+    {
+        return pair.second == CConfig::EAttributeSource::Environment;
+    });
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CUsage::DisplayEnvVarSwitchesSection
+//
+////////////////////////////////////////////////////////////////////////////////
+
+static void DisplayEnvVarSwitchesSection (CConsole & console, const CConfig & config)
+{
+    const optional<bool> * switchValues[] =
+    {
+        &config.m_fWideListing,
+        &config.m_fRecurse,
+        &config.m_fPerfTimer,
+        &config.m_fMultiThreaded,
+        &config.m_fBareListing,
+        &config.m_fShowOwner,
+        &config.m_fShowStreams,
+    };
+
+    static_assert (_countof (switchValues) == _countof (s_kSwitchInfos), "Switch arrays must match");
+
+
+
+    console.Puts (CConfig::EAttribute::Information, L"    Switches:");
+
+    for (size_t i = 0; i < _countof (s_kSwitchInfos); ++i)
+    {
+        if (switchValues[i]->has_value())
+        {
+            console.Printf (CConfig::EAttribute::Default, L"      %-8ls %ls\n", 
+                            s_kSwitchInfos[i].name, s_kSwitchInfos[i].description);
+        }
+    }
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CUsage::DisplayEnvVarDisplayItemsSection
+//
+////////////////////////////////////////////////////////////////////////////////
+
+static void DisplayEnvVarDisplayItemsSection (CConsole & console, const CConfig & config)
+{
+    console.Puts (CConfig::EAttribute::Default,     L"");
+    console.Puts (CConfig::EAttribute::Information, L"    Display item colors:");
+
+    for (const auto & info : s_kDisplayItemInfos)
+    {
+        if (config.m_rgAttributeSources[info.attr] == CConfig::EAttributeSource::Environment)
+        {
+            WORD attr = config.m_rgAttributes[info.attr];
+
+            console.Printf (CConfig::EAttribute::Default, L"      ");
+            console.Printf (attr, L"%ls", info.name);
+            console.Puts   (CConfig::EAttribute::Default, L"");
+        }
+    }
+
+    for (const auto & info : s_kCloudStatusInfos)
+    {
+        if (config.m_rgAttributeSources[info.attr] == CConfig::EAttributeSource::Environment)
+        {
+            WORD    attr    = config.m_rgAttributes[info.attr];
+            wstring display = format (L"{} ({})", info.baseName, info.symbol);
+
+            console.Printf (CConfig::EAttribute::Default, L"      ");
+            console.Printf (attr, L"%ls", display.c_str());
+            console.Puts   (CConfig::EAttribute::Default, L"");
+        }
+    }
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CUsage::DisplayEnvVarFileAttrsSection
+//
+////////////////////////////////////////////////////////////////////////////////
+
+static void DisplayEnvVarFileAttrsSection (CConsole & console, const CConfig & config)
+{
+    console.Puts (CConfig::EAttribute::Default,     L"");
+    console.Puts (CConfig::EAttribute::Information, L"    File attribute colors:");
+
+    for (const auto & info : s_kFileAttrInfos)
+    {
+        auto iter = config.m_mapFileAttributesTextAttr.find (info.dwAttribute);
+        if (iter != config.m_mapFileAttributesTextAttr.end() &&
+            iter->second.m_source == CConfig::EAttributeSource::Environment)
+        {
+            WORD attr = iter->second.m_wAttr;
+
+            console.Printf (CConfig::EAttribute::Default, L"      ");
+            console.Printf (attr, L"%lc %ls", info.letter, info.name);
+            console.Puts   (CConfig::EAttribute::Default, L"");
+        }
+    }
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CUsage::DisplayEnvVarExtensionsSection
+//
+////////////////////////////////////////////////////////////////////////////////
+
+static void DisplayEnvVarExtensionsSection (CConsole & console, const CConfig & config)
+{
+    console.Puts (CConfig::EAttribute::Default,     L"");
+    console.Puts (CConfig::EAttribute::Information, L"    File extension colors:");
+
+    // Collect extensions from env var, sorted
+    vector<pair<wstring, WORD>> envExtensions;
+    for (const auto & [ext, source] : config.m_mapExtensionSources)
+    {
+        if (source == CConfig::EAttributeSource::Environment)
+        {
+            auto iter = config.m_mapExtensionToTextAttr.find (ext);
+            if (iter != config.m_mapExtensionToTextAttr.end())
+            {
+                envExtensions.emplace_back (ext, iter->second);
+            }
+        }
+    }
+
+    ranges::sort (envExtensions, {}, &pair<wstring, WORD>::first);
+
+    for (const auto & [ext, attr] : envExtensions)
+    {
+        console.Printf (CConfig::EAttribute::Default, L"      ");
+        console.Printf (attr, L"%ls", ext.c_str());
+        console.Puts   (CConfig::EAttribute::Default, L"");
+    }
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CUsage::DisplayEnvVarDecodedSettings
+//
+//  Display decoded settings from the TCDIR environment variable.
+//  Shows switches (with descriptions), display items, file attributes, 
+//  and file extensions - only those set via the environment variable.
+//
+////////////////////////////////////////////////////////////////////////////////
+
+void CUsage::DisplayEnvVarDecodedSettings (CConsole & console)
+{
+    CConfig & config      = *console.m_configPtr;
+    bool hasSwitches      = HasEnvVarSwitches     (config);
+    bool hasDisplayItems  = HasEnvVarDisplayItems (config);
+    bool hasFileAttrs     = HasEnvVarFileAttrs    (config);
+    bool hasExtensions    = HasEnvVarExtensions   (config);
+
+
+
+    if (!hasSwitches && !hasDisplayItems && !hasFileAttrs && !hasExtensions)
+    {
+        return;
+    }
+
+    if (hasSwitches)
+    {
+        DisplayEnvVarSwitchesSection (console, config);
+    }
+
+    if (hasDisplayItems)
+    {
+        DisplayEnvVarDisplayItemsSection (console, config);
+    }
+
+    if (hasFileAttrs)
+    {
+        DisplayEnvVarFileAttrsSection (console, config);
+    }
+
+    if (hasExtensions)
+    {
+        DisplayEnvVarExtensionsSection (console, config);
+    }
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
 //  CUsage::DisplayEnvVarHelp
 //
 //  Display help for the TCDIR environment variable syntax, available colors,
@@ -904,7 +1199,9 @@ void CUsage::DisplayEnvVarHelp (CConsole & console)
 
     if (IsTcdirEnvVarSet ())
     {
-        DisplayEnvVarIssues (console);
+        DisplayEnvVarCurrentValue    (console, TCDIR_ENV_VAR_NAME);
+        DisplayEnvVarDecodedSettings (console);
+        DisplayEnvVarIssues          (console);
     }
     else
     {

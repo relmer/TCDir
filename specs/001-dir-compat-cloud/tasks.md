@@ -211,8 +211,8 @@ Project structure per plan.md:
 
 **Purpose**: README update and final validation across all stories
 
-- [ ] T034 [P] Update README.md with all new switches and attributes
-- [ ] T035 Run scripts/RunTests.ps1 to verify all existing tests pass (SC-010 regression check)
+- [x] T034 [P] Update README.md with all new switches and attributes
+- [x] T035 Run scripts/RunTests.ps1 to verify all existing tests pass (SC-010 regression check)
 - [ ] T036 Manual validation per quickstart.md test scenarios
 
 ---

@@ -49,4 +49,5 @@ private:
 
     static HRESULT DisplayEnvVarSegment                      (CConsole & console, wstring_view segment);
     static void    DisplayEnvVarCurrentValue                 (CConsole & console, LPCWSTR pszEnvVarName);
+    static void    DisplayEnvVarDecodedSettings              (CConsole & console);
 };
