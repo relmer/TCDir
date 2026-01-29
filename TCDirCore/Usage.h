@@ -20,10 +20,10 @@ public:
         MultiColumn,    // No indent, column padding (for multi-column grids)
     };
 
-    static void    DisplayUsage                     (CConsole & console);
-    static void    DisplayEnvVarHelp                (CConsole & console);
-    static void    DisplayCurrentConfiguration      (CConsole & console);
-    static void    DisplayEnvVarIssues              (CConsole & console);
+    static void    DisplayUsage                     (CConsole & console, wchar_t chPrefix = L'-');
+    static void    DisplayEnvVarHelp                (CConsole & console, wchar_t chPrefix = L'-');
+    static void    DisplayCurrentConfiguration      (CConsole & console, wchar_t chPrefix = L'-');
+    static void    DisplayEnvVarIssues              (CConsole & console, wchar_t chPrefix = L'-');
 
 
 
@@ -44,6 +44,7 @@ private:
     static void    DisplayExtensionConfigurationMultiColumn  (CConsole & console, const vector<pair<wstring, WORD>> & extensions, size_t maxExtLen, size_t cxSourceWidth, size_t cxAvailable, size_t cColumns);
 
     static void    DisplayColorConfiguration                 (CConsole & console);
+    static WORD    EnsureVisibleColorAttr                    (WORD colorAttr, WORD defaultAttr);
     static WORD    GetColorAttribute                         (CConsole & console, wstring_view colorName);
 
     static HRESULT DisplayEnvVarSegment                      (CConsole & console, wstring_view segment);

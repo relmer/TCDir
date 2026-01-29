@@ -472,8 +472,8 @@ HRESULT CConfig::ParseColorValue (wstring_view entry, wstring_view valueView, WO
     // Parse foreground color
     //
 
-    foreColor = ParseColorName (foreView, false);
-    if (foreColor == 0)
+    hr = ParseColorName (foreView, false, foreColor);
+    if (FAILED (hr))
     {
         m_lastParseResult.errors.push_back({
             L"Invalid foreground color",
@@ -490,8 +490,8 @@ HRESULT CConfig::ParseColorValue (wstring_view entry, wstring_view valueView, WO
 
     if (!backView.empty())
     {
-        backColor = ParseColorName (backView, true);
-        if (backColor == 0)
+        HRESULT hrBack = ParseColorName (backView, true, backColor);
+        if (FAILED (hrBack))
         {
             m_lastParseResult.errors.push_back({
                 L"Invalid background color",
@@ -500,6 +500,7 @@ HRESULT CConfig::ParseColorValue (wstring_view entry, wstring_view valueView, WO
                 backOffset
             });
             // Continue with foreground only - don't fail
+            backColor = 0;
         }
     }
 
@@ -565,6 +566,7 @@ void CConfig::ProcessSwitchOverride (wstring_view entry)
     {
         case L's':  m_fRecurse       = fValue;  break;
         case L'w':  m_fWideListing   = fValue;  break;
+        case L'b':  m_fBareListing   = fValue;  break;
         case L'p':  m_fPerfTimer     = fValue;  break;
         case L'm':  m_fMultiThreaded = fValue;  break;
 
@@ -777,12 +779,13 @@ Error:
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-WORD CConfig::ParseColorSpec (wstring_view colorSpec)
+HRESULT CConfig::ParseColorSpec (wstring_view colorSpec, WORD & colorAttr)
 {
-    WORD foreColor = 0;
-    WORD backColor = 0;
+    HRESULT hr        = S_OK;
+    WORD    foreColor = 0;
+    WORD    backColor = 0;
 
-    
+
 
     auto result = std::ranges::search (
         colorSpec,
@@ -794,7 +797,8 @@ WORD CConfig::ParseColorSpec (wstring_view colorSpec)
     {
         // Only foreground specified
         wstring_view foreView = TrimWhitespace (colorSpec);
-        foreColor = ParseColorName (foreView, false);
+        hr = ParseColorName (foreView, false, foreColor);
+        CHR (hr);
     }
     else
     {
@@ -804,11 +808,26 @@ WORD CConfig::ParseColorSpec (wstring_view colorSpec)
         wstring_view foreView = TrimWhitespace (colorSpec.substr (0, onPos));
         wstring_view backView = TrimWhitespace (colorSpec.substr (onPos + 4));
 
-        foreColor = ParseColorName (foreView, false);
-        backColor = ParseColorName (backView, true);
+        hr = ParseColorName (foreView, false, foreColor);
+        CHR (hr);
+
+        if (!backView.empty())
+        {
+            HRESULT hrBack = ParseColorName (backView, true, backColor);
+            if (FAILED (hrBack))
+            {
+                // Background invalid; treat as foreground-only.
+                backColor = 0;
+            }
+        }
     }
 
-    return foreColor | backColor;
+    colorAttr = foreColor | backColor;
+
+
+
+Error:
+    return hr;
 }
 
 
@@ -848,7 +867,7 @@ wstring_view CConfig::TrimWhitespace (wstring_view str)
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-WORD CConfig::ParseColorName (wstring_view colorName, bool isBackground)
+HRESULT CConfig::ParseColorName (wstring_view colorName, bool isBackground, WORD & colorValue)
 {
     struct ColorMapping
     {
@@ -877,7 +896,9 @@ WORD CConfig::ParseColorName (wstring_view colorName, bool isBackground)
         { L"White"sv,        FC_White,        BC_White        },
     };
 
+    HRESULT hr = S_OK;
 
+    
 
     //
     // Find matching color name (case-insensitive)
@@ -892,11 +913,18 @@ WORD CConfig::ParseColorName (wstring_view colorName, bool isBackground)
             [] (wchar_t a, wchar_t b) { return towlower (a) == towlower (b); }
         ))
         {
-            return isBackground ? mapping.backValue : mapping.foreValue;
+            colorValue = isBackground ? mapping.backValue : mapping.foreValue;
+            BAIL_OUT_IF (TRUE, S_OK);
         }
     }
 
-    return 0;  // Default/not found
+    colorValue = 0;
+    hr = E_INVALIDARG;
+
+
+
+Error:
+    return hr;
 }
 
 

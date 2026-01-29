@@ -56,20 +56,20 @@ int wmain (int argc, WCHAR * argv[])
     hr = cmdlinePtr->Parse (argc - 1, argv + 1);
     if (cmdlinePtr->m_fHelp || FAILED (hr))
     {
-        CUsage::DisplayUsage (*consolePtr);
+        CUsage::DisplayUsage (*consolePtr, cmdlinePtr->GetSwitchPrefix ());
         BAIL_OUT_IF (cmdlinePtr->m_fHelp, S_OK);
         CHR (hr);
     }
 
     if (cmdlinePtr->m_fEnv)
     {
-        CUsage::DisplayEnvVarHelp (*consolePtr);
+        CUsage::DisplayEnvVarHelp (*consolePtr, cmdlinePtr->GetSwitchPrefix ());
         BAIL_OUT_IF (cmdlinePtr->m_fEnv, S_OK);
     }
 
     if (cmdlinePtr->m_fConfig)
     {
-        CUsage::DisplayCurrentConfiguration (*consolePtr);
+        CUsage::DisplayCurrentConfiguration (*consolePtr, cmdlinePtr->GetSwitchPrefix ());
         BAIL_OUT_IF (cmdlinePtr->m_fConfig, S_OK);
     }
 
@@ -104,7 +104,7 @@ int wmain (int argc, WCHAR * argv[])
     // Display any TCDIR environment variable issues at the end of the run
     //
 
-    CUsage::DisplayEnvVarIssues (*consolePtr);
+    CUsage::DisplayEnvVarIssues (*consolePtr, cmdlinePtr->GetSwitchPrefix ());
 
     
 

@@ -69,7 +69,7 @@ bool CUsage::IsTcdirEnvVarSet (void)
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-void CUsage::DisplayUsage (CConsole & console)
+void CUsage::DisplayUsage (CConsole & console, wchar_t chPrefix)
 {
 #define COPYRIGHT L"\x00A9"
 
@@ -85,38 +85,10 @@ void CUsage::DisplayUsage (CConsole & console)
     #error "unknown architecture"
 #endif
 
-    static LPCWSTR s_usageLines[] =
-    {
-        L"Copyright " COPYRIGHT " 2004-" VERSION_YEAR_WSTRING  L" by Robert Elmer",
-        L"",
-        L"TCDIR [drive:][path][filename] [/A[[:]attributes]] [/O[[:]sortorder]] [/S] [/W] [/P] [/M] [/Env] [/Config]",
-        L"",
-        L"  [drive:][path][filename]",
-        L"              Specifies drive, directory, and/or files to list.",
-        L"",
-        L"  /A          Displays files with specified attributes.",
-        L"  attributes   D  Directories                R  Read-only files",
-        L"               H  Hidden files               A  Files ready for archiving",
-        L"               S  System files               T  Temporary files",
-        L"               E  Encrypted files            C  Compressed files",
-        L"               P  Reparse points             0  Sparse files",
-        L"               -  Prefix meaning not",
-        L"",
-        L"  /O          List by files in sorted order.",
-        L"  sortorder    N  By name (alphabetic)       S  By size (smallest first)",
-        L"               E  By extension (alphabetic)  D  By date/time (oldest first)",
-        L"               -  Prefix to reverse order",
-        L"",
-        L"  /S          Displays files in specified directory and all subdirectories.",
-        L"  /W          Displays results in a wide listing format.",
-        L"  /P          Displays performance timing information.",
-        L"  /M          Enables multi-threaded enumeration (default). Use /M- to disable.",
-        L"  /Env        Displays " TCDIR_ENV_VAR_NAME L" help, syntax, and current value.",
-        L"  /Config     Displays current color configuration for all items and extensions.",
-        L"",
-        L"",
-        L""
-    };
+    // Determine prefix strings for single-char and multi-char switches
+    wchar_t szShort[2]  = { chPrefix, L'\0' };                      // "-" or "/"
+    LPCWSTR pszLong     = (chPrefix == L'-') ? L"--" : L"/";        // "--" or "/"
+    LPCWSTR pszMDisable = (chPrefix == L'-') ? L" -M-" : L" /M-";   // " -M-" or " /M-"
 
     wstring buildTimestamp = VERSION_BUILD_TIMESTAMP;
 
@@ -129,10 +101,37 @@ void CUsage::DisplayUsage (CConsole & console)
     console.PrintColorfulString (L"Technicolor");
     console.Printf (CConfig::EAttribute::Default, L" Directory version " VERSION_WSTRING L" %s (%s)\n", s_kpszArch, buildTimestamp.c_str ());
 
-    for (LPCWSTR line : s_usageLines)
-    {
-        console.Puts (CConfig::EAttribute::Default, line);
-    }
+    console.Printf (CConfig::EAttribute::Default, L"Copyright " COPYRIGHT " 2004-" VERSION_YEAR_WSTRING  L" by Robert Elmer\n");
+    console.Printf (CConfig::EAttribute::Default, L"\n");
+    console.Printf (CConfig::EAttribute::Default, L"TCDIR [drive:][path][filename] [%sA[[:]attributes]] [%sO[[:]sortorder]] [%sS] [%sW] [%sB] [%sP] [%sM] [%sEnv] [%sConfig]\n",
+                    szShort, szShort, szShort, szShort, szShort, szShort, szShort, pszLong, pszLong);
+    console.Printf (CConfig::EAttribute::Default, L"\n");
+    console.Printf (CConfig::EAttribute::Default, L"  [drive:][path][filename]\n");
+    console.Printf (CConfig::EAttribute::Default, L"              Specifies drive, directory, and/or files to list.\n");
+    console.Printf (CConfig::EAttribute::Default, L"\n");
+    console.Printf (CConfig::EAttribute::Default, L"  %sA          Displays files with specified attributes.\n", szShort);
+    console.Printf (CConfig::EAttribute::Default, L"  attributes   D  Directories                R  Read-only files\n");
+    console.Printf (CConfig::EAttribute::Default, L"               H  Hidden files               A  Files ready for archiving\n");
+    console.Printf (CConfig::EAttribute::Default, L"               S  System files               T  Temporary files\n");
+    console.Printf (CConfig::EAttribute::Default, L"               E  Encrypted files            C  Compressed files\n");
+    console.Printf (CConfig::EAttribute::Default, L"               P  Reparse points             0  Sparse files\n");
+    console.Printf (CConfig::EAttribute::Default, L"               -  Prefix meaning not\n");
+    console.Printf (CConfig::EAttribute::Default, L"\n");
+    console.Printf (CConfig::EAttribute::Default, L"  %sO          List by files in sorted order.\n", szShort);
+    console.Printf (CConfig::EAttribute::Default, L"  sortorder    N  By name (alphabetic)       S  By size (smallest first)\n");
+    console.Printf (CConfig::EAttribute::Default, L"               E  By extension (alphabetic)  D  By date/time (oldest first)\n");
+    console.Printf (CConfig::EAttribute::Default, L"               -  Prefix to reverse order\n");
+    console.Printf (CConfig::EAttribute::Default, L"\n");
+    console.Printf (CConfig::EAttribute::Default, L"  %sS          Displays files in specified directory and all subdirectories.\n", szShort);
+    console.Printf (CConfig::EAttribute::Default, L"  %sW          Displays results in a wide listing format.\n", szShort);
+    console.Printf (CConfig::EAttribute::Default, L"  %sB          Displays bare file names only (no headers, footers, or details).\n", szShort);
+    console.Printf (CConfig::EAttribute::Default, L"  %sP          Displays performance timing information.\n", szShort);
+    console.Printf (CConfig::EAttribute::Default, L"  %sM          Enables multi-threaded enumeration (default). Use%s to disable.\n", szShort, pszMDisable);
+    console.Printf (CConfig::EAttribute::Default, L"  %sEnv        Displays " TCDIR_ENV_VAR_NAME L" help, syntax, and current value.\n", pszLong);
+    console.Printf (CConfig::EAttribute::Default, L"  %sConfig     Displays current color configuration for all items and extensions.\n", pszLong);
+    console.Printf (CConfig::EAttribute::Default, L"\n");
+    console.Printf (CConfig::EAttribute::Default, L"\n");
+    console.Printf (CConfig::EAttribute::Default, L"\n");
 }
 
 
@@ -145,9 +144,12 @@ void CUsage::DisplayUsage (CConsole & console)
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-void CUsage::DisplayEnvVarIssues (CConsole & console)
+void CUsage::DisplayEnvVarIssues (CConsole & console, wchar_t chPrefix)
 {
     CConfig::ValidationResult validationResult;
+
+    // Determine prefix strings for multi-char switches
+    LPCWSTR pszLong = (chPrefix == L'-') ? L"--" : L"/";
 
 
 
@@ -159,8 +161,8 @@ void CUsage::DisplayEnvVarIssues (CConsole & console)
     }
 
     console.Puts   (CConfig::EAttribute::Default, L"");
-    console.Printf (CConfig::EAttribute::Error,   L"There are some problems with your %s environment variable (see /env for help):", 
-                    TCDIR_ENV_VAR_NAME);
+    console.Printf (CConfig::EAttribute::Error,   L"There are some problems with your %s environment variable (see %senv for help):", 
+                    TCDIR_ENV_VAR_NAME, pszLong);
     console.Puts   (CConfig::EAttribute::Default, L"\n");
 
     DisplayEnvVarCurrentValue (console, TCDIR_ENV_VAR_NAME);
@@ -503,24 +505,70 @@ void CUsage::DisplayExtensionConfiguration (CConsole & console, int columnWidthA
 
 ////////////////////////////////////////////////////////////////////////////////
 //
+//  CUsage::EnsureVisibleColorAttr
+//
+//  Given a color attribute and a default attribute, returns a modified color
+//  attribute that ensures visibility. If the foreground matches the default
+//  background, a contrasting background is applied.
+//
+////////////////////////////////////////////////////////////////////////////////
+
+WORD CUsage::EnsureVisibleColorAttr (WORD colorAttr, WORD defaultAttr)
+{
+    WORD foreAttr        = colorAttr   & (FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_INTENSITY);
+    WORD backAttr        = colorAttr   & (BACKGROUND_RED | BACKGROUND_GREEN | BACKGROUND_BLUE | BACKGROUND_INTENSITY);
+    WORD defaultBackAttr = defaultAttr & (BACKGROUND_RED | BACKGROUND_GREEN | BACKGROUND_BLUE | BACKGROUND_INTENSITY);
+
+
+
+    //
+    // If no explicit background in colorAttr, use the default background
+    //
+
+    if (backAttr == 0)
+    {
+        backAttr = defaultBackAttr;
+    }
+
+    //
+    // If foreground matches background, use a contrasting background so text is visible.
+    // Compare by shifting foreground bits to background position.
+    //
+
+    if ((foreAttr << 4) == backAttr)
+    {
+        // Use opposite brightness: if dark background, use light; if light, use dark
+        WORD contrastBack = (backAttr & BACKGROUND_INTENSITY) ? static_cast<WORD>(BC_Black) : static_cast<WORD>(BC_LightGrey);
+        return foreAttr | contrastBack;
+    }
+
+    return foreAttr | backAttr;
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
 //  CUsage::GetColorAttribute
 //
 ////////////////////////////////////////////////////////////////////////////////
 
 WORD CUsage::GetColorAttribute (CConsole & console, wstring_view colorName)
 {
-    WORD defaultAttr = console.m_configPtr->m_rgAttributes[CConfig::EAttribute::Default];
-    WORD baseAttr    = defaultAttr & ~(FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_INTENSITY);
-    WORD foreAttr    = console.m_configPtr->ParseColorName (colorName, false);
+    WORD    defaultAttr = console.m_configPtr->m_rgAttributes[CConfig::EAttribute::Default];
+    WORD    foreAttr    = 0;
+    HRESULT hr          = console.m_configPtr->ParseColorName (colorName, false, foreAttr);
 
 
 
-    if (foreAttr == 0)
+    if (FAILED (hr))
     {
         foreAttr = FC_LightGrey;
     }
 
-    return baseAttr | foreAttr;
+    return EnsureVisibleColorAttr (foreAttr, defaultAttr);
 }
 
 
@@ -589,6 +637,9 @@ HRESULT CUsage::DisplayEnvVarSegment (CConsole & console, wstring_view segment)
     HRESULT      hr           = S_OK;
     size_t       equalPos     = 0;
     WORD         colorAttr    = 0;
+    WORD         visibleAttr  = 0;
+    WORD         defaultAttr  = console.m_configPtr->m_rgAttributes[CConfig::EAttribute::Default];
+    HRESULT      hrColor      = S_OK;
     wstring_view keyView;
     wstring_view valueView;
     wstring_view trimmedValue;
@@ -621,9 +672,9 @@ HRESULT CUsage::DisplayEnvVarSegment (CConsole & console, wstring_view segment)
     }   
 
     // Parse the color spec to get the actual color
-    colorAttr = console.m_configPtr->ParseColorSpec (trimmedValue);
+    hrColor = console.m_configPtr->ParseColorSpec (trimmedValue, colorAttr);
 
-    if (colorAttr == 0)
+    if (FAILED (hrColor))
     {
         // Invalid color - display entire segment in default
         console.Printf (CConfig::EAttribute::Default, L"%.*s", 
@@ -631,11 +682,14 @@ HRESULT CUsage::DisplayEnvVarSegment (CConsole & console, wstring_view segment)
     }
     else
     {
+        // Ensure the color is visible against the default background
+        visibleAttr = EnsureVisibleColorAttr (colorAttr, defaultAttr);
+
         // Print key in its color, = in default, value in its color
-        console.Printf (colorAttr, L"%.*s", 
+        console.Printf (visibleAttr, L"%.*s", 
                         static_cast<int>(keyView.length()), keyView.data());
         console.Printf (CConfig::EAttribute::Default, L"=");
-        console.Printf (colorAttr, L"%.*s", 
+        console.Printf (visibleAttr, L"%.*s", 
                         static_cast<int>(valueView.length()), valueView.data());
     }
 
@@ -729,49 +783,14 @@ Error:
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-void CUsage::DisplayEnvVarHelp (CConsole & console)
+void CUsage::DisplayEnvVarHelp (CConsole & console, wchar_t chPrefix)
 {
-#define ENV_VAR_SYNTAX L"[ -<Switch> | /<Switch>] | [<Item> | Attr:<fileattr> | <.ext>] = <Fore> [on <Back>][;...]"
+    // Determine prefix strings for single-char switches
+    wchar_t szShort[2]  = { chPrefix, L'\0' };                      // "-" or "/"
+    LPCWSTR pszMDisable = (chPrefix == L'-') ? L"-M-" : L"/M-";     // "-M-" or "/M-"
 
-    static LPCWSTR s_setEnvVarCommand[] =
-    {
-        L"  set " TCDIR_ENV_VAR_NAME L"=" ENV_VAR_SYNTAX,               // CMD -- *no spaces around '='*
-        L"  $env:" TCDIR_ENV_VAR_NAME L" = \"" ENV_VAR_SYNTAX L"\"",    // PowerShell -- quoted value
-    };
-
-    static LPCWSTR s_colorOverrideLines[] =
-    {
-        L"",
-        L"  <Switch>    A command-line switch:",
-        L"                  W  Wide listing format",
-        L"                  P  Display performance timing information",
-        L"                  S  Recurse into subdirectories",
-        L"                  M  Enables multi-threaded enumeration (default); use /M- to disable",
-        L"",
-        L"  <Item>      A display item:",
-        L"                  D  Date           T  Time",
-        L"                  S  Size           R  Directory name",
-        L"                  I  Information    H  Information highlight",
-        L"                  E  Error          F  File (default)",
-        L"",
-        L"  <.ext>      A file extension, including the leading period.",
-        L"",
-        L"  <FileAttr>  A file attribute (see file attributes below)",
-        L"                  R  Read-only      H  Hidden",
-        L"                  S  System         A  Archive",
-        L"                  T  Temporary      E  Encrypted",
-        L"                  C  Compressed     P  Reparse point",
-        L"                  0  Sparse file",
-        L"",
-        L"  <Fore>      Foreground color",
-        L"  <Back>      Background color",
-    };
-
-    static LPCWSTR s_envVarExample[] =
-    {
-        L"  Example: set "  TCDIR_ENV_VAR_NAME L"=-W;D=LightGreen;S=Yellow;Attr:H=DarkGrey;.cpp=White on Blue",           // CMD
-        L"  Example: $env:" TCDIR_ENV_VAR_NAME L" = \"-W;D=LightGreen;S=Yellow;Attr:H=DarkGrey;.cpp=White on Blue\"",    // PowerShell
-    };
+    static LPCWSTR s_setEnvVarCommandCmd        = L"  set " TCDIR_ENV_VAR_NAME L"=";
+    static LPCWSTR s_setEnvVarCommandPowerShell = L"  $env:" TCDIR_ENV_VAR_NAME L" = \"";
 
     bool  isPowerShell = IsPowerShell ();
 
@@ -783,21 +802,60 @@ void CUsage::DisplayEnvVarHelp (CConsole & console)
     console.Puts   (CConfig::EAttribute::Default,     L" environment variable to override default colors for display"
                                                       L" items, file attributes, or file extensions:\n");
 
-    console.Puts (CConfig::EAttribute::Default, s_setEnvVarCommand[isPowerShell]);
-
-    for (LPCWSTR line : s_colorOverrideLines)
+    // Display the syntax line with dynamic switch prefix
+    if (isPowerShell)
     {
-        console.Puts (CConfig::EAttribute::Default, line);
+        console.Printf (CConfig::EAttribute::Default, L"%s[ %s<Switch>] | [<Item> | Attr:<fileattr> | <.ext>] = <Fore> [on <Back>][;...]\"\n",
+                        s_setEnvVarCommandPowerShell, szShort);
     }
+    else
+    {
+        console.Printf (CConfig::EAttribute::Default, L"%s[ %s<Switch>] | [<Item> | Attr:<fileattr> | <.ext>] = <Fore> [on <Back>][;...]\n",
+                        s_setEnvVarCommandCmd, szShort);
+    }
+
+    console.Printf (CConfig::EAttribute::Default, L"\n");
+    console.Printf (CConfig::EAttribute::Default, L"  <Switch>    A command-line switch:\n");
+    console.Printf (CConfig::EAttribute::Default, L"                  W  Wide listing format\n");
+    console.Printf (CConfig::EAttribute::Default, L"                  P  Display performance timing information\n");
+    console.Printf (CConfig::EAttribute::Default, L"                  S  Recurse into subdirectories\n");
+    console.Printf (CConfig::EAttribute::Default, L"                  M  Enables multi-threaded enumeration (default); use %s to disable\n", pszMDisable);
+    console.Printf (CConfig::EAttribute::Default, L"\n");
+    console.Printf (CConfig::EAttribute::Default, L"  <Item>      A display item:\n");
+    console.Printf (CConfig::EAttribute::Default, L"                  D  Date           T  Time\n");
+    console.Printf (CConfig::EAttribute::Default, L"                  S  Size           R  Directory name\n");
+    console.Printf (CConfig::EAttribute::Default, L"                  I  Information    H  Information highlight\n");
+    console.Printf (CConfig::EAttribute::Default, L"                  E  Error          F  File (default)\n");
+    console.Printf (CConfig::EAttribute::Default, L"\n");
+    console.Printf (CConfig::EAttribute::Default, L"  <.ext>      A file extension, including the leading period.\n");
+    console.Printf (CConfig::EAttribute::Default, L"\n");
+    console.Printf (CConfig::EAttribute::Default, L"  <FileAttr>  A file attribute (see file attributes below)\n");
+    console.Printf (CConfig::EAttribute::Default, L"                  R  Read-only      H  Hidden\n");
+    console.Printf (CConfig::EAttribute::Default, L"                  S  System         A  Archive\n");
+    console.Printf (CConfig::EAttribute::Default, L"                  T  Temporary      E  Encrypted\n");
+    console.Printf (CConfig::EAttribute::Default, L"                  C  Compressed     P  Reparse point\n");
+    console.Printf (CConfig::EAttribute::Default, L"                  0  Sparse file\n");
+    console.Printf (CConfig::EAttribute::Default, L"\n");
+    console.Printf (CConfig::EAttribute::Default, L"  <Fore>      Foreground color\n");
+    console.Printf (CConfig::EAttribute::Default, L"  <Back>      Background color\n");
 
     DisplayColorConfiguration (console);
 
-    console.Puts (CConfig::EAttribute::Default, s_envVarExample[isPowerShell]);
+    // Display the example line with dynamic switch prefix
+    if (isPowerShell)
+    {
+        console.Printf (CConfig::EAttribute::Default, L"  Example: $env:" TCDIR_ENV_VAR_NAME L" = \"%sW;D=LightGreen;S=Yellow;Attr:H=DarkGrey;.cpp=White on Blue\"\n", szShort);
+    }
+    else
+    {
+        console.Printf (CConfig::EAttribute::Default, L"  Example: set "  TCDIR_ENV_VAR_NAME L"=%sW;D=LightGreen;S=Yellow;Attr:H=DarkGrey;.cpp=White on Blue\n", szShort);
+    }
+
     console.Puts (CConfig::EAttribute::Default, L"");
 
     if (IsTcdirEnvVarSet ())
     {
-        DisplayEnvVarIssues (console);
+        DisplayEnvVarIssues (console, chPrefix);
     }
     else
     {
@@ -820,13 +878,13 @@ void CUsage::DisplayEnvVarHelp (CConsole & console)
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-void CUsage::DisplayCurrentConfiguration (CConsole & console)
+void CUsage::DisplayCurrentConfiguration (CConsole & console, wchar_t chPrefix)
 {
     console.Puts (CConfig::EAttribute::Default, L"");
 
     if (IsTcdirEnvVarSet ())
     {
-        DisplayEnvVarIssues (console);
+        DisplayEnvVarIssues (console, chPrefix);
     }
     else
     {

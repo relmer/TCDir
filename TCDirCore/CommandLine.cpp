@@ -64,6 +64,7 @@ CCommandLine::~CCommandLine (void)
 void CCommandLine::ApplyConfigDefaults (const CConfig & config)
 {
     if (config.m_fWideListing.has_value())   m_fWideListing   = config.m_fWideListing.value();
+    if (config.m_fBareListing.has_value())   m_fBareListing   = config.m_fBareListing.value();
     if (config.m_fRecurse.has_value())       m_fRecurse       = config.m_fRecurse.value();
     if (config.m_fPerfTimer.has_value())     m_fPerfTimer     = config.m_fPerfTimer.value();
     if (config.m_fMultiThreaded.has_value()) m_fMultiThreaded = config.m_fMultiThreaded.value();
@@ -109,11 +110,23 @@ HRESULT CCommandLine::Parse (int cArg, WCHAR ** ppszArg)
         {
             //
             // Switches start with a '-' or a '/'
+            // Long switches use '--' prefix (e.g., --env, --config)
             //
             
             case L'-':
             case L'/':
-                hr = HandleSwitch (pszArg + 1);
+                m_chSwitchPrefix = *pszArg;
+
+                // Check for '--' prefix (long option style)
+                if (*pszArg == L'-' && *(pszArg + 1) == L'-')
+                {
+                    hr = HandleSwitch (pszArg + 2, true);
+                }
+                else
+                {
+                    hr = HandleSwitch (pszArg + 1, false);
+                }
+
                 CHR (hr);
                 
                 break;
@@ -144,11 +157,13 @@ Error:
 //
 //  CCommandLine::HandleSwitch
 //
-//  
+//  fLongOption: true if the switch was prefixed with '--' (or '/' for multi-char)
+//               Long options like 'env' and 'config' require '--' when using dash
+//               prefix, but can use single '/' when using slash prefix.
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-HRESULT CCommandLine::HandleSwitch (LPCWSTR pszArg)
+HRESULT CCommandLine::HandleSwitch (LPCWSTR pszArg, bool fLongOption)
 {
     struct SwitchEntry
     {
@@ -163,6 +178,7 @@ HRESULT CCommandLine::HandleSwitch (LPCWSTR pszArg)
         {  L'o',   NULL,               &CCommandLine::OrderByHandler    },
         {  L'a',   NULL,               &CCommandLine::AttributeHandler  },
         {  L'w',   &m_fWideListing,    NULL                             },
+        {  L'b',   &m_fBareListing,    NULL                             },
         {  L'p',   &m_fPerfTimer,      NULL                             },
         {  L'm',   &m_fMultiThreaded,  NULL                             },
         {  L'?',   &m_fHelp,           NULL                             },
@@ -174,14 +190,33 @@ HRESULT CCommandLine::HandleSwitch (LPCWSTR pszArg)
 
 
 
+    //
+    // Multi-character switches (env, config) require '--' when using dash prefix,
+    // but can use single '/' when using slash prefix.
+    //
+
     if (_wcsicmp (pszArg, L"env") == 0)
     {
+        // With dash prefix, require '--env' (fLongOption must be true)
+        // With slash prefix, '/env' is fine (fLongOption is false, but that's ok)
+        if (!fLongOption && m_chSwitchPrefix == L'-')
+        {
+            return E_INVALIDARG;
+        }
+
         m_fEnv = true;
         return S_OK;
     }
 
     if (_wcsicmp (pszArg, L"config") == 0)
     {
+        // With dash prefix, require '--config' (fLongOption must be true)
+        // With slash prefix, '/config' is fine (fLongOption is false, but that's ok)
+        if (!fLongOption && m_chSwitchPrefix == L'-')
+        {
+            return E_INVALIDARG;
+        }
+
         m_fConfig = true;
         return S_OK;
     }
@@ -257,6 +292,22 @@ HRESULT CCommandLine::OrderByHandler (LPCWSTR pszArg)
     WCHAR   ch = 0; 
 
 
+    //
+    // Make sure the arg isn't empty
+    //
+
+    CBRAEx (pszArg != NULL, E_INVALIDARG);
+
+    //
+    // Support optional ':' prefix (DIR-style switch syntax: /o:d)
+    //
+
+    if (*pszArg == L':')
+    {
+        ++pszArg;
+    }
+
+    CBRAEx (*pszArg != L'\0', E_INVALIDARG);
 
     //
     // Check to see if we're reversing the sort order
@@ -271,6 +322,8 @@ HRESULT CCommandLine::OrderByHandler (LPCWSTR pszArg)
         //
 
         ++pszArg;
+
+        CBRAEx (*pszArg != L'\0', E_INVALIDARG);
     }
 
     //
@@ -292,6 +345,9 @@ HRESULT CCommandLine::OrderByHandler (LPCWSTR pszArg)
         }
     }
     
+    return hr;
+
+Error:
     return hr;
 }
 

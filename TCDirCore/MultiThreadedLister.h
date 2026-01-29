@@ -1,7 +1,7 @@
 #pragma once
 
 #include "DirectoryInfo.h"
-#include "ResultsDisplayerBase.h"
+#include "IResultsDisplayer.h"
 #include "WorkQueue.h"
 
 
@@ -37,8 +37,8 @@ public:
     HRESULT ProcessDirectoryMultiThreaded (const CDriveInfo & driveInfo, 
                                            const filesystem::path & dirPath, 
                                            const filesystem::path & fileSpec,
-                                           CResultsDisplayerBase & displayer,
-                                           CResultsDisplayerBase::EDirectoryLevel level,
+                                           IResultsDisplayer & displayer,
+                                           IResultsDisplayer::EDirectoryLevel level,
                                            ULARGE_INTEGER & uliSizeOfAllFilesFound,
                                            UINT & cFilesFound,
                                            UINT & cDirectoriesFound);
@@ -48,8 +48,8 @@ protected:
     void    WorkerThreadFunc              ();
     HRESULT PrintDirectoryTree            (shared_ptr<CDirectoryInfo> pDirInfo, 
                                            const CDriveInfo & driveInfo,
-                                           CResultsDisplayerBase & displayer,
-                                           CResultsDisplayerBase::EDirectoryLevel level,
+                                           IResultsDisplayer & displayer,
+                                           IResultsDisplayer::EDirectoryLevel level,
                                            ULARGE_INTEGER & uliSizeOfAllFilesFound,
                                            UINT & cFilesFound,
                                            UINT & cDirectoriesFound);

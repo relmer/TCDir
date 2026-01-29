@@ -1,6 +1,6 @@
 #include "pch.h"
 #include "EhmTestHelper.h"
-#include "../TCDirCore/ResultsDisplayerBase.h"
+#include "../TCDirCore/ResultsDisplayerWithHeaderAndFooter.h"
 #include "../TCDirCore/Config.h"
 #include "../TCDirCore/Console.h"
 #include "../TCDirCore/CommandLine.h"
@@ -17,7 +17,7 @@ using namespace Microsoft::VisualStudio::CppUnitTestFramework;
 
 namespace UnitTest
 {
-    TEST_CLASS(ResultsDisplayerBaseTests)
+    TEST_CLASS(ResultsDisplayerWithHeaderAndFooterTests)
     {
     public:
 
@@ -29,10 +29,10 @@ namespace UnitTest
 
         TEST_METHOD(FormatNumberWithSeparators_Samples)
         {
-            struct DisplayerProbe : public CResultsDisplayerBase
+            struct DisplayerProbe : public CResultsDisplayerWithHeaderAndFooter
             {
                 DisplayerProbe(std::shared_ptr<CCommandLine> a, std::shared_ptr<CConsole> b, std::shared_ptr<CConfig> c)
-                    : CResultsDisplayerBase(a, b, c) {}
+                    : CResultsDisplayerWithHeaderAndFooter(a, b, c) {}
                 void  DisplayFileResults(const CDirectoryInfo &) override {}
                 LPCWSTR WrapFormat(ULONGLONG n) { return FormatNumberWithSeparators(n); }
             };
@@ -56,10 +56,10 @@ namespace UnitTest
 
         TEST_METHOD(GetStringLengthOfMaxFileSize_Samples)
         {
-            struct DisplayerProbe : public CResultsDisplayerBase
+            struct DisplayerProbe : public CResultsDisplayerWithHeaderAndFooter
             {
                 DisplayerProbe(std::shared_ptr<CCommandLine> a, std::shared_ptr<CConsole> b, std::shared_ptr<CConfig> c)
-                    : CResultsDisplayerBase(a, b, c) {}
+                    : CResultsDisplayerWithHeaderAndFooter(a, b, c) {}
                 void  DisplayFileResults(const CDirectoryInfo &) override {}
                 UINT  WrapLen(ULONGLONG n) { ULARGE_INTEGER u; u.QuadPart = n; return GetStringLengthOfMaxFileSize(u); }
             };

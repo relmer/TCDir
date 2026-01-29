@@ -65,7 +65,19 @@ function Get-VS2026MSBuildPath {
         [switch]$IncludePrerelease
     )
 
-    return Get-VS2026ToolPath -Find 'MSBuild\Current\Bin\MSBuild.exe' -Requires 'Microsoft.Component.MSBuild' -IncludePrerelease:$IncludePrerelease
+    # Use native MSBuild for current architecture to avoid x86 emulation memory limits
+    $arch = [System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture
+    if ($arch -eq [System.Runtime.InteropServices.Architecture]::Arm64) {
+        $findPath = 'MSBuild\Current\Bin\arm64\MSBuild.exe'
+    }
+    elseif ($arch -eq [System.Runtime.InteropServices.Architecture]::X64) {
+        $findPath = 'MSBuild\Current\Bin\amd64\MSBuild.exe'
+    }
+    else {
+        $findPath = 'MSBuild\Current\Bin\MSBuild.exe'
+    }
+
+    return Get-VS2026ToolPath -Find $findPath -Requires 'Microsoft.Component.MSBuild' -IncludePrerelease:$IncludePrerelease
 }
 
 
@@ -77,6 +89,23 @@ function Get-VS2026VSTestPath {
         [switch]$IncludePrerelease
     )
 
+    # Always use the native test runner for the current OS architecture.
+    # The ARM64 runner can execute both ARM64 and x64 test DLLs natively,
+    # avoiding emulation overhead when running x64 tests on ARM64 machines.
+    $arch = [System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture
+    if ($arch -eq [System.Runtime.InteropServices.Architecture]::Arm64) {
+        $testRunner = Get-VS2026ToolPath -Find 'Common7\IDE\Extensions\TestPlatform\vstest.console.arm64.exe' -IncludePrerelease:$IncludePrerelease
+        if ($testRunner) {
+            return $testRunner
+        }
+
+        $testRunner = Get-VS2026ToolPath -Find 'Common7\IDE\CommonExtensions\Microsoft\TestWindow\vstest.console.arm64.exe' -IncludePrerelease:$IncludePrerelease
+        if ($testRunner) {
+            return $testRunner
+        }
+    }
+
+    # Fall back to x64 runner (native on x64, emulated on ARM64 if ARM64 runner not found)
     $testRunner = Get-VS2026ToolPath -Find 'Common7\IDE\Extensions\TestPlatform\vstest.console.exe' -IncludePrerelease:$IncludePrerelease
     if ($testRunner) {
         return $testRunner
@@ -84,4 +113,57 @@ function Get-VS2026VSTestPath {
 
     $testRunner = Get-VS2026ToolPath -Find 'Common7\IDE\CommonExtensions\Microsoft\TestWindow\vstest.console.exe' -IncludePrerelease:$IncludePrerelease
     return $testRunner
+}
+
+
+
+
+
+function Test-VSVCPlatformInstalled {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$MSBuildPath,
+        [Parameter(Mandatory = $true)]
+        [string]$Platform
+    )
+
+    $msbuildDir = Split-Path $MSBuildPath -Parent
+    if (-not $msbuildDir) {
+        return $false
+    }
+
+    # Locate the Visual Studio instance root (e.g. ...\Microsoft Visual Studio\18\Enterprise)
+    # by walking up from MSBuild.exe until we find MSBuild\Microsoft\VC.
+    $vcRoot = $null
+    $cursor = $msbuildDir
+
+    for ($i = 0; $i -lt 10 -and $cursor; $i++) {
+        $candidate = Join-Path $cursor 'MSBuild\Microsoft\VC'
+        if (Test-Path $candidate) {
+            $vcRoot = $candidate
+            break
+        }
+
+        $parent = Split-Path $cursor -Parent
+        if (-not $parent -or $parent -eq $cursor) {
+            break
+        }
+
+        $cursor = $parent
+    }
+
+    if (-not $vcRoot) {
+        return $false
+    }
+
+    $platformPaths = Get-ChildItem $vcRoot -Directory -ErrorAction SilentlyContinue |
+        ForEach-Object { Join-Path $_.FullName ("Platforms\\$Platform") }
+
+    foreach ($platformPath in $platformPaths) {
+        if (Test-Path $platformPath) {
+            return $true
+        }
+    }
+
+    return $false
 }

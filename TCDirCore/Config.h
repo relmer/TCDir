@@ -77,8 +77,8 @@ public:
     WORD              GetTextAttrForFile          (const WIN32_FIND_DATA & wfd);
     ValidationResult  ValidateEnvironmentVariable (void);
     void              SetEnvironmentProvider      (const IEnvironmentProvider * pProvider);
-    WORD              ParseColorName              (wstring_view colorName, bool isBackground);
-    WORD              ParseColorSpec              (wstring_view colorSpec);
+    HRESULT           ParseColorName              (wstring_view colorName, bool isBackground, WORD & colorValue);
+    HRESULT           ParseColorSpec              (wstring_view colorSpec, WORD & colorAttr);
 
     WORD                                       m_rgAttributes[EAttribute::__count]       = { 0 };
     EAttributeSource                           m_rgAttributeSources[EAttribute::__count] = { EAttributeSource::Default };
@@ -90,6 +90,7 @@ public:
 
     // Switch defaults from environment variable
     optional<bool>                             m_fWideListing;
+    optional<bool>                             m_fBareListing;
     optional<bool>                             m_fRecurse;
     optional<bool>                             m_fPerfTimer;
     optional<bool>                             m_fMultiThreaded;
