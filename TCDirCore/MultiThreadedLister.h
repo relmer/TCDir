@@ -2,6 +2,7 @@
 
 #include "DirectoryInfo.h"
 #include "IResultsDisplayer.h"
+#include "ListingTotals.h"
 #include "WorkQueue.h"
 
 
@@ -39,9 +40,7 @@ public:
                                            const filesystem::path & fileSpec,
                                            IResultsDisplayer & displayer,
                                            IResultsDisplayer::EDirectoryLevel level,
-                                           ULARGE_INTEGER & uliSizeOfAllFilesFound,
-                                           UINT & cFilesFound,
-                                           UINT & cDirectoriesFound);
+                                           SListingTotals & totals);
 
 protected:
     void    EnumerateDirectoryNode        (shared_ptr<CDirectoryInfo> pDirInfo);
@@ -50,10 +49,11 @@ protected:
                                            const CDriveInfo & driveInfo,
                                            IResultsDisplayer & displayer,
                                            IResultsDisplayer::EDirectoryLevel level,
-                                           ULARGE_INTEGER & uliSizeOfAllFilesFound,
-                                           UINT & cFilesFound,
-                                           UINT & cDirectoriesFound);
-    void    AddMatchToList                (const WIN32_FIND_DATA & wfd, __in CDirectoryInfo * pdi);
+                                           SListingTotals & totals);
+    void    AddMatchToList                (const WIN32_FIND_DATA & wfd, CDirectoryInfo * pdi);
+    void    HandleDirectoryMatch          (size_t & cchFileName, CDirectoryInfo * pdi);
+    void    HandleFileMatch               (const WIN32_FIND_DATA & wfd, FileInfo & fileEntry, CDirectoryInfo * pdi);
+    HRESULT HandleFileMatchStreams        (const WIN32_FIND_DATA & wfd, FileInfo & fileEntry, CDirectoryInfo * pdi);
     BOOL    IsDots                        (LPCWSTR pszFileName);
 
 private:

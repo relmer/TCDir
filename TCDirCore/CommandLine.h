@@ -28,6 +28,13 @@ public:
         SD_DESCENDING,    
     };
 
+    enum class ETimeField
+    {
+        TF_WRITTEN,     // W - ftLastWriteTime (default)
+        TF_CREATION,    // C - ftCreationTime
+        TF_ACCESS       // A - ftLastAccessTime
+    };
+
 
 
     //
@@ -66,6 +73,10 @@ public:
     bool               m_fConfig                                           = false;    // Display current configuration
     bool               m_fHelp                                             = false;    // Display usage
     wchar_t            m_chSwitchPrefix                                    = L'-';     // Switch prefix character (default: '-')
+    ETimeField         m_timeField                                         = ETimeField::TF_WRITTEN;  // /T: time field selection
+    bool               m_fShowOwner                                        = false;    // --owner switch
+    bool               m_fShowStreams                                      = false;    // --streams switch
+    bool               m_fDebug                                            = false;    // --debug switch (raw hex attributes)
 
 
 
@@ -89,9 +100,11 @@ protected:
     // Protected methods
     //
     
-    HRESULT HandleSwitch     (LPCWSTR pszArg, bool fLongOption);
+    HRESULT HandleSwitch     (LPCWSTR pszArg);
+    HRESULT HandleLongSwitch (LPCWSTR pszArg);
     HRESULT OrderByHandler   (LPCWSTR pszArg);
     HRESULT AttributeHandler (LPCWSTR pszArg);
+    HRESULT TimeFieldHandler (LPCWSTR pszArg);
 
     
 };

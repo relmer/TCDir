@@ -229,6 +229,7 @@
     <ClInclude Include="EnvironmentProvider.h" />
     <ClInclude Include="FileComparator.h" />
     <ClInclude Include="Flag.h" />
+    <ClInclude Include="ListingTotals.h" />
     <ClInclude Include="MultiThreadedLister.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="PerfTimer.h" />

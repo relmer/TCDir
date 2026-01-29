@@ -288,7 +288,7 @@
             "problemMatcher": "$msCompile"
         },
         {
-            "label": "Build All Release (x64 + ARM64)",
+            "label": "Build All Release (x64 + ARM64) (no deploy)",
             "type": "process",
             "command": "pwsh",
             "args": [
@@ -308,6 +308,15 @@
                 "panel": "shared"
             },
             "problemMatcher": "$msCompile"
+        },
+        {
+            "label": "Build All Release and Deploy (x64 + ARM64)",
+            "dependsOn": [
+                "Build All Release (x64 + ARM64) (no deploy)",
+                "Deploy Release"
+            ],
+            "dependsOrder": "sequence",
+            "group": "build"
         },
         {
             "label": "Build Debug x64",
@@ -784,15 +793,16 @@
                 "-NoProfile",
                 "-ExecutionPolicy",
                 "Bypass",
-                "-Command",
-                "if ($env:OneDrive) { $dest = Join-Path $env:OneDrive 'Utils'; if (Test-Path $dest) { Copy-Item '${workspaceFolder}\\x64\\Release\\TCDir.exe' $dest -Force; Write-Host \"Deployed to $dest\" } else { Write-Host \"OneDrive\\Utils not found, skipping deploy\" } } else { Write-Host \"OneDrive not set, skipping deploy\" }"
+                "-File",
+                "${workspaceFolder}\\scripts\\Deploy.ps1"
             ],
             "presentation": {
                 "echo": true,
                 "reveal": "always",
                 "focus": false,
                 "panel": "shared"
-            }
+            },
+            "problemMatcher": []
         }
     ]
 }

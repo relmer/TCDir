@@ -1,6 +1,8 @@
 #include "pch.h"
 #include "EhmTestHelper.h"
+#include "../TCDirCore/Color.h"
 #include "../TCDirCore/CommandLine.h"
+#include "../TCDirCore/Config.h"
 
 
 
@@ -114,6 +116,124 @@ namespace UnitTest
             Assert::IsTrue(cl.m_fRecurse);
             Assert::IsTrue(cl.m_fWideListing);
             Assert::IsTrue(cl.m_fPerfTimer);
+        }
+
+
+
+
+        TEST_METHOD(ParseAttributeNotContentIndexed)
+        {
+            CCommandLine    cl;
+            const wchar_t * a1      = L"/a:x";
+            wchar_t       * argv1[] = { const_cast<wchar_t *>(a1) };
+            HRESULT         hr      = cl.Parse(1, argv1);
+
+
+
+            Assert::IsTrue(SUCCEEDED(hr));
+            Assert::IsTrue((cl.m_dwAttributesRequired & FILE_ATTRIBUTE_NOT_CONTENT_INDEXED) != 0);
+        }
+
+
+
+
+        TEST_METHOD(ParseAttributeCloudOnlyComposite)
+        {
+            CCommandLine    cl;
+            const wchar_t * a1      = L"/a:o";
+            wchar_t       * argv1[] = { const_cast<wchar_t *>(a1) };
+            HRESULT         hr      = cl.Parse(1, argv1);
+
+
+
+            Assert::IsTrue(SUCCEEDED(hr));
+            // 'o' is a composite: OFFLINE | RECALL_ON_OPEN | RECALL_ON_DATA_ACCESS
+            Assert::IsTrue((cl.m_dwAttributesRequired & FILE_ATTRIBUTE_OFFLINE)               != 0);
+            Assert::IsTrue((cl.m_dwAttributesRequired & FILE_ATTRIBUTE_RECALL_ON_OPEN)        != 0);
+            Assert::IsTrue((cl.m_dwAttributesRequired & FILE_ATTRIBUTE_RECALL_ON_DATA_ACCESS) != 0);
+        }
+
+
+
+
+        TEST_METHOD(ParseAttributeIntegrityStream)
+        {
+            CCommandLine    cl;
+            const wchar_t * a1      = L"/a:i";
+            wchar_t       * argv1[] = { const_cast<wchar_t *>(a1) };
+            HRESULT         hr      = cl.Parse(1, argv1);
+
+
+
+            Assert::IsTrue(SUCCEEDED(hr));
+            Assert::IsTrue((cl.m_dwAttributesRequired & FILE_ATTRIBUTE_INTEGRITY_STREAM) != 0);
+        }
+
+
+
+
+        TEST_METHOD(ParseAttributeNoScrubData)
+        {
+            CCommandLine    cl;
+            const wchar_t * a1      = L"/a:b";
+            wchar_t       * argv1[] = { const_cast<wchar_t *>(a1) };
+            HRESULT         hr      = cl.Parse(1, argv1);
+
+
+
+            Assert::IsTrue(SUCCEEDED(hr));
+            Assert::IsTrue((cl.m_dwAttributesRequired & FILE_ATTRIBUTE_NO_SCRUB_DATA) != 0);
+        }
+
+
+
+
+        TEST_METHOD(ParseAttributeAlwaysLocallyAvailable)
+        {
+            CCommandLine    cl;
+            const wchar_t * a1      = L"/a:v";
+            wchar_t       * argv1[] = { const_cast<wchar_t *>(a1) };
+            HRESULT         hr      = cl.Parse(1, argv1);
+
+
+
+            Assert::IsTrue(SUCCEEDED(hr));
+            Assert::IsTrue((cl.m_dwAttributesRequired & FILE_ATTRIBUTE_PINNED) != 0);
+        }
+
+
+
+
+        TEST_METHOD(ParseAttributeLocallyAvailable)
+        {
+            CCommandLine    cl;
+            const wchar_t * a1      = L"/a:l";
+            wchar_t       * argv1[] = { const_cast<wchar_t *>(a1) };
+            HRESULT         hr      = cl.Parse(1, argv1);
+
+
+
+            Assert::IsTrue(SUCCEEDED(hr));
+            Assert::IsTrue((cl.m_dwAttributesRequired & FILE_ATTRIBUTE_UNPINNED) != 0);
+        }
+
+
+
+
+        TEST_METHOD(ParseAttributeCloudOnlyNegated)
+        {
+            CCommandLine    cl;
+            const wchar_t * a1      = L"/a:-o";
+            wchar_t       * argv1[] = { const_cast<wchar_t *>(a1) };
+            HRESULT         hr      = cl.Parse(1, argv1);
+
+
+
+            Assert::IsTrue(SUCCEEDED(hr));
+            // Negated 'o' should exclude all cloud-only attributes
+            Assert::IsTrue((cl.m_dwAttributesExcluded & FILE_ATTRIBUTE_OFFLINE)               != 0);
+            Assert::IsTrue((cl.m_dwAttributesExcluded & FILE_ATTRIBUTE_RECALL_ON_OPEN)        != 0);
+            Assert::IsTrue((cl.m_dwAttributesExcluded & FILE_ATTRIBUTE_RECALL_ON_DATA_ACCESS) != 0);
         }
 
 
@@ -261,6 +381,362 @@ namespace UnitTest
 
 
             Assert::IsTrue(FAILED(hr));
+        }
+
+
+
+
+#ifdef _DEBUG
+        TEST_METHOD(ParseDebugSwitchDoubleDash)
+        {
+            CCommandLine    cl;
+            const wchar_t * d1      = L"--debug";
+            wchar_t       * argv1[] = { const_cast<wchar_t *>(d1) };
+            HRESULT         hr      = cl.Parse(1, argv1);
+
+
+
+            Assert::IsTrue(SUCCEEDED(hr));
+            Assert::IsTrue(cl.m_fDebug);
+            Assert::AreEqual(L'-', cl.GetSwitchPrefix());
+        }
+
+
+
+
+        TEST_METHOD(ParseDebugSwitchSlash)
+        {
+            CCommandLine    cl;
+            const wchar_t * d1      = L"/Debug";
+            wchar_t       * argv1[] = { const_cast<wchar_t *>(d1) };
+            HRESULT         hr      = cl.Parse(1, argv1);
+
+
+
+            Assert::IsTrue(SUCCEEDED(hr));
+            Assert::IsTrue(cl.m_fDebug);
+            Assert::AreEqual(L'/', cl.GetSwitchPrefix());
+        }
+#endif
+
+
+
+
+        TEST_METHOD(ParseDebugSwitchSingleDashFails)
+        {
+            CCommandLine    cl;
+            const wchar_t * d1      = L"-debug";
+            wchar_t       * argv1[] = { const_cast<wchar_t *>(d1) };
+            HRESULT         hr      = cl.Parse(1, argv1);
+
+
+
+            Assert::IsTrue(FAILED(hr));
+        }
+
+
+
+
+        TEST_METHOD(ParseTimeFieldCreation)
+        {
+            CCommandLine    cl;
+            const wchar_t * t1      = L"/T:C";
+            wchar_t       * argv1[] = { const_cast<wchar_t *>(t1) };
+            HRESULT         hr      = cl.Parse(1, argv1);
+
+
+
+            Assert::IsTrue(SUCCEEDED(hr));
+            Assert::AreEqual(static_cast<int>(CCommandLine::ETimeField::TF_CREATION), static_cast<int>(cl.m_timeField));
+        }
+
+
+
+
+        TEST_METHOD(ParseTimeFieldAccess)
+        {
+            CCommandLine    cl;
+            const wchar_t * t1      = L"/T:A";
+            wchar_t       * argv1[] = { const_cast<wchar_t *>(t1) };
+            HRESULT         hr      = cl.Parse(1, argv1);
+
+
+
+            Assert::IsTrue(SUCCEEDED(hr));
+            Assert::AreEqual(static_cast<int>(CCommandLine::ETimeField::TF_ACCESS), static_cast<int>(cl.m_timeField));
+        }
+
+
+
+
+        TEST_METHOD(ParseTimeFieldWritten)
+        {
+            CCommandLine    cl;
+            const wchar_t * t1      = L"/T:W";
+            wchar_t       * argv1[] = { const_cast<wchar_t *>(t1) };
+            HRESULT         hr      = cl.Parse(1, argv1);
+
+
+
+            Assert::IsTrue(SUCCEEDED(hr));
+            Assert::AreEqual(static_cast<int>(CCommandLine::ETimeField::TF_WRITTEN), static_cast<int>(cl.m_timeField));
+        }
+
+
+
+
+        TEST_METHOD(ParseTimeFieldDefaultIsWritten)
+        {
+            CCommandLine cl;
+
+
+
+            Assert::AreEqual(static_cast<int>(CCommandLine::ETimeField::TF_WRITTEN), static_cast<int>(cl.m_timeField));
+        }
+
+
+
+
+        TEST_METHOD(ParseTimeFieldNoColon)
+        {
+            CCommandLine    cl;
+            const wchar_t * t1      = L"/TC";
+            wchar_t       * argv1[] = { const_cast<wchar_t *>(t1) };
+            HRESULT         hr      = cl.Parse(1, argv1);
+
+
+
+            Assert::IsTrue(SUCCEEDED(hr));
+            Assert::AreEqual(static_cast<int>(CCommandLine::ETimeField::TF_CREATION), static_cast<int>(cl.m_timeField));
+        }
+
+
+
+
+        TEST_METHOD(ParseTimeFieldWithDash)
+        {
+            CCommandLine    cl;
+            const wchar_t * t1      = L"-T:C";
+            wchar_t       * argv1[] = { const_cast<wchar_t *>(t1) };
+            HRESULT         hr      = cl.Parse(1, argv1);
+
+
+
+            Assert::IsTrue(SUCCEEDED(hr));
+            Assert::AreEqual(static_cast<int>(CCommandLine::ETimeField::TF_CREATION), static_cast<int>(cl.m_timeField));
+        }
+
+
+
+
+        TEST_METHOD(ParseTimeFieldCaseInsensitive)
+        {
+            CCommandLine    cl;
+            const wchar_t * t1      = L"/t:c";
+            wchar_t       * argv1[] = { const_cast<wchar_t *>(t1) };
+            HRESULT         hr      = cl.Parse(1, argv1);
+
+
+
+            Assert::IsTrue(SUCCEEDED(hr));
+            Assert::AreEqual(static_cast<int>(CCommandLine::ETimeField::TF_CREATION), static_cast<int>(cl.m_timeField));
+        }
+
+
+
+
+        TEST_METHOD(ParseTimeFieldInvalidValue)
+        {
+            CCommandLine    cl;
+            const wchar_t * t1      = L"/T:X";
+            wchar_t       * argv1[] = { const_cast<wchar_t *>(t1) };
+            HRESULT         hr      = cl.Parse(1, argv1);
+
+
+
+            Assert::IsTrue(FAILED(hr));
+        }
+
+
+
+
+        TEST_METHOD(ParseOwnerSwitchDoubleDash)
+        {
+            CCommandLine    cl;
+            const wchar_t * o1      = L"--owner";
+            wchar_t       * argv1[] = { const_cast<wchar_t *>(o1) };
+            HRESULT         hr      = cl.Parse(1, argv1);
+
+
+
+            Assert::IsTrue(SUCCEEDED(hr));
+            Assert::IsTrue(cl.m_fShowOwner);
+            Assert::AreEqual(L'-', cl.GetSwitchPrefix());
+        }
+
+
+
+
+        TEST_METHOD(ParseOwnerSwitchSlash)
+        {
+            CCommandLine    cl;
+            const wchar_t * o1      = L"/Owner";
+            wchar_t       * argv1[] = { const_cast<wchar_t *>(o1) };
+            HRESULT         hr      = cl.Parse(1, argv1);
+
+
+
+            Assert::IsTrue(SUCCEEDED(hr));
+            Assert::IsTrue(cl.m_fShowOwner);
+            Assert::AreEqual(L'/', cl.GetSwitchPrefix());
+        }
+
+
+
+
+        TEST_METHOD(ParseOwnerSwitchSingleDashFails)
+        {
+            CCommandLine    cl;
+            const wchar_t * o1      = L"-owner";
+            wchar_t       * argv1[] = { const_cast<wchar_t *>(o1) };
+            HRESULT         hr      = cl.Parse(1, argv1);
+
+
+
+            Assert::IsTrue(FAILED(hr));
+        }
+
+
+
+
+        TEST_METHOD(ParseStreamsSwitchDoubleDash)
+        {
+            CCommandLine    cl;
+            const wchar_t * o1      = L"--streams";
+            wchar_t       * argv1[] = { const_cast<wchar_t *>(o1) };
+            HRESULT         hr      = cl.Parse(1, argv1);
+
+
+
+            Assert::IsTrue(SUCCEEDED(hr));
+            Assert::IsTrue(cl.m_fShowStreams);
+            Assert::AreEqual(L'-', cl.GetSwitchPrefix());
+        }
+
+
+
+
+        TEST_METHOD(ParseStreamsSwitchSlash)
+        {
+            CCommandLine    cl;
+            const wchar_t * o1      = L"/Streams";
+            wchar_t       * argv1[] = { const_cast<wchar_t *>(o1) };
+            HRESULT         hr      = cl.Parse(1, argv1);
+
+
+
+            Assert::IsTrue(SUCCEEDED(hr));
+            Assert::IsTrue(cl.m_fShowStreams);
+            Assert::AreEqual(L'/', cl.GetSwitchPrefix());
+        }
+
+
+
+
+        TEST_METHOD(ParseStreamsSwitchSingleDashFails)
+        {
+            CCommandLine    cl;
+            const wchar_t * o1      = L"-streams";
+            wchar_t       * argv1[] = { const_cast<wchar_t *>(o1) };
+            HRESULT         hr      = cl.Parse(1, argv1);
+
+
+
+            Assert::IsTrue(FAILED(hr));
+        }
+
+
+
+
+        //
+        // ApplyConfigDefaults tests - verify env var settings transfer to command line
+        //
+
+        TEST_METHOD(ApplyConfigDefaults_Streams_TransfersToCommandLine)
+        {
+            CConfig      config;
+            CCommandLine cl;
+
+            config.Initialize (FC_LightGrey);
+            config.m_fShowStreams = true;
+
+            cl.ApplyConfigDefaults (config);
+
+            Assert::IsTrue (cl.m_fShowStreams);
+        }
+
+
+
+
+        TEST_METHOD(ApplyConfigDefaults_Owner_TransfersToCommandLine)
+        {
+            CConfig      config;
+            CCommandLine cl;
+
+            config.Initialize (FC_LightGrey);
+            config.m_fShowOwner = true;
+
+            cl.ApplyConfigDefaults (config);
+
+            Assert::IsTrue (cl.m_fShowOwner);
+        }
+
+
+
+
+        TEST_METHOD(ApplyConfigDefaults_AllSwitches_TransferToCommandLine)
+        {
+            CConfig      config;
+            CCommandLine cl;
+
+            config.Initialize (FC_LightGrey);
+            config.m_fWideListing   = true;
+            config.m_fBareListing   = true;
+            config.m_fRecurse       = true;
+            config.m_fPerfTimer     = true;
+            config.m_fMultiThreaded = false;  // Explicitly disable
+            config.m_fShowOwner     = true;
+            config.m_fShowStreams   = true;
+
+            cl.ApplyConfigDefaults (config);
+
+            Assert::IsTrue (cl.m_fWideListing);
+            Assert::IsTrue (cl.m_fBareListing);
+            Assert::IsTrue (cl.m_fRecurse);
+            Assert::IsTrue (cl.m_fPerfTimer);
+            Assert::IsFalse (cl.m_fMultiThreaded);
+            Assert::IsTrue (cl.m_fShowOwner);
+            Assert::IsTrue (cl.m_fShowStreams);
+        }
+
+
+
+
+        TEST_METHOD(ApplyConfigDefaults_UnsetValues_DoNotOverrideDefaults)
+        {
+            CConfig      config;
+            CCommandLine cl;
+
+            config.Initialize (FC_LightGrey);
+            // Don't set any switch values - they should remain as optional<> without value
+
+            // Set some non-default values on command line first
+            cl.m_fWideListing = true;
+
+            cl.ApplyConfigDefaults (config);
+
+            // Command line value should be preserved since config didn't have a value
+            Assert::IsTrue (cl.m_fWideListing);
         }
 
     };

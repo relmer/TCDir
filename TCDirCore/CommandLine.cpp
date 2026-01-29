@@ -68,6 +68,8 @@ void CCommandLine::ApplyConfigDefaults (const CConfig & config)
     if (config.m_fRecurse.has_value())       m_fRecurse       = config.m_fRecurse.value();
     if (config.m_fPerfTimer.has_value())     m_fPerfTimer     = config.m_fPerfTimer.value();
     if (config.m_fMultiThreaded.has_value()) m_fMultiThreaded = config.m_fMultiThreaded.value();
+    if (config.m_fShowOwner.has_value())     m_fShowOwner     = config.m_fShowOwner.value();
+    if (config.m_fShowStreams.has_value())   m_fShowStreams   = config.m_fShowStreams.value();
 }
 
 
@@ -115,21 +117,40 @@ HRESULT CCommandLine::Parse (int cArg, WCHAR ** ppszArg)
             
             case L'-':
             case L'/':
+            {
                 m_chSwitchPrefix = *pszArg;
+
+                LPCWSTR pszSwitchArg  = pszArg + 1;
+                bool    fLongOption   = false;
 
                 // Check for '--' prefix (long option style)
                 if (*pszArg == L'-' && *(pszArg + 1) == L'-')
                 {
-                    hr = HandleSwitch (pszArg + 2, true);
+                    pszSwitchArg = pszArg + 2;
+                    fLongOption  = true;
+                }
+
+                //
+                // Detect long switch: 3+ chars without ':' or '-' at position 1
+                // Reject single-dash long switches (e.g., -env) - must use --env
+                //
+
+                size_t cchArg = wcslen (pszSwitchArg);
+                bool   fLooksLikeLongSwitch = (cchArg >= 3 && pszSwitchArg[1] != L':' && pszSwitchArg[1] != L'-');
+
+                if (fLooksLikeLongSwitch && !fLongOption && m_chSwitchPrefix == L'-')
+                {
+                    hr = E_INVALIDARG;
                 }
                 else
                 {
-                    hr = HandleSwitch (pszArg + 1, false);
+                    hr = HandleSwitch (pszSwitchArg);
                 }
 
                 CHR (hr);
                 
                 break;
+            }
 
 
             //
@@ -157,31 +178,31 @@ Error:
 //
 //  CCommandLine::HandleSwitch
 //
-//  fLongOption: true if the switch was prefixed with '--' (or '/' for multi-char)
-//               Long options like 'env' and 'config' require '--' when using dash
-//               prefix, but can use single '/' when using slash prefix.
+//  Handles both single-char switches (s, w, b, etc.) and long switches (env, config).
+//  Long switch validation (requiring -- prefix) is done in Parse before calling this.
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-HRESULT CCommandLine::HandleSwitch (LPCWSTR pszArg, bool fLongOption)
+HRESULT CCommandLine::HandleSwitch (LPCWSTR pszArg)
 {
     struct SwitchEntry
     {
         WCHAR              m_chSwitch; 
-        bool             * m_pfValueOfSwitch; 
+        bool CCommandLine::* m_pfValueOfSwitch; 
         SwitchParserFunc   m_pHandler; 
     };                             
 
-    SwitchEntry allSwitches[] =
+    static const SwitchEntry s_krgSingleCharSwitches[] =
     {
-        {  L's',   &m_fRecurse,        NULL                             },
-        {  L'o',   NULL,               &CCommandLine::OrderByHandler    },
-        {  L'a',   NULL,               &CCommandLine::AttributeHandler  },
-        {  L'w',   &m_fWideListing,    NULL                             },
-        {  L'b',   &m_fBareListing,    NULL                             },
-        {  L'p',   &m_fPerfTimer,      NULL                             },
-        {  L'm',   &m_fMultiThreaded,  NULL                             },
-        {  L'?',   &m_fHelp,           NULL                             },
+        {  L's',   &CCommandLine::m_fRecurse,        nullptr                          },
+        {  L'o',   nullptr,                          &CCommandLine::OrderByHandler    },
+        {  L'a',   nullptr,                          &CCommandLine::AttributeHandler  },
+        {  L't',   nullptr,                          &CCommandLine::TimeFieldHandler  },
+        {  L'w',   &CCommandLine::m_fWideListing,    nullptr                          },
+        {  L'b',   &CCommandLine::m_fBareListing,    nullptr                          },
+        {  L'p',   &CCommandLine::m_fPerfTimer,      nullptr                          },
+        {  L'm',   &CCommandLine::m_fMultiThreaded,  nullptr                          },
+        {  L'?',   &CCommandLine::m_fHelp,           nullptr                          },
     };
     
     HRESULT hr       = S_OK;
@@ -191,37 +212,18 @@ HRESULT CCommandLine::HandleSwitch (LPCWSTR pszArg, bool fLongOption)
 
 
     //
-    // Multi-character switches (env, config) require '--' when using dash prefix,
-    // but can use single '/' when using slash prefix.
+    // Long switches are 3+ chars without ':' or '-' after first char (e.g., "env", "config")
+    // Short switches are single char, optionally followed by ':' or '-' (e.g., "s", "m-", "a:hs", "o-s")
     //
 
-    if (_wcsicmp (pszArg, L"env") == 0)
+    if (wcslen (pszArg) >= 3 && pszArg[1] != L':' && pszArg[1] != L'-')
     {
-        // With dash prefix, require '--env' (fLongOption must be true)
-        // With slash prefix, '/env' is fine (fLongOption is false, but that's ok)
-        if (!fLongOption && m_chSwitchPrefix == L'-')
-        {
-            return E_INVALIDARG;
-        }
-
-        m_fEnv = true;
-        return S_OK;
+        return HandleLongSwitch (pszArg);
     }
 
-    if (_wcsicmp (pszArg, L"config") == 0)
-    {
-        // With dash prefix, require '--config' (fLongOption must be true)
-        // With slash prefix, '/config' is fine (fLongOption is false, but that's ok)
-        if (!fLongOption && m_chSwitchPrefix == L'-')
-        {
-            return E_INVALIDARG;
-        }
-
-        m_fConfig = true;
-        return S_OK;
-    }
-
-
+    //
+    // Single-character switches
+    //
 
     ch = (WCHAR) towlower (*pszArg);
 
@@ -237,13 +239,13 @@ HRESULT CCommandLine::HandleSwitch (LPCWSTR pszArg, bool fLongOption)
     // Default to E_INVALIDARG for unrecognized switches
     hr = E_INVALIDARG;
 
-    for (SwitchEntry entry : allSwitches)
+    for (const SwitchEntry & entry : s_krgSingleCharSwitches)
     {
         if (entry.m_chSwitch == ch)
         {
-            if (entry.m_pfValueOfSwitch != NULL)
+            if (entry.m_pfValueOfSwitch != nullptr)
             {
-                *(entry.m_pfValueOfSwitch) = !fDisable;
+                this->*(entry.m_pfValueOfSwitch) = !fDisable;
                 hr = S_OK;
             }
             else
@@ -251,6 +253,55 @@ HRESULT CCommandLine::HandleSwitch (LPCWSTR pszArg, bool fLongOption)
                 hr = (this->*(entry.m_pHandler))(pszArg + 1);
             }
 
+            break;
+        }
+    }
+
+    return hr;
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CCommandLine::HandleLongSwitch
+//
+//  Handle multi-character switches (env, config, debug).
+//  Validation of -- prefix requirement is done in Parse before calling this.
+//
+////////////////////////////////////////////////////////////////////////////////
+
+HRESULT CCommandLine::HandleLongSwitch (LPCWSTR pszArg)
+{
+    struct LongSwitchEntry
+    {
+        LPCWSTR                m_pszSwitch;
+        bool CCommandLine::  * m_pfValue;
+    };
+
+    static const LongSwitchEntry s_krgLongSwitches[] =
+    {
+        {  L"env",     &CCommandLine::m_fEnv         },
+        {  L"config",  &CCommandLine::m_fConfig      },
+        {  L"owner",   &CCommandLine::m_fShowOwner   },
+        {  L"streams", &CCommandLine::m_fShowStreams },
+#ifdef _DEBUG
+        {  L"debug",   &CCommandLine::m_fDebug       },
+#endif
+    };
+
+    HRESULT hr = E_INVALIDARG;
+
+
+
+    for (const LongSwitchEntry & entry : s_krgLongSwitches)
+    {
+        if (_wcsicmp (pszArg, entry.m_pszSwitch) == 0)
+        {
+            this->*(entry.m_pfValue) = true;
+            hr = S_OK;
             break;
         }
     }
@@ -369,7 +420,7 @@ HRESULT CCommandLine::AttributeHandler (LPCWSTR pszArg)
     DWORD                  * pdwMask; 
     const WCHAR            * pchAttribute;       
     int                      idxAttribute;       
-    static constexpr WCHAR   s_kszAttributes[] = L"dhsratecp0";
+    static constexpr WCHAR   s_kszAttributes[] = L"dhsratecp0xoiblv";
     static constexpr DWORD   s_kdwAttributes[] =
     { 
         FILE_ATTRIBUTE_DIRECTORY, 
@@ -382,6 +433,12 @@ HRESULT CCommandLine::AttributeHandler (LPCWSTR pszArg)
         FILE_ATTRIBUTE_COMPRESSED,
         FILE_ATTRIBUTE_REPARSE_POINT,
         FILE_ATTRIBUTE_SPARSE_FILE,
+        FILE_ATTRIBUTE_NOT_CONTENT_INDEXED,
+        FILE_ATTRIBUTE_OFFLINE | FILE_ATTRIBUTE_RECALL_ON_OPEN | FILE_ATTRIBUTE_RECALL_ON_DATA_ACCESS,  // 'o' - cloud-only (composite)
+        FILE_ATTRIBUTE_INTEGRITY_STREAM,
+        FILE_ATTRIBUTE_NO_SCRUB_DATA,
+        FILE_ATTRIBUTE_UNPINNED,      // 'l' - locally available
+        FILE_ATTRIBUTE_PINNED,        // 'v' - always locally available
     };
 
 
@@ -450,6 +507,77 @@ HRESULT CCommandLine::AttributeHandler (LPCWSTR pszArg)
 
         ++pszArg;
     }
+
+
+Error:
+    return hr;
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CCommandLine::TimeFieldHandler
+//
+//  Handles /T: switch to select which time field to display and sort by
+//  /T:C = Creation time
+//  /T:A = Access time
+//  /T:W = Last write time (default)
+//
+////////////////////////////////////////////////////////////////////////////////
+
+HRESULT CCommandLine::TimeFieldHandler (LPCWSTR pszArg)
+{
+    struct STimeFieldMap
+    {
+        WCHAR      ch;
+        ETimeField timeField;
+    };
+
+    static constexpr STimeFieldMap s_krgTimeFieldMap[] =
+    {
+        { L'c', ETimeField::TF_CREATION },
+        { L'a', ETimeField::TF_ACCESS   },
+        { L'w', ETimeField::TF_WRITTEN  }
+    };
+
+    HRESULT hr = S_OK;
+    WCHAR   ch = 0;
+
+
+
+    CBRAEx (pszArg != NULL, E_INVALIDARG);
+
+    //
+    // Support optional ':' prefix (DIR-style switch syntax: /T:C)
+    //
+
+    if (*pszArg == L':')
+    {
+        ++pszArg;
+    }
+
+    CBRAEx (*pszArg != L'\0', E_INVALIDARG);
+
+    //
+    // Find the time field character in the map array
+    //
+
+    hr = E_INVALIDARG; // If there's no match, we'll return this
+
+    ch = towlower (*pszArg);
+    for (STimeFieldMap entry : s_krgTimeFieldMap)
+    {
+        if (ch == entry.ch)
+        {
+            m_timeField = entry.timeField;
+            hr = S_OK;
+            break;
+        }
+    }
+
 
 
 Error:

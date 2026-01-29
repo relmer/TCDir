@@ -9,14 +9,16 @@ class CDriveInfo
 public:
     CDriveInfo (const filesystem::path & dirPath);
 
-    const filesystem::path & GetUncPath()  const { return m_uncPath;                             }
-    const filesystem::path & GetRootPath() const { return m_rootPath;                            }
-    LPCWSTR         GetVolumeName()        const { return m_szVolumeName;                        }
-    UINT            GetVolumeType()        const { return m_nVolumeType;                         }
-    const wstring & GetVolumeDescription() const { return s_krgVolumeDescription[m_nVolumeType]; }
-    LPCWSTR         GetFileSystemName()    const { return m_szFileSystemName;                    }
-    bool            IsUncPath()            const { return m_fUncPath;                            }
-    const wstring & GetRemoteName()        const { return m_remoteName;                          }
+    const filesystem::path & GetUncPath()  const { return m_uncPath;                                  }
+    const filesystem::path & GetRootPath() const { return m_rootPath;                                 }
+    LPCWSTR         GetVolumeName()        const { return m_szVolumeName;                             }
+    UINT            GetVolumeType()        const { return m_nVolumeType;                              }
+    const wstring & GetVolumeDescription() const { return s_krgVolumeDescription[m_nVolumeType];      }
+    LPCWSTR         GetFileSystemName()    const { return m_szFileSystemName;                         }
+    bool            IsUncPath()            const { return m_fUncPath;                                 }
+    const wstring & GetRemoteName()        const { return m_remoteName;                               }
+    bool            IsNTFS()               const { return _wcsicmp(m_szFileSystemName, L"NTFS") == 0; }
+    bool            IsReFS()               const { return _wcsicmp(m_szFileSystemName, L"ReFS") == 0; }
 
 
 

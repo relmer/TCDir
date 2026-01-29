@@ -2,6 +2,7 @@
 
 #include "DirectoryInfo.h"
 #include "IResultsDisplayer.h"
+#include "ListingTotals.h"
 
 
 
@@ -42,7 +43,10 @@ protected:
                                                 const filesystem::path & dirPath, 
                                                 const filesystem::path & fileSpec);
 
-    HRESULT AddMatchToList                     (const WIN32_FIND_DATA & wfd, __in CDirectoryInfo * pdi);
+    HRESULT AddMatchToList                     (const WIN32_FIND_DATA & wfd, CDirectoryInfo * pdi);
+    void    HandleDirectoryMatch               (size_t & cchFileName, CDirectoryInfo * pdi);
+    void    HandleFileMatch                    (const WIN32_FIND_DATA & wfd, FileInfo & fileEntry, CDirectoryInfo * pdi);
+    HRESULT HandleFileMatchStreams             (const WIN32_FIND_DATA & wfd, FileInfo & fileEntry, CDirectoryInfo * pdi);
     BOOL    IsDots                             (LPCWSTR pszFileName);
 
 
@@ -51,7 +55,5 @@ protected:
     shared_ptr<CConsole>                  m_consolePtr;
     shared_ptr<CConfig>                   m_configPtr;
     unique_ptr<IResultsDisplayer>         m_displayer;
-    ULARGE_INTEGER                        m_uliSizeOfAllFilesFound;
-    UINT                                  m_cFilesFound;
-    UINT                                  m_cDirectoriesFound;
+    SListingTotals                        m_totals;
 };

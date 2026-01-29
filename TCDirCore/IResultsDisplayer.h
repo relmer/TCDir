@@ -2,6 +2,7 @@
 
 #include "DirectoryInfo.h"
 #include "DriveInfo.h"
+#include "ListingTotals.h"
 
 
 
@@ -26,6 +27,6 @@ public:
 
     virtual ~IResultsDisplayer                (void) = default;
     virtual void DisplayResults               (const CDriveInfo & driveInfo, const CDirectoryInfo & di, EDirectoryLevel level) = 0;
-    virtual void DisplayRecursiveSummary      (const CDirectoryInfo & diInitial, UINT cFilesFound, UINT cDirectoriesFound, const ULARGE_INTEGER & uliSizeOfAllFilesFound) = 0;
+    virtual void DisplayRecursiveSummary      (const CDirectoryInfo & diInitial, const SListingTotals & totals) = 0;
 };
 

@@ -112,5 +112,117 @@ namespace UnitTest
             Assert::IsFalse(comp(b, a));
         }
 
+
+
+
+        TEST_METHOD(DateOrderingDefaultWriteTime)
+        {
+            auto cmd = std::make_shared<CCommandLine>();
+
+            cmd->m_rgSortPreference[0] = CCommandLine::ESortOrder::SO_DATE;
+            cmd->m_sortorder           = CCommandLine::ESortOrder::SO_DATE;
+            cmd->m_sortdirection       = CCommandLine::ESortDirection::SD_ASCENDING;
+            // m_timeField defaults to TF_WRITTEN
+
+            FileComparator comp(cmd);
+
+            WIN32_FIND_DATA older = {};
+            WIN32_FIND_DATA newer = {};
+            StringCchCopyW(older.cFileName, ARRAYSIZE(older.cFileName), L"older");
+            StringCchCopyW(newer.cFileName, ARRAYSIZE(newer.cFileName), L"newer");
+
+            // Set last write times (older < newer)
+            older.ftLastWriteTime.dwHighDateTime = 0; older.ftLastWriteTime.dwLowDateTime = 100;
+            newer.ftLastWriteTime.dwHighDateTime = 0; newer.ftLastWriteTime.dwLowDateTime = 200;
+
+            Assert::IsTrue(comp(older, newer));
+            Assert::IsFalse(comp(newer, older));
+        }
+
+
+
+
+        TEST_METHOD(DateOrderingCreationTime)
+        {
+            auto cmd = std::make_shared<CCommandLine>();
+
+            cmd->m_rgSortPreference[0] = CCommandLine::ESortOrder::SO_DATE;
+            cmd->m_sortorder           = CCommandLine::ESortOrder::SO_DATE;
+            cmd->m_sortdirection       = CCommandLine::ESortDirection::SD_ASCENDING;
+            cmd->m_timeField           = CCommandLine::ETimeField::TF_CREATION;
+
+            FileComparator comp(cmd);
+
+            WIN32_FIND_DATA older = {};
+            WIN32_FIND_DATA newer = {};
+            StringCchCopyW(older.cFileName, ARRAYSIZE(older.cFileName), L"older");
+            StringCchCopyW(newer.cFileName, ARRAYSIZE(newer.cFileName), L"newer");
+
+            // Set creation times (older < newer) - opposite write times to prove we use creation
+            older.ftCreationTime.dwHighDateTime   = 0; older.ftCreationTime.dwLowDateTime   = 100;
+            newer.ftCreationTime.dwHighDateTime   = 0; newer.ftCreationTime.dwLowDateTime   = 200;
+            older.ftLastWriteTime.dwHighDateTime  = 0; older.ftLastWriteTime.dwLowDateTime  = 200;  // Intentionally reversed
+            newer.ftLastWriteTime.dwHighDateTime  = 0; newer.ftLastWriteTime.dwLowDateTime  = 100;
+
+            Assert::IsTrue(comp(older, newer));
+            Assert::IsFalse(comp(newer, older));
+        }
+
+
+
+
+        TEST_METHOD(DateOrderingAccessTime)
+        {
+            auto cmd = std::make_shared<CCommandLine>();
+
+            cmd->m_rgSortPreference[0] = CCommandLine::ESortOrder::SO_DATE;
+            cmd->m_sortorder           = CCommandLine::ESortOrder::SO_DATE;
+            cmd->m_sortdirection       = CCommandLine::ESortDirection::SD_ASCENDING;
+            cmd->m_timeField           = CCommandLine::ETimeField::TF_ACCESS;
+
+            FileComparator comp(cmd);
+
+            WIN32_FIND_DATA older = {};
+            WIN32_FIND_DATA newer = {};
+            StringCchCopyW(older.cFileName, ARRAYSIZE(older.cFileName), L"older");
+            StringCchCopyW(newer.cFileName, ARRAYSIZE(newer.cFileName), L"newer");
+
+            // Set access times (older < newer) - opposite write times to prove we use access
+            older.ftLastAccessTime.dwHighDateTime = 0; older.ftLastAccessTime.dwLowDateTime = 100;
+            newer.ftLastAccessTime.dwHighDateTime = 0; newer.ftLastAccessTime.dwLowDateTime = 200;
+            older.ftLastWriteTime.dwHighDateTime  = 0; older.ftLastWriteTime.dwLowDateTime  = 200;  // Intentionally reversed
+            newer.ftLastWriteTime.dwHighDateTime  = 0; newer.ftLastWriteTime.dwLowDateTime  = 100;
+
+            Assert::IsTrue(comp(older, newer));
+            Assert::IsFalse(comp(newer, older));
+        }
+
+
+
+
+        TEST_METHOD(DateOrderingDescendingCreationTime)
+        {
+            auto cmd = std::make_shared<CCommandLine>();
+
+            cmd->m_rgSortPreference[0] = CCommandLine::ESortOrder::SO_DATE;
+            cmd->m_sortorder           = CCommandLine::ESortOrder::SO_DATE;
+            cmd->m_sortdirection       = CCommandLine::ESortDirection::SD_DESCENDING;
+            cmd->m_timeField           = CCommandLine::ETimeField::TF_CREATION;
+
+            FileComparator comp(cmd);
+
+            WIN32_FIND_DATA older = {};
+            WIN32_FIND_DATA newer = {};
+            StringCchCopyW(older.cFileName, ARRAYSIZE(older.cFileName), L"older");
+            StringCchCopyW(newer.cFileName, ARRAYSIZE(newer.cFileName), L"newer");
+
+            older.ftCreationTime.dwHighDateTime = 0; older.ftCreationTime.dwLowDateTime = 100;
+            newer.ftCreationTime.dwHighDateTime = 0; newer.ftCreationTime.dwLowDateTime = 200;
+
+            // Descending: newer should come before older
+            Assert::IsFalse(comp(older, newer));
+            Assert::IsTrue(comp(newer, older));
+        }
+
     };
 }

@@ -1407,7 +1407,7 @@ namespace UnitTest
             Assert::AreEqual(size_t(1), result.errors.size());
             
             const auto& error = result.errors[0];
-            Assert::AreEqual(wstring(L"Invalid display attribute character (valid: D,T,A,-,S,R,I,H,E,F)"), error.message);
+            Assert::AreEqual(wstring(L"Invalid display attribute character (valid: D,T,A,-,S,R,I,H,E,F,O)"), error.message);
             Assert::AreEqual(wstring(L"Q=Yellow"), error.entry);
             Assert::AreEqual(wstring(L"Q"), error.invalidText);
             Assert::AreEqual(size_t(0), error.invalidTextOffset);
@@ -1476,12 +1476,12 @@ namespace UnitTest
 
 
 
-        TEST_METHOD(ProcessSwitchOverride_SlashW_SetsWideListing)
+        TEST_METHOD(ProcessSwitchOverride_W_SetsWideListing)
         {
             ConfigProbe config;
             config.Initialize (FC_LightGrey);
 
-            config.ProcessSwitchOverride (L"/w");
+            config.ProcessSwitchOverride (L"w");
 
             Assert::IsTrue (config.m_fWideListing.has_value ());
             Assert::IsTrue (config.m_fWideListing.value ());
@@ -1491,12 +1491,12 @@ namespace UnitTest
 
 
 
-        TEST_METHOD(ProcessSwitchOverride_SlashWUppercase_SetsWideListing)
+        TEST_METHOD(ProcessSwitchOverride_WUppercase_SetsWideListing)
         {
             ConfigProbe config;
             config.Initialize (FC_LightGrey);
 
-            config.ProcessSwitchOverride (L"/W");
+            config.ProcessSwitchOverride (L"W");
 
             Assert::IsTrue (config.m_fWideListing.has_value ());
             Assert::IsTrue (config.m_fWideListing.value ());
@@ -1506,12 +1506,12 @@ namespace UnitTest
 
 
 
-        TEST_METHOD(ProcessSwitchOverride_DashW_SetsWideListing)
+        TEST_METHOD(ProcessSwitchOverride_wLowercase_SetsWideListing)
         {
             ConfigProbe config;
             config.Initialize (FC_LightGrey);
 
-            config.ProcessSwitchOverride (L"-w");
+            config.ProcessSwitchOverride (L"w");
 
             Assert::IsTrue (config.m_fWideListing.has_value ());
             Assert::IsTrue (config.m_fWideListing.value ());
@@ -1521,12 +1521,12 @@ namespace UnitTest
 
 
 
-        TEST_METHOD(ProcessSwitchOverride_SlashWMinus_DisablesWideListing)
+        TEST_METHOD(ProcessSwitchOverride_WMinus_DisablesWideListing)
         {
             ConfigProbe config;
             config.Initialize (FC_LightGrey);
 
-            config.ProcessSwitchOverride (L"/w-");
+            config.ProcessSwitchOverride (L"W-");
 
             Assert::IsTrue (config.m_fWideListing.has_value ());
             Assert::IsFalse (config.m_fWideListing.value ());
@@ -1536,12 +1536,12 @@ namespace UnitTest
 
 
 
-        TEST_METHOD(ProcessSwitchOverride_SlashS_SetsRecurse)
+        TEST_METHOD(ProcessSwitchOverride_S_SetsRecurse)
         {
             ConfigProbe config;
             config.Initialize (FC_LightGrey);
 
-            config.ProcessSwitchOverride (L"/s");
+            config.ProcessSwitchOverride (L"S");
 
             Assert::IsTrue (config.m_fRecurse.has_value ());
             Assert::IsTrue (config.m_fRecurse.value ());
@@ -1551,12 +1551,12 @@ namespace UnitTest
 
 
 
-        TEST_METHOD(ProcessSwitchOverride_SlashP_SetsPerfTimer)
+        TEST_METHOD(ProcessSwitchOverride_P_SetsPerfTimer)
         {
             ConfigProbe config;
             config.Initialize (FC_LightGrey);
 
-            config.ProcessSwitchOverride (L"/p");
+            config.ProcessSwitchOverride (L"P");
 
             Assert::IsTrue (config.m_fPerfTimer.has_value ());
             Assert::IsTrue (config.m_fPerfTimer.value ());
@@ -1566,12 +1566,12 @@ namespace UnitTest
 
 
 
-        TEST_METHOD(ProcessSwitchOverride_SlashM_SetsMultiThreaded)
+        TEST_METHOD(ProcessSwitchOverride_M_SetsMultiThreaded)
         {
             ConfigProbe config;
             config.Initialize (FC_LightGrey);
 
-            config.ProcessSwitchOverride (L"/m");
+            config.ProcessSwitchOverride (L"M");
 
             Assert::IsTrue (config.m_fMultiThreaded.has_value ());
             Assert::IsTrue (config.m_fMultiThreaded.value ());
@@ -1581,17 +1581,72 @@ namespace UnitTest
 
 
 
-        TEST_METHOD(ProcessSwitchOverride_SlashMMinus_DisablesMultiThreaded)
+        TEST_METHOD(ProcessSwitchOverride_MMinus_DisablesMultiThreaded)
         {
             ConfigProbe config;
             config.Initialize (FC_LightGrey);
 
-            config.ProcessSwitchOverride (L"/m-");
+            config.ProcessSwitchOverride (L"M-");
 
             Assert::IsTrue (config.m_fMultiThreaded.has_value ());
             Assert::IsFalse (config.m_fMultiThreaded.value ());
         }
 
+
+
+
+        TEST_METHOD(ProcessSwitchOverride_Owner_SetsShowOwner)
+        {
+            ConfigProbe config;
+            config.Initialize (FC_LightGrey);
+
+            config.ProcessSwitchOverride (L"Owner");
+
+            Assert::IsTrue (config.m_fShowOwner.has_value ());
+            Assert::IsTrue (config.m_fShowOwner.value ());
+        }
+
+
+
+
+        TEST_METHOD(ProcessSwitchOverride_owner_lowercase_SetsShowOwner)
+        {
+            ConfigProbe config;
+            config.Initialize (FC_LightGrey);
+
+            config.ProcessSwitchOverride (L"owner");
+
+            Assert::IsTrue (config.m_fShowOwner.has_value ());
+            Assert::IsTrue (config.m_fShowOwner.value ());
+        }
+
+
+
+
+        TEST_METHOD(ProcessSwitchOverride_Streams_SetsShowStreams)
+        {
+            ConfigProbe config;
+            config.Initialize (FC_LightGrey);
+
+            config.ProcessSwitchOverride (L"Streams");
+
+            Assert::IsTrue (config.m_fShowStreams.has_value ());
+            Assert::IsTrue (config.m_fShowStreams.value ());
+        }
+
+
+
+
+        TEST_METHOD(ProcessSwitchOverride_streams_lowercase_SetsShowStreams)
+        {
+            ConfigProbe config;
+            config.Initialize (FC_LightGrey);
+
+            config.ProcessSwitchOverride (L"streams");
+
+            Assert::IsTrue (config.m_fShowStreams.has_value ());
+            Assert::IsTrue (config.m_fShowStreams.value ());
+        }
 
 
 
@@ -1601,75 +1656,79 @@ namespace UnitTest
             ConfigProbe config;
             config.Initialize (FC_LightGrey);
 
-            config.ProcessSwitchOverride (L"/x");
+            config.ProcessSwitchOverride (L"x");
 
             CConfig::ValidationResult result = config.ValidateEnvironmentVariable ();
             Assert::AreEqual (size_t (1), result.errors.size ());
-            Assert::AreEqual (wstring (L"Invalid switch (expected /S, /W, /P, or /M)"), result.errors[0].message);
+            Assert::AreEqual (wstring (L"Invalid switch (expected W, S, P, M, Owner, or Streams)"), result.errors[0].message);
         }
 
 
 
 
 
-        TEST_METHOD(ProcessSwitchOverride_TooShort_AddsError)
+        TEST_METHOD(ProcessSwitchOverride_TooLong_AddsError)
         {
             ConfigProbe config;
             config.Initialize (FC_LightGrey);
 
-            config.ProcessSwitchOverride (L"/");
+            config.ProcessSwitchOverride (L"abc");
 
             CConfig::ValidationResult result = config.ValidateEnvironmentVariable ();
             Assert::AreEqual (size_t (1), result.errors.size ());
-            // With just "/", length check fails before idxExample is set, so idxExample=0 (default), uses the -S message
-            Assert::AreEqual (wstring (L"Invalid switch (expected -S, -W, -P, or -M)"), result.errors[0].message);
+            Assert::AreEqual (wstring (L"Invalid switch (expected W, S, P, M, Owner, or Streams)"), result.errors[0].message);
         }
 
 
 
 
 
-        TEST_METHOD(ProcessSwitchOverride_TooShort_DashPrefix_AddsError)
+        TEST_METHOD(ProcessSwitchOverride_InvalidLongSwitch_AddsError)
         {
             ConfigProbe config;
             config.Initialize (FC_LightGrey);
 
-            config.ProcessSwitchOverride (L"-");
+            config.ProcessSwitchOverride (L"invalid");
 
             CConfig::ValidationResult result = config.ValidateEnvironmentVariable ();
             Assert::AreEqual (size_t (1), result.errors.size ());
-            // With just "-", entry[0] is '-' so idxExample=0, uses the -S message
-            Assert::AreEqual (wstring (L"Invalid switch (expected -S, -W, -P, or -M)"), result.errors[0].message);
+            Assert::AreEqual (wstring (L"Invalid switch (expected W, S, P, M, Owner, or Streams)"), result.errors[0].message);
         }
 
 
 
 
 
-        TEST_METHOD(ProcessColorOverrideEntry_SwitchWithSlash_RouteToSwitchHandler)
+        TEST_METHOD(ProcessColorOverrideEntry_SwitchWithSlash_RejectsPrefix)
         {
             ConfigProbe config;
             config.Initialize (FC_LightGrey);
 
             config.ProcessColorOverrideEntry (L"/w");
 
-            Assert::IsTrue (config.m_fWideListing.has_value ());
-            Assert::IsTrue (config.m_fWideListing.value ());
+            // Prefixed switches should be rejected
+            Assert::IsFalse (config.m_fWideListing.has_value ());
+            CConfig::ValidationResult result = config.ValidateEnvironmentVariable ();
+            Assert::AreEqual (size_t (1), result.errors.size ());
+            Assert::AreEqual (wstring (L"Switch prefixes (/, -, --) are not allowed in env var"), result.errors[0].message);
         }
 
 
 
 
 
-        TEST_METHOD(ProcessColorOverrideEntry_SwitchWithDash_RouteToSwitchHandler)
+        TEST_METHOD(ProcessColorOverrideEntry_SwitchWithDash_RejectsPrefix)
         {
             ConfigProbe config;
             config.Initialize (FC_LightGrey);
 
             config.ProcessColorOverrideEntry (L"-s");
 
-            Assert::IsTrue (config.m_fRecurse.has_value ());
-            Assert::IsTrue (config.m_fRecurse.value ());
+            // Prefixed switches should be rejected
+            Assert::IsFalse (config.m_fRecurse.has_value ());
+            CConfig::ValidationResult result = config.ValidateEnvironmentVariable ();
+            Assert::AreEqual (size_t (1), result.errors.size ());
+            Assert::AreEqual (wstring (L"Switch prefixes (/, -, --) are not allowed in env var"), result.errors[0].message);
         }
 
 
@@ -1681,7 +1740,7 @@ namespace UnitTest
             ConfigProbe config;
             config.Initialize (FC_LightGrey);
 
-            config.SetEnvVar (TCDIR_ENV_VAR_NAME, L"/w;/s;D=Yellow;.cpp=LightGreen");
+            config.SetEnvVar (TCDIR_ENV_VAR_NAME, L"W;S;D=Yellow;.cpp=LightGreen");
             config.ApplyUserColorOverrides ();
 
             // Check switches
@@ -1704,7 +1763,7 @@ namespace UnitTest
             ConfigProbe config;
             config.Initialize (FC_LightGrey);
 
-            config.SetEnvVar (TCDIR_ENV_VAR_NAME, L"/m-;/w");
+            config.SetEnvVar (TCDIR_ENV_VAR_NAME, L"M-;W");
             config.ApplyUserColorOverrides ();
 
             Assert::IsTrue (config.m_fMultiThreaded.has_value ());
@@ -1717,7 +1776,7 @@ namespace UnitTest
 
 
 
-        TEST_METHOD(EnvVar_DashPrefixSwitch_ParsesCorrectly)
+        TEST_METHOD(EnvVar_DashPrefixSwitch_RejectsPrefix)
         {
             ConfigProbe config;
             config.Initialize (FC_LightGrey);
@@ -1725,10 +1784,13 @@ namespace UnitTest
             config.SetEnvVar (TCDIR_ENV_VAR_NAME, L"-w;-p");
             config.ApplyUserColorOverrides ();
 
-            Assert::IsTrue (config.m_fWideListing.has_value ());
-            Assert::IsTrue (config.m_fWideListing.value ());
-            Assert::IsTrue (config.m_fPerfTimer.has_value ());
-            Assert::IsTrue (config.m_fPerfTimer.value ());
+            // Prefixed switches should not be set
+            Assert::IsFalse (config.m_fWideListing.has_value ());
+            Assert::IsFalse (config.m_fPerfTimer.has_value ());
+
+            // Should have errors
+            CConfig::ValidationResult result = config.ValidateEnvironmentVariable ();
+            Assert::AreEqual (size_t (2), result.errors.size ());
         }
 
 
@@ -1744,6 +1806,79 @@ namespace UnitTest
             Assert::IsFalse (config.m_fRecurse.has_value ());
             Assert::IsFalse (config.m_fPerfTimer.has_value ());
             Assert::IsFalse (config.m_fMultiThreaded.has_value ());
+        }
+
+
+
+
+        TEST_METHOD(EnvVar_PrefixFreeSwitch_ParsesCorrectly)
+        {
+            ConfigProbe config;
+            config.Initialize (FC_LightGrey);
+
+            config.SetEnvVar (TCDIR_ENV_VAR_NAME, L"W;S;P");
+            config.ApplyUserColorOverrides ();
+
+            Assert::IsTrue (config.m_fWideListing.has_value ());
+            Assert::IsTrue (config.m_fWideListing.value ());
+            Assert::IsTrue (config.m_fRecurse.has_value ());
+            Assert::IsTrue (config.m_fRecurse.value ());
+            Assert::IsTrue (config.m_fPerfTimer.has_value ());
+            Assert::IsTrue (config.m_fPerfTimer.value ());
+        }
+
+
+
+
+        TEST_METHOD(EnvVar_PrefixFreeSwitchDisable_ParsesCorrectly)
+        {
+            ConfigProbe config;
+            config.Initialize (FC_LightGrey);
+
+            config.SetEnvVar (TCDIR_ENV_VAR_NAME, L"M-;W");
+            config.ApplyUserColorOverrides ();
+
+            Assert::IsTrue (config.m_fMultiThreaded.has_value ());
+            Assert::IsFalse (config.m_fMultiThreaded.value ());
+            Assert::IsTrue (config.m_fWideListing.has_value ());
+            Assert::IsTrue (config.m_fWideListing.value ());
+        }
+
+
+
+
+        TEST_METHOD(EnvVar_PrefixFreeOwner_ParsesCorrectly)
+        {
+            ConfigProbe config;
+            config.Initialize (FC_LightGrey);
+
+            config.SetEnvVar (TCDIR_ENV_VAR_NAME, L"Owner;Streams");
+            config.ApplyUserColorOverrides ();
+
+            Assert::IsTrue (config.m_fShowOwner.has_value ());
+            Assert::IsTrue (config.m_fShowOwner.value ());
+            Assert::IsTrue (config.m_fShowStreams.has_value ());
+            Assert::IsTrue (config.m_fShowStreams.value ());
+        }
+
+
+
+
+        TEST_METHOD(EnvVar_AllPrefixFree_ParsesCorrectly)
+        {
+            ConfigProbe config;
+            config.Initialize (FC_LightGrey);
+
+            config.SetEnvVar (TCDIR_ENV_VAR_NAME, L"W;S;Owner;D=Yellow");
+            config.ApplyUserColorOverrides ();
+
+            Assert::IsTrue (config.m_fWideListing.has_value ());
+            Assert::IsTrue (config.m_fWideListing.value ());
+            Assert::IsTrue (config.m_fRecurse.has_value ());
+            Assert::IsTrue (config.m_fRecurse.value ());
+            Assert::IsTrue (config.m_fShowOwner.has_value ());
+            Assert::IsTrue (config.m_fShowOwner.value ());
+            Assert::AreEqual ((WORD) FC_Yellow, config.m_rgAttributes[CConfig::EAttribute::Date]);
         }
     };
 }

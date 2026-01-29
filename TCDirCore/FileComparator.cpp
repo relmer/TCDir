@@ -65,49 +65,20 @@ bool FileComparator::operator() (const WIN32_FIND_DATA & lhs, const WIN32_FIND_D
         {
             case CCommandLine::ESortOrder::SO_DEFAULT:
             case CCommandLine::ESortOrder::SO_NAME:
-                cmp = lstrcmpiW(lhs.cFileName, rhs.cFileName);
+                cmp = CompareName (lhs, rhs);
                 break;
 
             case CCommandLine::ESortOrder::SO_DATE:
-                cmp = CompareFileTime(&lhs.ftLastWriteTime, &rhs.ftLastWriteTime);
+                cmp = CompareDate (lhs, rhs);
                 break;
 
             case CCommandLine::ESortOrder::SO_EXTENSION:
-            {
-                filesystem::path lhsPath (lhs.cFileName);
-                filesystem::path rhsPath (rhs.cFileName);
-                cmp = lstrcmpiW(lhsPath.extension().c_str(), rhsPath.extension().c_str());
+                cmp = CompareExtension (lhs, rhs);
                 break;
-            }
 
             case CCommandLine::ESortOrder::SO_SIZE:
-            {
-                ULARGE_INTEGER uliFileSize;
-                ULARGE_INTEGER uliRhsFileSize;
-
-
-
-                // Use explicit relational comparison to avoid signed overflow from subtraction on 64-bit sizes.
-                uliFileSize.HighPart = lhs.nFileSizeHigh;
-                uliFileSize.LowPart  = lhs.nFileSizeLow;
-
-                uliRhsFileSize.HighPart = rhs.nFileSizeHigh;
-                uliRhsFileSize.LowPart  = rhs.nFileSizeLow;
-
-                if (uliFileSize.QuadPart < uliRhsFileSize.QuadPart)
-                {
-                    cmp = -1;
-                }
-                else if (uliFileSize.QuadPart > uliRhsFileSize.QuadPart)
-                {
-                    cmp = 1;
-                }
-                else
-                {
-                    cmp = 0;
-                }
+                cmp = CompareSize (lhs, rhs);
                 break;
-            }
         }
 
         //
@@ -141,4 +112,128 @@ bool FileComparator::operator() (const WIN32_FIND_DATA & lhs, const WIN32_FIND_D
     }
 
     return comesBeforeRhs;
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  FileComparator::CompareName
+//
+//  Compare two files by name (case-insensitive)
+//
+////////////////////////////////////////////////////////////////////////////////
+
+LONGLONG FileComparator::CompareName (const WIN32_FIND_DATA & lhs, const WIN32_FIND_DATA & rhs) const
+{
+    return lstrcmpiW (lhs.cFileName, rhs.cFileName);
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  FileComparator::CompareDate
+//
+//  Compare two files by date, using the time field selected via /T: switch
+//
+////////////////////////////////////////////////////////////////////////////////
+
+LONGLONG FileComparator::CompareDate (const WIN32_FIND_DATA & lhs, const WIN32_FIND_DATA & rhs) const
+{
+    const FILETIME * pftLhs = nullptr;
+    const FILETIME * pftRhs = nullptr;
+
+
+
+    switch (m_cmdLinePtr->m_timeField)
+    {
+        case CCommandLine::ETimeField::TF_CREATION:
+            pftLhs = &lhs.ftCreationTime;
+            pftRhs = &rhs.ftCreationTime;
+            break;
+
+        case CCommandLine::ETimeField::TF_ACCESS:
+            pftLhs = &lhs.ftLastAccessTime;
+            pftRhs = &rhs.ftLastAccessTime;
+            break;
+
+        case CCommandLine::ETimeField::TF_WRITTEN:
+        default:
+            pftLhs = &lhs.ftLastWriteTime;
+            pftRhs = &rhs.ftLastWriteTime;
+            break;
+    }
+
+    return CompareFileTime (pftLhs, pftRhs);
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  FileComparator::CompareExtension
+//
+//  Compare two files by extension (case-insensitive)
+//
+////////////////////////////////////////////////////////////////////////////////
+
+LONGLONG FileComparator::CompareExtension (const WIN32_FIND_DATA & lhs, const WIN32_FIND_DATA & rhs) const
+{
+    filesystem::path lhsPath (lhs.cFileName);
+    filesystem::path rhsPath (rhs.cFileName);
+
+
+
+    return lstrcmpiW (lhsPath.extension().c_str(), rhsPath.extension().c_str());
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  FileComparator::CompareSize
+//
+//  Compare two files by size
+//
+////////////////////////////////////////////////////////////////////////////////
+
+LONGLONG FileComparator::CompareSize (const WIN32_FIND_DATA & lhs, const WIN32_FIND_DATA & rhs) const
+{
+    ULARGE_INTEGER uliLhsSize;
+    ULARGE_INTEGER uliRhsSize;
+
+
+
+    uliLhsSize.HighPart = lhs.nFileSizeHigh;
+    uliLhsSize.LowPart  = lhs.nFileSizeLow;
+
+    uliRhsSize.HighPart = rhs.nFileSizeHigh;
+    uliRhsSize.LowPart  = rhs.nFileSizeLow;
+
+    //
+    // Use explicit relational comparison to avoid signed overflow 
+    // from subtraction on 64-bit sizes.
+    //
+
+    if (uliLhsSize.QuadPart < uliRhsSize.QuadPart)
+    {
+        return -1;
+    }
+    else if (uliLhsSize.QuadPart > uliRhsSize.QuadPart)
+    {
+        return 1;
+    }
+    else
+    {
+        return 0;
+    }
 }

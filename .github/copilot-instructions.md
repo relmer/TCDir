@@ -71,6 +71,12 @@ g_pConsole->Printf (CConfig::Error, L"Error: %s\n", msg);
 
 ## C++ Specific Guidelines
 
+### Precompiled Headers
+- Every `.cpp` file MUST include `"pch.h"` as its **first** `#include`
+- **NEVER** use angle-bracket includes (`<header>`) anywhere except `pch.h`
+- All system headers, Windows SDK headers, and STL headers belong in `pch.h`
+- Individual `.cpp` and `.h` files use only quoted includes (`"header.h"`) for project headers
+
 ### Smart Pointers
 - Prefer `unique_ptr` for exclusive ownership
 - Use `shared_ptr` when shared ownership is needed

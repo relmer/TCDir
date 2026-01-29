@@ -21,7 +21,7 @@ public:
     };
 
     static void    DisplayUsage                     (CConsole & console, wchar_t chPrefix = L'-');
-    static void    DisplayEnvVarHelp                (CConsole & console, wchar_t chPrefix = L'-');
+    static void    DisplayEnvVarHelp                (CConsole & console);
     static void    DisplayCurrentConfiguration      (CConsole & console, wchar_t chPrefix = L'-');
     static void    DisplayEnvVarIssues              (CConsole & console, wchar_t chPrefix = L'-');
 
@@ -49,4 +49,5 @@ private:
 
     static HRESULT DisplayEnvVarSegment                      (CConsole & console, wstring_view segment);
     static void    DisplayEnvVarCurrentValue                 (CConsole & console, LPCWSTR pszEnvVarName);
+    static void    DisplayEnvVarDecodedSettings              (CConsole & console);
 };
