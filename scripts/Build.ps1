@@ -244,6 +244,20 @@ try {
                 break
             }
         }
+
+        if ($scriptExitCode -ne 0) {
+            foreach ($config in $configsToBuild) {
+                foreach ($platformToBuild in $platformsToBuild) {
+                    $existing = $script:BuildResults |
+                        Where-Object { $_.Configuration -eq $config -and $_.Platform -eq $platformToBuild -and $_.Target -eq $msbuildTarget } |
+                        Select-Object -First 1
+
+                    if (-not $existing) {
+                        Add-BuildResult -Configuration $config -Platform $platformToBuild -Target $msbuildTarget -Status 'Skipped' -Message 'Skipped due to previous failure'
+                    }
+                }
+            }
+        }
     }
     else {
         if ($Platform -eq 'ARM64') {
