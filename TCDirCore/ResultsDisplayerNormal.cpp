@@ -324,6 +324,14 @@ ECloudStatus CResultsDisplayerNormal::GetCloudStatus (const WIN32_FIND_DATA & wf
 
 
 
+    // Only report cloud status for files in a registered sync root.
+    // Cloud attributes can persist on files copied from cloud locations,
+    // so we ignore them if the current path isn't cloud-managed.
+    if (!fInSyncRoot)
+    {
+        return status;
+    }
+
     if (wfd.dwFileAttributes & FILE_ATTRIBUTE_PINNED)
     {
         // Pinned takes priority - always available locally
@@ -341,11 +349,10 @@ ECloudStatus CResultsDisplayerNormal::GetCloudStatus (const WIN32_FIND_DATA & wf
         // Unpinned means locally available but can be dehydrated
         status = ECloudStatus::CS_LOCAL;
     }
-    else if (fInSyncRoot)
+    else
     {
-        // No cloud attributes set - if we're in a sync root, the file is
-        // fully hydrated (locally synced). OneDrive removes placeholder
-        // metadata from fully hydrated files.
+        // No cloud attributes set - the file is fully hydrated (locally synced).
+        // OneDrive removes placeholder metadata from fully hydrated files.
         status = ECloudStatus::CS_LOCAL;
     }
 

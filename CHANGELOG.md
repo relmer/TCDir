@@ -2,6 +2,11 @@
 
 All notable changes to TCDir are documented in this file.
 
+## [4.2.1195] - 2026-01-29
+
+### Fixed
+- Cloud status symbols no longer appear for files outside cloud sync roots (e.g., files copied from OneDrive that retained stale attributes)
+
 ## [4.2] - 2026-01-28
 
 ### Added

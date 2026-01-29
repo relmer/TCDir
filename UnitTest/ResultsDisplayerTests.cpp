@@ -145,6 +145,30 @@ namespace UnitTest
 
 
 
+        TEST_METHOD(GetCloudStatus_None_CloudAttrsIgnoredOutsideSyncRoot)
+        {
+            // Cloud attributes should be ignored if file is not in a sync root
+            // (e.g., stale attributes from files copied from cloud locations)
+            auto cmd = std::make_shared<CCommandLine>();
+            auto con = std::make_shared<CConsole>();
+            auto cfg = std::make_shared<CConfig>();
+            con->Initialize(cfg);
+            NormalDisplayerProbe probe(cmd, con, cfg);
+
+            WIN32_FIND_DATA fd = CreateMockFileData(L"copied.txt",
+                FILE_ATTRIBUTE_ARCHIVE | FILE_ATTRIBUTE_PINNED);
+
+
+
+            // fInSyncRoot = false, so cloud attributes are ignored
+            ECloudStatus status = probe.WrapGetCloudStatus(fd, false);
+
+            Assert::AreEqual(static_cast<int>(ECloudStatus::CS_NONE), static_cast<int>(status));
+        }
+
+
+
+
         TEST_METHOD(GetCloudStatus_CloudOnly_Offline)
         {
             auto cmd = std::make_shared<CCommandLine>();
@@ -157,7 +181,7 @@ namespace UnitTest
 
 
 
-            ECloudStatus status = probe.WrapGetCloudStatus(fd);
+            ECloudStatus status = probe.WrapGetCloudStatus(fd, true);
 
             Assert::AreEqual(static_cast<int>(ECloudStatus::CS_CLOUD_ONLY), static_cast<int>(status));
         }
@@ -177,7 +201,7 @@ namespace UnitTest
 
 
 
-            ECloudStatus status = probe.WrapGetCloudStatus(fd);
+            ECloudStatus status = probe.WrapGetCloudStatus(fd, true);
 
             Assert::AreEqual(static_cast<int>(ECloudStatus::CS_CLOUD_ONLY), static_cast<int>(status));
         }
@@ -197,7 +221,7 @@ namespace UnitTest
 
 
 
-            ECloudStatus status = probe.WrapGetCloudStatus(fd);
+            ECloudStatus status = probe.WrapGetCloudStatus(fd, true);
 
             Assert::AreEqual(static_cast<int>(ECloudStatus::CS_CLOUD_ONLY), static_cast<int>(status));
         }
@@ -217,7 +241,7 @@ namespace UnitTest
 
 
 
-            ECloudStatus status = probe.WrapGetCloudStatus(fd);
+            ECloudStatus status = probe.WrapGetCloudStatus(fd, true);
 
             Assert::AreEqual(static_cast<int>(ECloudStatus::CS_LOCAL), static_cast<int>(status));
         }
@@ -237,7 +261,7 @@ namespace UnitTest
 
 
 
-            ECloudStatus status = probe.WrapGetCloudStatus(fd);
+            ECloudStatus status = probe.WrapGetCloudStatus(fd, true);
 
             Assert::AreEqual(static_cast<int>(ECloudStatus::CS_PINNED), static_cast<int>(status));
         }
@@ -259,7 +283,7 @@ namespace UnitTest
 
 
 
-            ECloudStatus status = probe.WrapGetCloudStatus(fd);
+            ECloudStatus status = probe.WrapGetCloudStatus(fd, true);
 
             Assert::AreEqual(static_cast<int>(ECloudStatus::CS_PINNED), static_cast<int>(status));
         }
@@ -397,7 +421,7 @@ namespace UnitTest
 
 
             // PINNED should take priority for display
-            ECloudStatus status = probe.WrapGetCloudStatus(fd);
+            ECloudStatus status = probe.WrapGetCloudStatus(fd, true);
             Assert::AreEqual(static_cast<int>(ECloudStatus::CS_PINNED), static_cast<int>(status));
         }
 
