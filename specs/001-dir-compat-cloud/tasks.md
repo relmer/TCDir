@@ -213,7 +213,7 @@ Project structure per plan.md:
 
 - [x] T034 [P] Update README.md with all new switches and attributes
 - [x] T035 Run scripts/RunTests.ps1 to verify all existing tests pass (SC-010 regression check)
-- [ ] T036 Manual validation per quickstart.md test scenarios
+- [x] T036 Manual validation per quickstart.md test scenarios
 
 ---
 
