@@ -20,10 +20,17 @@ if (-not (Test-Path $TestDll)) {
     throw "Test DLL not found: $TestDll"
 }
 
+# Detect if we're trying to run ARM64 tests on an x64 host (not supported)
+$hostArch = [System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture
+$isArm64Test = $TestDll -match '(?i)\\ARM64\\'
 
+if ($isArm64Test -and $hostArch -ne [System.Runtime.InteropServices.Architecture]::Arm64) {
+    Write-Host "Skipping ARM64 tests on $hostArch host (cross-arch execution not supported)" -ForegroundColor Yellow
+    exit 0
+}
 
 $platform = 'Any'
-if ($TestDll -match '(?i)\\ARM64\\') {
+if ($isArm64Test) {
     $platform = 'ARM64'
 }
 
