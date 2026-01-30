@@ -6,6 +6,7 @@ All notable changes to TCDir are documented in this file.
 
 ### Fixed
 - Cloud status symbols no longer appear for files outside cloud sync roots (e.g., files copied from OneDrive that retained stale attributes)
+- IncrementVersion.ps1: Add robustness with atomic writes, retry logic, and auto-recovery from git for corrupted Version.h
 
 ## [4.2] - 2026-01-28
 

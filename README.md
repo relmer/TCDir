@@ -33,6 +33,7 @@ Build:
 Run:
 
 - `.\x64\Release\TCDir.exe`
+- `.\ARM64\Release\TCDir.exe`
 
 ## Usage
 

@@ -3,6 +3,8 @@
 
 $repoRoot = Split-Path $PSScriptRoot -Parent
 $versionFile = "$repoRoot\TCDirCore\Version.h"
+$tempFile = "$versionFile.tmp"
+$backupFile = "$versionFile.bak"
 
 # Check if the version file exists
 if (-not (Test-Path $versionFile)) {
@@ -11,7 +13,35 @@ if (-not (Test-Path $versionFile)) {
 }
 
 # Read the file content
-$content = Get-Content $versionFile -Raw
+try {
+    $content = Get-Content $versionFile -Raw -ErrorAction Stop
+} catch {
+    Write-Error "Failed to read $versionFile : $_"
+    exit 1
+}
+
+# Validate the file has expected content before proceeding
+if ([string]::IsNullOrWhiteSpace($content) -or $content -notmatch '#define VERSION_BUILD \d+') {
+    Write-Warning "Version.h appears corrupted or empty. Attempting to restore from git..."
+    
+    try {
+        Push-Location $repoRoot
+        git checkout HEAD -- "TCDirCore/Version.h" 2>&1 | Out-Null
+        Pop-Location
+        
+        # Re-read after restore
+        $content = Get-Content $versionFile -Raw -ErrorAction Stop
+        
+        if ($content -notmatch '#define VERSION_BUILD \d+') {
+            Write-Error "Failed to restore Version.h from git"
+            exit 1
+        }
+        Write-Host "Successfully restored Version.h from git" -ForegroundColor Yellow
+    } catch {
+        Write-Error "Failed to restore Version.h: $_"
+        exit 1
+    }
+}
 
 # Get current year
 $currentYear = (Get-Date).Year
@@ -19,17 +49,61 @@ $currentYear = (Get-Date).Year
 # Find and increment the build number
 if ($content -match '#define VERSION_BUILD (\d+)') {
     $buildNumber = [int]$matches[1] + 1
-    $content = $content -replace '#define VERSION_BUILD \d+', "#define VERSION_BUILD $buildNumber"
+    $newContent = $content -replace '#define VERSION_BUILD \d+', "#define VERSION_BUILD $buildNumber"
     
     # Update the year
-    $content = $content -replace '#define VERSION_YEAR \d+', "#define VERSION_YEAR $currentYear"
+    $newContent = $newContent -replace '#define VERSION_YEAR \d+', "#define VERSION_YEAR $currentYear"
     
-    # Write back to file (preserve line endings)
-    Set-Content -Path $versionFile -Value $content -NoNewline
+    # Write to temp file first (atomic write pattern)
+    try {
+        Set-Content -Path $tempFile -Value $newContent -NoNewline -ErrorAction Stop
+    } catch {
+        Write-Error "Failed to write temp file: $_"
+        # Clean up temp file if it exists
+        if (Test-Path $tempFile) { Remove-Item $tempFile -Force -ErrorAction SilentlyContinue }
+        exit 1
+    }
     
-    Write-Host "Build number incremented to: $buildNumber" -ForegroundColor Green
-    Write-Host "Year updated to: $currentYear" -ForegroundColor Green
-    exit 0
+    # Verify temp file was written correctly
+    $verifyContent = Get-Content $tempFile -Raw -ErrorAction SilentlyContinue
+    if ($verifyContent -notmatch "#define VERSION_BUILD $buildNumber") {
+        Write-Error "Temp file verification failed"
+        Remove-Item $tempFile -Force -ErrorAction SilentlyContinue
+        exit 1
+    }
+    
+    # Backup original, replace with new (with retry for locked files)
+    $maxRetries = 3
+    $retryDelay = 500  # milliseconds
+    
+    for ($i = 0; $i -lt $maxRetries; $i++) {
+        try {
+            # Create backup
+            Copy-Item $versionFile $backupFile -Force -ErrorAction Stop
+            
+            # Replace original with temp
+            Move-Item $tempFile $versionFile -Force -ErrorAction Stop
+            
+            # Success - remove backup
+            Remove-Item $backupFile -Force -ErrorAction SilentlyContinue
+            
+            Write-Host "Build number incremented to: $buildNumber" -ForegroundColor Green
+            Write-Host "Year updated to: $currentYear" -ForegroundColor Green
+            exit 0
+        } catch {
+            Write-Warning "Attempt $($i + 1) failed: $_"
+            Start-Sleep -Milliseconds $retryDelay
+        }
+    }
+    
+    # All retries failed - restore from backup if it exists
+    Write-Error "Failed to update Version.h after $maxRetries attempts"
+    if (Test-Path $backupFile) {
+        Copy-Item $backupFile $versionFile -Force -ErrorAction SilentlyContinue
+        Remove-Item $backupFile -Force -ErrorAction SilentlyContinue
+    }
+    Remove-Item $tempFile -Force -ErrorAction SilentlyContinue
+    exit 1
 } else {
     Write-Error "Could not find VERSION_BUILD in $versionFile"
     exit 1
