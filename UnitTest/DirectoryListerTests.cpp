@@ -31,24 +31,11 @@ namespace UnitTest
 
         TEST_METHOD(IsDotsRecognition)
         {
-            struct ListerProbe : public CDirectoryLister
-            {
-                using CDirectoryLister::CDirectoryLister;
-                BOOL Call(LPCWSTR s) { return IsDots(s); }
-            };
-
-            auto cmd = std::make_shared<CCommandLine>();
-            auto con = std::make_shared<CConsole>();
-            auto cfg = std::make_shared<CConfig>();
-            con->Initialize(cfg);
-            ListerProbe lp(cmd, con, cfg);
-
-
-
-            Assert::IsTrue(lp.Call(L"."));
-            Assert::IsTrue(lp.Call(L".."));
-            Assert::IsFalse(lp.Call(L".git"));
-            Assert::IsFalse(lp.Call(L"file.txt"));
+            // IsDots is now static, can call directly
+            Assert::IsTrue(CDirectoryLister::IsDots(L"."));
+            Assert::IsTrue(CDirectoryLister::IsDots(L".."));
+            Assert::IsFalse(CDirectoryLister::IsDots(L".git"));
+            Assert::IsFalse(CDirectoryLister::IsDots(L"file.txt"));
         }
 
     };

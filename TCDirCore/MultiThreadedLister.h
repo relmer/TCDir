@@ -1,17 +1,12 @@
 #pragma once
 
-#include "DirectoryInfo.h"
-#include "IResultsDisplayer.h"
-#include "ListingTotals.h"
+#include "DirectoryLister.h"
 #include "WorkQueue.h"
 
 
 
 
 
-class CCommandLine;
-class CConfig;
-class CConsole;
 class CDriveInfo;
 
 
@@ -27,7 +22,7 @@ struct WorkItem
 
 
 
-class CMultiThreadedLister
+class CMultiThreadedLister : public CDirectoryLister
 {
 public:
     CMultiThreadedLister  (shared_ptr<CCommandLine> cmdLinePtr, 
@@ -44,28 +39,21 @@ public:
 
 protected:
     void    EnumerateDirectoryNode        (shared_ptr<CDirectoryInfo> pDirInfo);
-    void    WorkerThreadFunc              ();
+    void    WorkerThreadFunc              (stop_token stopToken);
     HRESULT PrintDirectoryTree            (shared_ptr<CDirectoryInfo> pDirInfo, 
                                            const CDriveInfo & driveInfo,
                                            IResultsDisplayer & displayer,
                                            IResultsDisplayer::EDirectoryLevel level,
                                            SListingTotals & totals);
-    void    AddMatchToList                (const WIN32_FIND_DATA & wfd, CDirectoryInfo * pdi);
-    void    HandleDirectoryMatch          (size_t & cchFileName, CDirectoryInfo * pdi);
-    void    HandleFileMatch               (const WIN32_FIND_DATA & wfd, FileInfo & fileEntry, CDirectoryInfo * pdi);
-    HRESULT HandleFileMatchStreams        (const WIN32_FIND_DATA & wfd, FileInfo & fileEntry, CDirectoryInfo * pdi);
-    BOOL    IsDots                        (LPCWSTR pszFileName);
 
 private:
     HRESULT PerformEnumeration            (shared_ptr<CDirectoryInfo> pDirInfo);
     void    EnqueueChildDirectory         (const WIN32_FIND_DATA & wfd, shared_ptr<CDirectoryInfo> pDirInfo);
     void    StopWorkers                   ();
 
+    bool    StopRequested                 () const { return m_stopSource.stop_requested(); }
 
-    shared_ptr<CCommandLine>  m_cmdLinePtr;
-    shared_ptr<CConsole>      m_consolePtr;
-    shared_ptr<CConfig>       m_configPtr;
-    atomic<bool>              m_fCancelRequested;
+    stop_source               m_stopSource;
     CWorkQueue<WorkItem>      m_workQueue;
-    vector<thread>            m_workers;
+    vector<jthread>           m_workers;
 };

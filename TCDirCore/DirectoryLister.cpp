@@ -242,8 +242,7 @@ HRESULT CDirectoryLister::CollectMatchingFilesAndDirectories (const std::filesys
                 if (CFlag::IsSet (wfd.dwFileAttributes, m_cmdLinePtr->m_dwAttributesRequired) &&
                     CFlag::IsNotSet (wfd.dwFileAttributes, m_cmdLinePtr->m_dwAttributesExcluded))
                 {
-                    hr = AddMatchToList (wfd, &di);
-                    CHR (hr);
+                    AddMatchToList (wfd, &di, &m_totals);
                 }
             }
 
@@ -254,7 +253,6 @@ HRESULT CDirectoryLister::CollectMatchingFilesAndDirectories (const std::filesys
 
 
     
-Error:
     return hr;
 }
 
@@ -365,9 +363,8 @@ Error:
 //
 ////////////////////////////////////////////////////////////////////////////////  
 
-HRESULT CDirectoryLister::AddMatchToList (const WIN32_FIND_DATA & wfd, __in CDirectoryInfo * pdi)
+void CDirectoryLister::AddMatchToList (const WIN32_FIND_DATA & wfd, __in CDirectoryInfo * pdi, SListingTotals * pTotals)
 {
-    HRESULT  hr          = S_OK;
     size_t   cchFileName = 0; 
     FileInfo fileEntry     (wfd);
 
@@ -380,11 +377,11 @@ HRESULT CDirectoryLister::AddMatchToList (const WIN32_FIND_DATA & wfd, __in CDir
     
     if (CFlag::IsSet (wfd.dwFileAttributes, FILE_ATTRIBUTE_DIRECTORY))
     {
-        HandleDirectoryMatch (cchFileName, pdi);
+        HandleDirectoryMatch (cchFileName, pdi, pTotals);
     }
     else
     {
-        HandleFileMatch (wfd, fileEntry, pdi);
+        HandleFileMatch (wfd, fileEntry, pdi, pTotals);
     }            
 
     if (m_cmdLinePtr->m_fWideListing)
@@ -396,11 +393,6 @@ HRESULT CDirectoryLister::AddMatchToList (const WIN32_FIND_DATA & wfd, __in CDir
     }
     
     pdi->m_vMatches.push_back (move (fileEntry));
-
-
-
-//Error:
-    return hr;
 }
 
 
@@ -415,7 +407,7 @@ HRESULT CDirectoryLister::AddMatchToList (const WIN32_FIND_DATA & wfd, __in CDir
 //
 ////////////////////////////////////////////////////////////////////////////////  
 
-void CDirectoryLister::HandleDirectoryMatch (size_t & cchFileName, CDirectoryInfo * pdi)
+void CDirectoryLister::HandleDirectoryMatch (size_t & cchFileName, CDirectoryInfo * pdi, SListingTotals * pTotals)
 {
     //
     // In wide directory listings, directories are shown inside brackets
@@ -428,7 +420,11 @@ void CDirectoryLister::HandleDirectoryMatch (size_t & cchFileName, CDirectoryInf
     }
     
     ++pdi->m_cSubDirectories;
-    ++m_totals.m_cDirectories;
+
+    if (pTotals)
+    {
+        ++pTotals->m_cDirectories;
+    }
 }
 
 
@@ -443,7 +439,7 @@ void CDirectoryLister::HandleDirectoryMatch (size_t & cchFileName, CDirectoryInf
 //
 ////////////////////////////////////////////////////////////////////////////////  
 
-void CDirectoryLister::HandleFileMatch (const WIN32_FIND_DATA & wfd, FileInfo & fileEntry, CDirectoryInfo * pdi)
+void CDirectoryLister::HandleFileMatch (const WIN32_FIND_DATA & wfd, FileInfo & fileEntry, CDirectoryInfo * pdi, SListingTotals * pTotals)
 {
     HRESULT        hr          = S_OK;
     ULARGE_INTEGER uliFileSize = { 0 };
@@ -465,8 +461,11 @@ void CDirectoryLister::HandleFileMatch (const WIN32_FIND_DATA & wfd, FileInfo & 
     pdi->m_uliBytesUsed.QuadPart += uliFileSize.QuadPart;        
     ++pdi->m_cFiles;
 
-    m_totals.m_uliFileBytes.QuadPart += uliFileSize.QuadPart;
-    ++m_totals.m_cFiles;
+    if (pTotals)
+    {
+        pTotals->m_uliFileBytes.QuadPart += uliFileSize.QuadPart;
+        ++pTotals->m_cFiles;
+    }
 
     //
     // If showing streams, enumerate and collect alternate data streams
@@ -474,7 +473,7 @@ void CDirectoryLister::HandleFileMatch (const WIN32_FIND_DATA & wfd, FileInfo & 
 
     if (m_cmdLinePtr->m_fShowStreams)
     {
-        hr = HandleFileMatchStreams (wfd, fileEntry, pdi);
+        hr = HandleFileMatchStreams (wfd, fileEntry, pdi, pTotals);
         IGNORE_RETURN_VALUE (hr, S_OK);
     }
 }
@@ -491,17 +490,17 @@ void CDirectoryLister::HandleFileMatch (const WIN32_FIND_DATA & wfd, FileInfo & 
 //
 ////////////////////////////////////////////////////////////////////////////////  
 
-HRESULT CDirectoryLister::HandleFileMatchStreams (const WIN32_FIND_DATA & wfd, FileInfo & fileEntry, CDirectoryInfo * pdi)
+HRESULT CDirectoryLister::HandleFileMatchStreams (const WIN32_FIND_DATA & wfd, FileInfo & fileEntry, CDirectoryInfo * pdi, SListingTotals * pTotals)
 {
     HRESULT                hr         = S_OK;
     filesystem::path       fullPath   = pdi->m_dirPath / wfd.cFileName;
     WIN32_FIND_STREAM_DATA streamData = {};
-    HANDLE                 hFind      = NULL;
+    UniqueFindHandle       hFind;
 
 
 
-    hFind = FindFirstStreamW (fullPath.c_str(), FindStreamInfoStandard, &streamData, 0);
-    CWR (hFind != INVALID_HANDLE_VALUE);
+    hFind.reset (FindFirstStreamW (fullPath.c_str(), FindStreamInfoStandard, &streamData, 0));
+    CWR (hFind.get() != INVALID_HANDLE_VALUE);
 
     do
     {
@@ -524,8 +523,11 @@ HRESULT CDirectoryLister::HandleFileMatchStreams (const WIN32_FIND_DATA & wfd, F
         pdi->m_uliStreamBytesUsed.QuadPart += streamData.StreamSize.QuadPart;
 
         // Track global stream totals for recursive summary
-        ++m_totals.m_cStreams;
-        m_totals.m_uliStreamBytes.QuadPart += streamData.StreamSize.QuadPart;
+        if (pTotals)
+        {
+            ++pTotals->m_cStreams;
+            pTotals->m_uliStreamBytes.QuadPart += streamData.StreamSize.QuadPart;
+        }
 
         // Store stream info for display phase - strip ":$DATA" suffix
         si.m_strName = streamData.cStreamName;
@@ -539,16 +541,11 @@ HRESULT CDirectoryLister::HandleFileMatchStreams (const WIN32_FIND_DATA & wfd, F
 
         fileEntry.m_vStreams.push_back (move (si));
     }
-    while (FindNextStreamW (hFind, &streamData));
+    while (FindNextStreamW (hFind.get(), &streamData));
 
 
 
 Error:
-    if (hFind != INVALID_HANDLE_VALUE)
-    {
-        FindClose (hFind);
-    }
-
     return hr;
 }
 
@@ -564,11 +561,11 @@ Error:
 //
 ////////////////////////////////////////////////////////////////////////////////  
 
-BOOL CDirectoryLister::IsDots(LPCWSTR pszFileName)
+/*static*/ bool CDirectoryLister::IsDots (LPCWSTR pszFileName)
 {
-    static const WCHAR kchDot = L'.';
+    static const WCHAR kchDot  = L'.';
     static const WCHAR kchNull = L'\0';
-    BOOL               fDots = FALSE;
+    bool               fDots   = false;
 
     
 
@@ -576,13 +573,13 @@ BOOL CDirectoryLister::IsDots(LPCWSTR pszFileName)
     {
         if (pszFileName[1] == kchNull)
         {
-            fDots = TRUE;
+            fDots = true;
         }
         else if (pszFileName[1] == kchDot)
         {
             if (pszFileName[2] == kchNull)
             {
-                fDots = TRUE;
+                fDots = true;
             }
         }
     }

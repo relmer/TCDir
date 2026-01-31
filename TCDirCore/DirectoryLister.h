@@ -23,6 +23,8 @@ public:
     ~CDirectoryLister (void); 
 
     void List         (const wstring & mask);
+    
+    static bool IsDots (LPCWSTR pszFileName);
 
 protected:
     HRESULT ProcessDirectory                   (const CDriveInfo & driveInfo, 
@@ -43,14 +45,13 @@ protected:
                                                 const filesystem::path & dirPath, 
                                                 const filesystem::path & fileSpec);
 
-    HRESULT AddMatchToList                     (const WIN32_FIND_DATA & wfd, CDirectoryInfo * pdi);
-    void    HandleDirectoryMatch               (size_t & cchFileName, CDirectoryInfo * pdi);
-    void    HandleFileMatch                    (const WIN32_FIND_DATA & wfd, FileInfo & fileEntry, CDirectoryInfo * pdi);
-    HRESULT HandleFileMatchStreams             (const WIN32_FIND_DATA & wfd, FileInfo & fileEntry, CDirectoryInfo * pdi);
-    BOOL    IsDots                             (LPCWSTR pszFileName);
+    void    AddMatchToList                     (const WIN32_FIND_DATA & wfd, CDirectoryInfo * pdi, SListingTotals * pTotals);
+    void    HandleDirectoryMatch               (size_t & cchFileName, CDirectoryInfo * pdi, SListingTotals * pTotals);
+    void    HandleFileMatch                    (const WIN32_FIND_DATA & wfd, FileInfo & fileEntry, CDirectoryInfo * pdi, SListingTotals * pTotals);
+    HRESULT HandleFileMatchStreams             (const WIN32_FIND_DATA & wfd, FileInfo & fileEntry, CDirectoryInfo * pdi, SListingTotals * pTotals);
 
 
-    
+
     shared_ptr<CCommandLine>              m_cmdLinePtr; 
     shared_ptr<CConsole>                  m_consolePtr;
     shared_ptr<CConfig>                   m_configPtr;

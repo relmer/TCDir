@@ -8,7 +8,6 @@
 #include "FileComparator.h"
 #include "Flag.h"
 #include "UniqueFindHandle.h"
-#include "WorkQueue.h"
 
 
 
@@ -23,10 +22,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 CMultiThreadedLister::CMultiThreadedLister (shared_ptr<CCommandLine> pCmdLine, shared_ptr<CConsole> pConsole, shared_ptr<CConfig> pConfig) :
-    m_cmdLinePtr        (pCmdLine),
-    m_consolePtr        (pConsole),
-    m_configPtr         (pConfig),
-    m_fCancelRequested  (false)
+    CDirectoryLister (pCmdLine, pConsole, pConfig)
 {
 }
 
@@ -61,17 +57,9 @@ CMultiThreadedLister::~CMultiThreadedLister()
 
 void CMultiThreadedLister::StopWorkers()
 {
+    m_stopSource.request_stop();
     m_workQueue.SetDone();
-
-    for (auto & worker : m_workers)
-    {
-        if (worker.joinable())
-        {
-            worker.join();
-        }
-    }
-
-    m_workers.clear();
+    m_workers.clear();  // jthreads auto-join on destruction
 }
 
 
@@ -104,11 +92,11 @@ HRESULT CMultiThreadedLister::ProcessDirectoryMultiThreaded (const CDriveInfo & 
     m_workQueue.Push (WorkItem { pRootDirInfo });
 
     // Create worker threads
-    const size_t numThreads = max(1u, thread::hardware_concurrency());
+    const size_t numThreads = max(1u, jthread::hardware_concurrency());
 
     for (size_t i = 0; i < numThreads; ++i)
     {
-        m_workers.emplace_back ([this]() { WorkerThreadFunc(); });
+        m_workers.emplace_back ([this](stop_token st) { WorkerThreadFunc (st); });
     }
 
     // Start consuming immediately (streaming output)
@@ -204,7 +192,7 @@ HRESULT CMultiThreadedLister::PerformEnumeration (shared_ptr<CDirectoryInfo> pDi
     {
         do
         {
-            if (m_fCancelRequested.load (memory_order_relaxed))
+            if (StopRequested())
             {
                 break;
             }
@@ -220,7 +208,7 @@ HRESULT CMultiThreadedLister::PerformEnumeration (shared_ptr<CDirectoryInfo> pDi
                 CFlag::IsNotSet (wfd.dwFileAttributes, m_cmdLinePtr->m_dwAttributesExcluded))
             {
                 lock_guard<mutex> lock (pDirInfo->m_mutex);
-                AddMatchToList (wfd, pDirInfo.get());
+                AddMatchToList (wfd, pDirInfo.get(), nullptr);
             }
 
         } 
@@ -245,7 +233,7 @@ HRESULT CMultiThreadedLister::PerformEnumeration (shared_ptr<CDirectoryInfo> pDi
         {
             do
             {
-                if (m_fCancelRequested.load (memory_order_relaxed))
+                if (StopRequested())
                 {
                     break;
                 }
@@ -304,9 +292,9 @@ void CMultiThreadedLister::EnqueueChildDirectory (const WIN32_FIND_DATA & wfd, s
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-void CMultiThreadedLister::WorkerThreadFunc()
+void CMultiThreadedLister::WorkerThreadFunc (stop_token stopToken)
 {
-    while (!m_fCancelRequested.load (memory_order_relaxed))
+    while (!stopToken.stop_requested())
     {
         WorkItem item;
 
@@ -351,11 +339,11 @@ HRESULT CMultiThreadedLister::PrintDirectoryTree (shared_ptr<CDirectoryInfo> pDi
         pDirInfo->m_cvStatusChanged.wait (lock, [&]() {
             return pDirInfo->m_status == CDirectoryInfo::Status::Done ||
                    pDirInfo->m_status == CDirectoryInfo::Status::Error ||
-                   m_fCancelRequested.load (memory_order_relaxed);
+                   StopRequested();
         });
 
         // Check for cancellation
-        if (m_fCancelRequested.load (memory_order_relaxed))
+        if (StopRequested())
         {
             CHR (E_ABORT);
         }
@@ -396,7 +384,7 @@ HRESULT CMultiThreadedLister::PrintDirectoryTree (shared_ptr<CDirectoryInfo> pDi
     // Recurse into children
     for (const auto & pChild : pDirInfo->m_vChildren)
     {
-        if (m_fCancelRequested.load (memory_order_relaxed))
+        if (StopRequested())
         {
             CHR (E_ABORT);
         }
@@ -413,228 +401,4 @@ HRESULT CMultiThreadedLister::PrintDirectoryTree (shared_ptr<CDirectoryInfo> pDi
 
 Error:
     return hr;
-}
-
-
-
-
-
-////////////////////////////////////////////////////////////////////////////////
-//
-//  CMultiThreadedLister::AddMatchToList
-//
-//  
-//
-////////////////////////////////////////////////////////////////////////////////
-
-void CMultiThreadedLister::AddMatchToList (const WIN32_FIND_DATA & wfd, __in CDirectoryInfo * pdi)
-{
-    size_t   cchFileName = 0;
-    FileInfo fileEntry     (wfd);
-
-    
-
-    if (m_cmdLinePtr->m_fWideListing)
-    {
-        cchFileName = wcslen (wfd.cFileName);
-    }
-
-    if (CFlag::IsSet (wfd.dwFileAttributes, FILE_ATTRIBUTE_DIRECTORY))
-    {
-        HandleDirectoryMatch (cchFileName, pdi);
-    }
-    else
-    {
-        HandleFileMatch (wfd, fileEntry, pdi);
-    }
-
-    if (m_cmdLinePtr->m_fWideListing)
-    {
-        if (cchFileName > pdi->m_cchLargestFileName)
-        {
-            pdi->m_cchLargestFileName = cchFileName;
-        }
-    }
-
-    pdi->m_vMatches.push_back (move (fileEntry));
-}
-
-
-
-
-
-////////////////////////////////////////////////////////////////////////////////
-//
-//  CMultiThreadedLister::HandleDirectoryMatch
-//
-//  Process a directory entry - update counters and handle wide listing format.
-//
-////////////////////////////////////////////////////////////////////////////////  
-
-void CMultiThreadedLister::HandleDirectoryMatch (size_t & cchFileName, CDirectoryInfo * pdi)
-{
-    //
-    // In wide directory listings, directories are shown inside brackets
-    // so add space for them here.
-    //
-
-    if (m_cmdLinePtr->m_fWideListing)
-    {
-        cchFileName += 2;
-    }
-
-    ++pdi->m_cSubDirectories;
-}
-
-
-
-
-
-////////////////////////////////////////////////////////////////////////////////
-//
-//  CMultiThreadedLister::HandleFileMatch
-//
-//  Process a file entry - update size counters and collect streams if needed.
-//
-////////////////////////////////////////////////////////////////////////////////  
-
-void CMultiThreadedLister::HandleFileMatch (const WIN32_FIND_DATA & wfd, FileInfo & fileEntry, CDirectoryInfo * pdi)
-{
-    HRESULT        hr          = S_OK;
-    ULARGE_INTEGER uliFileSize = { 0 };
-
-
-
-    //
-    // Get the two 32-bit halves into a convenient 64-bit type
-    //
-
-    uliFileSize.LowPart  = wfd.nFileSizeLow;
-    uliFileSize.HighPart = wfd.nFileSizeHigh;
-
-    if (uliFileSize.QuadPart > pdi->m_uliLargestFileSize.QuadPart)
-    {
-        pdi->m_uliLargestFileSize = uliFileSize;
-    }
-
-    pdi->m_uliBytesUsed.QuadPart += uliFileSize.QuadPart;
-    ++pdi->m_cFiles;
-
-    //
-    // If showing streams, enumerate and collect alternate data streams
-    //
-
-    if (m_cmdLinePtr->m_fShowStreams)
-    {
-        hr = HandleFileMatchStreams (wfd, fileEntry, pdi);
-        IGNORE_RETURN_VALUE (hr, S_OK);
-    }
-}
-
-
-
-
-
-////////////////////////////////////////////////////////////////////////////////
-//
-//  CMultiThreadedLister::HandleFileMatchStreams
-//
-//  Enumerate and collect alternate data streams for a file.
-//
-////////////////////////////////////////////////////////////////////////////////  
-
-HRESULT CMultiThreadedLister::HandleFileMatchStreams (const WIN32_FIND_DATA & wfd, FileInfo & fileEntry, CDirectoryInfo * pdi)
-{
-    HRESULT                hr         = S_OK;
-    filesystem::path       fullPath   = pdi->m_dirPath / wfd.cFileName;
-    WIN32_FIND_STREAM_DATA streamData = {};
-    HANDLE                 hFind      = NULL;
-
-
-
-    hFind = FindFirstStreamW (fullPath.c_str(), FindStreamInfoStandard, &streamData, 0);
-    CWR (hFind != INVALID_HANDLE_VALUE);
-
-    do
-    {
-        SStreamInfo si;
-
-
-
-        // Skip the default unnamed data stream (::$DATA)
-        if (_wcsicmp (streamData.cStreamName, L"::$DATA") == 0)
-        {
-            continue;
-        }
-
-        if (static_cast<ULONGLONG>(streamData.StreamSize.QuadPart) > pdi->m_uliLargestFileSize.QuadPart)
-        {
-            pdi->m_uliLargestFileSize.QuadPart = streamData.StreamSize.QuadPart;
-        }
-
-        ++pdi->m_cStreams;
-        pdi->m_uliStreamBytesUsed.QuadPart += streamData.StreamSize.QuadPart;
-
-        // Store stream info for display phase - strip ":$DATA" suffix
-        si.m_strName = streamData.cStreamName;
-        si.m_liSize  = streamData.StreamSize;
-
-        if (si.m_strName.length () > 6 && 
-            _wcsicmp (si.m_strName.c_str() + si.m_strName.length() - 6, L":$DATA") == 0)
-        {
-            si.m_strName.resize (si.m_strName.length() - 6);
-        }
-
-        fileEntry.m_vStreams.push_back (move (si));
-    }
-    while (FindNextStreamW (hFind, &streamData));
-
-
-
-Error:
-    if (hFind != INVALID_HANDLE_VALUE)
-    {
-        FindClose (hFind);
-    }
-
-    return hr;
-}
-
-
-
-
-
-////////////////////////////////////////////////////////////////////////////////
-//
-//  CMultiThreadedLister::IsDots
-//
-//  
-//
-////////////////////////////////////////////////////////////////////////////////
-
-BOOL CMultiThreadedLister::IsDots (LPCWSTR pszFileName)
-{
-    static const WCHAR kchDot  = L'.';
-    static const WCHAR kchNull = L'\0';
-
-    BOOL               fDots   = FALSE;
-
-    
-
-    if (pszFileName[0] == kchDot)
-    {
-        if (pszFileName[1] == kchNull)
-        {
-            fDots = TRUE;
-        }
-        else if (pszFileName[1] == kchDot)
-        {
-            if (pszFileName[2] == kchNull)
-            {
-                fDots = TRUE;
-            }
-        }
-    }
-
-    return fDots;
 }

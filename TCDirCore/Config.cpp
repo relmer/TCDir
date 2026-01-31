@@ -2,7 +2,6 @@
 #include "Config.h"
 
 #include "Color.h"
-#include "EnvironmentProvider.h"
 
 
 

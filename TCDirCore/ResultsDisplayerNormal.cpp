@@ -4,7 +4,6 @@
 #include "CommandLine.h"
 #include "Config.h"
 #include "Console.h"
-#include "Flag.h"
 #include "UnicodeSymbols.h"
 
 
