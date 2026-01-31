@@ -384,7 +384,7 @@ HRESULT CCommandLine::OrderByHandler (LPCWSTR pszArg)
     hr = E_INVALIDARG; // If there's no match, we'll return this
 
     ch = towlower (*pszArg);
-    for (SSortOrderMap entry : s_krgSortOrderMap)
+    for (const SSortOrderMap & entry : s_krgSortOrderMap)
     {
         if (ch == entry.ch)
         {

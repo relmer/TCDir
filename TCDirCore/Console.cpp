@@ -202,8 +202,8 @@ void CConsole::Puts (int attributeIndex, LPCWSTR psz)
 
 int CConsole::Printf (CConfig::EAttribute attributeIndex, LPCWSTR pszFormat, ...)
 {
-    static constexpr int s_cchBuf          = 9999;  // Max console buffer width
-    static  WCHAR        s_szBuf[s_cchBuf] = { L'\0' };
+    constexpr int      k_cchBuf          = 9999;  // Max console buffer width
+    thread_local WCHAR s_szBuf[k_cchBuf] = { L'\0' };
 
     HRESULT   hr     = S_OK;
     va_list   vaArgs = 0;  
@@ -213,7 +213,7 @@ int CConsole::Printf (CConfig::EAttribute attributeIndex, LPCWSTR pszFormat, ...
 
     va_start (vaArgs, pszFormat);
     
-    hr = StringCchVPrintfEx (s_szBuf, s_cchBuf, &pszEnd, nullptr, 0, pszFormat, vaArgs);
+    hr = StringCchVPrintfEx (s_szBuf, k_cchBuf, &pszEnd, nullptr, 0, pszFormat, vaArgs);
     CHRA (hr);
 
     ProcessMultiLineStringWithAttribute (s_szBuf, m_configPtr->m_rgAttributes[attributeIndex]);
@@ -238,8 +238,8 @@ Error:
 
 int CConsole::Printf (WORD attr, LPCWSTR pszFormat, ...)
 {
-    static constexpr int s_cchBuf          = 9999;  // Max console buffer width
-    static  WCHAR        s_szBuf[s_cchBuf] = { L'\0' };
+    constexpr int      k_cchBuf          = 9999;  // Max console buffer width
+    thread_local WCHAR s_szBuf[k_cchBuf] = { L'\0' };
 
     HRESULT   hr       = S_OK;
     va_list   vaArgs   = 0;  
@@ -249,7 +249,7 @@ int CConsole::Printf (WORD attr, LPCWSTR pszFormat, ...)
 
     va_start (vaArgs, pszFormat);
     
-    hr = StringCchVPrintfEx (s_szBuf, s_cchBuf, &pszEnd, nullptr, 0, pszFormat, vaArgs);
+    hr = StringCchVPrintfEx (s_szBuf, k_cchBuf, &pszEnd, nullptr, 0, pszFormat, vaArgs);
     CHRA (hr);
 
     ProcessMultiLineStringWithAttribute (s_szBuf, attr);
@@ -276,7 +276,7 @@ Error:
 
 void CConsole::PrintColorfulString (LPCWSTR psz)
 {
-    static const WORD s_rgForegroundColors[] = 
+    static constexpr WORD s_rgForegroundColors[] = 
     {
         FC_Black,
         FC_Blue,

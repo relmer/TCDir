@@ -13,6 +13,31 @@
 
 ////////////////////////////////////////////////////////////////////////////////
 //
+//  GetArchitecture
+//
+//  Returns the architecture string at compile time.
+//
+////////////////////////////////////////////////////////////////////////////////
+
+consteval wstring_view GetArchitecture (void)
+{
+#if defined(_M_X64)
+    return L"x64";
+#elif defined(_M_ARM64)
+    return L"ARM64";
+#elif defined(_M_IX86)
+    return L"x86";
+#else
+    #error "unknown architecture"
+#endif
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
 //  Shared data structures for display items, file attributes, and switches
 //
 ////////////////////////////////////////////////////////////////////////////////
@@ -156,87 +181,117 @@ bool CUsage::IsTcdirEnvVarSet (void)
 
 void CUsage::DisplayUsage (CConsole & console, wchar_t chPrefix)
 {
-    static constexpr LPCWSTR s_kpszArch = 
-#if defined(_M_X64)
-                                          L"x64";
-#elif defined(_M_ARM64)
-                                          L"ARM64";
-#elif defined(_M_IX86)
-                                          L"x86";
-#else
-                                          L"";
-    #error "unknown architecture"
+    // Format strings with indexed placeholders:
+    // {0} = szShort (single-char switch prefix: "-" or "/")
+    // {1} = pszLong (long switch prefix: "--" or "/")
+    // {2} = pszMDisable (" -M-" or " /M-")
+    // {3} = CircleHollow
+    // {4} = CircleHalfFilled
+    // {5} = CircleFilled
+    // {6} = pszLongPad (extra padding for "/" mode to align descriptions)
+    // {7} = GetArchitecture()
+    // {8} = buildTimestamp
+    // {9} = Copyright symbol
+
+    // Header continuation after "Technicolor" (printed with PrintColorfulString)
+    static constexpr wchar_t k_wszUsageHeader[] =
+        L" Directory version " VERSION_WSTRING L" {7} ({8})\n"
+        L"Copyright {9} 2004-" VERSION_YEAR_WSTRING L" by Robert Elmer\n"
+        L"\n"
+        L"TCDIR [drive:][path][filename] [{0}A[[:]attributes]] [{0}O[[:]sortorder]] [{0}T[[:]timefield]] [{0}S] [{0}W] [{0}B] [{0}P] [{0}M] [{1}Env] [{1}Config] [{1}Owner] [{1}Streams]"
+#ifdef _DEBUG
+        L" [{1}Debug]"
 #endif
+        L"\n";
+
+    static constexpr wchar_t k_wszUsageBody[] =
+        L"\n"
+        L"  [drive:][path][filename]\n"
+        L"              Specifies drive, directory, and/or files to list.\n"
+        L"\n"
+        L"  {0}A          Displays files with specified attributes.\n"
+        L"  attributes   D  Directories                R  Read-only files\n"
+        L"               H  Hidden files               A  Files ready for archiving\n"
+        L"               S  System files               T  Temporary files\n"
+        L"               E  Encrypted files            C  Compressed files\n"
+        L"               P  Reparse points             0  Sparse files\n"
+        L"               X  Not content indexed        I  Integrity stream (ReFS)\n"
+        L"               B  No scrub data (ReFS)       O  Cloud-only (not local)\n"
+        L"               L  Locally available          V  Always locally available\n"
+        L"               -  Prefix meaning not\n"
+        L"\n"
+        L"  Cloud status symbols shown between file size and name:\n"
+        L"               {3}  Cloud-only (not locally available)\n"
+        L"               {4}  Locally available (can be freed)\n"
+        L"               {5}  Always locally available (pinned)\n"
+        L"\n"
+        L"  {0}O          List by files in sorted order.\n"
+        L"  sortorder    N  By name (alphabetic)       S  By size (smallest first)\n"
+        L"               E  By extension (alphabetic)  D  By date/time (oldest first)\n"
+        L"               -  Prefix to reverse order\n"
+        L"\n"
+        L"  {0}T          Selects the time field for display and sorting.\n"
+        L"  timefield    C  Creation time              A  Last access time\n"
+        L"               W  Last write time (default)\n"
+        L"\n"
+        L"  {0}S          Displays files in specified directory and all subdirectories.\n"
+        L"  {0}W          Displays results in a wide listing format.\n"
+        L"  {0}B          Displays bare file names only (no headers, footers, or details).\n"
+        L"  {0}P          Displays performance timing information.\n"
+        L"  {0}M          Enables multi-threaded enumeration (default). Use{2} to disable.\n"
+        L"  {1}Env       {6}Displays " TCDIR_ENV_VAR_NAME L" help, syntax, and current value.\n"
+        L"  {1}Config    {6}Displays current color configuration for all items and extensions.\n"
+        L"  {1}Owner     {6}Displays file owner (DOMAIN\\User) for each file.\n"
+        L"  {1}Streams   {6}Displays alternate data streams (NTFS only)."
+#ifdef _DEBUG
+        L"\n  {1}Debug     {6}Displays raw file attributes in hex for diagnosing edge cases."
+#endif
+    ;
 
     // Determine prefix strings for single-char and multi-char switches
-    wchar_t szShort[2]  = { chPrefix, L'\0' };                      // "-" or "/"
-    LPCWSTR pszLong     = (chPrefix == L'-') ? L"--" : L"/";        // "--" or "/"
-    LPCWSTR pszMDisable = (chPrefix == L'-') ? L" -M-" : L" /M-";   // " -M-" or " /M-"
-
-    wstring buildTimestamp = VERSION_BUILD_TIMESTAMP;
+    wstring_view szShort        = (chPrefix == L'-') ? L"-"    : L"/";
+    wstring_view pszLong        = (chPrefix == L'-') ? L"--"   : L"/";
+    wstring_view pszMDisable    = (chPrefix == L'-') ? L" -M-" : L" /M-";
+    wstring_view pszLongPad     = (chPrefix == L'-') ? L""     : L" ";
+    wstring      buildTimestamp = VERSION_BUILD_TIMESTAMP;
 
 
 
     // Format build timestamp without seconds (drop last 3 chars ":SS" from __TIME__)
     buildTimestamp.resize (buildTimestamp.length () - 3);
 
+    // "Technicolor" is printed with special per-character color cycling
     console.Puts (CConfig::EAttribute::Default, L"");
     console.PrintColorfulString (L"Technicolor");
-    console.Printf (CConfig::EAttribute::Default, L" Directory version " VERSION_WSTRING L" %s (%s)\n", s_kpszArch, buildTimestamp.c_str ());
 
-    console.Printf (CConfig::EAttribute::Default, L"Copyright %c 2004-" VERSION_YEAR_WSTRING  L" by Robert Elmer\n", UnicodeSymbols::Copyright);
-    console.Printf (CConfig::EAttribute::Default, L"\n");
-#ifdef _DEBUG
-    console.Printf (CConfig::EAttribute::Default, L"TCDIR [drive:][path][filename] [%sA[[:]attributes]] [%sO[[:]sortorder]] [%sT[[:]timefield]] [%sS] [%sW] [%sB] [%sP] [%sM] [%sEnv] [%sConfig] [%sOwner] [%sStreams] [%sDebug]\n",
-                    szShort, szShort, szShort, szShort, szShort, szShort, szShort, szShort, pszLong, pszLong, pszLong, pszLong, pszLong);
-#else
-    console.Printf (CConfig::EAttribute::Default, L"TCDIR [drive:][path][filename] [%sA[[:]attributes]] [%sO[[:]sortorder]] [%sT[[:]timefield]] [%sS] [%sW] [%sB] [%sP] [%sM] [%sEnv] [%sConfig] [%sOwner] [%sStreams]\n",
-                    szShort, szShort, szShort, szShort, szShort, szShort, szShort, szShort, pszLong, pszLong, pszLong, pszLong);
-#endif
-    console.Printf (CConfig::EAttribute::Default, L"\n");
-    console.Printf (CConfig::EAttribute::Default, L"  [drive:][path][filename]\n");
-    console.Printf (CConfig::EAttribute::Default, L"              Specifies drive, directory, and/or files to list.\n");
-    console.Printf (CConfig::EAttribute::Default, L"\n");
-    console.Printf (CConfig::EAttribute::Default, L"  %sA          Displays files with specified attributes.\n", szShort);
-    console.Printf (CConfig::EAttribute::Default, L"  attributes   D  Directories                R  Read-only files\n");
-    console.Printf (CConfig::EAttribute::Default, L"               H  Hidden files               A  Files ready for archiving\n");
-    console.Printf (CConfig::EAttribute::Default, L"               S  System files               T  Temporary files\n");
-    console.Printf (CConfig::EAttribute::Default, L"               E  Encrypted files            C  Compressed files\n");
-    console.Printf (CConfig::EAttribute::Default, L"               P  Reparse points             0  Sparse files\n");
-    console.Printf (CConfig::EAttribute::Default, L"               X  Not content indexed        I  Integrity stream (ReFS)\n");
-    console.Printf (CConfig::EAttribute::Default, L"               B  No scrub data (ReFS)       O  Cloud-only (not local)\n");
-    console.Printf (CConfig::EAttribute::Default, L"               L  Locally available          V  Always locally available\n");
-    console.Printf (CConfig::EAttribute::Default, L"               -  Prefix meaning not\n");
-    console.Printf (CConfig::EAttribute::Default, L"\n");
-    console.Printf (CConfig::EAttribute::Default, L"  Cloud status symbols shown between file size and name:\n");
-    console.Printf (CConfig::EAttribute::Default, L"               %c  Cloud-only (not locally available)\n", UnicodeSymbols::CircleHollow);
-    console.Printf (CConfig::EAttribute::Default, L"               %c  Locally available (can be freed)\n", UnicodeSymbols::CircleHalfFilled);
-    console.Printf (CConfig::EAttribute::Default, L"               %c  Always locally available (pinned)\n", UnicodeSymbols::CircleFilled);
-    console.Printf (CConfig::EAttribute::Default, L"\n");
-    console.Printf (CConfig::EAttribute::Default, L"  %sO          List by files in sorted order.\n", szShort);
-    console.Printf (CConfig::EAttribute::Default, L"  sortorder    N  By name (alphabetic)       S  By size (smallest first)\n");
-    console.Printf (CConfig::EAttribute::Default, L"               E  By extension (alphabetic)  D  By date/time (oldest first)\n");
-    console.Printf (CConfig::EAttribute::Default, L"               -  Prefix to reverse order\n");
-    console.Printf (CConfig::EAttribute::Default, L"\n");
-    console.Printf (CConfig::EAttribute::Default, L"  %sT          Selects the time field for display and sorting.\n", szShort);
-    console.Printf (CConfig::EAttribute::Default, L"  timefield    C  Creation time              A  Last access time\n");
-    console.Printf (CConfig::EAttribute::Default, L"               W  Last write time (default)\n");
-    console.Printf (CConfig::EAttribute::Default, L"\n");
-    console.Printf (CConfig::EAttribute::Default, L"  %sS          Displays files in specified directory and all subdirectories.\n", szShort);
-    console.Printf (CConfig::EAttribute::Default, L"  %sW          Displays results in a wide listing format.\n", szShort);
-    console.Printf (CConfig::EAttribute::Default, L"  %sB          Displays bare file names only (no headers, footers, or details).\n", szShort);
-    console.Printf (CConfig::EAttribute::Default, L"  %sP          Displays performance timing information.\n", szShort);
-    console.Printf (CConfig::EAttribute::Default, L"  %sM          Enables multi-threaded enumeration (default). Use%s to disable.\n", szShort, pszMDisable);
-    console.Printf (CConfig::EAttribute::Default, L"  %sEnv        Displays " TCDIR_ENV_VAR_NAME L" help, syntax, and current value.\n", pszLong);
-    console.Printf (CConfig::EAttribute::Default, L"  %sConfig     Displays current color configuration for all items and extensions.\n", pszLong);
-    console.Printf (CConfig::EAttribute::Default, L"  %sOwner      Displays file owner (DOMAIN\\User) for each file.\n", pszLong);
-    console.Printf (CConfig::EAttribute::Default, L"  %sStreams    Displays alternate data streams (NTFS only).\n", pszLong);
-#ifdef _DEBUG
-    console.Printf (CConfig::EAttribute::Default, L"  %sDebug      Displays raw file attributes in hex for diagnosing edge cases.\n", pszLong);
-#endif
-    console.Printf (CConfig::EAttribute::Default, L"\n");
-    console.Printf (CConfig::EAttribute::Default, L"\n");
-    console.Printf (CConfig::EAttribute::Default, L"\n");
+    // Print header and body using format() with indexed placeholders
+    console.Puts (CConfig::EAttribute::Default, 
+                  format (k_wszUsageHeader,
+                          szShort, 
+                          pszLong, 
+                          pszMDisable,
+                          UnicodeSymbols::CircleHollow, 
+                          UnicodeSymbols::CircleHalfFilled, 
+                          UnicodeSymbols::CircleFilled,
+                          pszLongPad, 
+                          GetArchitecture(), 
+                          buildTimestamp, 
+                          UnicodeSymbols::Copyright
+                  ).c_str ());
+
+    console.Puts (CConfig::EAttribute::Default, 
+                  format (k_wszUsageBody,
+                          szShort, 
+                          pszLong, 
+                          pszMDisable,
+                          UnicodeSymbols::CircleHollow, 
+                          UnicodeSymbols::CircleHalfFilled, 
+                          UnicodeSymbols::CircleFilled,
+                          pszLongPad, 
+                          GetArchitecture(), 
+                          buildTimestamp, 
+                          UnicodeSymbols::Copyright
+                  ).c_str ());
 }
 
 
