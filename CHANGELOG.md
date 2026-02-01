@@ -2,6 +2,11 @@
 
 All notable changes to TCDir are documented in this file.
 
+## [4.2.1284] - 2026-01-31
+
+### Added
+- Colorized help output: `/? ` now displays switches, attribute letters, and cloud status symbols in color
+
 ## [4.2.1195] - 2026-01-29
 
 ### Fixed

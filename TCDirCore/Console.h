@@ -18,6 +18,8 @@ public:
     void    Puts                      (int attributeIndex, LPCWSTR psz);
     int     Printf                    (CConfig::EAttribute attributeIndex, LPCWSTR pszFormat, ...);
     int     Printf                    (WORD attr, LPCWSTR pszFormat, ...);
+    void    ColorPuts                 (LPCWSTR psz);
+    void    ColorPrintf               (LPCWSTR pszFormat, ...);
     void    PrintColorfulString       (LPCWSTR psz);
     void    WriteSeparatorLine        (WORD attr);
     HRESULT Flush                     (void);
@@ -34,6 +36,7 @@ protected:
     HRESULT InitializeConsoleWidth              (void);
     void    SetColor                            (WORD attr);
     void    ProcessMultiLineStringWithAttribute (wstring_view text, WORD attr);
+    bool    ParseColorMarker                    (wstring_view text, size_t pos, CConfig::EAttribute & outAttr, size_t & outMarkerLen);
 
     static constexpr size_t s_kcchInitialBufferSize = 10 * 1024 * 1024;
 

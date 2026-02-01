@@ -268,6 +268,179 @@ Error:
 
 ////////////////////////////////////////////////////////////////////////////////
 //
+//  CConsole::ParseColorMarker
+//
+//  Parses a color marker at the given position in the text.
+//  Format: {EAttributeName}
+//  Returns true if a valid marker was found, false otherwise.
+//
+////////////////////////////////////////////////////////////////////////////////
+
+bool CConsole::ParseColorMarker (wstring_view text, size_t pos, CConfig::EAttribute & outAttr, size_t & outMarkerLen)
+{
+    // Generate the lookup table from the X-Macro list in Config.h
+    static const struct { LPCWSTR name; CConfig::EAttribute attr; } s_markers[] =
+    {
+        #define MARKER_ENTRY(name) { L## #name, CConfig::EAttribute::name },
+        EATTRIBUTE_LIST(MARKER_ENTRY)
+        #undef MARKER_ENTRY
+    };
+
+    static_assert (ARRAYSIZE (s_markers) == CConfig::EAttribute::__count,
+                   "s_markers and EAttribute are out of sync");
+
+    HRESULT      hr         = S_OK;
+    bool         fFound     = false;
+    size_t       endPos     = wstring_view::npos;
+    wstring_view markerName;
+
+
+
+    // Must start with '{'
+    CBRAEx (pos < text.size () && text[pos] == L'{', E_UNEXPECTED);
+
+    // Find the closing '}'
+    endPos = text.find (L'}', pos + 1);
+    CBRAEx (endPos != wstring_view::npos, E_UNEXPECTED);  // Unclosed color marker brace
+
+    // Extract the marker name (between { and })
+    markerName = text.substr (pos + 1, endPos - pos - 1);
+
+    // Look up the marker name
+    for (const auto & marker : s_markers)
+    {
+        if (markerName == marker.name)
+        {
+            outAttr      = marker.attr;
+            outMarkerLen = endPos - pos + 1;  // Include both { and }
+
+            fFound = true;
+            BAIL_OUT_IF (true, S_OK);
+        }
+    }
+
+    // Has closing brace but unknown marker name - developer error
+    CBRAEx (FALSE, E_UNEXPECTED);  // Unknown color marker name
+
+
+Error:
+    return fFound;
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CConsole::ColorPuts
+//
+//  Write a string with embedded color markers.
+//  Format: {EAttributeName} switches to that color.
+//  Colors are "sticky" - they remain until the next marker.
+//  Text before the first marker is emitted without changing color.
+//
+////////////////////////////////////////////////////////////////////////////////
+
+void CConsole::ColorPuts (LPCWSTR psz)
+{
+    wstring_view text        = psz;
+    size_t       chunkStart  = 0;
+    WORD         currentAttr = m_configPtr->m_rgAttributes[CConfig::EAttribute::Default];
+
+
+
+    while (chunkStart < text.size())
+    {
+        // Find the next potential marker
+        size_t              chunkEnd  = text.find (L'{', chunkStart);
+        size_t              chunkLen  = wstring_view::npos;
+        CConfig::EAttribute newAttr   = CConfig::EAttribute::Default;
+        size_t              markerLen = 0;
+
+
+
+        if (chunkEnd != wstring_view::npos)
+        {
+            chunkLen = chunkEnd - chunkStart;
+        }
+
+        // Emit text before the marker
+        ProcessMultiLineStringWithAttribute (text.substr (chunkStart, chunkLen), currentAttr);
+
+        if (chunkEnd == wstring_view::npos)
+        {
+            // No more markers
+            break;
+        }
+
+        if (ParseColorMarker (text, chunkEnd, newAttr, markerLen))
+        {
+            // Valid marker - switch colors
+            currentAttr = m_configPtr->m_rgAttributes[newAttr];
+            chunkStart  = chunkEnd + markerLen;
+        }
+        else
+        {
+            // Not a valid marker - emit the '{' as literal text
+            // (ParseColorMarker already ASSERTs if there's an unknown marker name)
+            ProcessMultiLineStringWithAttribute (text.substr (chunkEnd, 1), currentAttr);
+            chunkStart = chunkEnd + 1;
+        }
+    }
+
+    // Reset to default color before final newline to prevent color bleeding
+    SetColor (m_configPtr->m_rgAttributes[CConfig::EAttribute::Default]);
+    m_strBuffer.append (L"\n");
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CConsole::ColorPrintf
+//
+//  Format a string and then process it with ColorPuts.
+//
+////////////////////////////////////////////////////////////////////////////////
+
+void CConsole::ColorPrintf (LPCWSTR pszFormat, ...)
+{
+    constexpr int      k_cchBuf          = 9999;
+    thread_local WCHAR s_szBuf[k_cchBuf] = { L'\0' };
+
+    HRESULT hr     = S_OK;
+    va_list vaArgs = 0;
+    LPWSTR  pszEnd = nullptr;
+
+
+
+    va_start (vaArgs, pszFormat);
+
+    hr = StringCchVPrintfEx (s_szBuf, k_cchBuf, &pszEnd, nullptr, 0, pszFormat, vaArgs);
+
+    va_end (vaArgs);
+
+    if (SUCCEEDED (hr))
+    {
+        // Remove trailing newline if present since ColorPuts adds one
+        if (pszEnd > s_szBuf && *(pszEnd - 1) == L'\n')
+        {
+            *(pszEnd - 1) = L'\0';
+        }
+
+        ColorPuts (s_szBuf);
+    }
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
 //  CConsole::PrintColorfulString
 //
 //  Print a string, cycling through colors for each character  
@@ -335,29 +508,32 @@ void CConsole::PrintColorfulString (LPCWSTR psz)
 
 void CConsole::ProcessMultiLineStringWithAttribute (wstring_view text, WORD attr)
 {
+    size_t pos   = 0;
+    size_t start = 0;
+
+
+
     SetColor (attr);
 
-    // Split on newlines and process each part
-    auto lines = text | std::views::split (L'\n');
-    bool firstLine = true;
-
-    for (const auto & line : lines)
+    while ((pos = text.find (L'\n', start)) != wstring_view::npos)
     {
-        if (!firstLine)
-        {
-            // Reset to default color before the newline
-            SetColor (m_configPtr->m_rgAttributes[CConfig::EAttribute::Default]);
-            m_strBuffer.append (L"\n");
+        // Append text before newline
+        m_strBuffer.append (text.substr (start, pos - start));
 
-            // Restore the original color for the next line
-            SetColor (attr);
-        }
+        // Reset to default color before newline
+        SetColor (m_configPtr->m_rgAttributes[CConfig::EAttribute::Default]);
+        m_strBuffer.append (L"\n");
 
-        // Append the line content
-        wstring_view lineView (line.begin(), line.end());
-        m_strBuffer.append (lineView);
+        // Restore color for next line
+        SetColor (attr);
 
-        firstLine = false;
+        start = pos + 1;
+    }
+
+    // Append remaining text after last newline (or all text if no newlines)
+    if (start < text.size())
+    {
+        m_strBuffer.append (text.substr (start));
     }
 }
 

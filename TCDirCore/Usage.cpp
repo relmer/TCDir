@@ -185,66 +185,84 @@ void CUsage::DisplayUsage (CConsole & console, wchar_t chPrefix)
     // {0} = szShort (single-char switch prefix: "-" or "/")
     // {1} = pszLong (long switch prefix: "--" or "/")
     // {2} = pszMDisable (" -M-" or " /M-")
-    // {3} = CircleHollow
-    // {4} = CircleHalfFilled
-    // {5} = CircleFilled
+    // {3} = CircleHollow (with color marker)
+    // {4} = CircleHalfFilled (with color marker)
+    // {5} = CircleFilled (with color marker)
     // {6} = pszLongPad (extra padding for "/" mode to align descriptions)
     // {7} = GetArchitecture()
     // {8} = buildTimestamp
     // {9} = Copyright symbol
+    //
+    // Color markers use {{EAttributeName}} which format() escapes to {EAttributeName}
+    // for ColorPuts to parse.
 
     // Header continuation after "Technicolor" (printed with PrintColorfulString)
     static constexpr wchar_t k_wszUsageHeader[] =
-        L" Directory version " VERSION_WSTRING L" {7} ({8})\n"
+        L"{{Information}} Directory version " VERSION_WSTRING L" {7} ({8})\n"
         L"Copyright {9} 2004-" VERSION_YEAR_WSTRING L" by Robert Elmer\n"
         L"\n"
-        L"TCDIR [drive:][path][filename] [{0}A[[:]attributes]] [{0}O[[:]sortorder]] [{0}T[[:]timefield]] [{0}S] [{0}W] [{0}B] [{0}P] [{0}M] [{1}Env] [{1}Config] [{1}Owner] [{1}Streams]"
+        L"{{InformationHighlight}}TCDIR{{Information}} "
+        L"[{{InformationHighlight}}drive:{{Information}}]"
+        L"[{{InformationHighlight}}path{{Information}}]"
+        L"[{{InformationHighlight}}filename{{Information}}] "
+        L"[{{InformationHighlight}}{0}A{{Information}}[[:]{{InformationHighlight}}attributes{{Information}}]] "
+        L"[{{InformationHighlight}}{0}O{{Information}}[[:]{{InformationHighlight}}sortorder{{Information}}]] "
+        L"[{{InformationHighlight}}{0}T{{Information}}[[:]{{InformationHighlight}}timefield{{Information}}]] "
+        L"[{{InformationHighlight}}{0}S{{Information}}] "
+        L"[{{InformationHighlight}}{0}W{{Information}}] "
+        L"[{{InformationHighlight}}{0}B{{Information}}] "
+        L"[{{InformationHighlight}}{0}P{{Information}}] "
+        L"[{{InformationHighlight}}{0}M{{Information}}] "
+        L"[{{InformationHighlight}}{1}Env{{Information}}] "
+        L"[{{InformationHighlight}}{1}Config{{Information}}] "
+        L"[{{InformationHighlight}}{1}Owner{{Information}}] "
+        L"[{{InformationHighlight}}{1}Streams{{Information}}]"
 #ifdef _DEBUG
-        L" [{1}Debug]"
+        L" [{{InformationHighlight}}{1}Debug{{Information}}]"
 #endif
         L"\n";
 
     static constexpr wchar_t k_wszUsageBody[] =
-        L"\n"
+        L"{{Information}}\n"
         L"  [drive:][path][filename]\n"
         L"              Specifies drive, directory, and/or files to list.\n"
         L"\n"
-        L"  {0}A          Displays files with specified attributes.\n"
-        L"  attributes   D  Directories                R  Read-only files\n"
-        L"               H  Hidden files               A  Files ready for archiving\n"
-        L"               S  System files               T  Temporary files\n"
-        L"               E  Encrypted files            C  Compressed files\n"
-        L"               P  Reparse points             0  Sparse files\n"
-        L"               X  Not content indexed        I  Integrity stream (ReFS)\n"
-        L"               B  No scrub data (ReFS)       O  Cloud-only (not local)\n"
-        L"               L  Locally available          V  Always locally available\n"
-        L"               -  Prefix meaning not\n"
+        L"  {{InformationHighlight}}{0}A{{Information}}          Displays files with specified attributes.\n"
+        L"  attributes   {{InformationHighlight}}D{{Information}}  Directories                {{InformationHighlight}}R{{Information}}  Read-only files\n"
+        L"               {{InformationHighlight}}H{{Information}}  Hidden files               {{InformationHighlight}}A{{Information}}  Files ready for archiving\n"
+        L"               {{InformationHighlight}}S{{Information}}  System files               {{InformationHighlight}}T{{Information}}  Temporary files\n"
+        L"               {{InformationHighlight}}E{{Information}}  Encrypted files            {{InformationHighlight}}C{{Information}}  Compressed files\n"
+        L"               {{InformationHighlight}}P{{Information}}  Reparse points             {{InformationHighlight}}0{{Information}}  Sparse files\n"
+        L"               {{InformationHighlight}}X{{Information}}  Not content indexed        {{InformationHighlight}}I{{Information}}  Integrity stream (ReFS)\n"
+        L"               {{InformationHighlight}}B{{Information}}  No scrub data (ReFS)       {{InformationHighlight}}O{{Information}}  Cloud-only (not local)\n"
+        L"               {{InformationHighlight}}L{{Information}}  Locally available          {{InformationHighlight}}V{{Information}}  Always locally available\n"
+        L"               {{InformationHighlight}}-{{Information}}  Prefix meaning not\n"
         L"\n"
         L"  Cloud status symbols shown between file size and name:\n"
-        L"               {3}  Cloud-only (not locally available)\n"
-        L"               {4}  Locally available (can be freed)\n"
-        L"               {5}  Always locally available (pinned)\n"
+        L"               {{CloudStatusCloudOnly}}{3}{{Information}}  Cloud-only (not locally available)\n"
+        L"               {{CloudStatusLocallyAvailable}}{4}{{Information}}  Locally available (can be freed)\n"
+        L"               {{CloudStatusAlwaysLocallyAvailable}}{5}{{Information}}  Always locally available (pinned)\n"
         L"\n"
-        L"  {0}O          List by files in sorted order.\n"
-        L"  sortorder    N  By name (alphabetic)       S  By size (smallest first)\n"
-        L"               E  By extension (alphabetic)  D  By date/time (oldest first)\n"
-        L"               -  Prefix to reverse order\n"
+        L"  {{InformationHighlight}}{0}O{{Information}}          List by files in sorted order.\n"
+        L"  sortorder    {{InformationHighlight}}N{{Information}}  By name (alphabetic)       {{InformationHighlight}}S{{Information}}  By size (smallest first)\n"
+        L"               {{InformationHighlight}}E{{Information}}  By extension (alphabetic)  {{InformationHighlight}}D{{Information}}  By date/time (oldest first)\n"
+        L"               {{InformationHighlight}}-{{Information}}  Prefix to reverse order\n"
         L"\n"
-        L"  {0}T          Selects the time field for display and sorting.\n"
-        L"  timefield    C  Creation time              A  Last access time\n"
-        L"               W  Last write time (default)\n"
+        L"  {{InformationHighlight}}{0}T{{Information}}          Selects the time field for display and sorting.\n"
+        L"  timefield    {{InformationHighlight}}C{{Information}}  Creation time              {{InformationHighlight}}A{{Information}}  Last access time\n"
+        L"               {{InformationHighlight}}W{{Information}}  Last write time (default)\n"
         L"\n"
-        L"  {0}S          Displays files in specified directory and all subdirectories.\n"
-        L"  {0}W          Displays results in a wide listing format.\n"
-        L"  {0}B          Displays bare file names only (no headers, footers, or details).\n"
-        L"  {0}P          Displays performance timing information.\n"
-        L"  {0}M          Enables multi-threaded enumeration (default). Use{2} to disable.\n"
-        L"  {1}Env       {6}Displays " TCDIR_ENV_VAR_NAME L" help, syntax, and current value.\n"
-        L"  {1}Config    {6}Displays current color configuration for all items and extensions.\n"
-        L"  {1}Owner     {6}Displays file owner (DOMAIN\\User) for each file.\n"
-        L"  {1}Streams   {6}Displays alternate data streams (NTFS only)."
+        L"  {{InformationHighlight}}{0}S{{Information}}          Displays files in specified directory and all subdirectories.\n"
+        L"  {{InformationHighlight}}{0}W{{Information}}          Displays results in a wide listing format.\n"
+        L"  {{InformationHighlight}}{0}B{{Information}}          Displays bare file names only (no headers, footers, or details).\n"
+        L"  {{InformationHighlight}}{0}P{{Information}}          Displays performance timing information.\n"
+        L"  {{InformationHighlight}}{0}M{{Information}}          Enables multi-threaded enumeration (default). Use{{InformationHighlight}}{2}{{Information}} to disable.\n"
+        L"  {{InformationHighlight}}{1}Env{{Information}}       {6}Displays " TCDIR_ENV_VAR_NAME L" help, syntax, and current value.\n"
+        L"  {{InformationHighlight}}{1}Config{{Information}}    {6}Displays current color configuration for all items and extensions.\n"
+        L"  {{InformationHighlight}}{1}Owner{{Information}}     {6}Displays file owner (DOMAIN\\User) for each file.\n"
+        L"  {{InformationHighlight}}{1}Streams{{Information}}   {6}Displays alternate data streams (NTFS only)."
 #ifdef _DEBUG
-        L"\n  {1}Debug     {6}Displays raw file attributes in hex for diagnosing edge cases."
+        L"\n  {{InformationHighlight}}{1}Debug{{Information}}     {6}Displays raw file attributes in hex for diagnosing edge cases."
 #endif
     ;
 
@@ -255,6 +273,11 @@ void CUsage::DisplayUsage (CConsole & console, wchar_t chPrefix)
     wstring_view pszLongPad     = (chPrefix == L'-') ? L""     : L" ";
     wstring      buildTimestamp = VERSION_BUILD_TIMESTAMP;
 
+    // Cloud status symbols (color markers are in the format string itself)
+    wchar_t szCloudOnly    = UnicodeSymbols::CircleHollow;
+    wchar_t szLocallyAvail = UnicodeSymbols::CircleHalfFilled;
+    wchar_t szAlwaysLocal  = UnicodeSymbols::CircleFilled;
+
 
 
     // Format build timestamp without seconds (drop last 3 chars ":SS" from __TIME__)
@@ -264,34 +287,32 @@ void CUsage::DisplayUsage (CConsole & console, wchar_t chPrefix)
     console.Puts (CConfig::EAttribute::Default, L"");
     console.PrintColorfulString (L"Technicolor");
 
-    // Print header and body using format() with indexed placeholders
-    console.Puts (CConfig::EAttribute::Default, 
-                  format (k_wszUsageHeader,
-                          szShort, 
-                          pszLong, 
-                          pszMDisable,
-                          UnicodeSymbols::CircleHollow, 
-                          UnicodeSymbols::CircleHalfFilled, 
-                          UnicodeSymbols::CircleFilled,
-                          pszLongPad, 
-                          GetArchitecture(), 
-                          buildTimestamp, 
-                          UnicodeSymbols::Copyright
-                  ).c_str ());
+    // Print header and body using format() with indexed placeholders, then ColorPuts to parse color markers
+    console.ColorPuts (format (k_wszUsageHeader,
+                               szShort, 
+                               pszLong, 
+                               pszMDisable,
+                               szCloudOnly, 
+                               szLocallyAvail, 
+                               szAlwaysLocal,
+                               pszLongPad, 
+                               GetArchitecture(), 
+                               buildTimestamp, 
+                               UnicodeSymbols::Copyright
+                       ).c_str ());
 
-    console.Puts (CConfig::EAttribute::Default, 
-                  format (k_wszUsageBody,
-                          szShort, 
-                          pszLong, 
-                          pszMDisable,
-                          UnicodeSymbols::CircleHollow, 
-                          UnicodeSymbols::CircleHalfFilled, 
-                          UnicodeSymbols::CircleFilled,
-                          pszLongPad, 
-                          GetArchitecture(), 
-                          buildTimestamp, 
-                          UnicodeSymbols::Copyright
-                  ).c_str ());
+    console.ColorPuts (format (k_wszUsageBody,
+                               szShort, 
+                               pszLong, 
+                               pszMDisable,
+                               szCloudOnly, 
+                               szLocallyAvail, 
+                               szAlwaysLocal,
+                               pszLongPad, 
+                               GetArchitecture(), 
+                               buildTimestamp, 
+                               UnicodeSymbols::Copyright
+                       ).c_str ());
 }
 
 

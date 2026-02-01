@@ -38,25 +38,32 @@ public:
 
     typedef unordered_map<DWORD, SFileAttributeStyle> FileAttrMap;
 
+    // X-Macro list of all EAttribute values.
+    // Used to generate both the enum and the string lookup table in Console.cpp.
+    #define EATTRIBUTE_LIST(MACRO)              \
+        MACRO(Default)                          \
+        MACRO(Date)                             \
+        MACRO(Time)                             \
+        MACRO(FileAttributePresent)             \
+        MACRO(FileAttributeNotPresent)          \
+        MACRO(Size)                             \
+        MACRO(Directory)                        \
+        MACRO(Information)                      \
+        MACRO(InformationHighlight)             \
+        MACRO(SeparatorLine)                    \
+        MACRO(Error)                            \
+        MACRO(Owner)                            \
+        MACRO(Stream)                           \
+        MACRO(CloudStatusCloudOnly)             \
+        MACRO(CloudStatusLocallyAvailable)      \
+        MACRO(CloudStatusAlwaysLocallyAvailable)
+
     enum EAttribute
     {
-        Default,
-        Date,
-        Time,
-        FileAttributePresent,
-        FileAttributeNotPresent,
-        Size,
-        Directory,
-        Information,
-        InformationHighlight,
-        SeparatorLine,
-        Error,
-        Owner,                             // File owner (DOMAIN\User)
-        Stream,                            // Alternate data stream name
-        CloudStatusCloudOnly,              // ○ symbol color (configurable, default: bright blue)
-        CloudStatusLocallyAvailable,       // ◐ symbol color (configurable, default: bright green)
-        CloudStatusAlwaysLocallyAvailable, // ● symbol color (configurable, default: green)
-        
+        #define DECLARE_EATTRIBUTE(name) name,
+        EATTRIBUTE_LIST(DECLARE_EATTRIBUTE)
+        #undef DECLARE_EATTRIBUTE
+
         __count
     };
 
