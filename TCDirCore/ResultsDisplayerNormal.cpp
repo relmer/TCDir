@@ -4,6 +4,7 @@
 #include "CommandLine.h"
 #include "Config.h"
 #include "Console.h"
+#include "FileAttributeMap.h"
 #include "UnicodeSymbols.h"
 
 
@@ -134,7 +135,7 @@ HRESULT CResultsDisplayerNormal::DisplayResultsNormalDateAndTime (const FILETIME
     fSuccess = GetTimeFormatEx (LOCALE_NAME_USER_DEFAULT, 0, &stLocal, L"hh:mm tt",   szTime, ARRAYSIZE (szTime));
     CWRA (fSuccess);
 
-    m_consolePtr->ColorPrintf (L"{Date}%s{Default}  {Time}%s{Default} ", szDate, szTime);
+    m_consolePtr->ColorPrintf (L"{Date}%s  {Time}%s{Default} ", szDate, szTime);
 
 
     
@@ -184,37 +185,16 @@ const FILETIME & CResultsDisplayerNormal::GetTimeFieldForDisplay (const WIN32_FI
 
 void CResultsDisplayerNormal::DisplayResultsNormalAttributes  (DWORD dwFileAttributes)
 {
-    struct SFileAttributeEntry
-    {
-        DWORD m_dwAttr;
-        WCHAR m_chAttr;
-    };
-    
-    static constexpr SFileAttributeEntry s_krgAttrMap[] =
-    {
-        {  FILE_ATTRIBUTE_READONLY,      L'R' },
-        {  FILE_ATTRIBUTE_HIDDEN,        L'H' },
-        {  FILE_ATTRIBUTE_SYSTEM,        L'S' },
-        {  FILE_ATTRIBUTE_ARCHIVE,       L'A' },
-        {  FILE_ATTRIBUTE_TEMPORARY,     L'T' },
-        {  FILE_ATTRIBUTE_ENCRYPTED,     L'E' },
-        {  FILE_ATTRIBUTE_COMPRESSED,    L'C' },
-        {  FILE_ATTRIBUTE_REPARSE_POINT, L'P' },
-        {  FILE_ATTRIBUTE_SPARSE_FILE,   L'0' }
-    };      
-
-
-
-    for (const SFileAttributeEntry fileAttributeEntry : s_krgAttrMap)
+    for (const SFileAttributeMap fileAttributeEntry : k_rgFileAttributeMap)
     {
         CConfig::EAttribute attr      = CConfig::EAttribute::FileAttributeNotPresent;
         WCHAR               chDisplay = L'-';
         
 
-        if (dwFileAttributes & fileAttributeEntry.m_dwAttr)
+        if (dwFileAttributes & fileAttributeEntry.m_dwAttribute)
         {
             attr = CConfig::EAttribute::FileAttributePresent;
-            chDisplay = fileAttributeEntry.m_chAttr;
+            chDisplay = fileAttributeEntry.m_chKey;
         }
         
         m_consolePtr->Printf (attr, L"%c", chDisplay);

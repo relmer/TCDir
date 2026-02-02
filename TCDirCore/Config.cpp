@@ -2,29 +2,7 @@
 #include "Config.h"
 
 #include "Color.h"
-
-
-
-
-
-struct SFileAttributeKeyMap
-{
-    DWORD   m_dwAttribute;
-    wchar_t m_chKey;
-};
-
-static constexpr SFileAttributeKeyMap s_krgFileAttributeKeyMap[] =
-{
-    {  FILE_ATTRIBUTE_READONLY,      L'R' },
-    {  FILE_ATTRIBUTE_HIDDEN,        L'H' },
-    {  FILE_ATTRIBUTE_SYSTEM,        L'S' },
-    {  FILE_ATTRIBUTE_ARCHIVE,       L'A' },
-    {  FILE_ATTRIBUTE_TEMPORARY,     L'T' },
-    {  FILE_ATTRIBUTE_ENCRYPTED,     L'E' },
-    {  FILE_ATTRIBUTE_COMPRESSED,    L'C' },
-    {  FILE_ATTRIBUTE_REPARSE_POINT, L'P' },
-    {  FILE_ATTRIBUTE_SPARSE_FILE,   L'0' },
-};
+#include "FileAttributeMap.h"
 
 
 
@@ -808,7 +786,7 @@ void CConfig::ProcessFileAttributeOverride (wstring_view keyView, WORD colorAttr
 
     chAttr = towupper (keyView[5]);
 
-    for (const SFileAttributeKeyMap & mapping : s_krgFileAttributeKeyMap)
+    for (const SFileAttributeMap & mapping : k_rgFileAttributeMap)
     {
         if (mapping.m_chKey == chAttr)
         {
@@ -1056,7 +1034,7 @@ WORD CConfig::GetTextAttrForFile (const WIN32_FIND_DATA & wfd)
     // and follow a fixed precedence order.
     //
 
-    for (const SFileAttributeKeyMap & mapping : s_krgFileAttributeKeyMap)
+    for (const SFileAttributeMap & mapping : k_rgFileAttributeMap)
     {
         if ((wfd.dwFileAttributes & mapping.m_dwAttribute) == 0)
         {
