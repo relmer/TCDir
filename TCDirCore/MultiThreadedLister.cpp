@@ -351,10 +351,9 @@ HRESULT CMultiThreadedLister::PrintDirectoryTree (shared_ptr<CDirectoryInfo> pDi
         // Check for error
         if (pDirInfo->m_status == CDirectoryInfo::Status::Error)
         {
-            m_consolePtr->Printf (CConfig::EAttribute::Error,
-                                  L"  Error accessing directory: %s: HRESULT 0x%08X\n",
-                                  pDirInfo->m_dirPath.c_str(), 
-                                  pDirInfo->m_hr);
+            m_consolePtr->ColorPrintf (L"{Error}  Error accessing directory: {InformationHighlight}%s{Error}: HRESULT 0x%08X\n",
+                                        pDirInfo->m_dirPath.c_str(), 
+                                        pDirInfo->m_hr);
             CHR (pDirInfo->m_hr);
         }
     }

@@ -104,10 +104,8 @@ void CDirectoryLister::List (const wstring & mask)
     exists = filesystem::exists (dirPath, ec);
     if (!exists || !filesystem::is_directory (dirPath)) 
     {
-        m_consolePtr->Printf (CConfig::EAttribute::Error,                L"Error:  ");
-        m_consolePtr->Printf (CConfig::EAttribute::InformationHighlight, L"%s", dirPath.c_str());
-        m_consolePtr->Puts   (CConfig::EAttribute::Error,                L" does not exist");
-        
+        m_consolePtr->ColorPrintf (L"{Error}Error:   {InformationHighlight}%s{Error} does not exist\n", 
+                                   dirPath.c_str());
         BAIL_OUT_IF (TRUE, HRESULT_FROM_WIN32 (ERROR_PATH_NOT_FOUND));
     }
 

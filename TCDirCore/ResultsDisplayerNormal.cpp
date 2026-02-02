@@ -134,11 +134,7 @@ HRESULT CResultsDisplayerNormal::DisplayResultsNormalDateAndTime (const FILETIME
     fSuccess = GetTimeFormatEx (LOCALE_NAME_USER_DEFAULT, 0, &stLocal, L"hh:mm tt",   szTime, ARRAYSIZE (szTime));
     CWRA (fSuccess);
 
-    m_consolePtr->Printf (CConfig::EAttribute::Date,    L"%s", szDate);
-    m_consolePtr->Printf (CConfig::EAttribute::Default, L"  ");
-
-    m_consolePtr->Printf (CConfig::EAttribute::Time,    L"%s", szTime);
-    m_consolePtr->Printf (CConfig::EAttribute::Default, L" ");
+    m_consolePtr->ColorPrintf (L"{Date}%s{Default}  {Time}%s{Default} ", szDate, szTime);
 
 
     
@@ -372,34 +368,23 @@ ECloudStatus CResultsDisplayerNormal::GetCloudStatus (const WIN32_FIND_DATA & wf
 
 void CResultsDisplayerNormal::DisplayCloudStatusSymbol (ECloudStatus status)
 {
-    CConfig::EAttribute    attr         = CConfig::EAttribute::Default;
-    WCHAR                  symbol       = L' ';
-
-
-
-    switch (status)
+    struct SCloudStatusEntry
     {
-        case ECloudStatus::CS_CLOUD_ONLY:
-            attr   = CConfig::EAttribute::CloudStatusCloudOnly;
-            symbol = UnicodeSymbols::CircleHollow;
-            break;
+        LPCWSTR pszColorMarker;
+        WCHAR   chSymbol;
+    };
 
-        case ECloudStatus::CS_LOCAL:
-            attr   = CConfig::EAttribute::CloudStatusLocallyAvailable;
-            symbol = UnicodeSymbols::CircleHalfFilled;
-            break;
+    static constexpr SCloudStatusEntry s_krgCloudStatusMap[] =
+    {
+        { L"{Default}",                            L' '                             },  // CS_NONE
+        { L"{CloudStatusCloudOnly}",               UnicodeSymbols::CircleHollow     },  // CS_CLOUD_ONLY
+        { L"{CloudStatusLocallyAvailable}",        UnicodeSymbols::CircleHalfFilled },  // CS_LOCAL
+        { L"{CloudStatusAlwaysLocallyAvailable}",  UnicodeSymbols::CircleFilled     },  // CS_PINNED
+    };
 
-        case ECloudStatus::CS_PINNED:
-            attr   = CConfig::EAttribute::CloudStatusAlwaysLocallyAvailable;
-            symbol = UnicodeSymbols::CircleFilled;
-            break;
+    const SCloudStatusEntry & entry = s_krgCloudStatusMap[static_cast<size_t>(status)];
 
-        case ECloudStatus::CS_NONE:
-        default:
-            break;
-    }
-
-    m_consolePtr->Printf (attr, L"%c ", symbol);
+    m_consolePtr->ColorPrintf (L"%s%c ", entry.pszColorMarker, entry.chSymbol);
 }
 
 
@@ -504,7 +489,9 @@ Error:
 
 void CResultsDisplayerNormal::DisplayFileOwner (const wstring & owner, size_t cchColumnWidth)
 {
-    m_consolePtr->Printf (CConfig::EAttribute::Owner, L"%-*s ", static_cast<int>(cchColumnWidth), owner.c_str ());
+    int cchPadding = static_cast<int>(cchColumnWidth - owner.length() + 1);
+
+    m_consolePtr->ColorPrintf (L"{Owner}%s{Default}%*s", owner.c_str(), cchPadding, L"");
 }
 
 
@@ -566,17 +553,14 @@ void CResultsDisplayerNormal::DisplayFileStreams (const FileInfo & fileEntry, si
 
     for (const SStreamInfo & si : fileEntry.m_vStreams)
     {
-        LPCWSTR pszStreamSize = FormatNumberWithSeparators (si.m_liSize.QuadPart);
+        LPCWSTR pszStreamSize   = FormatNumberWithSeparators (si.m_liSize.QuadPart);
+        int     cchOwnerPadding = (cchOwnerWidth > 0) ? static_cast<int>(cchOwnerWidth + 1) : 0;
 
-        m_consolePtr->Printf (CConfig::EAttribute::Default, L"%*c", 30, L' ');                      // 30 spaces (21 + 9)
-        m_consolePtr->Printf (CConfig::EAttribute::Size,    L" %*s ", static_cast<int>(cchMaxFileSize), pszStreamSize);
-        m_consolePtr->Printf (CConfig::EAttribute::Default, L"  ");                                 // Cloud status placeholder
-
-        if (cchOwnerWidth > 0)
-        {
-            m_consolePtr->Printf (CConfig::EAttribute::Default, L"%*c", static_cast<int>(cchOwnerWidth + 1), L' ');
-        }
-
-        m_consolePtr->Printf (CConfig::EAttribute::Stream,  L"%s%s\n", fileEntry.cFileName, si.m_strName.c_str ());
+        m_consolePtr->ColorPrintf (L"{Default}%*c{Size} %*s {Default}  %*s{Stream}%s%s\n",
+                                   30, L' ',
+                                   static_cast<int>(cchMaxFileSize), pszStreamSize,
+                                   cchOwnerPadding, L"",
+                                   fileEntry.cFileName, 
+                                   si.m_strName.c_str());
     }
 }

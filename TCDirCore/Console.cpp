@@ -333,16 +333,16 @@ Error:
 
 ////////////////////////////////////////////////////////////////////////////////
 //
-//  CConsole::ColorPuts
+//  CConsole::ColorPrint
 //
-//  Write a string with embedded color markers.
+//  Write a string with embedded color markers (no trailing newline).
 //  Format: {EAttributeName} switches to that color.
 //  Colors are "sticky" - they remain until the next marker.
 //  Text before the first marker is emitted without changing color.
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-void CConsole::ColorPuts (LPCWSTR psz)
+void CConsole::ColorPrint (LPCWSTR psz)
 {
     wstring_view text        = psz;
     size_t       chunkStart  = 0;
@@ -388,8 +388,25 @@ void CConsole::ColorPuts (LPCWSTR psz)
             chunkStart = chunkEnd + 1;
         }
     }
+}
 
-    // Reset to default color before final newline to prevent color bleeding
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CConsole::ColorPuts
+//
+//  Write a string with embedded color markers, followed by a newline.
+//
+////////////////////////////////////////////////////////////////////////////////
+
+void CConsole::ColorPuts (LPCWSTR psz)
+{
+    ColorPrint (psz);
+
+    // Reset to default color before newline to prevent color bleeding
     SetColor (m_configPtr->m_rgAttributes[CConfig::EAttribute::Default]);
     m_strBuffer.append (L"\n");
 }
@@ -402,7 +419,7 @@ void CConsole::ColorPuts (LPCWSTR psz)
 //
 //  CConsole::ColorPrintf
 //
-//  Format a string and then process it with ColorPuts.
+//  Format a string and then process it with ColorPrint (no trailing newline).
 //
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -413,25 +430,18 @@ void CConsole::ColorPrintf (LPCWSTR pszFormat, ...)
 
     HRESULT hr     = S_OK;
     va_list vaArgs = 0;
-    LPWSTR  pszEnd = nullptr;
 
 
 
     va_start (vaArgs, pszFormat);
 
-    hr = StringCchVPrintfEx (s_szBuf, k_cchBuf, &pszEnd, nullptr, 0, pszFormat, vaArgs);
+    hr = StringCchVPrintfEx (s_szBuf, k_cchBuf, nullptr, nullptr, 0, pszFormat, vaArgs);
 
     va_end (vaArgs);
 
     if (SUCCEEDED (hr))
     {
-        // Remove trailing newline if present since ColorPuts adds one
-        if (pszEnd > s_szBuf && *(pszEnd - 1) == L'\n')
-        {
-            *(pszEnd - 1) = L'\0';
-        }
-
-        ColorPuts (s_szBuf);
+        ColorPrint (s_szBuf);
     }
 }
 

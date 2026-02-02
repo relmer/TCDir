@@ -111,32 +111,20 @@ Error:
 
 HRESULT CResultsDisplayerWide::DisplayFile (const WIN32_FIND_DATA & wfd, size_t cxColumnWidth)
 {
-    HRESULT hr            = S_OK;
-    size_t  cSpacesNeeded = 0;
-    LPCWSTR pszName       = NULL;
-    size_t  cchName       = 0;
-    WORD    textAttr      = m_configPtr->GetTextAttrForFile (wfd);
+    WCHAR        szDirName[MAX_PATH + 3]; // '[' + MAX_PATH + ']' + '\0'
+    wstring_view name     = GetWideFormattedName (wfd, szDirName, ARRAYSIZE (szDirName));
+    WORD         textAttr = m_configPtr->GetTextAttrForFile (wfd);
 
 
 
-    hr = GetWideFormattedName (wfd, &pszName);
-    CHR (hr);
+    m_consolePtr->Printf (textAttr, L"%s", name.data ());
 
-    m_consolePtr->Printf (textAttr, L"%.*s", cxColumnWidth, pszName);
-
-    cchName = wcslen (pszName);
-    if (cxColumnWidth > cchName)
+    if (cxColumnWidth > name.length ())
     {
-        for (cSpacesNeeded = cxColumnWidth - wcslen (pszName); cSpacesNeeded > 0; cSpacesNeeded--)
-        {
-            m_consolePtr->Printf (CConfig::EAttribute::Default, L" ");
-        }
+        m_consolePtr->ColorPrintf (L"{Default}%*s", cxColumnWidth - name.length (), L"");
     }
 
-
-
-Error:
-    return hr;
+    return S_OK;
 }
 
 
@@ -182,34 +170,18 @@ void CResultsDisplayerWide::GetColumnInfo (const CDirectoryInfo & di, size_t & c
 //
 ////////////////////////////////////////////////////////////////////////////////  
 
-HRESULT CResultsDisplayerWide::GetWideFormattedName (const WIN32_FIND_DATA & wfd, __deref_out_z LPCWSTR * ppszName)
+wstring_view CResultsDisplayerWide::GetWideFormattedName (const WIN32_FIND_DATA & wfd, LPWSTR pszBuffer, size_t cchBuffer)
 {
-    static WCHAR szDirName[MAX_PATH + 2] = L"[";
-    
-    HRESULT      hr                      = S_OK;
-    
+    LPCWSTR pszName = wfd.cFileName;
+
 
 
     if (wfd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
     {
-        LPWSTR pszBufEnd    = szDirName + 1;
-        size_t cchRemaining = 0;
-
-        
-
-        hr = StringCchCopyEx (szDirName + 1, ARRAYSIZE (szDirName) - 2, wfd.cFileName, &pszBufEnd, &cchRemaining, 0);
-        CHRA (hr);
-
-        hr = StringCchCat (pszBufEnd,  cchRemaining, L"]");
-        CHRA (hr);
-
-        *ppszName = szDirName;
-    }
-    else
-    {
-        *ppszName = wfd.cFileName;
+        auto [out, _] = format_to_n (pszBuffer, cchBuffer - 1, L"[{}]", wfd.cFileName);
+        *out    = L'\0';
+        pszName = pszBuffer;
     }
 
-Error:
-    return hr;
+    return pszName;
 }

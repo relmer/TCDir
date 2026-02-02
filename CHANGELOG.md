@@ -2,6 +2,17 @@
 
 All notable changes to TCDir are documented in this file.
 
+## [4.2.1318] - 2026-02-01
+
+### Changed
+- Refactored console output to use `ColorPrintf`/`ColorPuts` with embedded color markers (`{EAttributeName}`)
+- `--env` help text now uses `{Information}`/`{InformationHighlight}` colors consistently with `-?` output
+- Wide listing: `GetWideFormattedName` now returns `wstring_view` with caller-provided stack buffer (thread-safe)
+- Cloud status display refactored to use lookup table instead of switch statement
+
+### Fixed
+- `ColorPrintf` no longer appends trailing newline (use `ColorPuts` for that)
+
 ## [4.2.1284] - 2026-01-31
 
 ### Added

@@ -35,6 +35,7 @@ protected:
     HRESULT InitializeConsoleMode               (void);
     HRESULT InitializeConsoleWidth              (void);
     void    SetColor                            (WORD attr);
+    void    ColorPrint                          (LPCWSTR psz);
     void    ProcessMultiLineStringWithAttribute (wstring_view text, WORD attr);
     bool    ParseColorMarker                    (wstring_view text, size_t pos, CConfig::EAttribute & outAttr, size_t & outMarkerLen);
 

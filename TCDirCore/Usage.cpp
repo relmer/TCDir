@@ -341,10 +341,8 @@ void CUsage::DisplayEnvVarIssues (CConsole & console, wchar_t chPrefix)
         return;
     }
 
-    console.Puts   (CConfig::EAttribute::Default, L"");
-    console.Printf (CConfig::EAttribute::Error,   L"There are some problems with your %s environment variable (see %senv for help):", 
-                    TCDIR_ENV_VAR_NAME, pszLong);
-    console.Puts   (CConfig::EAttribute::Default, L"\n");
+    console.ColorPrintf (L"{Default}\n{Error}There are some problems with your %s environment variable (see %senv for help):\n", 
+                         TCDIR_ENV_VAR_NAME, pszLong);
 
     for (const auto & error : validationResult.errors)
     {
@@ -353,13 +351,9 @@ void CUsage::DisplayEnvVarIssues (CConsole & console, wchar_t chPrefix)
         
 
 
-        console.Printf (CConfig::EAttribute::Error,   L"  %s in \"%s\"", error.message.c_str(), error.entry.c_str());
-        console.Puts   (CConfig::EAttribute::Default, L"");
-        console.Printf (CConfig::EAttribute::Default, L"%*s", static_cast<int>(prefixLen), L"");
-        console.Puts   (CConfig::EAttribute::Error,   underline.c_str());
+        console.ColorPrintf (L"{Error}  %s in \"%s\"\n", error.message.c_str(), error.entry.c_str());
+        console.ColorPrintf (L"{Default}%*s{Error}%s\n\n", static_cast<int>(prefixLen), L"", underline.c_str());
     }
-
-    console.Puts (CConfig::EAttribute::Default, L"");
 }
 
 
@@ -402,9 +396,7 @@ void CUsage::DisplayConfigurationTable (CConsole & console)
 
 void CUsage::DisplayAttributeConfiguration (CConsole & console, int columnWidthAttr, int columnWidthSource)
 {
-    console.Puts (CConfig::EAttribute::Information, L"");
-    console.Puts (CConfig::EAttribute::Information, L"Current display item configuration:");
-    console.Puts (CConfig::EAttribute::Information, L"");
+    console.Puts (CConfig::EAttribute::Information, L"\nCurrent display item configuration:\n");
 
     for (const auto & info : s_kDisplayItemInfos)
     {
@@ -436,9 +428,7 @@ void CUsage::DisplayAttributeConfiguration (CConsole & console, int columnWidthA
 
 void CUsage::DisplayFileAttributeConfiguration (CConsole & console, int columnWidthAttr, int columnWidthSource)
 {
-    console.Puts (CConfig::EAttribute::Information, L"");
-    console.Puts (CConfig::EAttribute::Information, L"File attribute color configuration:");
-    console.Puts (CConfig::EAttribute::Information, L"");
+    console.Puts (CConfig::EAttribute::Information, L"\nFile attribute color configuration:\n");
 
     for (const auto & info : s_kFileAttrInfos)
     {
@@ -564,11 +554,11 @@ void CUsage::DisplayExtensionConfigurationMultiColumn (CConsole & console, const
                 idx += cItemsInLastRow;
             }
 
-            const auto & ext     = extensions[idx].first;
-            WORD         extAttr = extensions[idx].second;
-            auto      sourceIter = console.m_configPtr->m_mapExtensionSources.find (ext);
-            bool      isEnv      = (sourceIter         != console.m_configPtr->m_mapExtensionSources.end () &&
-                                    sourceIter->second == CConfig::EAttributeSource::Environment);
+            const auto & ext        = extensions[idx].first;
+            WORD         extAttr    = extensions[idx].second;
+            auto         sourceIter = console.m_configPtr->m_mapExtensionSources.find (ext);
+            bool         isEnv      = (sourceIter         != console.m_configPtr->m_mapExtensionSources.end () &&
+                                       sourceIter->second == CConfig::EAttributeSource::Environment);
 
             DisplayItemAndSource (console, ext, extAttr, isEnv, maxExtLen, cxSourceWidth, cxColumnWidth, EItemDisplayMode::MultiColumn);
         }
@@ -601,8 +591,7 @@ void CUsage::DisplayExtensionConfiguration (CConsole & console, int columnWidthA
 
 
 
-    console.Puts (CConfig::EAttribute::Information, L"");
-    console.Puts (CConfig::EAttribute::Information, L"File extension color configuration:");
+    console.Puts (CConfig::EAttribute::Information, L"\nFile extension color configuration:");
 
     extensions.reserve (console.m_configPtr->m_mapExtensionToTextAttr.size());
 
@@ -869,9 +858,8 @@ void CUsage::DisplayEnvVarCurrentValue (CConsole & console, LPCWSTR pszEnvVarNam
     cchCopied = GetEnvironmentVariableW (pszEnvVarName, envValue.data(), cchBufNeeded);
     CWRA (cchCopied == cchExcludingNull);
 
-    console.Printf (CConfig::EAttribute::Default,     L"  ");
-    console.Printf (CConfig::EAttribute::Information, pszEnvVarName);
-    console.Printf (CConfig::EAttribute::Default,     L" = ");
+    console.ColorPrintf (L"{Information}Your settings:{Default}\n\n  {Information}%s{Default} = ", 
+                         pszEnvVarName);
 
     if (envValue.empty())
     {
@@ -1039,8 +1027,7 @@ static void DisplayEnvVarSwitchesSection (CConsole & console, const CConfig & co
 
 static void DisplayEnvVarDisplayItemsSection (CConsole & console, const CConfig & config)
 {
-    console.Puts (CConfig::EAttribute::Default,     L"");
-    console.Puts (CConfig::EAttribute::Information, L"    Display item colors:");
+    console.ColorPuts (L"{Default}\n    {Information}Display item colors:");
 
     for (const auto & info : s_kDisplayItemInfos)
     {
@@ -1080,8 +1067,7 @@ static void DisplayEnvVarDisplayItemsSection (CConsole & console, const CConfig 
 
 static void DisplayEnvVarFileAttrsSection (CConsole & console, const CConfig & config)
 {
-    console.Puts (CConfig::EAttribute::Default,     L"");
-    console.Puts (CConfig::EAttribute::Information, L"    File attribute colors:");
+    console.ColorPuts (L"{Default}\n    {Information}File attribute colors:");
 
     for (const auto & info : s_kFileAttrInfos)
     {
@@ -1110,8 +1096,7 @@ static void DisplayEnvVarFileAttrsSection (CConsole & console, const CConfig & c
 
 static void DisplayEnvVarExtensionsSection (CConsole & console, const CConfig & config)
 {
-    console.Puts (CConfig::EAttribute::Default,     L"");
-    console.Puts (CConfig::EAttribute::Information, L"    File extension colors:");
+    console.ColorPuts (L"{Default}\n    {Information}File extension colors:");
 
     // Collect extensions from env var, sorted
     vector<pair<wstring, WORD>> envExtensions;
@@ -1202,76 +1187,78 @@ void CUsage::DisplayEnvVarDecodedSettings (CConsole & console)
 
 void CUsage::DisplayEnvVarHelp (CConsole & console)
 {
-    static LPCWSTR s_setEnvVarCommandCmd        = L"  set "  TCDIR_ENV_VAR_NAME L"=";
-    static LPCWSTR s_setEnvVarCommandPowerShell = L"  $env:" TCDIR_ENV_VAR_NAME L" = \"";
+    // Format strings with indexed placeholders:
+    // {0} = syntax command (set TCDIR= or $env:TCDIR = ")
+    // {1} = syntax suffix (nothing or closing quote)
+    // {2} = example command
+    //
+    // Color markers use {{EAttributeName}} which format() escapes to {EAttributeName}
+    // for ColorPuts to parse.
 
-    bool  isPowerShell = IsPowerShell ();
+    static constexpr wchar_t k_wszEnvVarHelpBody[] =
+        L"\n"
+        L"{{Information}}Set the {{InformationHighlight}}" TCDIR_ENV_VAR_NAME L"{{Information}} environment variable to override default colors for display"
+        L" items, file attributes, or file extensions:\n"
+        L"{0}[{{InformationHighlight}}<Switch>{{Information}}] | "
+        L"[{{InformationHighlight}}<Item>{{Information}} | "
+        L"{{InformationHighlight}}Attr:<fileattr>{{Information}} | "
+        L"{{InformationHighlight}}<.ext>{{Information}}] = "
+        L"{{InformationHighlight}}<Fore>{{Information}} [on {{InformationHighlight}}<Back>{{Information}}][;...]"
+        L"{1}\n"
+        L"\n"
+        L"  {{InformationHighlight}}<Switch>{{Information}}    A command-line switch:\n"
+        L"                  {{InformationHighlight}}W{{Information}}        Wide listing format\n"
+        L"                  {{InformationHighlight}}P{{Information}}        Display performance timing information\n"
+        L"                  {{InformationHighlight}}S{{Information}}        Recurse into subdirectories\n"
+        L"                  {{InformationHighlight}}M{{Information}}        Enables multi-threaded enumeration (default); use {{InformationHighlight}}M-{{Information}} to disable\n"
+        L"                  {{InformationHighlight}}Owner{{Information}}    Display file ownership\n"
+        L"                  {{InformationHighlight}}Streams{{Information}}  Display alternate data streams (NTFS)\n"
+        L"\n"
+        L"  {{InformationHighlight}}<Item>{{Information}}      A display item:\n"
+        L"                  {{InformationHighlight}}D{{Information}}  Date                     {{InformationHighlight}}T{{Information}}  Time\n"
+        L"                  {{InformationHighlight}}S{{Information}}  Size                     {{InformationHighlight}}R{{Information}}  Directory name\n"
+        L"                  {{InformationHighlight}}I{{Information}}  Information              {{InformationHighlight}}H{{Information}}  Information highlight\n"
+        L"                  {{InformationHighlight}}E{{Information}}  Error                    {{InformationHighlight}}F{{Information}}  File (default)\n"
+        L"                  {{InformationHighlight}}O{{Information}}  Owner                    {{InformationHighlight}}M{{Information}}  Stream\n"
+        L"\n"
+        L"              Cloud status (use full name, e.g., {{InformationHighlight}}CloudOnly=Blue{{Information}}):\n"
+        L"                  {{InformationHighlight}}CloudOnly{{Information}}                   {{InformationHighlight}}LocallyAvailable{{Information}}\n"
+        L"                  {{InformationHighlight}}AlwaysLocallyAvailable{{Information}}\n"
+        L"\n"
+        L"  {{InformationHighlight}}<.ext>{{Information}}      A file extension, including the leading period.\n"
+        L"\n"
+        L"  {{InformationHighlight}}<FileAttr>{{Information}}  A file attribute (see file attributes below)\n"
+        L"                  {{InformationHighlight}}R{{Information}}  Read-only                {{InformationHighlight}}H{{Information}}  Hidden\n"
+        L"                  {{InformationHighlight}}S{{Information}}  System                   {{InformationHighlight}}A{{Information}}  Archive\n"
+        L"                  {{InformationHighlight}}T{{Information}}  Temporary                {{InformationHighlight}}E{{Information}}  Encrypted\n"
+        L"                  {{InformationHighlight}}C{{Information}}  Compressed               {{InformationHighlight}}P{{Information}}  Reparse point\n"
+        L"                  {{InformationHighlight}}0{{Information}}  Sparse file\n"
+        L"\n"
+        L"  {{InformationHighlight}}<Fore>{{Information}}      Foreground color\n"
+        L"  {{InformationHighlight}}<Back>{{Information}}      Background color";
 
-
-
-    console.Puts   (CConfig::EAttribute::Default,     L"");
-    console.Printf (CConfig::EAttribute::Default,     L"Set the ");
-    console.Printf (CConfig::EAttribute::Information, TCDIR_ENV_VAR_NAME);
-    console.Puts   (CConfig::EAttribute::Default,     L" environment variable to override default colors for display"
-                                                      L" items, file attributes, or file extensions:\n");
-
-    // Display the syntax line with dynamic switch prefix
-    if (isPowerShell)
+    wstring_view syntaxCommand;
+    wstring_view syntaxSuffix;
+    wstring_view exampleCmd; 
+    
+    if (IsPowerShell())
     {
-        console.Printf (CConfig::EAttribute::Default, L"%s[<Switch>] | [<Item> | Attr:<fileattr> | <.ext>] = <Fore> [on <Back>][;...]\"\n",
-                        s_setEnvVarCommandPowerShell);
+        syntaxCommand = L"  {InformationHighlight}$env:" TCDIR_ENV_VAR_NAME L"{Information} = \"";
+        syntaxSuffix  = L"\"";
+        exampleCmd    = L"{Information}  Example: {InformationHighlight}$env:" TCDIR_ENV_VAR_NAME L"{Information} = \"W;D=LightGreen;S=Yellow;Attr:H=DarkGrey;.cpp=White on Blue\"";
     }
     else
     {
-        console.Printf (CConfig::EAttribute::Default, L"%s[<Switch>] | [<Item> | Attr:<fileattr> | <.ext>] = <Fore> [on <Back>][;...]\n",
-                        s_setEnvVarCommandCmd);
+        syntaxCommand = L"  set {InformationHighlight}" TCDIR_ENV_VAR_NAME L"{Information} =";
+        syntaxSuffix  = L"";
+        exampleCmd    = L"{Information}  Example: {InformationHighlight}set "  TCDIR_ENV_VAR_NAME L"{Information} = W;D=LightGreen;S=Yellow;Attr:H=DarkGrey;.cpp=White on Blue";
     }
 
-    console.Printf (CConfig::EAttribute::Default, L"\n");
-    console.Printf (CConfig::EAttribute::Default, L"  <Switch>    A command-line switch:\n");
-    console.Printf (CConfig::EAttribute::Default, L"                  W        Wide listing format\n");
-    console.Printf (CConfig::EAttribute::Default, L"                  P        Display performance timing information\n");
-    console.Printf (CConfig::EAttribute::Default, L"                  S        Recurse into subdirectories\n");
-    console.Printf (CConfig::EAttribute::Default, L"                  M        Enables multi-threaded enumeration (default); use M- to disable\n");
-    console.Printf (CConfig::EAttribute::Default, L"                  Owner    Display file ownership\n");
-    console.Printf (CConfig::EAttribute::Default, L"                  Streams  Display alternate data streams (NTFS)\n");
-    console.Printf (CConfig::EAttribute::Default, L"\n");
-    console.Printf (CConfig::EAttribute::Default, L"  <Item>      A display item:\n");
-    console.Printf (CConfig::EAttribute::Default, L"                  D  Date                     T  Time\n");
-    console.Printf (CConfig::EAttribute::Default, L"                  S  Size                     R  Directory name\n");
-    console.Printf (CConfig::EAttribute::Default, L"                  I  Information              H  Information highlight\n");
-    console.Printf (CConfig::EAttribute::Default, L"                  E  Error                    F  File (default)\n");
-    console.Printf (CConfig::EAttribute::Default, L"                  O  Owner                    M  Stream\n");
-    console.Printf (CConfig::EAttribute::Default, L"\n");
-    console.Printf (CConfig::EAttribute::Default, L"              Cloud status (use full name, e.g., CloudOnly=Blue):\n");
-    console.Printf (CConfig::EAttribute::Default, L"                  CloudOnly                   LocallyAvailable\n");
-    console.Printf (CConfig::EAttribute::Default, L"                  AlwaysLocallyAvailable\n");
-    console.Printf (CConfig::EAttribute::Default, L"\n");
-    console.Printf (CConfig::EAttribute::Default, L"  <.ext>      A file extension, including the leading period.\n");
-    console.Printf (CConfig::EAttribute::Default, L"\n");
-    console.Printf (CConfig::EAttribute::Default, L"  <FileAttr>  A file attribute (see file attributes below)\n");
-    console.Printf (CConfig::EAttribute::Default, L"                  R  Read-only                H  Hidden\n");
-    console.Printf (CConfig::EAttribute::Default, L"                  S  System                   A  Archive\n");
-    console.Printf (CConfig::EAttribute::Default, L"                  T  Temporary                E  Encrypted\n");
-    console.Printf (CConfig::EAttribute::Default, L"                  C  Compressed               P  Reparse point\n");
-    console.Printf (CConfig::EAttribute::Default, L"                  0  Sparse file\n");
-    console.Printf (CConfig::EAttribute::Default, L"\n");
-    console.Printf (CConfig::EAttribute::Default, L"  <Fore>      Foreground color\n");
-    console.Printf (CConfig::EAttribute::Default, L"  <Back>      Background color\n");
+    console.ColorPuts (format (k_wszEnvVarHelpBody, syntaxCommand, syntaxSuffix, exampleCmd).c_str());
 
     DisplayColorConfiguration (console);
 
-    // Display the example line with dynamic switch prefix
-    if (isPowerShell)
-    {
-        console.Printf (CConfig::EAttribute::Default, L"  Example: $env:" TCDIR_ENV_VAR_NAME L" = \"W;D=LightGreen;S=Yellow;Attr:H=DarkGrey;.cpp=White on Blue\"\n");
-    }
-    else
-    {
-        console.Printf (CConfig::EAttribute::Default, L"  Example: set "  TCDIR_ENV_VAR_NAME L"=W;D=LightGreen;S=Yellow;Attr:H=DarkGrey;.cpp=White on Blue\n");
-    }
-
-    console.Puts (CConfig::EAttribute::Default, L"");
+    console.ColorPrintf (L"{Default}%s\n\n", exampleCmd.data ());
 
     if (IsTcdirEnvVarSet ())
     {
@@ -1281,9 +1268,7 @@ void CUsage::DisplayEnvVarHelp (CConsole & console)
     }
     else
     {
-        console.Printf (CConfig::EAttribute::Default,     L"  ");
-        console.Printf (CConfig::EAttribute::Information, TCDIR_ENV_VAR_NAME);
-        console.Puts   (CConfig::EAttribute::Default,     L" environment variable is not set.");
+        console.ColorPuts (L"  {InformationHighlight}" TCDIR_ENV_VAR_NAME L"{Information} environment variable is not set.");
     }
 }
 
@@ -1302,17 +1287,13 @@ void CUsage::DisplayEnvVarHelp (CConsole & console)
 
 void CUsage::DisplayCurrentConfiguration (CConsole & console, wchar_t chPrefix)
 {
-    console.Puts (CConfig::EAttribute::Default, L"");
-
     if (IsTcdirEnvVarSet ())
     {
         DisplayEnvVarIssues (console, chPrefix);
     }
     else
     {
-        console.Printf (CConfig::EAttribute::Default,     L"  ");
-        console.Printf (CConfig::EAttribute::Information, TCDIR_ENV_VAR_NAME);
-        console.Puts   (CConfig::EAttribute::Default,     L" environment variable is not set; showing default configuration.");
+        console.ColorPuts (L"\n  {Information}" TCDIR_ENV_VAR_NAME L"{Default} environment variable is not set; showing default configuration.");
     }
 
     DisplayConfigurationTable (console);

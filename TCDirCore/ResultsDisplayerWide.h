@@ -14,7 +14,7 @@ public:
     void DisplayFileResults      (const CDirectoryInfo & di) override;
 
 protected:
-    HRESULT DisplayFile          (const WIN32_FIND_DATA & wfd, size_t cxColumnWidth);
-    void    GetColumnInfo        (const CDirectoryInfo & di, size_t & cColumns, size_t & cxColumnWidth);
-    HRESULT GetWideFormattedName (const WIN32_FIND_DATA & wfd, __deref_out_z LPCWSTR * ppszName);
+    HRESULT      DisplayFile          (const WIN32_FIND_DATA & wfd, size_t cxColumnWidth);
+    void         GetColumnInfo        (const CDirectoryInfo & di, size_t & cColumns, size_t & cxColumnWidth);
+    wstring_view GetWideFormattedName (const WIN32_FIND_DATA & wfd, LPWSTR pszBuffer, size_t cchBuffer);
 };

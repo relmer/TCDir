@@ -139,7 +139,7 @@ void CResultsDisplayerWithHeaderAndFooter::DisplayRecursiveSummary (const CDirec
 //
 //  CResultsDisplayerWithHeaderAndFooter::DisplayDriveHeader
 //
-//  Displays information about the drive, eg: 
+//  Displays information about the drive, e.g.: 
 // 
 //      Volume in drive C is a hard drive (NTFS)
 //      Volume Name is "Maxtor 250GB"
@@ -148,47 +148,50 @@ void CResultsDisplayerWithHeaderAndFooter::DisplayRecursiveSummary (const CDirec
 
 void CResultsDisplayerWithHeaderAndFooter::DisplayDriveHeader (const CDriveInfo & driveInfo)
 {
-    m_consolePtr->Printf (CConfig::EAttribute::Information, L" Volume ");
+    //
+    // Build the first line: "Volume [path] is [description] [mapped to X] (filesystem)"
+    //
 
     if (driveInfo.IsUncPath())
     {
-        m_consolePtr->Printf (CConfig::EAttribute::InformationHighlight, L"%s", driveInfo.GetUncPath().c_str());
+        m_consolePtr->ColorPrintf (L"{Information} Volume {InformationHighlight}%s{Information} is {InformationHighlight}%s{Information}",
+                                   driveInfo.GetUncPath().c_str(),
+                                   driveInfo.GetVolumeDescription().c_str());
     }
     else
     {
-        m_consolePtr->Printf (CConfig::EAttribute::Information,          L"in drive ");
-        m_consolePtr->Printf (CConfig::EAttribute::InformationHighlight, L"%c", driveInfo.GetRootPath().c_str()[0]);
-    }        
-
-    m_consolePtr->Printf (CConfig::EAttribute::Information,          L" is ");
-    m_consolePtr->Printf (CConfig::EAttribute::InformationHighlight, L"%s", driveInfo.GetVolumeDescription().c_str());
+        m_consolePtr->ColorPrintf (L"{Information} Volume in drive {InformationHighlight}%c{Information} is {InformationHighlight}%s{Information}",
+                                   driveInfo.GetRootPath().c_str()[0],
+                                   driveInfo.GetVolumeDescription().c_str());
+    }
 
     //
     // If this is a mapped drive, get the remote name that it's mapped to
     //
-    
+
     const wstring & remoteName = driveInfo.GetRemoteName();
     if (remoteName.length() > 0)
     {
-        m_consolePtr->Printf (CConfig::EAttribute::Information,          L" mapped to ");
-        m_consolePtr->Printf (CConfig::EAttribute::InformationHighlight, L"%s", remoteName.c_str());
+        m_consolePtr->ColorPrintf (L"{Information} mapped to {InformationHighlight}%s{Information}", remoteName.c_str());
     }
 
-    m_consolePtr->Printf (CConfig::EAttribute::Information,          L" (");
-    m_consolePtr->Printf (CConfig::EAttribute::InformationHighlight, L"%s", driveInfo.GetFileSystemName());
-    m_consolePtr->Printf (CConfig::EAttribute::Information,          L")\n");
+    m_consolePtr->ColorPrintf (L"{Information} ({InformationHighlight}%s{Information})\n", driveInfo.GetFileSystemName());
+
+    //
+    // Display the volume name (second line)
+    //
 
     LPCWSTR pszVolumeName = driveInfo.GetVolumeName();
     if (pszVolumeName[0] != L'\0')
     {
-        m_consolePtr->Printf (CConfig::EAttribute::Information,          L" Volume name is \"");
-        m_consolePtr->Printf (CConfig::EAttribute::InformationHighlight, L"%s", pszVolumeName);
-        m_consolePtr->Printf (CConfig::EAttribute::Information,          L"\"\n\n");
+        m_consolePtr->ColorPrintf (L"{Information} Volume name is \"{InformationHighlight}%s{Information}\"\n", pszVolumeName);
     }
     else
     {
-        m_consolePtr->Puts (CConfig::EAttribute::Information, L" Volume has no name\n");
+        m_consolePtr->ColorPuts (L"{Information} Volume has no name");
     }
+
+    m_consolePtr->ColorPuts (L"");
 }
 
 
@@ -205,9 +208,7 @@ void CResultsDisplayerWithHeaderAndFooter::DisplayDriveHeader (const CDriveInfo 
 
 void CResultsDisplayerWithHeaderAndFooter::DisplayPathHeader (const filesystem::path & dirPath)
 {
-    m_consolePtr->Printf (CConfig::EAttribute::Information,          L" Directory of ");
-    m_consolePtr->Printf (CConfig::EAttribute::InformationHighlight, L"%s", dirPath.c_str());
-    m_consolePtr->Printf (CConfig::EAttribute::Information,          L"\n\n");
+    m_consolePtr->ColorPrintf (L"{Information} Directory of {InformationHighlight}%s{Information}\n\n", dirPath.c_str());
 }
 
 
@@ -240,23 +241,21 @@ void CResultsDisplayerWithHeaderAndFooter::DisplayListingSummary (const CDirecto
         cMaxDigits += cMaxDigits / 3;  // add space for each comma
     }
 
-    m_consolePtr->Printf (CConfig::EAttribute::Information,          L" Total files listed:");
-    m_consolePtr->Puts   (CConfig::EAttribute::Default,              L"\n");
-
-    m_consolePtr->Printf (CConfig::EAttribute::InformationHighlight, L"    %*s", cMaxDigits, FormatNumberWithSeparators (totals.m_cFiles));
-    m_consolePtr->Printf (CConfig::EAttribute::Information,          totals.m_cFiles == 1 ? L" file using " : L" files using ");
-    m_consolePtr->Printf (CConfig::EAttribute::InformationHighlight, FormatNumberWithSeparators (totals.m_uliFileBytes.QuadPart));
-    m_consolePtr->Printf (CConfig::EAttribute::Information,          totals.m_uliFileBytes.QuadPart == 1 ? L" byte\n" : L" bytes\n");
-
-    m_consolePtr->Printf (CConfig::EAttribute::InformationHighlight, L"    %*s", cMaxDigits, FormatNumberWithSeparators (totals.m_cDirectories));
-    m_consolePtr->Printf (CConfig::EAttribute::Information,          totals.m_cDirectories == 1 ? L" subdirectory\n" : L" subdirectories\n");
+    m_consolePtr->ColorPrintf (L"{Information} Total files listed:\n\n{InformationHighlight}    %*s{Information}%s{InformationHighlight}%s{Information}%s\n{InformationHighlight}    %*s{Information}%s\n",
+                               cMaxDigits, FormatNumberWithSeparators (totals.m_cFiles),
+                               totals.m_cFiles == 1 ? L" file using " : L" files using ",
+                               FormatNumberWithSeparators (totals.m_uliFileBytes.QuadPart),
+                               totals.m_uliFileBytes.QuadPart == 1 ? L" byte" : L" bytes",
+                               cMaxDigits, FormatNumberWithSeparators (totals.m_cDirectories),
+                               totals.m_cDirectories == 1 ? L" subdirectory" : L" subdirectories");
 
     if (totals.m_cStreams > 0)
     {
-        m_consolePtr->Printf (CConfig::EAttribute::InformationHighlight, L"    %*s", cMaxDigits, FormatNumberWithSeparators (totals.m_cStreams));
-        m_consolePtr->Printf (CConfig::EAttribute::Information,          totals.m_cStreams == 1 ? L" stream using " : L" streams using ");
-        m_consolePtr->Printf (CConfig::EAttribute::InformationHighlight, FormatNumberWithSeparators (totals.m_uliStreamBytes.QuadPart));
-        m_consolePtr->Printf (CConfig::EAttribute::Information,          totals.m_uliStreamBytes.QuadPart == 1 ? L" byte\n" : L" bytes\n");
+        m_consolePtr->ColorPrintf (L"{InformationHighlight}    %*s{Information}%s{InformationHighlight}%s{Information}%s\n",
+                                   cMaxDigits, FormatNumberWithSeparators (totals.m_cStreams),
+                                   totals.m_cStreams == 1 ? L" stream using " : L" streams using ",
+                                   FormatNumberWithSeparators (totals.m_uliStreamBytes.QuadPart),
+                                   totals.m_uliStreamBytes.QuadPart == 1 ? L" byte" : L" bytes");
     }
 
     DisplayVolumeFooter (di);
@@ -282,25 +281,24 @@ void CResultsDisplayerWithHeaderAndFooter::DisplayListingSummary (const CDirecto
 
 void CResultsDisplayerWithHeaderAndFooter::DisplayDirectorySummary (const CDirectoryInfo & di)
 {
-    m_consolePtr->Printf (CConfig::EAttribute::Information,          L"\n ");
-    m_consolePtr->Printf (CConfig::EAttribute::InformationHighlight, L"%d", di.m_cSubDirectories);
-    m_consolePtr->Printf (CConfig::EAttribute::Information,          di.m_cSubDirectories == 1 ? L" dir, " : L" dirs, ");
-
-    m_consolePtr->Printf (CConfig::EAttribute::InformationHighlight, L"%d", di.m_cFiles);
-    m_consolePtr->Printf (CConfig::EAttribute::Information,          di.m_cFiles == 1 ? L" file using " : L" files using ");
-    m_consolePtr->Printf (CConfig::EAttribute::InformationHighlight, FormatNumberWithSeparators (di.m_uliBytesUsed.QuadPart));
-    m_consolePtr->Printf (CConfig::EAttribute::Information,          di.m_uliBytesUsed.QuadPart == 1 ? L" byte" : L" bytes");
+    m_consolePtr->ColorPrintf (L"\n{Information} {InformationHighlight}%d{Information}%s{InformationHighlight}%d{Information}%s{InformationHighlight}%s{Information}%s",
+                               di.m_cSubDirectories,
+                               di.m_cSubDirectories == 1 ? L" dir, " : L" dirs, ",
+                               di.m_cFiles,
+                               di.m_cFiles == 1 ? L" file using " : L" files using ",
+                               FormatNumberWithSeparators (di.m_uliBytesUsed.QuadPart),
+                               di.m_uliBytesUsed.QuadPart == 1 ? L" byte" : L" bytes");
 
     if (di.m_cStreams > 0)
     {
-        m_consolePtr->Printf (CConfig::EAttribute::Information,          L", ");
-        m_consolePtr->Printf (CConfig::EAttribute::InformationHighlight, L"%d", di.m_cStreams);
-        m_consolePtr->Printf (CConfig::EAttribute::Information,          di.m_cStreams == 1 ? L" stream using " : L" streams using ");
-        m_consolePtr->Printf (CConfig::EAttribute::InformationHighlight, FormatNumberWithSeparators (di.m_uliStreamBytesUsed.QuadPart));
-        m_consolePtr->Printf (CConfig::EAttribute::Information,          di.m_uliStreamBytesUsed.QuadPart == 1 ? L" byte" : L" bytes");
+        m_consolePtr->ColorPrintf (L"{Information}, {InformationHighlight}%d{Information}%s{InformationHighlight}%s{Information}%s",
+                                   di.m_cStreams,
+                                   di.m_cStreams == 1 ? L" stream using " : L" streams using ",
+                                   FormatNumberWithSeparators (di.m_uliStreamBytesUsed.QuadPart),
+                                   di.m_uliStreamBytesUsed.QuadPart == 1 ? L" byte" : L" bytes");
     }
 
-    m_consolePtr->Printf (CConfig::EAttribute::Information,          L"\n");
+    m_consolePtr->ColorPuts (L"");
 }
 
 
@@ -320,19 +318,20 @@ void CResultsDisplayerWithHeaderAndFooter::DisplayDirectorySummary (const CDirec
 
 void CResultsDisplayerWithHeaderAndFooter::DisplayVolumeFooter (const CDirectoryInfo & di)
 {
-    HRESULT        hr                     = S_OK;
-    BOOL           fSuccess;              
-    ULARGE_INTEGER uliFreeBytesAvailable; 
-    ULARGE_INTEGER uliTotalBytes;         
-    ULARGE_INTEGER uliTotalFreeBytes;     
+    HRESULT        hr                    = S_OK;
+    BOOL           fSuccess              = {};              
+    ULARGE_INTEGER uliFreeBytesAvailable = {}; 
+    ULARGE_INTEGER uliTotalBytes         = {};         
+    ULARGE_INTEGER uliTotalFreeBytes     = {};     
 
     
 
     fSuccess = GetDiskFreeSpaceEx (di.m_dirPath.c_str(), &uliFreeBytesAvailable, &uliTotalBytes, &uliTotalFreeBytes);
     CBRA (fSuccess);
 
-    m_consolePtr->Printf (CConfig::EAttribute::InformationHighlight, L" %s", FormatNumberWithSeparators (uliTotalFreeBytes.QuadPart));
-    m_consolePtr->Printf (CConfig::EAttribute::Information,          uliTotalFreeBytes.QuadPart == 1 ? L" byte free on volume\n" : L" bytes free on volume\n");
+    m_consolePtr->ColorPrintf (L"{InformationHighlight} %s{Information}%s\n",
+                               FormatNumberWithSeparators (uliTotalFreeBytes.QuadPart),
+                               uliTotalFreeBytes.QuadPart == 1 ? L" byte free on volume" : L" bytes free on volume");
 
     if (uliFreeBytesAvailable.QuadPart != uliTotalFreeBytes.QuadPart)
     {
@@ -379,11 +378,10 @@ void CResultsDisplayerWithHeaderAndFooter::DisplayFooterQuotaInfo (const ULARGE_
         strUsername = L"<Unknown>";
     }
 
-    m_consolePtr->Printf(CConfig::EAttribute::Information,          L" ");
-    m_consolePtr->Printf(CConfig::EAttribute::InformationHighlight, FormatNumberWithSeparators (uliFreeBytesAvailable.QuadPart));
-    m_consolePtr->Printf(CConfig::EAttribute::Information,          uliFreeBytesAvailable.QuadPart == 1 ? L" byte available to " : L" bytes available to ");
-    m_consolePtr->Printf(CConfig::EAttribute::InformationHighlight, strUsername.c_str());
-    m_consolePtr->Printf(CConfig::EAttribute::Information,          L" due to quota\n");
+    m_consolePtr->ColorPrintf (L"{Information} {InformationHighlight}%s{Information}%s{InformationHighlight}%s{Information} due to quota\n",
+                                FormatNumberWithSeparators (uliFreeBytesAvailable.QuadPart),
+                                uliFreeBytesAvailable.QuadPart == 1 ? L" byte available to " : L" bytes available to ",
+                                strUsername.c_str());
 }
 
 
