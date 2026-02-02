@@ -2,6 +2,12 @@
 
 All notable changes to TCDir are documented in this file.
 
+## [4.2.1322] - 2026-02-01
+
+### Fixed
+- TCDIR env var error message now uses correct switch prefix (`--env` vs `/env`) based on user's choice
+- TCDIR env var error "see --env for help" hint no longer shown when already viewing `--env` output
+
 ## [4.2.1318] - 2026-02-01
 
 ### Changed

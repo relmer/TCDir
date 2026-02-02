@@ -21,9 +21,9 @@ public:
     };
 
     static void    DisplayUsage                     (CConsole & console, wchar_t chPrefix = L'-');
-    static void    DisplayEnvVarHelp                (CConsole & console);
+    static void    DisplayEnvVarHelp                (CConsole & console, wchar_t chPrefix = L'-');
     static void    DisplayCurrentConfiguration      (CConsole & console, wchar_t chPrefix = L'-');
-    static void    DisplayEnvVarIssues              (CConsole & console, wchar_t chPrefix = L'-');
+    static void    DisplayEnvVarIssues              (CConsole & console, wchar_t chPrefix = L'-', bool fShowHint = true);
 
 
 

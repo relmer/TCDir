@@ -63,7 +63,7 @@ int wmain (int argc, WCHAR * argv[])
 
     if (cmdlinePtr->m_fEnv)
     {
-        CUsage::DisplayEnvVarHelp (*consolePtr);
+        CUsage::DisplayEnvVarHelp (*consolePtr, cmdlinePtr->GetSwitchPrefix ());
         BAIL_OUT_IF (cmdlinePtr->m_fEnv, S_OK);
     }
 

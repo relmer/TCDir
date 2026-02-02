@@ -325,7 +325,7 @@ void CUsage::DisplayUsage (CConsole & console, wchar_t chPrefix)
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-void CUsage::DisplayEnvVarIssues (CConsole & console, wchar_t chPrefix)
+void CUsage::DisplayEnvVarIssues (CConsole & console, wchar_t chPrefix, bool fShowHint)
 {
     CConfig::ValidationResult validationResult;
 
@@ -341,8 +341,9 @@ void CUsage::DisplayEnvVarIssues (CConsole & console, wchar_t chPrefix)
         return;
     }
 
-    console.ColorPrintf (L"{Default}\n{Error}There are some problems with your %s environment variable (see %senv for help):\n", 
-                         TCDIR_ENV_VAR_NAME, pszLong);
+    console.ColorPrintf (L"{Default}\n{Error}There are some problems with your %s environment variable%s:\n", 
+                         TCDIR_ENV_VAR_NAME,
+                         fShowHint ? format (L" (see {}env for help)", pszLong).c_str() : L"");
 
     for (const auto & error : validationResult.errors)
     {
@@ -1185,7 +1186,7 @@ void CUsage::DisplayEnvVarDecodedSettings (CConsole & console)
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-void CUsage::DisplayEnvVarHelp (CConsole & console)
+void CUsage::DisplayEnvVarHelp (CConsole & console, wchar_t chPrefix)
 {
     // Format strings with indexed placeholders:
     // {0} = syntax command (set TCDIR= or $env:TCDIR = ")
@@ -1264,7 +1265,7 @@ void CUsage::DisplayEnvVarHelp (CConsole & console)
     {
         DisplayEnvVarCurrentValue    (console, TCDIR_ENV_VAR_NAME);
         DisplayEnvVarDecodedSettings (console);
-        DisplayEnvVarIssues          (console);
+        DisplayEnvVarIssues          (console, chPrefix, false /* fShowHint */);
     }
     else
     {
