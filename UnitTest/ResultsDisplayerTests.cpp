@@ -29,7 +29,7 @@ namespace UnitTest
         void DisplayFileResults (const CDirectoryInfo &) override {}
 
         // Expose protected members for testing
-        LPCWSTR      WrapFormatNumber   (ULONGLONG n)                                            { return FormatNumberWithSeparators (n);    }
+        wstring      WrapFormatNumber   (ULONGLONG n)                                            { return FormatNumberWithSeparators (n);    }
         ECloudStatus WrapGetCloudStatus (const WIN32_FIND_DATA & wfd, bool fInSyncRoot = false)  { return GetCloudStatus (wfd, fInSyncRoot); }
     };
 
@@ -99,8 +99,8 @@ namespace UnitTest
             {
                 WideProbe(std::shared_ptr<CCommandLine> a, std::shared_ptr<CConsole> b, std::shared_ptr<CConfig> c)
                     : CResultsDisplayerWide(a, b, c) {}
-                void DisplayFileResults(const CDirectoryInfo &) override {}
-                LPCWSTR Wrap(ULONGLONG n) { return FormatNumberWithSeparators(n); }
+                void    DisplayFileResults(const CDirectoryInfo &) override {}
+                wstring Wrap(ULONGLONG n) { return FormatNumberWithSeparators(n); }
             };
 
             auto cmd = std::make_shared<CCommandLine>();

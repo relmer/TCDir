@@ -48,8 +48,18 @@ protected:
 
 private:
     HRESULT PerformEnumeration            (shared_ptr<CDirectoryInfo> pDirInfo);
+    HRESULT EnumerateMatchingFiles        (shared_ptr<CDirectoryInfo> pDirInfo);
+    HRESULT EnumerateSubdirectories       (shared_ptr<CDirectoryInfo> pDirInfo);
     void    EnqueueChildDirectory         (const WIN32_FIND_DATA & wfd, shared_ptr<CDirectoryInfo> pDirInfo);
     void    StopWorkers                   ();
+
+    HRESULT WaitForNodeCompletion         (shared_ptr<CDirectoryInfo> pDirInfo);
+    void    SortResults                   (shared_ptr<CDirectoryInfo> pDirInfo);
+    void    AccumulateTotals              (shared_ptr<CDirectoryInfo> pDirInfo, SListingTotals & totals);
+    HRESULT ProcessChildren               (shared_ptr<CDirectoryInfo> pDirInfo,
+                                           const CDriveInfo & driveInfo,
+                                           IResultsDisplayer & displayer,
+                                           SListingTotals & totals);
 
     bool    StopRequested                 () const { return m_stopSource.stop_requested(); }
 

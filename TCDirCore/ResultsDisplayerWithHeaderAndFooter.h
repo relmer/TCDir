@@ -37,7 +37,7 @@ protected:
     void    DisplayFooterQuotaInfo                 (const ULARGE_INTEGER & uliFreeBytesAvailable);
 
     UINT    GetStringLengthOfMaxFileSize           (const ULARGE_INTEGER & uli);
-    LPCWSTR FormatNumberWithSeparators             (ULONGLONG n);
+    wstring FormatNumberWithSeparators              (ULONGLONG n);
 
     shared_ptr<CCommandLine> m_cmdLinePtr; 
     shared_ptr<CConsole>     m_consolePtr;

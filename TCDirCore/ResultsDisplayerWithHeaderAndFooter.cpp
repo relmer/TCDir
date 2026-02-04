@@ -242,19 +242,19 @@ void CResultsDisplayerWithHeaderAndFooter::DisplayListingSummary (const CDirecto
     }
 
     m_consolePtr->ColorPrintf (L"{Information} Total files listed:\n\n{InformationHighlight}    %*s{Information}%s{InformationHighlight}%s{Information}%s\n{InformationHighlight}    %*s{Information}%s\n",
-                               cMaxDigits, FormatNumberWithSeparators (totals.m_cFiles),
+                               cMaxDigits, FormatNumberWithSeparators (totals.m_cFiles).c_str(),
                                totals.m_cFiles == 1 ? L" file using " : L" files using ",
-                               FormatNumberWithSeparators (totals.m_uliFileBytes.QuadPart),
+                               FormatNumberWithSeparators (totals.m_uliFileBytes.QuadPart).c_str(),
                                totals.m_uliFileBytes.QuadPart == 1 ? L" byte" : L" bytes",
-                               cMaxDigits, FormatNumberWithSeparators (totals.m_cDirectories),
+                               cMaxDigits, FormatNumberWithSeparators (totals.m_cDirectories).c_str(),
                                totals.m_cDirectories == 1 ? L" subdirectory" : L" subdirectories");
 
     if (totals.m_cStreams > 0)
     {
         m_consolePtr->ColorPrintf (L"{InformationHighlight}    %*s{Information}%s{InformationHighlight}%s{Information}%s\n",
-                                   cMaxDigits, FormatNumberWithSeparators (totals.m_cStreams),
+                                   cMaxDigits, FormatNumberWithSeparators (totals.m_cStreams).c_str(),
                                    totals.m_cStreams == 1 ? L" stream using " : L" streams using ",
-                                   FormatNumberWithSeparators (totals.m_uliStreamBytes.QuadPart),
+                                   FormatNumberWithSeparators (totals.m_uliStreamBytes.QuadPart).c_str(),
                                    totals.m_uliStreamBytes.QuadPart == 1 ? L" byte" : L" bytes");
     }
 
@@ -286,7 +286,7 @@ void CResultsDisplayerWithHeaderAndFooter::DisplayDirectorySummary (const CDirec
                                di.m_cSubDirectories == 1 ? L" dir, " : L" dirs, ",
                                di.m_cFiles,
                                di.m_cFiles == 1 ? L" file using " : L" files using ",
-                               FormatNumberWithSeparators (di.m_uliBytesUsed.QuadPart),
+                               FormatNumberWithSeparators (di.m_uliBytesUsed.QuadPart).c_str(),
                                di.m_uliBytesUsed.QuadPart == 1 ? L" byte" : L" bytes");
 
     if (di.m_cStreams > 0)
@@ -294,7 +294,7 @@ void CResultsDisplayerWithHeaderAndFooter::DisplayDirectorySummary (const CDirec
         m_consolePtr->ColorPrintf (L"{Information}, {InformationHighlight}%d{Information}%s{InformationHighlight}%s{Information}%s",
                                    di.m_cStreams,
                                    di.m_cStreams == 1 ? L" stream using " : L" streams using ",
-                                   FormatNumberWithSeparators (di.m_uliStreamBytesUsed.QuadPart),
+                                   FormatNumberWithSeparators (di.m_uliStreamBytesUsed.QuadPart).c_str(),
                                    di.m_uliStreamBytesUsed.QuadPart == 1 ? L" byte" : L" bytes");
     }
 
@@ -330,7 +330,7 @@ void CResultsDisplayerWithHeaderAndFooter::DisplayVolumeFooter (const CDirectory
     CBRA (fSuccess);
 
     m_consolePtr->ColorPrintf (L"{InformationHighlight} %s{Information}%s\n",
-                               FormatNumberWithSeparators (uliTotalFreeBytes.QuadPart),
+                               FormatNumberWithSeparators (uliTotalFreeBytes.QuadPart).c_str(),
                                uliTotalFreeBytes.QuadPart == 1 ? L" byte free on volume" : L" bytes free on volume");
 
     if (uliFreeBytesAvailable.QuadPart != uliTotalFreeBytes.QuadPart)
@@ -379,7 +379,7 @@ void CResultsDisplayerWithHeaderAndFooter::DisplayFooterQuotaInfo (const ULARGE_
     }
 
     m_consolePtr->ColorPrintf (L"{Information} {InformationHighlight}%s{Information}%s{InformationHighlight}%s{Information} due to quota\n",
-                                FormatNumberWithSeparators (uliFreeBytesAvailable.QuadPart),
+                                FormatNumberWithSeparators (uliFreeBytesAvailable.QuadPart).c_str(),
                                 uliFreeBytesAvailable.QuadPart == 1 ? L" byte available to " : L" bytes available to ",
                                 strUsername.c_str());
 }
@@ -424,68 +424,12 @@ UINT CResultsDisplayerWithHeaderAndFooter::GetStringLengthOfMaxFileSize (const U
 //
 //  CResultsDisplayerWithHeaderAndFooter::FormatNumberWithSeparators
 //
-//  
+//  Formats a number with thousands separators using the user's locale.
 //
 ////////////////////////////////////////////////////////////////////////////////  
 
-LPCWSTR CResultsDisplayerWithHeaderAndFooter::FormatNumberWithSeparators (ULONGLONG n)
+wstring CResultsDisplayerWithHeaderAndFooter::FormatNumberWithSeparators (ULONGLONG n)
 {
-    static WCHAR szFileSize[27];  // 2^64 = 1.84467440737096E+19 = 18,446,744,073,709,600,000 = 18 chars + 6 commas + 1 null
-    LPWSTR       pszSize;
-    UINT         nDigitPosition = 0;
-
-    
-
-    //
-    // Point to the end of the size buffer
-    // 
-    
-    pszSize = szFileSize + ARRAYSIZE (szFileSize) - 1;
-    *pszSize = L'\0';
-
-    //
-    // Extract the digits, placing comma seperators appropriately
-    //
-
-    do
-    {
-        UINT uiDigit;
-
-        //
-        // Pick off the lowest remaining digit and shift the 
-        // remaining number down by a factor of 10.
-        //
-
-        uiDigit = (UINT) (n % 10ull);
-        n       = n / 10ull;
-
-        //
-        // Point to the next free spot in the write buffer
-        //
-        
-        --pszSize;
-        assert (pszSize >= szFileSize);
-
-        //
-        // Every 4th character written should be a comma
-        //
-        
-        ++nDigitPosition;
-        if ((nDigitPosition % 4) == 0)
-        {
-            *pszSize = L',';
-            ++nDigitPosition;
-            --pszSize;
-            assert (pszSize >= szFileSize);
-        }
-
-        //
-        // Write the digit to the buffer
-        // 
-        
-        *pszSize = (WCHAR) (uiDigit + (UINT) L'0');
-    }             
-    while (n > 0ull);
-
-    return pszSize;
+    static const locale s_loc ("");  // Cache the locale - construction is expensive
+    return format (s_loc, L"{:L}", n);
 }

@@ -231,7 +231,7 @@ void CResultsDisplayerNormal::DisplayResultsNormalFileSize (const WIN32_FIND_DAT
         m_consolePtr->Printf (CConfig::EAttribute::Size, 
                               L" %*s ", 
                               cchMaxFileSize, 
-                              FormatNumberWithSeparators (uliFileSize.QuadPart));
+                              FormatNumberWithSeparators (uliFileSize.QuadPart).c_str());
     }
     else
     {
@@ -533,12 +533,12 @@ void CResultsDisplayerNormal::DisplayFileStreams (const FileInfo & fileEntry, si
 
     for (const SStreamInfo & si : fileEntry.m_vStreams)
     {
-        LPCWSTR pszStreamSize   = FormatNumberWithSeparators (si.m_liSize.QuadPart);
+        wstring pszStreamSize   = FormatNumberWithSeparators (si.m_liSize.QuadPart);
         int     cchOwnerPadding = (cchOwnerWidth > 0) ? static_cast<int>(cchOwnerWidth + 1) : 0;
 
         m_consolePtr->ColorPrintf (L"{Default}%*c{Size} %*s {Default}  %*s{Stream}%s%s\n",
                                    30, L' ',
-                                   static_cast<int>(cchMaxFileSize), pszStreamSize,
+                                   static_cast<int>(cchMaxFileSize), pszStreamSize.c_str(),
                                    cchOwnerPadding, L"",
                                    fileEntry.cFileName, 
                                    si.m_strName.c_str());

@@ -74,12 +74,13 @@ void CMultiThreadedLister::StopWorkers()
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-HRESULT CMultiThreadedLister::ProcessDirectoryMultiThreaded (const CDriveInfo & driveInfo,
-                                                             const filesystem::path & dirPath,
-                                                             const filesystem::path & fileSpec,
-                                                             IResultsDisplayer & displayer,
-                                                             IResultsDisplayer::EDirectoryLevel level,
-                                                             SListingTotals & totals)
+HRESULT CMultiThreadedLister::ProcessDirectoryMultiThreaded (
+    const CDriveInfo                   & driveInfo,
+    const filesystem::path             & dirPath,
+    const filesystem::path             & fileSpec,
+    IResultsDisplayer                  & displayer,
+    IResultsDisplayer::EDirectoryLevel   level,
+    SListingTotals                     & totals)
 {
     HRESULT hr = S_OK;
 
@@ -167,12 +168,43 @@ void CMultiThreadedLister::EnumerateDirectoryNode (shared_ptr<CDirectoryInfo> pD
 
 HRESULT CMultiThreadedLister::PerformEnumeration (shared_ptr<CDirectoryInfo> pDirInfo)
 {
-    HRESULT          hr               = S_OK;
-    WIN32_FIND_DATA  wfd              = { 0 };
-    UniqueFindHandle hFind;
-    filesystem::path pathAndFileSpec;
-    DWORD            dwError          = 0;
+    HRESULT hr = S_OK;
+
     
+
+    hr = EnumerateMatchingFiles (pDirInfo);
+    CHR (hr);
+
+    if (m_cmdLinePtr->m_fRecurse)
+    {
+        hr = EnumerateSubdirectories (pDirInfo);
+        CHR (hr);
+    }
+
+Error:
+    return hr;
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CMultiThreadedLister::EnumerateMatchingFiles
+//
+//  Searches for files matching the file spec pattern
+//
+////////////////////////////////////////////////////////////////////////////////
+
+HRESULT CMultiThreadedLister::EnumerateMatchingFiles (shared_ptr<CDirectoryInfo> pDirInfo)
+{
+    HRESULT          hr               = S_OK;
+    filesystem::path pathAndFileSpec;
+    UniqueFindHandle hFind;
+    WIN32_FIND_DATA  wfd              = { 0 };
+    DWORD            dwError          = 0;
+
     
 
     // Build search path for files matching the pattern
@@ -185,74 +217,101 @@ HRESULT CMultiThreadedLister::PerformEnumeration (shared_ptr<CDirectoryInfo> pDi
         return E_INVALIDARG;
     }
 
-    // Search for files matching the file spec
     hFind.reset (FindFirstFile (pathAndFileSpec.c_str(), &wfd));
-    
-    if (hFind.get() != INVALID_HANDLE_VALUE)
+    BAIL_OUT_IF (hFind.get() == INVALID_HANDLE_VALUE, S_OK);
+
+    do
     {
-        do
+        if (StopRequested())
         {
-            if (StopRequested())
-            {
-                break;
-            }
-
-            // Skip "." and ".."
-            if (IsDots (wfd.cFileName))
-            {
-                continue;
-            }
-
-            // Check if this entry should be displayed based on attribute filters
-            if (CFlag::IsSet    (wfd.dwFileAttributes, m_cmdLinePtr->m_dwAttributesRequired) &&
-                CFlag::IsNotSet (wfd.dwFileAttributes, m_cmdLinePtr->m_dwAttributesExcluded))
-            {
-                lock_guard<mutex> lock (pDirInfo->m_mutex);
-                AddMatchToList (wfd, *pDirInfo, nullptr);
-            }
-
-        } 
-        while (FindNextFile (hFind.get(), &wfd));
-
-        // Check if loop ended due to error or naturally
-        dwError = GetLastError();
-        if (dwError != ERROR_NO_MORE_FILES)
-        {
-            CHRA (HRESULT_FROM_WIN32 (dwError));
+            break;
         }
+
+        // Skip "." and ".."
+        if (IsDots (wfd.cFileName))
+        {
+            continue;
+        }
+
+        // Check if this entry should be displayed based on attribute filters
+        if (CFlag::IsSet    (wfd.dwFileAttributes, m_cmdLinePtr->m_dwAttributesRequired) &&
+            CFlag::IsNotSet (wfd.dwFileAttributes, m_cmdLinePtr->m_dwAttributesExcluded))
+        {
+            lock_guard<mutex> lock (pDirInfo->m_mutex);
+
+            AddMatchToList (wfd, *pDirInfo, nullptr);
+        }
+
+    } 
+    while (FindNextFile (hFind.get(), &wfd));
+
+    // Check if loop ended due to error or naturally
+    dwError = GetLastError();
+    if (dwError != ERROR_NO_MORE_FILES)
+    {
+        CHRA (HRESULT_FROM_WIN32 (dwError));
     }
 
-    // Now search for subdirectories if recursion is enabled
-    // This is a separate search using "*" to find all directories
-    if (m_cmdLinePtr->m_fRecurse)
+Error:
+    return hr;
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CMultiThreadedLister::EnumerateSubdirectories
+//
+//  Searches for subdirectories and enqueues them for processing
+//
+////////////////////////////////////////////////////////////////////////////////
+
+HRESULT CMultiThreadedLister::EnumerateSubdirectories (shared_ptr<CDirectoryInfo> pDirInfo)
+{
+    HRESULT          hr          = S_OK;
+    filesystem::path pathForDirs;
+    UniqueFindHandle hFind;
+    WIN32_FIND_DATA  wfd         = { 0 };
+    DWORD            dwError     = 0;
+
+
+
+    // Search using "*" to find all directories
+    pathForDirs = pDirInfo->m_dirPath / L"*";
+    hFind.reset (FindFirstFile (pathForDirs.c_str(), &wfd));
+    BAIL_OUT_IF (hFind.get() == INVALID_HANDLE_VALUE, S_OK);
+
+    do
     {
-        filesystem::path pathForDirs = pDirInfo->m_dirPath / L"*";
-        hFind.reset (FindFirstFile (pathForDirs.c_str(), &wfd));
-        
-        if (hFind.get() != INVALID_HANDLE_VALUE)
+        if (StopRequested())
         {
-            do
-            {
-                if (StopRequested())
-                {
-                    break;
-                }
+            break;
+        }
 
-                if (IsDots (wfd.cFileName))
-                {
-                    continue;
-                }
+        if (IsDots (wfd.cFileName))
+        {
+            continue;
+        }
 
-                // Enqueue all directories for recursion
-                if (CFlag::IsSet (wfd.dwFileAttributes, FILE_ATTRIBUTE_DIRECTORY))
-                {
-                    lock_guard<mutex> lock (pDirInfo->m_mutex);
-                    EnqueueChildDirectory (wfd, pDirInfo);
-                }
-            }
-            while (FindNextFile (hFind.get(), &wfd));
+        // Enqueue directories for recursion
+        if (CFlag::IsSet (wfd.dwFileAttributes, FILE_ATTRIBUTE_DIRECTORY))
+        {
+            lock_guard<mutex> lock (pDirInfo->m_mutex);
+
+            EnqueueChildDirectory (wfd, pDirInfo);
         }
     }
+    while (FindNextFile (hFind.get(), &wfd));
+
+    // Check if loop ended due to error or naturally
+    dwError = GetLastError();
+    if (dwError != ERROR_NO_MORE_FILES)
+    {
+        CHRA (HRESULT_FROM_WIN32 (dwError));
+    }
+
 
 Error:
     return hr;
@@ -322,65 +381,140 @@ void CMultiThreadedLister::WorkerThreadFunc (stop_token stopToken)
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-HRESULT CMultiThreadedLister::PrintDirectoryTree (shared_ptr<CDirectoryInfo> pDirInfo,
-                                                  const CDriveInfo & driveInfo,
-                                                  IResultsDisplayer & displayer,
-                                                  IResultsDisplayer::EDirectoryLevel level,
-                                                  SListingTotals & totals)
+HRESULT CMultiThreadedLister::PrintDirectoryTree (
+    shared_ptr<CDirectoryInfo>           pDirInfo,
+    const CDriveInfo                   & driveInfo,
+    IResultsDisplayer                  & displayer,
+    IResultsDisplayer::EDirectoryLevel   level,
+    SListingTotals                     & totals)
 {
     HRESULT hr = S_OK;
 
     
 
-    // Wait for this node to complete enumeration
-    {
-        unique_lock<mutex> lock (pDirInfo->m_mutex);
+    hr = WaitForNodeCompletion (pDirInfo);
+    CHR (hr);
 
-        pDirInfo->m_cvStatusChanged.wait (lock, [&]() {
-            return pDirInfo->m_status == CDirectoryInfo::Status::Done ||
-                   pDirInfo->m_status == CDirectoryInfo::Status::Error ||
-                   StopRequested();
-        });
+    SortResults (pDirInfo);
 
-        // Check for cancellation
-        if (StopRequested())
-        {
-            CHR (E_ABORT);
-        }
-
-        // Check for error
-        if (pDirInfo->m_status == CDirectoryInfo::Status::Error)
-        {
-            m_consolePtr->ColorPrintf (L"{Error}  Error accessing directory: {InformationHighlight}%s{Error}: HRESULT 0x%08X\n",
-                                        pDirInfo->m_dirPath.c_str(), 
-                                        pDirInfo->m_hr);
-            CHR (pDirInfo->m_hr);
-        }
-    }
-
-    // Sort the results using FileComparator
-    {
-        lock_guard<mutex> lock (pDirInfo->m_mutex);
-
-        std::sort (pDirInfo->m_vMatches.begin(), pDirInfo->m_vMatches.end(), 
-                   FileComparator (m_cmdLinePtr));
-    }
-
-    // Display the results
     displayer.DisplayResults (driveInfo, *pDirInfo, level);
 
-    // Update global counters
-    {
-        lock_guard<mutex> lock (pDirInfo->m_mutex);
+    AccumulateTotals (pDirInfo, totals);
 
-        totals.m_cFiles                  += pDirInfo->m_cFiles;
-        totals.m_cDirectories            += pDirInfo->m_cSubDirectories;
-        totals.m_uliFileBytes.QuadPart   += pDirInfo->m_uliBytesUsed.QuadPart;
-        totals.m_cStreams                += pDirInfo->m_cStreams;
-        totals.m_uliStreamBytes.QuadPart += pDirInfo->m_uliStreamBytesUsed.QuadPart;
+    hr = ProcessChildren (pDirInfo, driveInfo, displayer, totals);
+    CHR (hr);
+
+
+
+Error:
+    return hr;
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CMultiThreadedLister::WaitForNodeCompletion
+//
+//  Waits for a directory node to complete enumeration
+//
+////////////////////////////////////////////////////////////////////////////////
+
+HRESULT CMultiThreadedLister::WaitForNodeCompletion (shared_ptr<CDirectoryInfo> pDirInfo)
+{
+    HRESULT hr = S_OK;
+
+    unique_lock<mutex> lock (pDirInfo->m_mutex);
+
+    pDirInfo->m_cvStatusChanged.wait (lock, [&]() {
+        return pDirInfo->m_status == CDirectoryInfo::Status::Done ||
+               pDirInfo->m_status == CDirectoryInfo::Status::Error ||
+               StopRequested();
+    });
+
+    // Check for cancellation
+    if (StopRequested())
+    {
+        CHR (E_ABORT);
     }
 
-    // Recurse into children
+    // Check for error
+    if (pDirInfo->m_status == CDirectoryInfo::Status::Error)
+    {
+        m_consolePtr->ColorPrintf (L"{Error}  Error accessing directory: {InformationHighlight}%s{Error}: HRESULT 0x%08X\n",
+                                    pDirInfo->m_dirPath.c_str(), 
+                                    pDirInfo->m_hr);
+        CHR (pDirInfo->m_hr);
+    }
+
+Error:
+    return hr;
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CMultiThreadedLister::SortResults
+//
+//  Sorts the file matches using FileComparator
+//
+////////////////////////////////////////////////////////////////////////////////
+
+void CMultiThreadedLister::SortResults (shared_ptr<CDirectoryInfo> pDirInfo)
+{
+    lock_guard<mutex> lock (pDirInfo->m_mutex);
+
+    std::sort (pDirInfo->m_vMatches.begin(), pDirInfo->m_vMatches.end(), 
+               FileComparator (m_cmdLinePtr));
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CMultiThreadedLister::AccumulateTotals
+//
+//  Updates global counters from a directory node
+//
+////////////////////////////////////////////////////////////////////////////////
+
+void CMultiThreadedLister::AccumulateTotals (shared_ptr<CDirectoryInfo> pDirInfo, SListingTotals & totals)
+{
+    lock_guard<mutex> lock (pDirInfo->m_mutex);
+
+    totals.m_cFiles                  += pDirInfo->m_cFiles;
+    totals.m_cDirectories            += pDirInfo->m_cSubDirectories;
+    totals.m_uliFileBytes.QuadPart   += pDirInfo->m_uliBytesUsed.QuadPart;
+    totals.m_cStreams                += pDirInfo->m_cStreams;
+    totals.m_uliStreamBytes.QuadPart += pDirInfo->m_uliStreamBytesUsed.QuadPart;
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CMultiThreadedLister::ProcessChildren
+//
+//  Recursively processes child directories
+//
+////////////////////////////////////////////////////////////////////////////////
+
+HRESULT CMultiThreadedLister::ProcessChildren (shared_ptr<CDirectoryInfo> pDirInfo,
+                                               const CDriveInfo & driveInfo,
+                                               IResultsDisplayer & displayer,
+                                               SListingTotals & totals)
+{
+    HRESULT hr = S_OK;
+
     for (const auto & pChild : pDirInfo->m_vChildren)
     {
         if (StopRequested())
@@ -395,8 +529,6 @@ HRESULT CMultiThreadedLister::PrintDirectoryTree (shared_ptr<CDirectoryInfo> pDi
                                  totals);
         IGNORE_RETURN_VALUE (hr, S_OK);
     }
-
-
 
 Error:
     return hr;

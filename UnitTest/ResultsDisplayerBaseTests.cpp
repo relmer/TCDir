@@ -33,8 +33,8 @@ namespace UnitTest
             {
                 DisplayerProbe(std::shared_ptr<CCommandLine> a, std::shared_ptr<CConsole> b, std::shared_ptr<CConfig> c)
                     : CResultsDisplayerWithHeaderAndFooter(a, b, c) {}
-                void  DisplayFileResults(const CDirectoryInfo &) override {}
-                LPCWSTR WrapFormat(ULONGLONG n) { return FormatNumberWithSeparators(n); }
+                void    DisplayFileResults(const CDirectoryInfo &) override {}
+                wstring WrapFormat(ULONGLONG n) { return FormatNumberWithSeparators(n); }
             };
 
             auto cmd = std::make_shared<CCommandLine>();
