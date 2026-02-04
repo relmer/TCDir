@@ -53,3 +53,15 @@ jobs:
           name: tcdir-arm64-${{ matrix.configuration }}
           path: ARM64/${{ matrix.configuration }}/TCDir.exe
           retention-days: 30
+
+  analyze:
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Add MSBuild to PATH
+        uses: microsoft/setup-msbuild@v2
+
+      - name: Build with Code Analysis
+        run: msbuild TCDir.sln -p:Configuration=Release -p:Platform=x64 -p:PlatformToolset=v143 -p:PostBuildEventUseInBuild=false -p:EnableCppCoreCheck=true -p:RunCodeAnalysis=true -p:CodeAnalysisTreatWarningsAsErrors=true

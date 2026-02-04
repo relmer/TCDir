@@ -54,7 +54,9 @@ param(
     [string]$Platform = 'Auto',
 
     [ValidateSet('Build', 'Clean', 'Rebuild', 'BuildAllRelease', 'CleanAll', 'RebuildAllRelease')]
-    [string]$Target = 'Build'
+    [string]$Target = 'Build',
+
+    [switch]$RunCodeAnalysis
 )
 
 # Resolve 'Auto' platform to actual architecture
@@ -279,6 +281,11 @@ try {
             "-p:Platform=$Platform",
             "-p:PreferredToolArchitecture=$preferredArch"
         )
+
+        if ($RunCodeAnalysis) {
+            $msbuildArgs += '-p:EnableCppCoreCheck=true'
+            $msbuildArgs += '-p:RunCodeAnalysis=true'
+        }
 
         if ($Target -ne 'Build') {
             $msbuildArgs += "-t:$Target"
