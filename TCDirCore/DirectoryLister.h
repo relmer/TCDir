@@ -45,10 +45,10 @@ protected:
                                                 const filesystem::path & dirPath, 
                                                 const filesystem::path & fileSpec);
 
-    void    AddMatchToList                     (const WIN32_FIND_DATA & wfd, CDirectoryInfo * pdi, SListingTotals * pTotals);
-    void    HandleDirectoryMatch               (size_t & cchFileName, CDirectoryInfo * pdi, SListingTotals * pTotals);
-    void    HandleFileMatch                    (const WIN32_FIND_DATA & wfd, FileInfo & fileEntry, CDirectoryInfo * pdi, SListingTotals * pTotals);
-    HRESULT HandleFileMatchStreams             (const WIN32_FIND_DATA & wfd, FileInfo & fileEntry, CDirectoryInfo * pdi, SListingTotals * pTotals);
+    void    AddMatchToList                     (const WIN32_FIND_DATA & wfd, CDirectoryInfo & di, SListingTotals * pTotals);
+    void    HandleDirectoryMatch               (size_t & cchFileName, CDirectoryInfo & di, SListingTotals * pTotals);
+    void    HandleFileMatch                    (const WIN32_FIND_DATA & wfd, FileInfo & fileEntry, CDirectoryInfo & di, SListingTotals * pTotals);
+    HRESULT HandleFileMatchStreams             (const WIN32_FIND_DATA & wfd, FileInfo & fileEntry, CDirectoryInfo & di, SListingTotals * pTotals);
 
 
 

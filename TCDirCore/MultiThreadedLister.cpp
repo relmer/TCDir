@@ -208,7 +208,7 @@ HRESULT CMultiThreadedLister::PerformEnumeration (shared_ptr<CDirectoryInfo> pDi
                 CFlag::IsNotSet (wfd.dwFileAttributes, m_cmdLinePtr->m_dwAttributesExcluded))
             {
                 lock_guard<mutex> lock (pDirInfo->m_mutex);
-                AddMatchToList (wfd, pDirInfo.get(), nullptr);
+                AddMatchToList (wfd, *pDirInfo, nullptr);
             }
 
         } 

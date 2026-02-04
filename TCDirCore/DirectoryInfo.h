@@ -14,8 +14,8 @@
 
 struct SStreamInfo
 {
-    wstring        m_strName;   // Stream name (e.g., ":hidden", already stripped of :$DATA suffix)
-    LARGE_INTEGER  m_liSize;    // Stream size
+    wstring        m_strName;       // Stream name (e.g., ":hidden", already stripped of :$DATA suffix)
+    LARGE_INTEGER  m_liSize = {};   // Stream size
 };
 
 

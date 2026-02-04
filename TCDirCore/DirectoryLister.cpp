@@ -240,7 +240,7 @@ HRESULT CDirectoryLister::CollectMatchingFilesAndDirectories (const std::filesys
                 if (CFlag::IsSet (wfd.dwFileAttributes, m_cmdLinePtr->m_dwAttributesRequired) &&
                     CFlag::IsNotSet (wfd.dwFileAttributes, m_cmdLinePtr->m_dwAttributesExcluded))
                 {
-                    AddMatchToList (wfd, &di, &m_totals);
+                    AddMatchToList (wfd, di, &m_totals);
                 }
             }
 
@@ -361,7 +361,7 @@ Error:
 //
 ////////////////////////////////////////////////////////////////////////////////  
 
-void CDirectoryLister::AddMatchToList (const WIN32_FIND_DATA & wfd, __in CDirectoryInfo * pdi, SListingTotals * pTotals)
+void CDirectoryLister::AddMatchToList (const WIN32_FIND_DATA & wfd, CDirectoryInfo & di, SListingTotals * pTotals)
 {
     size_t   cchFileName = 0; 
     FileInfo fileEntry     (wfd);
@@ -375,22 +375,22 @@ void CDirectoryLister::AddMatchToList (const WIN32_FIND_DATA & wfd, __in CDirect
     
     if (CFlag::IsSet (wfd.dwFileAttributes, FILE_ATTRIBUTE_DIRECTORY))
     {
-        HandleDirectoryMatch (cchFileName, pdi, pTotals);
+        HandleDirectoryMatch (cchFileName, di, pTotals);
     }
     else
     {
-        HandleFileMatch (wfd, fileEntry, pdi, pTotals);
+        HandleFileMatch (wfd, fileEntry, di, pTotals);
     }            
 
     if (m_cmdLinePtr->m_fWideListing)
     {
-        if (cchFileName > pdi->m_cchLargestFileName)
+        if (cchFileName > di.m_cchLargestFileName)
         {
-            pdi->m_cchLargestFileName = cchFileName;
+            di.m_cchLargestFileName = cchFileName;
         }
     }
     
-    pdi->m_vMatches.push_back (move (fileEntry));
+    di.m_vMatches.push_back (move (fileEntry));
 }
 
 
@@ -405,7 +405,7 @@ void CDirectoryLister::AddMatchToList (const WIN32_FIND_DATA & wfd, __in CDirect
 //
 ////////////////////////////////////////////////////////////////////////////////  
 
-void CDirectoryLister::HandleDirectoryMatch (size_t & cchFileName, CDirectoryInfo * pdi, SListingTotals * pTotals)
+void CDirectoryLister::HandleDirectoryMatch (size_t & cchFileName, CDirectoryInfo & di, SListingTotals * pTotals)
 {
     //
     // In wide directory listings, directories are shown inside brackets
@@ -417,7 +417,7 @@ void CDirectoryLister::HandleDirectoryMatch (size_t & cchFileName, CDirectoryInf
         cchFileName += 2;  
     }
     
-    ++pdi->m_cSubDirectories;
+    ++di.m_cSubDirectories;
 
     if (pTotals)
     {
@@ -437,7 +437,7 @@ void CDirectoryLister::HandleDirectoryMatch (size_t & cchFileName, CDirectoryInf
 //
 ////////////////////////////////////////////////////////////////////////////////  
 
-void CDirectoryLister::HandleFileMatch (const WIN32_FIND_DATA & wfd, FileInfo & fileEntry, CDirectoryInfo * pdi, SListingTotals * pTotals)
+void CDirectoryLister::HandleFileMatch (const WIN32_FIND_DATA & wfd, FileInfo & fileEntry, CDirectoryInfo & di, SListingTotals * pTotals)
 {
     HRESULT        hr          = S_OK;
     ULARGE_INTEGER uliFileSize = { 0 };
@@ -451,13 +451,13 @@ void CDirectoryLister::HandleFileMatch (const WIN32_FIND_DATA & wfd, FileInfo & 
     uliFileSize.LowPart  = wfd.nFileSizeLow;
     uliFileSize.HighPart = wfd.nFileSizeHigh;
     
-    if (uliFileSize.QuadPart > pdi->m_uliLargestFileSize.QuadPart)
+    if (uliFileSize.QuadPart > di.m_uliLargestFileSize.QuadPart)
     {
-        pdi->m_uliLargestFileSize = uliFileSize;
+        di.m_uliLargestFileSize = uliFileSize;
     }
     
-    pdi->m_uliBytesUsed.QuadPart += uliFileSize.QuadPart;        
-    ++pdi->m_cFiles;
+    di.m_uliBytesUsed.QuadPart += uliFileSize.QuadPart;        
+    ++di.m_cFiles;
 
     if (pTotals)
     {
@@ -471,7 +471,7 @@ void CDirectoryLister::HandleFileMatch (const WIN32_FIND_DATA & wfd, FileInfo & 
 
     if (m_cmdLinePtr->m_fShowStreams)
     {
-        hr = HandleFileMatchStreams (wfd, fileEntry, pdi, pTotals);
+        hr = HandleFileMatchStreams (wfd, fileEntry, di, pTotals);
         IGNORE_RETURN_VALUE (hr, S_OK);
     }
 }
@@ -488,10 +488,10 @@ void CDirectoryLister::HandleFileMatch (const WIN32_FIND_DATA & wfd, FileInfo & 
 //
 ////////////////////////////////////////////////////////////////////////////////  
 
-HRESULT CDirectoryLister::HandleFileMatchStreams (const WIN32_FIND_DATA & wfd, FileInfo & fileEntry, CDirectoryInfo * pdi, SListingTotals * pTotals)
+HRESULT CDirectoryLister::HandleFileMatchStreams (const WIN32_FIND_DATA & wfd, FileInfo & fileEntry, CDirectoryInfo & di, SListingTotals * pTotals)
 {
     HRESULT                hr         = S_OK;
-    filesystem::path       fullPath   = pdi->m_dirPath / wfd.cFileName;
+    filesystem::path       fullPath   = di.m_dirPath / wfd.cFileName;
     WIN32_FIND_STREAM_DATA streamData = {};
     UniqueFindHandle       hFind;
 
@@ -512,13 +512,13 @@ HRESULT CDirectoryLister::HandleFileMatchStreams (const WIN32_FIND_DATA & wfd, F
             continue;
         }
 
-        if (static_cast<ULONGLONG>(streamData.StreamSize.QuadPart) > pdi->m_uliLargestFileSize.QuadPart)
+        if (static_cast<ULONGLONG>(streamData.StreamSize.QuadPart) > di.m_uliLargestFileSize.QuadPart)
         {
-            pdi->m_uliLargestFileSize.QuadPart = streamData.StreamSize.QuadPart;
+            di.m_uliLargestFileSize.QuadPart = streamData.StreamSize.QuadPart;
         }
 
-        ++pdi->m_cStreams;
-        pdi->m_uliStreamBytesUsed.QuadPart += streamData.StreamSize.QuadPart;
+        ++di.m_cStreams;
+        di.m_uliStreamBytesUsed.QuadPart += streamData.StreamSize.QuadPart;
 
         // Track global stream totals for recursive summary
         if (pTotals)
