@@ -51,7 +51,7 @@ namespace UnitTest
             ASSERT(TRUE);
             
             // If we get here, the assertion passed as expected
-            Assert::IsTrue(true, L"EHM assertion passed when condition was true");
+            Assert::IsTrue (true, L"EHM assertion passed when condition was true");
         }
 
 
@@ -66,8 +66,10 @@ namespace UnitTest
             auto con = std::make_shared<CConsole>();
             
             HRESULT hr = con->Initialize(cfg);
-            Assert::IsTrue(SUCCEEDED(hr), L"CConsole::Initialize should succeed");
+            Assert::IsTrue (SUCCEEDED(hr), L"CConsole::Initialize should succeed");
         }
 
     };
 }
+
+

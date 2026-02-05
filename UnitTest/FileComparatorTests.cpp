@@ -46,13 +46,13 @@ namespace UnitTest
             fileSmall.nFileSizeHigh = 0; fileSmall.nFileSizeLow = 100;
             fileLarge.nFileSizeHigh = 0; fileLarge.nFileSizeLow = 200;
 
-            Assert::IsTrue(comp(fileSmall, fileLarge));
-            Assert::IsFalse(comp(fileLarge, fileSmall));
+            Assert::IsTrue (comp(fileSmall, fileLarge));
+            Assert::IsFalse (comp(fileLarge, fileSmall));
 
             cmd->m_sortdirection = CCommandLine::ESortDirection::SD_DESCENDING;
 
-            Assert::IsFalse(comp(fileSmall, fileLarge));
-            Assert::IsTrue(comp(fileLarge, fileSmall));
+            Assert::IsFalse (comp(fileSmall, fileLarge));
+            Assert::IsTrue (comp(fileLarge, fileSmall));
         }
 
 
@@ -76,8 +76,8 @@ namespace UnitTest
             entryDir.dwFileAttributes  = FILE_ATTRIBUTE_DIRECTORY;
             entryFile.dwFileAttributes = 0;
 
-            Assert::IsTrue(comp(entryDir, entryFile));
-            Assert::IsFalse(comp(entryFile, entryDir));
+            Assert::IsTrue (comp(entryDir, entryFile));
+            Assert::IsFalse (comp(entryFile, entryDir));
         }
 
 
@@ -108,8 +108,8 @@ namespace UnitTest
 
             // Even though direction is DESC for primary (name), because names are equal,
             // comparison falls back, and reverse should NOT apply. Smaller comes first.
-            Assert::IsTrue(comp(a, b));
-            Assert::IsFalse(comp(b, a));
+            Assert::IsTrue (comp(a, b));
+            Assert::IsFalse (comp(b, a));
         }
 
 
@@ -135,8 +135,8 @@ namespace UnitTest
             older.ftLastWriteTime.dwHighDateTime = 0; older.ftLastWriteTime.dwLowDateTime = 100;
             newer.ftLastWriteTime.dwHighDateTime = 0; newer.ftLastWriteTime.dwLowDateTime = 200;
 
-            Assert::IsTrue(comp(older, newer));
-            Assert::IsFalse(comp(newer, older));
+            Assert::IsTrue (comp(older, newer));
+            Assert::IsFalse (comp(newer, older));
         }
 
 
@@ -164,8 +164,8 @@ namespace UnitTest
             older.ftLastWriteTime.dwHighDateTime  = 0; older.ftLastWriteTime.dwLowDateTime  = 200;  // Intentionally reversed
             newer.ftLastWriteTime.dwHighDateTime  = 0; newer.ftLastWriteTime.dwLowDateTime  = 100;
 
-            Assert::IsTrue(comp(older, newer));
-            Assert::IsFalse(comp(newer, older));
+            Assert::IsTrue (comp(older, newer));
+            Assert::IsFalse (comp(newer, older));
         }
 
 
@@ -193,8 +193,8 @@ namespace UnitTest
             older.ftLastWriteTime.dwHighDateTime  = 0; older.ftLastWriteTime.dwLowDateTime  = 200;  // Intentionally reversed
             newer.ftLastWriteTime.dwHighDateTime  = 0; newer.ftLastWriteTime.dwLowDateTime  = 100;
 
-            Assert::IsTrue(comp(older, newer));
-            Assert::IsFalse(comp(newer, older));
+            Assert::IsTrue (comp(older, newer));
+            Assert::IsFalse (comp(newer, older));
         }
 
 
@@ -220,9 +220,11 @@ namespace UnitTest
             newer.ftCreationTime.dwHighDateTime = 0; newer.ftCreationTime.dwLowDateTime = 200;
 
             // Descending: newer should come before older
-            Assert::IsFalse(comp(older, newer));
-            Assert::IsTrue(comp(newer, older));
+            Assert::IsFalse (comp(older, newer));
+            Assert::IsTrue (comp(newer, older));
         }
 
     };
 }
+
+

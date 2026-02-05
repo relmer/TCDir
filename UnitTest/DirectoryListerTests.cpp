@@ -32,11 +32,13 @@ namespace UnitTest
         TEST_METHOD(IsDotsRecognition)
         {
             // IsDots is now static, can call directly
-            Assert::IsTrue(CDirectoryLister::IsDots(L"."));
-            Assert::IsTrue(CDirectoryLister::IsDots(L".."));
-            Assert::IsFalse(CDirectoryLister::IsDots(L".git"));
-            Assert::IsFalse(CDirectoryLister::IsDots(L"file.txt"));
+            Assert::IsTrue (CDirectoryLister::IsDots(L"."));
+            Assert::IsTrue (CDirectoryLister::IsDots(L".."));
+            Assert::IsFalse (CDirectoryLister::IsDots(L".git"));
+            Assert::IsFalse (CDirectoryLister::IsDots(L"file.txt"));
         }
 
     };
 }
+
+

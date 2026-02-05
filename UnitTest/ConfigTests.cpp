@@ -31,7 +31,7 @@ namespace UnitTest
         virtual bool TryGetEnvironmentVariable (LPCWSTR pszName, wstring & value) const override
         {
             auto iter = m_map.find (pszName);
-            if (iter == m_map.end ())
+            if (iter == m_map.end())
             {
                 value.clear();
                 return false;
@@ -107,8 +107,8 @@ namespace UnitTest
                 WORD    value = 0;
                 HRESULT hr    = config.ParseColorName (colorName, isBackground, value);
 
-                Assert::AreEqual((HRESULT)S_OK, hr);
-                Assert::AreEqual(expected, value);
+                Assert::AreEqual ((HRESULT)S_OK, hr);
+                Assert::AreEqual (expected, value);
             };
 
             AssertParseColorName (L"Black"sv,        false, (WORD)FC_Black);
@@ -143,8 +143,8 @@ namespace UnitTest
                 WORD    value = 0;
                 HRESULT hr    = config.ParseColorName (colorName, isBackground, value);
 
-                Assert::AreEqual((HRESULT)S_OK, hr);
-                Assert::AreEqual(expected, value);
+                Assert::AreEqual ((HRESULT)S_OK, hr);
+                Assert::AreEqual (expected, value);
             };
 
             AssertParseColorName (L"Black"sv,        true, (WORD)BC_Black);
@@ -178,20 +178,20 @@ namespace UnitTest
             HRESULT hr    = S_OK;
 
             hr = config.ParseColorName (L"YELLOW"sv, false, value);
-            Assert::AreEqual((HRESULT)S_OK, hr);
-            Assert::AreEqual((WORD)FC_Yellow, value);
+            Assert::AreEqual ((HRESULT)S_OK, hr);
+            Assert::AreEqual ((WORD)FC_Yellow, value);
 
             hr = config.ParseColorName (L"yellow"sv, false, value);
-            Assert::AreEqual((HRESULT)S_OK, hr);
-            Assert::AreEqual((WORD)FC_Yellow, value);
+            Assert::AreEqual ((HRESULT)S_OK, hr);
+            Assert::AreEqual ((WORD)FC_Yellow, value);
 
             hr = config.ParseColorName (L"YeLLoW"sv, false, value);
-            Assert::AreEqual((HRESULT)S_OK, hr);
-            Assert::AreEqual((WORD)FC_Yellow, value);
+            Assert::AreEqual ((HRESULT)S_OK, hr);
+            Assert::AreEqual ((WORD)FC_Yellow, value);
 
             hr = config.ParseColorName (L"yELLOw"sv, false, value);
-            Assert::AreEqual((HRESULT)S_OK, hr);
-            Assert::AreEqual((WORD)FC_Yellow, value);
+            Assert::AreEqual ((HRESULT)S_OK, hr);
+            Assert::AreEqual ((WORD)FC_Yellow, value);
         }
 
 
@@ -206,24 +206,24 @@ namespace UnitTest
             HRESULT hr    = S_OK;
 
             hr = config.ParseColorName (L"InvalidColor"sv,  false, value);
-            Assert::AreEqual((HRESULT)E_INVALIDARG, hr);
-            Assert::AreEqual((WORD)0, value);
+            Assert::AreEqual ((HRESULT)E_INVALIDARG, hr);
+            Assert::AreEqual ((WORD)0, value);
 
             hr = config.ParseColorName (L""sv,              false, value);
-            Assert::AreEqual((HRESULT)E_INVALIDARG, hr);
-            Assert::AreEqual((WORD)0, value);
+            Assert::AreEqual ((HRESULT)E_INVALIDARG, hr);
+            Assert::AreEqual ((WORD)0, value);
 
             hr = config.ParseColorName (L"Purple"sv,        false, value);
-            Assert::AreEqual((HRESULT)E_INVALIDARG, hr);
-            Assert::AreEqual((WORD)0, value);
+            Assert::AreEqual ((HRESULT)E_INVALIDARG, hr);
+            Assert::AreEqual ((WORD)0, value);
 
             hr = config.ParseColorName (L"Orange"sv,        false, value);
-            Assert::AreEqual((HRESULT)E_INVALIDARG, hr);
-            Assert::AreEqual((WORD)0, value);
+            Assert::AreEqual ((HRESULT)E_INVALIDARG, hr);
+            Assert::AreEqual ((WORD)0, value);
 
             hr = config.ParseColorName (L"123"sv,           false, value);
-            Assert::AreEqual((HRESULT)E_INVALIDARG, hr);
-            Assert::AreEqual((WORD)0, value);
+            Assert::AreEqual ((HRESULT)E_INVALIDARG, hr);
+            Assert::AreEqual ((WORD)0, value);
         }
 
 
@@ -236,8 +236,8 @@ namespace UnitTest
             
             WORD    result = 0;
             HRESULT hr     = config.ParseColorSpec (L"Yellow"sv, result);
-            Assert::AreEqual((HRESULT)S_OK, hr);
-            Assert::AreEqual((WORD)FC_Yellow, result);
+            Assert::AreEqual ((HRESULT)S_OK, hr);
+            Assert::AreEqual ((WORD)FC_Yellow, result);
         }
 
 
@@ -250,12 +250,12 @@ namespace UnitTest
             
             WORD    result = 0;
             HRESULT hr     = config.ParseColorSpec (L"  Yellow"sv, result);
-            Assert::AreEqual((HRESULT)S_OK, hr);
-            Assert::AreEqual((WORD)FC_Yellow, result);
+            Assert::AreEqual ((HRESULT)S_OK, hr);
+            Assert::AreEqual ((WORD)FC_Yellow, result);
             
             hr = config.ParseColorSpec (L"    Yellow"sv, result);
-            Assert::AreEqual((HRESULT)S_OK, hr);
-            Assert::AreEqual((WORD)FC_Yellow, result);
+            Assert::AreEqual ((HRESULT)S_OK, hr);
+            Assert::AreEqual ((WORD)FC_Yellow, result);
         }
 
 
@@ -268,12 +268,12 @@ namespace UnitTest
             
             WORD    result = 0;
             HRESULT hr     = config.ParseColorSpec (L"Yellow  "sv, result);
-            Assert::AreEqual((HRESULT)S_OK, hr);
-            Assert::AreEqual((WORD)FC_Yellow, result);
+            Assert::AreEqual ((HRESULT)S_OK, hr);
+            Assert::AreEqual ((WORD)FC_Yellow, result);
             
             hr = config.ParseColorSpec (L"Yellow    "sv, result);
-            Assert::AreEqual((HRESULT)S_OK, hr);
-            Assert::AreEqual((WORD)FC_Yellow, result);
+            Assert::AreEqual ((HRESULT)S_OK, hr);
+            Assert::AreEqual ((WORD)FC_Yellow, result);
         }
 
 
@@ -286,12 +286,12 @@ namespace UnitTest
             
             WORD    result = 0;
             HRESULT hr     = config.ParseColorSpec (L"  Yellow  "sv, result);
-            Assert::AreEqual((HRESULT)S_OK, hr);
-            Assert::AreEqual((WORD)FC_Yellow, result);
+            Assert::AreEqual ((HRESULT)S_OK, hr);
+            Assert::AreEqual ((WORD)FC_Yellow, result);
             
             hr = config.ParseColorSpec (L"    Yellow    "sv, result);
-            Assert::AreEqual((HRESULT)S_OK, hr);
-            Assert::AreEqual((WORD)FC_Yellow, result);
+            Assert::AreEqual ((HRESULT)S_OK, hr);
+            Assert::AreEqual ((WORD)FC_Yellow, result);
         }
 
 
@@ -304,9 +304,9 @@ namespace UnitTest
             
             WORD    result = 0;
             HRESULT hr     = config.ParseColorSpec (L"Yellow on Blue"sv, result);
-            Assert::AreEqual((HRESULT)S_OK, hr);
+            Assert::AreEqual ((HRESULT)S_OK, hr);
             WORD expected = FC_Yellow | BC_Blue;
-            Assert::AreEqual(expected, result);
+            Assert::AreEqual (expected, result);
         }
 
 
@@ -321,12 +321,12 @@ namespace UnitTest
             
             WORD    result = 0;
             HRESULT hr     = config.ParseColorSpec (L"  LightGreen  on  Red  "sv, result);
-            Assert::AreEqual((HRESULT)S_OK, hr);
-            Assert::AreEqual(expected, result);
+            Assert::AreEqual ((HRESULT)S_OK, hr);
+            Assert::AreEqual (expected, result);
                         
             hr = config.ParseColorSpec (L"    LightGreen    on    Red    "sv, result);
-            Assert::AreEqual((HRESULT)S_OK, hr);
-            Assert::AreEqual(expected, result);
+            Assert::AreEqual ((HRESULT)S_OK, hr);
+            Assert::AreEqual (expected, result);
         }
 
 
@@ -343,24 +343,24 @@ namespace UnitTest
             HRESULT hr     = S_OK;
 
             hr = config.ParseColorSpec (L"White on Black"sv, result);
-            Assert::AreEqual((HRESULT)S_OK, hr);
-            Assert::AreEqual(expected, result);
+            Assert::AreEqual ((HRESULT)S_OK, hr);
+            Assert::AreEqual (expected, result);
 
             hr = config.ParseColorSpec (L"White ON Black"sv, result);
-            Assert::AreEqual((HRESULT)S_OK, hr);
-            Assert::AreEqual(expected, result);
+            Assert::AreEqual ((HRESULT)S_OK, hr);
+            Assert::AreEqual (expected, result);
 
             hr = config.ParseColorSpec (L"White On Black"sv, result);
-            Assert::AreEqual((HRESULT)S_OK, hr);
-            Assert::AreEqual(expected, result);
+            Assert::AreEqual ((HRESULT)S_OK, hr);
+            Assert::AreEqual (expected, result);
 
             hr = config.ParseColorSpec (L"White oN Black"sv, result);
-            Assert::AreEqual((HRESULT)S_OK, hr);
-            Assert::AreEqual(expected, result);
+            Assert::AreEqual ((HRESULT)S_OK, hr);
+            Assert::AreEqual (expected, result);
 
             hr = config.ParseColorSpec (L"white ON black"sv, result);
-            Assert::AreEqual((HRESULT)S_OK, hr);
-            Assert::AreEqual(expected, result);
+            Assert::AreEqual ((HRESULT)S_OK, hr);
+            Assert::AreEqual (expected, result);
         }
 
 
@@ -374,16 +374,16 @@ namespace UnitTest
             // Tab characters should NOT be treated as whitespace
             WORD    result = 0;
             HRESULT hr     = config.ParseColorSpec (L"\tYellow"sv, result);
-            Assert::AreEqual((HRESULT)E_INVALIDARG, hr);
-            Assert::AreEqual((WORD)0, result);
+            Assert::AreEqual ((HRESULT)E_INVALIDARG, hr);
+            Assert::AreEqual ((WORD)0, result);
             
             hr = config.ParseColorSpec (L"Yellow\t"sv, result);
-            Assert::AreEqual((HRESULT)E_INVALIDARG, hr);
-            Assert::AreEqual((WORD)0, result);
+            Assert::AreEqual ((HRESULT)E_INVALIDARG, hr);
+            Assert::AreEqual ((WORD)0, result);
             
             hr = config.ParseColorSpec (L"\tYellow\t"sv, result);
-            Assert::AreEqual((HRESULT)E_INVALIDARG, hr);
-            Assert::AreEqual((WORD)0, result);
+            Assert::AreEqual ((HRESULT)E_INVALIDARG, hr);
+            Assert::AreEqual ((WORD)0, result);
         }
 
 
@@ -395,8 +395,8 @@ namespace UnitTest
             ConfigProbe config;
             
             auto result = config.TrimWhitespace(L"test"sv);
-            Assert::AreEqual((size_t)4, result.length());
-            Assert::AreEqual(L't', result[0]);
+            Assert::AreEqual ((size_t)4, result.length());
+            Assert::AreEqual (L't', result[0]);
         }
 
 
@@ -408,10 +408,10 @@ namespace UnitTest
             ConfigProbe config;
             
             auto result = config.TrimWhitespace(L"  test"sv);
-            Assert::AreEqual((size_t)4, result.length());
+            Assert::AreEqual ((size_t)4, result.length());
             
             result = config.TrimWhitespace(L"    test"sv);
-            Assert::AreEqual((size_t)4, result.length());
+            Assert::AreEqual ((size_t)4, result.length());
         }
 
 
@@ -423,10 +423,10 @@ namespace UnitTest
             ConfigProbe config;
             
             auto result = config.TrimWhitespace(L"test  "sv);
-            Assert::AreEqual((size_t)4, result.length());
+            Assert::AreEqual ((size_t)4, result.length());
             
             result = config.TrimWhitespace(L"test    "sv);
-            Assert::AreEqual((size_t)4, result.length());
+            Assert::AreEqual ((size_t)4, result.length());
         }
 
 
@@ -438,10 +438,10 @@ namespace UnitTest
             ConfigProbe config;
             
             auto result = config.TrimWhitespace(L"  test  "sv);
-            Assert::AreEqual((size_t)4, result.length());
+            Assert::AreEqual ((size_t)4, result.length());
             
             result = config.TrimWhitespace(L"    test    "sv);
-            Assert::AreEqual((size_t)4, result.length());
+            Assert::AreEqual ((size_t)4, result.length());
         }
 
 
@@ -452,7 +452,7 @@ namespace UnitTest
         {
             ConfigProbe config;
             
-            Assert::IsTrue(config.TrimWhitespace(L""sv).empty());
+            Assert::IsTrue (config.TrimWhitespace(L""sv).empty());
         }
 
 
@@ -463,7 +463,7 @@ namespace UnitTest
         {
             ConfigProbe config;
             
-            Assert::IsTrue(config.TrimWhitespace(L"   "sv).empty());
+            Assert::IsTrue (config.TrimWhitespace(L"   "sv).empty());
         }
 
 
@@ -476,18 +476,18 @@ namespace UnitTest
             
             // Tab characters should NOT be treated as whitespace
             auto result = config.TrimWhitespace(L"\ttest"sv);
-            Assert::AreEqual((size_t)5, result.length());
-            Assert::AreEqual(L'\t', result[0]);
+            Assert::AreEqual ((size_t)5, result.length());
+            Assert::AreEqual (L'\t', result[0]);
             
             result = config.TrimWhitespace(L"test\t"sv);
-            Assert::AreEqual((size_t)5, result.length());
-            Assert::AreEqual(L'\t', result[4]);
+            Assert::AreEqual ((size_t)5, result.length());
+            Assert::AreEqual (L'\t', result[4]);
             
             result = config.TrimWhitespace(L"\ttest\t"sv);
-            Assert::AreEqual((size_t)6, result.length());
+            Assert::AreEqual ((size_t)6, result.length());
             
             result = config.TrimWhitespace(L"\t\t"sv);
-            Assert::AreEqual((size_t)2, result.length());
+            Assert::AreEqual ((size_t)2, result.length());
         }
 
 
@@ -501,9 +501,9 @@ namespace UnitTest
             
             HRESULT hr = config.ParseKeyAndValue(L".cpp=Yellow"sv, keyView, valueView);
             
-            Assert::IsTrue(SUCCEEDED(hr));
-            Assert::AreEqual((size_t)4, keyView.length());
-            Assert::AreEqual((size_t)6, valueView.length());
+            Assert::IsTrue (SUCCEEDED(hr));
+            Assert::AreEqual ((size_t)4, keyView.length());
+            Assert::AreEqual ((size_t)6, valueView.length());
         }
 
 
@@ -517,9 +517,9 @@ namespace UnitTest
             
             HRESULT hr = config.ParseKeyAndValue(L"  .h  =  LightGreen  "sv, keyView, valueView);
             
-            Assert::IsTrue(SUCCEEDED(hr));
-            Assert::AreEqual((size_t)2, keyView.length());
-            Assert::AreEqual((size_t)10, valueView.length());
+            Assert::IsTrue (SUCCEEDED(hr));
+            Assert::AreEqual ((size_t)2, keyView.length());
+            Assert::AreEqual ((size_t)10, valueView.length());
         }
 
 
@@ -533,7 +533,7 @@ namespace UnitTest
             
             HRESULT hr = config.ParseKeyAndValue(L".cppYellow"sv, keyView, valueView);
             
-            Assert::IsFalse(SUCCEEDED(hr));
+            Assert::IsFalse (SUCCEEDED(hr));
         }
 
 
@@ -547,7 +547,7 @@ namespace UnitTest
             
             HRESULT hr = config.ParseKeyAndValue(L"=Yellow"sv, keyView, valueView);
             
-            Assert::IsFalse(SUCCEEDED(hr));
+            Assert::IsFalse (SUCCEEDED(hr));
         }
 
 
@@ -561,7 +561,7 @@ namespace UnitTest
             
             HRESULT hr = config.ParseKeyAndValue(L".cpp="sv, keyView, valueView);
             
-            Assert::IsFalse(SUCCEEDED(hr));
+            Assert::IsFalse (SUCCEEDED(hr));
         }
 
 
@@ -575,7 +575,7 @@ namespace UnitTest
             
             HRESULT hr = config.ParseKeyAndValue(L"   =   "sv, keyView, valueView);
             
-            Assert::IsFalse(SUCCEEDED(hr));
+            Assert::IsFalse (SUCCEEDED(hr));
         }
 
 
@@ -592,7 +592,7 @@ namespace UnitTest
             config.Initialize(FC_LightGrey);
             
             // Should succeed without error
-            Assert::IsTrue(true);
+            Assert::IsTrue (true);
         }
 
 
@@ -610,13 +610,13 @@ namespace UnitTest
             config.ApplyUserColorOverrides();
             
             // Verify new extensions were added
-            Assert::IsTrue(config.m_mapExtensionToTextAttr.contains(L".xyz"));
-            Assert::IsTrue(config.m_mapExtensionToTextAttr.contains(L".abc"));
-            Assert::IsTrue(config.m_mapExtensionToTextAttr.contains(L".test"));
+            Assert::IsTrue (config.m_mapExtensionToTextAttr.contains(L".xyz"));
+            Assert::IsTrue (config.m_mapExtensionToTextAttr.contains(L".abc"));
+            Assert::IsTrue (config.m_mapExtensionToTextAttr.contains(L".test"));
             
-            Assert::AreEqual((WORD)FC_Yellow, config.m_mapExtensionToTextAttr[L".xyz"]);
-            Assert::AreEqual((WORD)FC_LightBlue, config.m_mapExtensionToTextAttr[L".abc"]);
-            Assert::AreEqual((WORD)(FC_Red | BC_White), config.m_mapExtensionToTextAttr[L".test"]);
+            Assert::AreEqual ((WORD)FC_Yellow, config.m_mapExtensionToTextAttr[L".xyz"]);
+            Assert::AreEqual ((WORD)FC_LightBlue, config.m_mapExtensionToTextAttr[L".abc"]);
+            Assert::AreEqual ((WORD)(FC_Red | BC_White), config.m_mapExtensionToTextAttr[L".test"]);
         }
 
 
@@ -629,7 +629,7 @@ namespace UnitTest
             config.Initialize(FC_LightGrey);
             
             // .cpp defaults to FC_LightGreen in s_rgTextAttrs
-            Assert::AreEqual((WORD)FC_LightGreen, config.m_mapExtensionToTextAttr[L".cpp"]);
+            Assert::AreEqual ((WORD)FC_LightGreen, config.m_mapExtensionToTextAttr[L".cpp"]);
             
             // Override it
             config.SetEnvVar (TCDIR_ENV_VAR_NAME, L".cpp=Red on Yellow");
@@ -637,7 +637,7 @@ namespace UnitTest
             
             // Verify override took effect
             WORD expected = FC_Red | BC_Yellow;
-            Assert::AreEqual(expected, config.m_mapExtensionToTextAttr[L".cpp"]);
+            Assert::AreEqual (expected, config.m_mapExtensionToTextAttr[L".cpp"]);
         }
 
 
@@ -652,10 +652,10 @@ namespace UnitTest
             config.SetEnvVar (TCDIR_ENV_VAR_NAME, L".a=Red;.b=Blue;.c=Green;.d=Yellow");
             config.ApplyUserColorOverrides();
             
-            Assert::AreEqual((WORD)FC_Red, config.m_mapExtensionToTextAttr[L".a"]);
-            Assert::AreEqual((WORD)FC_Blue, config.m_mapExtensionToTextAttr[L".b"]);
-            Assert::AreEqual((WORD)FC_Green, config.m_mapExtensionToTextAttr[L".c"]);
-            Assert::AreEqual((WORD)FC_Yellow, config.m_mapExtensionToTextAttr[L".d"]);
+            Assert::AreEqual ((WORD)FC_Red, config.m_mapExtensionToTextAttr[L".a"]);
+            Assert::AreEqual ((WORD)FC_Blue, config.m_mapExtensionToTextAttr[L".b"]);
+            Assert::AreEqual ((WORD)FC_Green, config.m_mapExtensionToTextAttr[L".c"]);
+            Assert::AreEqual ((WORD)FC_Yellow, config.m_mapExtensionToTextAttr[L".d"]);
         }
 
 
@@ -672,10 +672,10 @@ namespace UnitTest
             config.ApplyUserColorOverrides();
             
             // Valid entries should be applied
-            Assert::IsTrue(config.m_mapExtensionToTextAttr.contains(L".cpp"));
-            Assert::IsTrue(config.m_mapExtensionToTextAttr.contains(L".h"));
-            Assert::AreEqual((WORD)FC_Yellow, config.m_mapExtensionToTextAttr[L".cpp"]);
-            Assert::AreEqual((WORD)FC_Blue, config.m_mapExtensionToTextAttr[L".h"]);
+            Assert::IsTrue (config.m_mapExtensionToTextAttr.contains(L".cpp"));
+            Assert::IsTrue (config.m_mapExtensionToTextAttr.contains(L".h"));
+            Assert::AreEqual ((WORD)FC_Yellow, config.m_mapExtensionToTextAttr[L".cpp"]);
+            Assert::AreEqual ((WORD)FC_Blue, config.m_mapExtensionToTextAttr[L".h"]);
         }
 
 
@@ -691,12 +691,12 @@ namespace UnitTest
             config.ApplyUserColorOverrides();
 
             // Foreground should still be applied
-            Assert::IsTrue(config.m_mapExtensionToTextAttr.contains(L".cpp"));
-            Assert::AreEqual((WORD)FC_White, config.m_mapExtensionToTextAttr[L".cpp"]);
+            Assert::IsTrue (config.m_mapExtensionToTextAttr.contains(L".cpp"));
+            Assert::AreEqual ((WORD)FC_White, config.m_mapExtensionToTextAttr[L".cpp"]);
 
             // Invalid background should produce a validation issue
             CConfig::ValidationResult result = config.ValidateEnvironmentVariable();
-            Assert::IsTrue(result.errors.size() == 1);
+            Assert::IsTrue (result.errors.size() == 1);
         }
 
 
@@ -711,11 +711,11 @@ namespace UnitTest
             config.SetEnvVar (TCDIR_ENV_VAR_NAME, L".cpp=Black on Magenta");
             config.ApplyUserColorOverrides();
 
-            Assert::IsTrue(config.m_mapExtensionToTextAttr.contains(L".cpp"));
-            Assert::AreEqual((WORD)(FC_Black | BC_Magenta), config.m_mapExtensionToTextAttr[L".cpp"]);
+            Assert::IsTrue (config.m_mapExtensionToTextAttr.contains(L".cpp"));
+            Assert::AreEqual ((WORD)(FC_Black | BC_Magenta), config.m_mapExtensionToTextAttr[L".cpp"]);
 
             CConfig::ValidationResult result = config.ValidateEnvironmentVariable();
-            Assert::IsTrue(result.errors.size() == 0);
+            Assert::IsTrue (result.errors.size() == 0);
         }
 
 
@@ -729,13 +729,13 @@ namespace UnitTest
             config.ClearEnvVar (TCDIR_ENV_VAR_NAME);
             config.Initialize(FC_LightGrey);
 
-            Assert::IsTrue(config.m_mapFileAttributesTextAttr.contains(FILE_ATTRIBUTE_HIDDEN));
-            Assert::AreEqual((WORD)FC_DarkGrey, config.m_mapFileAttributesTextAttr[FILE_ATTRIBUTE_HIDDEN].m_wAttr);
-            Assert::IsTrue(config.m_mapFileAttributesTextAttr[FILE_ATTRIBUTE_HIDDEN].m_source == CConfig::EAttributeSource::Default);
+            Assert::IsTrue (config.m_mapFileAttributesTextAttr.contains(FILE_ATTRIBUTE_HIDDEN));
+            Assert::AreEqual ((WORD)FC_DarkGrey, config.m_mapFileAttributesTextAttr[FILE_ATTRIBUTE_HIDDEN].m_wAttr);
+            Assert::IsTrue (config.m_mapFileAttributesTextAttr[FILE_ATTRIBUTE_HIDDEN].m_source == CConfig::EAttributeSource::Default);
 
-            Assert::IsTrue(config.m_mapFileAttributesTextAttr.contains(FILE_ATTRIBUTE_ENCRYPTED));
-            Assert::AreEqual((WORD)FC_LightGreen, config.m_mapFileAttributesTextAttr[FILE_ATTRIBUTE_ENCRYPTED].m_wAttr);
-            Assert::IsTrue(config.m_mapFileAttributesTextAttr[FILE_ATTRIBUTE_ENCRYPTED].m_source == CConfig::EAttributeSource::Default);
+            Assert::IsTrue (config.m_mapFileAttributesTextAttr.contains(FILE_ATTRIBUTE_ENCRYPTED));
+            Assert::AreEqual ((WORD)FC_LightGreen, config.m_mapFileAttributesTextAttr[FILE_ATTRIBUTE_ENCRYPTED].m_wAttr);
+            Assert::IsTrue (config.m_mapFileAttributesTextAttr[FILE_ATTRIBUTE_ENCRYPTED].m_source == CConfig::EAttributeSource::Default);
         }
 
 
@@ -749,12 +749,12 @@ namespace UnitTest
             config.SetEnvVar (TCDIR_ENV_VAR_NAME, L"AtTr:h=Red");
             config.Initialize(FC_LightGrey);
 
-            Assert::IsTrue(config.m_mapFileAttributesTextAttr.contains(FILE_ATTRIBUTE_HIDDEN));
-            Assert::AreEqual((WORD)FC_Red, config.m_mapFileAttributesTextAttr[FILE_ATTRIBUTE_HIDDEN].m_wAttr);
-            Assert::IsTrue(config.m_mapFileAttributesTextAttr[FILE_ATTRIBUTE_HIDDEN].m_source == CConfig::EAttributeSource::Environment);
+            Assert::IsTrue (config.m_mapFileAttributesTextAttr.contains(FILE_ATTRIBUTE_HIDDEN));
+            Assert::AreEqual ((WORD)FC_Red, config.m_mapFileAttributesTextAttr[FILE_ATTRIBUTE_HIDDEN].m_wAttr);
+            Assert::IsTrue (config.m_mapFileAttributesTextAttr[FILE_ATTRIBUTE_HIDDEN].m_source == CConfig::EAttributeSource::Environment);
 
             CConfig::ValidationResult result = config.ValidateEnvironmentVariable();
-            Assert::IsTrue(result.errors.size() == 0);
+            Assert::IsTrue (result.errors.size() == 0);
         }
 
 
@@ -772,11 +772,11 @@ namespace UnitTest
 
             wfd.dwFileAttributes = FILE_ATTRIBUTE_DIRECTORY | FILE_ATTRIBUTE_HIDDEN;
             wcscpy_s(wfd.cFileName, L"somedir");
-            Assert::AreEqual(expected, config.GetTextAttrForFile(wfd));
+            Assert::AreEqual (expected, config.GetTextAttrForFile(wfd));
 
             wfd.dwFileAttributes = FILE_ATTRIBUTE_HIDDEN;
             wcscpy_s(wfd.cFileName, L"foo.cpp");
-            Assert::AreEqual(expected, config.GetTextAttrForFile(wfd));
+            Assert::AreEqual (expected, config.GetTextAttrForFile(wfd));
         }
 
 
@@ -794,7 +794,7 @@ namespace UnitTest
             wfd.dwFileAttributes = FILE_ATTRIBUTE_HIDDEN | FILE_ATTRIBUTE_SYSTEM;
             wcscpy_s(wfd.cFileName, L"foo.txt");
 
-            Assert::AreEqual(static_cast<WORD>(FC_Red | BC_Blue), config.GetTextAttrForFile(wfd));
+            Assert::AreEqual (static_cast<WORD>(FC_Red | BC_Blue), config.GetTextAttrForFile(wfd));
         }
 
 
@@ -809,9 +809,9 @@ namespace UnitTest
             config.ProcessColorOverrideEntry(L".CPP=Yellow"sv);
             
             // Should be stored as lowercase
-            Assert::IsTrue(config.m_mapExtensionToTextAttr.contains(L".cpp"));
-            Assert::IsFalse(config.m_mapExtensionToTextAttr.contains(L".CPP"));
-            Assert::AreEqual((WORD)FC_Yellow, config.m_mapExtensionToTextAttr[L".cpp"]);
+            Assert::IsTrue (config.m_mapExtensionToTextAttr.contains(L".cpp"));
+            Assert::IsFalse (config.m_mapExtensionToTextAttr.contains(L".CPP"));
+            Assert::AreEqual ((WORD)FC_Yellow, config.m_mapExtensionToTextAttr[L".cpp"]);
         }
 
 
@@ -826,8 +826,8 @@ namespace UnitTest
             config.ProcessColorOverrideEntry(L".CpP=Blue"sv);
             config.ProcessColorOverrideEntry(L".HpP=Red"sv);
             
-            Assert::IsTrue(config.m_mapExtensionToTextAttr.contains(L".cpp"));
-            Assert::IsTrue(config.m_mapExtensionToTextAttr.contains(L".hpp"));
+            Assert::IsTrue (config.m_mapExtensionToTextAttr.contains(L".cpp"));
+            Assert::IsTrue (config.m_mapExtensionToTextAttr.contains(L".hpp"));
         }
 
 
@@ -846,11 +846,11 @@ namespace UnitTest
             config.ApplyUserColorOverrides();
             
             // Verify all entries
-            Assert::AreEqual((WORD)FC_LightGreen,            config.m_mapExtensionToTextAttr[L".cpp"]);
-            Assert::AreEqual((WORD)(FC_Yellow | BC_Blue),    config.m_mapExtensionToTextAttr[L".h"]);
-            Assert::AreEqual((WORD)FC_White,                 config.m_mapExtensionToTextAttr[L".txt"]);
-            Assert::AreEqual((WORD)(FC_LightRed | BC_Black), config.m_mapExtensionToTextAttr[L".log"]);
-            Assert::AreEqual((WORD)FC_Cyan,                  config.m_mapExtensionToTextAttr[L".xml"]);
+            Assert::AreEqual ((WORD)FC_LightGreen,            config.m_mapExtensionToTextAttr[L".cpp"]);
+            Assert::AreEqual ((WORD)(FC_Yellow | BC_Blue),    config.m_mapExtensionToTextAttr[L".h"]);
+            Assert::AreEqual ((WORD)FC_White,                 config.m_mapExtensionToTextAttr[L".txt"]);
+            Assert::AreEqual ((WORD)(FC_LightRed | BC_Black), config.m_mapExtensionToTextAttr[L".log"]);
+            Assert::AreEqual ((WORD)FC_Cyan,                  config.m_mapExtensionToTextAttr[L".xml"]);
         }
 
 
@@ -866,7 +866,7 @@ namespace UnitTest
             config.ApplyUserColorOverrides();
             
             // Should complete without error
-            Assert::IsTrue(true);
+            Assert::IsTrue (true);
         }
 
 
@@ -881,8 +881,8 @@ namespace UnitTest
             config.SetEnvVar (TCDIR_ENV_VAR_NAME, L".cpp=Yellow;.h=Blue;");
             config.ApplyUserColorOverrides();
             
-            Assert::IsTrue(config.m_mapExtensionToTextAttr.contains(L".cpp"));
-            Assert::IsTrue(config.m_mapExtensionToTextAttr.contains(L".h"));
+            Assert::IsTrue (config.m_mapExtensionToTextAttr.contains(L".cpp"));
+            Assert::IsTrue (config.m_mapExtensionToTextAttr.contains(L".h"));
         }
 
 
@@ -900,8 +900,8 @@ namespace UnitTest
             
             config.ProcessFileExtensionOverride(L".cpp"sv, FC_Yellow);
             
-            Assert::IsTrue(config.m_mapExtensionToTextAttr.contains(L".cpp"));
-            Assert::AreEqual((WORD)FC_Yellow, config.m_mapExtensionToTextAttr[L".cpp"]);
+            Assert::IsTrue (config.m_mapExtensionToTextAttr.contains(L".cpp"));
+            Assert::AreEqual ((WORD)FC_Yellow, config.m_mapExtensionToTextAttr[L".cpp"]);
         }
 
 
@@ -915,9 +915,9 @@ namespace UnitTest
             
             config.ProcessFileExtensionOverride(L".CPP"sv, FC_Red);
             
-            Assert::IsTrue(config.m_mapExtensionToTextAttr.contains(L".cpp"));
-            Assert::IsFalse(config.m_mapExtensionToTextAttr.contains(L".CPP"));
-            Assert::AreEqual((WORD)FC_Red, config.m_mapExtensionToTextAttr[L".cpp"]);
+            Assert::IsTrue (config.m_mapExtensionToTextAttr.contains(L".cpp"));
+            Assert::IsFalse (config.m_mapExtensionToTextAttr.contains(L".CPP"));
+            Assert::AreEqual ((WORD)FC_Red, config.m_mapExtensionToTextAttr[L".cpp"]);
         }
 
 
@@ -932,10 +932,10 @@ namespace UnitTest
             config.ProcessFileExtensionOverride(L".CpP"sv, FC_Blue);
             config.ProcessFileExtensionOverride(L".HpP"sv, FC_Green);
             
-            Assert::IsTrue(config.m_mapExtensionToTextAttr.contains(L".cpp"));
-            Assert::IsTrue(config.m_mapExtensionToTextAttr.contains(L".hpp"));
-            Assert::AreEqual((WORD)FC_Blue, config.m_mapExtensionToTextAttr[L".cpp"]);
-            Assert::AreEqual((WORD)FC_Green, config.m_mapExtensionToTextAttr[L".hpp"]);
+            Assert::IsTrue (config.m_mapExtensionToTextAttr.contains(L".cpp"));
+            Assert::IsTrue (config.m_mapExtensionToTextAttr.contains(L".hpp"));
+            Assert::AreEqual ((WORD)FC_Blue, config.m_mapExtensionToTextAttr[L".cpp"]);
+            Assert::AreEqual ((WORD)FC_Green, config.m_mapExtensionToTextAttr[L".hpp"]);
         }
 
 
@@ -950,7 +950,7 @@ namespace UnitTest
             WORD colorAttr = FC_Yellow | BC_Blue;
             config.ProcessFileExtensionOverride(L".txt"sv, colorAttr);
             
-            Assert::AreEqual(colorAttr, config.m_mapExtensionToTextAttr[L".txt"]);
+            Assert::AreEqual (colorAttr, config.m_mapExtensionToTextAttr[L".txt"]);
         }
 
 
@@ -966,9 +966,9 @@ namespace UnitTest
             config.ProcessFileExtensionOverride(L".h"sv, FC_LightBlue);
             config.ProcessFileExtensionOverride(L".txt"sv, FC_White);
             
-            Assert::AreEqual((WORD)FC_LightGreen, config.m_mapExtensionToTextAttr[L".cpp"]);
-            Assert::AreEqual((WORD)FC_LightBlue, config.m_mapExtensionToTextAttr[L".h"]);
-            Assert::AreEqual((WORD)FC_White, config.m_mapExtensionToTextAttr[L".txt"]);
+            Assert::AreEqual ((WORD)FC_LightGreen, config.m_mapExtensionToTextAttr[L".cpp"]);
+            Assert::AreEqual ((WORD)FC_LightBlue, config.m_mapExtensionToTextAttr[L".h"]);
+            Assert::AreEqual ((WORD)FC_White, config.m_mapExtensionToTextAttr[L".txt"]);
         }
 
 
@@ -987,8 +987,8 @@ namespace UnitTest
             WORD originalDate = config.m_rgAttributes[CConfig::EAttribute::Date];
             config.ProcessDisplayAttributeOverride(L'D', FC_Yellow, L"D=Yellow");
             
-            Assert::AreEqual((WORD)FC_Yellow, config.m_rgAttributes[CConfig::EAttribute::Date]);
-            Assert::AreNotEqual(originalDate, config.m_rgAttributes[CConfig::EAttribute::Date]);
+            Assert::AreEqual ((WORD)FC_Yellow, config.m_rgAttributes[CConfig::EAttribute::Date]);
+            Assert::AreNotEqual (originalDate, config.m_rgAttributes[CConfig::EAttribute::Date]);
         }
 
 
@@ -1002,7 +1002,7 @@ namespace UnitTest
             
             config.ProcessDisplayAttributeOverride(L'T', FC_Cyan, L"T=Cyan");
             
-            Assert::AreEqual((WORD)FC_Cyan, config.m_rgAttributes[CConfig::EAttribute::Time]);
+            Assert::AreEqual ((WORD)FC_Cyan, config.m_rgAttributes[CConfig::EAttribute::Time]);
         }
 
 
@@ -1016,7 +1016,7 @@ namespace UnitTest
             
             config.ProcessDisplayAttributeOverride(L'S', FC_Magenta, L"S=Magenta");
             
-            Assert::AreEqual((WORD)FC_Magenta, config.m_rgAttributes[CConfig::EAttribute::Size]);
+            Assert::AreEqual ((WORD)FC_Magenta, config.m_rgAttributes[CConfig::EAttribute::Size]);
         }
 
 
@@ -1030,7 +1030,7 @@ namespace UnitTest
             
             config.ProcessDisplayAttributeOverride(L'R', FC_Green, L"R=Green");
             
-            Assert::AreEqual((WORD)FC_Green, config.m_rgAttributes[CConfig::EAttribute::Directory]);
+            Assert::AreEqual ((WORD)FC_Green, config.m_rgAttributes[CConfig::EAttribute::Directory]);
         }
 
 
@@ -1044,7 +1044,7 @@ namespace UnitTest
             
             config.ProcessDisplayAttributeOverride(L'A', FC_LightRed, L"A=LightRed");
             
-            Assert::AreEqual((WORD)FC_LightRed, config.m_rgAttributes[CConfig::EAttribute::FileAttributePresent]);
+            Assert::AreEqual ((WORD)FC_LightRed, config.m_rgAttributes[CConfig::EAttribute::FileAttributePresent]);
         }
 
 
@@ -1058,7 +1058,7 @@ namespace UnitTest
             
             config.ProcessDisplayAttributeOverride(L'-', FC_DarkGrey, L"-=DarkGrey");
             
-            Assert::AreEqual((WORD)FC_DarkGrey, config.m_rgAttributes[CConfig::EAttribute::FileAttributeNotPresent]);
+            Assert::AreEqual ((WORD)FC_DarkGrey, config.m_rgAttributes[CConfig::EAttribute::FileAttributeNotPresent]);
         }
 
 
@@ -1072,7 +1072,7 @@ namespace UnitTest
             
             config.ProcessDisplayAttributeOverride(L'I', FC_White, L"I=White");
             
-            Assert::AreEqual((WORD)FC_White, config.m_rgAttributes[CConfig::EAttribute::Information]);
+            Assert::AreEqual ((WORD)FC_White, config.m_rgAttributes[CConfig::EAttribute::Information]);
         }
 
 
@@ -1086,7 +1086,7 @@ namespace UnitTest
             
             config.ProcessDisplayAttributeOverride(L'H', FC_Yellow, L"H=Yellow");
             
-            Assert::AreEqual((WORD)FC_Yellow, config.m_rgAttributes[CConfig::EAttribute::InformationHighlight]);
+            Assert::AreEqual ((WORD)FC_Yellow, config.m_rgAttributes[CConfig::EAttribute::InformationHighlight]);
         }
 
 
@@ -1100,7 +1100,7 @@ namespace UnitTest
             
             config.ProcessDisplayAttributeOverride(L'E', FC_Red, L"E=Red");
             
-            Assert::AreEqual((WORD)FC_Red, config.m_rgAttributes[CConfig::EAttribute::Error]);
+            Assert::AreEqual ((WORD)FC_Red, config.m_rgAttributes[CConfig::EAttribute::Error]);
         }
 
 
@@ -1114,7 +1114,7 @@ namespace UnitTest
             
             config.ProcessDisplayAttributeOverride(L'F', FC_Blue, L"F=Blue");
             
-            Assert::AreEqual((WORD)FC_Blue, config.m_rgAttributes[CConfig::EAttribute::Default]);
+            Assert::AreEqual ((WORD)FC_Blue, config.m_rgAttributes[CConfig::EAttribute::Default]);
         }
 
 
@@ -1129,8 +1129,8 @@ namespace UnitTest
             config.ProcessDisplayAttributeOverride(L'd', FC_Yellow, L"d=Yellow");
             config.ProcessDisplayAttributeOverride(L't', FC_Cyan, L"t=Cyan");
             
-            Assert::AreEqual((WORD)FC_Yellow, config.m_rgAttributes[CConfig::EAttribute::Date]);
-            Assert::AreEqual((WORD)FC_Cyan, config.m_rgAttributes[CConfig::EAttribute::Time]);
+            Assert::AreEqual ((WORD)FC_Yellow, config.m_rgAttributes[CConfig::EAttribute::Date]);
+            Assert::AreEqual ((WORD)FC_Cyan, config.m_rgAttributes[CConfig::EAttribute::Time]);
         }
 
 
@@ -1145,7 +1145,7 @@ namespace UnitTest
             WORD colorAttr = FC_White | BC_Blue;
             config.ProcessDisplayAttributeOverride(L'D', colorAttr, L"D=White on Blue");
             
-            Assert::AreEqual(colorAttr, config.m_rgAttributes[CConfig::EAttribute::Date]);
+            Assert::AreEqual (colorAttr, config.m_rgAttributes[CConfig::EAttribute::Date]);
         }
 
 
@@ -1164,7 +1164,7 @@ namespace UnitTest
             config.ProcessDisplayAttributeOverride(L'1', FC_Green, L"1=Green");
             
             // Date should remain unchanged
-            Assert::AreEqual(originalDate, config.m_rgAttributes[CConfig::EAttribute::Date]);
+            Assert::AreEqual (originalDate, config.m_rgAttributes[CConfig::EAttribute::Date]);
         }
 
 
@@ -1188,16 +1188,16 @@ namespace UnitTest
             config.ProcessDisplayAttributeOverride(L'E', FC_DarkGrey, L"E=DarkGrey");
             config.ProcessDisplayAttributeOverride(L'F', FC_LightBlue, L"F=LightBlue");
             
-            Assert::AreEqual((WORD)FC_Black, config.m_rgAttributes[CConfig::EAttribute::Date]);
-            Assert::AreEqual((WORD)FC_Blue, config.m_rgAttributes[CConfig::EAttribute::Time]);
-            Assert::AreEqual((WORD)FC_Green, config.m_rgAttributes[CConfig::EAttribute::FileAttributePresent]);
-            Assert::AreEqual((WORD)FC_Cyan, config.m_rgAttributes[CConfig::EAttribute::FileAttributeNotPresent]);
-            Assert::AreEqual((WORD)FC_Red, config.m_rgAttributes[CConfig::EAttribute::Size]);
-            Assert::AreEqual((WORD)FC_Magenta, config.m_rgAttributes[CConfig::EAttribute::Directory]);
-            Assert::AreEqual((WORD)FC_Brown, config.m_rgAttributes[CConfig::EAttribute::Information]);
-            Assert::AreEqual((WORD)FC_LightGrey, config.m_rgAttributes[CConfig::EAttribute::InformationHighlight]);
-            Assert::AreEqual((WORD)FC_DarkGrey, config.m_rgAttributes[CConfig::EAttribute::Error]);
-            Assert::AreEqual((WORD)FC_LightBlue, config.m_rgAttributes[CConfig::EAttribute::Default]);
+            Assert::AreEqual ((WORD)FC_Black, config.m_rgAttributes[CConfig::EAttribute::Date]);
+            Assert::AreEqual ((WORD)FC_Blue, config.m_rgAttributes[CConfig::EAttribute::Time]);
+            Assert::AreEqual ((WORD)FC_Green, config.m_rgAttributes[CConfig::EAttribute::FileAttributePresent]);
+            Assert::AreEqual ((WORD)FC_Cyan, config.m_rgAttributes[CConfig::EAttribute::FileAttributeNotPresent]);
+            Assert::AreEqual ((WORD)FC_Red, config.m_rgAttributes[CConfig::EAttribute::Size]);
+            Assert::AreEqual ((WORD)FC_Magenta, config.m_rgAttributes[CConfig::EAttribute::Directory]);
+            Assert::AreEqual ((WORD)FC_Brown, config.m_rgAttributes[CConfig::EAttribute::Information]);
+            Assert::AreEqual ((WORD)FC_LightGrey, config.m_rgAttributes[CConfig::EAttribute::InformationHighlight]);
+            Assert::AreEqual ((WORD)FC_DarkGrey, config.m_rgAttributes[CConfig::EAttribute::Error]);
+            Assert::AreEqual ((WORD)FC_LightBlue, config.m_rgAttributes[CConfig::EAttribute::Default]);
         }
 
 
@@ -1219,13 +1219,13 @@ namespace UnitTest
             config.ApplyUserColorOverrides();
             
             // Verify display attributes
-            Assert::AreEqual((WORD)FC_LightGreen, config.m_rgAttributes[CConfig::EAttribute::Date]);
-            Assert::AreEqual((WORD)FC_Yellow, config.m_rgAttributes[CConfig::EAttribute::Size]);
-            Assert::AreEqual((WORD)FC_Cyan, config.m_rgAttributes[CConfig::EAttribute::Time]);
+            Assert::AreEqual ((WORD)FC_LightGreen, config.m_rgAttributes[CConfig::EAttribute::Date]);
+            Assert::AreEqual ((WORD)FC_Yellow, config.m_rgAttributes[CConfig::EAttribute::Size]);
+            Assert::AreEqual ((WORD)FC_Cyan, config.m_rgAttributes[CConfig::EAttribute::Time]);
             
             // Verify file extensions
-            Assert::AreEqual((WORD)(FC_White | BC_Blue), config.m_mapExtensionToTextAttr[L".cpp"]);
-            Assert::AreEqual((WORD)FC_Red, config.m_mapExtensionToTextAttr[L".h"]);
+            Assert::AreEqual ((WORD)(FC_White | BC_Blue), config.m_mapExtensionToTextAttr[L".cpp"]);
+            Assert::AreEqual ((WORD)FC_Red, config.m_mapExtensionToTextAttr[L".h"]);
         }
 
 
@@ -1242,16 +1242,16 @@ namespace UnitTest
             
             config.ApplyUserColorOverrides();
             
-            Assert::AreEqual((WORD)FC_Red, config.m_rgAttributes[CConfig::EAttribute::Date]);
-            Assert::AreEqual((WORD)FC_Brown, config.m_rgAttributes[CConfig::EAttribute::Time]);
-            Assert::AreEqual((WORD)FC_Cyan, config.m_rgAttributes[CConfig::EAttribute::FileAttributePresent]);
-            Assert::AreEqual((WORD)FC_DarkGrey, config.m_rgAttributes[CConfig::EAttribute::FileAttributeNotPresent]);
-            Assert::AreEqual((WORD)FC_Yellow, config.m_rgAttributes[CConfig::EAttribute::Size]);
-            Assert::AreEqual((WORD)(FC_LightBlue | BC_Black), config.m_rgAttributes[CConfig::EAttribute::Directory]);
-            Assert::AreEqual((WORD)FC_White, config.m_rgAttributes[CConfig::EAttribute::Information]);
-            Assert::AreEqual((WORD)FC_LightCyan, config.m_rgAttributes[CConfig::EAttribute::InformationHighlight]);
-            Assert::AreEqual((WORD)FC_LightRed, config.m_rgAttributes[CConfig::EAttribute::Error]);
-            Assert::AreEqual((WORD)FC_Green, config.m_rgAttributes[CConfig::EAttribute::Default]);
+            Assert::AreEqual ((WORD)FC_Red, config.m_rgAttributes[CConfig::EAttribute::Date]);
+            Assert::AreEqual ((WORD)FC_Brown, config.m_rgAttributes[CConfig::EAttribute::Time]);
+            Assert::AreEqual ((WORD)FC_Cyan, config.m_rgAttributes[CConfig::EAttribute::FileAttributePresent]);
+            Assert::AreEqual ((WORD)FC_DarkGrey, config.m_rgAttributes[CConfig::EAttribute::FileAttributeNotPresent]);
+            Assert::AreEqual ((WORD)FC_Yellow, config.m_rgAttributes[CConfig::EAttribute::Size]);
+            Assert::AreEqual ((WORD)(FC_LightBlue | BC_Black), config.m_rgAttributes[CConfig::EAttribute::Directory]);
+            Assert::AreEqual ((WORD)FC_White, config.m_rgAttributes[CConfig::EAttribute::Information]);
+            Assert::AreEqual ((WORD)FC_LightCyan, config.m_rgAttributes[CConfig::EAttribute::InformationHighlight]);
+            Assert::AreEqual ((WORD)FC_LightRed, config.m_rgAttributes[CConfig::EAttribute::Error]);
+            Assert::AreEqual ((WORD)FC_Green, config.m_rgAttributes[CConfig::EAttribute::Default]);
         }
 
 
@@ -1268,10 +1268,10 @@ namespace UnitTest
             
             config.ApplyUserColorOverrides();
             
-            Assert::AreEqual((WORD)FC_Yellow, config.m_rgAttributes[CConfig::EAttribute::Date]);
-            Assert::AreEqual((WORD)FC_Blue, config.m_rgAttributes[CConfig::EAttribute::Time]);
-            Assert::AreEqual((WORD)FC_Red, config.m_mapExtensionToTextAttr[L".cpp"]);
-            Assert::AreEqual((WORD)FC_Green, config.m_mapExtensionToTextAttr[L".h"]);
+            Assert::AreEqual ((WORD)FC_Yellow, config.m_rgAttributes[CConfig::EAttribute::Date]);
+            Assert::AreEqual ((WORD)FC_Blue, config.m_rgAttributes[CConfig::EAttribute::Time]);
+            Assert::AreEqual ((WORD)FC_Red, config.m_mapExtensionToTextAttr[L".cpp"]);
+            Assert::AreEqual ((WORD)FC_Green, config.m_mapExtensionToTextAttr[L".h"]);
         }
 
 
@@ -1291,12 +1291,12 @@ namespace UnitTest
             config.ApplyUserColorOverrides();
             
             // Valid entries should be processed
-            Assert::AreEqual((WORD)FC_Yellow, config.m_rgAttributes[CConfig::EAttribute::Date]);
-            Assert::AreEqual((WORD)FC_Red, config.m_rgAttributes[CConfig::EAttribute::Size]);
-            Assert::AreEqual((WORD)FC_Green, config.m_rgAttributes[CConfig::EAttribute::Time]);
+            Assert::AreEqual ((WORD)FC_Yellow, config.m_rgAttributes[CConfig::EAttribute::Date]);
+            Assert::AreEqual ((WORD)FC_Red, config.m_rgAttributes[CConfig::EAttribute::Size]);
+            Assert::AreEqual ((WORD)FC_Green, config.m_rgAttributes[CConfig::EAttribute::Time]);
             
             // Error attribute should be unchanged (X is invalid, no E was set)
-            Assert::AreEqual(originalError, config.m_rgAttributes[CConfig::EAttribute::Error]);
+            Assert::AreEqual (originalError, config.m_rgAttributes[CConfig::EAttribute::Error]);
         }
 
 
@@ -1316,13 +1316,13 @@ namespace UnitTest
             config.ApplyUserColorOverrides();
             
             CConfig::ValidationResult result = config.ValidateEnvironmentVariable();
-            Assert::AreEqual(size_t(1), result.errors.size());
+            Assert::AreEqual (size_t(1), result.errors.size());
             
             const auto& error = result.errors[0];
-            Assert::AreEqual(wstring(L"Invalid entry format (expected key = value)"), error.message);
-            Assert::AreEqual(wstring(L"NoEqualsSign"), error.entry);
-            Assert::AreEqual(wstring(L"NoEqualsSign"), error.invalidText);
-            Assert::AreEqual(size_t(0), error.invalidTextOffset);
+            Assert::AreEqual (wstring(L"Invalid entry format (expected key = value)"), error.message);
+            Assert::AreEqual (wstring(L"NoEqualsSign"), error.entry);
+            Assert::AreEqual (wstring(L"NoEqualsSign"), error.invalidText);
+            Assert::AreEqual (size_t(0), error.invalidTextOffset);
         }
 
 
@@ -1338,13 +1338,13 @@ namespace UnitTest
             config.ApplyUserColorOverrides();
             
             CConfig::ValidationResult result = config.ValidateEnvironmentVariable();
-            Assert::AreEqual(size_t(1), result.errors.size());
+            Assert::AreEqual (size_t(1), result.errors.size());
             
             const auto& error = result.errors[0];
-            Assert::AreEqual(wstring(L"Invalid foreground color"), error.message);
-            Assert::AreEqual(wstring(L".cpp=Purplish"), error.entry);
-            Assert::AreEqual(wstring(L"Purplish"), error.invalidText);
-            Assert::AreEqual(size_t(5), error.invalidTextOffset);  // ".cpp=" = 5 chars
+            Assert::AreEqual (wstring(L"Invalid foreground color"), error.message);
+            Assert::AreEqual (wstring(L".cpp=Purplish"), error.entry);
+            Assert::AreEqual (wstring(L"Purplish"), error.invalidText);
+            Assert::AreEqual (size_t(5), error.invalidTextOffset);  // ".cpp=" = 5 chars
         }
 
 
@@ -1360,13 +1360,13 @@ namespace UnitTest
             config.ApplyUserColorOverrides();
             
             CConfig::ValidationResult result = config.ValidateEnvironmentVariable();
-            Assert::AreEqual(size_t(1), result.errors.size());
+            Assert::AreEqual (size_t(1), result.errors.size());
             
             const auto& error = result.errors[0];
-            Assert::AreEqual(wstring(L"Invalid background color"), error.message);
-            Assert::AreEqual(wstring(L".cpp=White on Purplish"), error.entry);
-            Assert::AreEqual(wstring(L"Purplish"), error.invalidText);
-            Assert::AreEqual(size_t(14), error.invalidTextOffset);  // ".cpp=White on " = 14 chars
+            Assert::AreEqual (wstring(L"Invalid background color"), error.message);
+            Assert::AreEqual (wstring(L".cpp=White on Purplish"), error.entry);
+            Assert::AreEqual (wstring(L"Purplish"), error.invalidText);
+            Assert::AreEqual (size_t(14), error.invalidTextOffset);  // ".cpp=White on " = 14 chars
         }
 
 
@@ -1382,13 +1382,13 @@ namespace UnitTest
             config.ApplyUserColorOverrides();
             
             CConfig::ValidationResult result = config.ValidateEnvironmentVariable();
-            Assert::AreEqual(size_t(1), result.errors.size());
+            Assert::AreEqual (size_t(1), result.errors.size());
             
             const auto& error = result.errors[0];
-            Assert::AreEqual(wstring(L"Invalid key (expected single character, .extension, or attr:x)"), error.message);
-            Assert::AreEqual(wstring(L"InvalidKey=Yellow"), error.entry);
-            Assert::AreEqual(wstring(L"InvalidKey"), error.invalidText);
-            Assert::AreEqual(size_t(0), error.invalidTextOffset);
+            Assert::AreEqual (wstring(L"Invalid key (expected single character, .extension, or attr:x)"), error.message);
+            Assert::AreEqual (wstring(L"InvalidKey=Yellow"), error.entry);
+            Assert::AreEqual (wstring(L"InvalidKey"), error.invalidText);
+            Assert::AreEqual (size_t(0), error.invalidTextOffset);
         }
 
 
@@ -1404,13 +1404,13 @@ namespace UnitTest
             config.ApplyUserColorOverrides();
             
             CConfig::ValidationResult result = config.ValidateEnvironmentVariable();
-            Assert::AreEqual(size_t(1), result.errors.size());
+            Assert::AreEqual (size_t(1), result.errors.size());
             
             const auto& error = result.errors[0];
-            Assert::AreEqual(wstring(L"Invalid display attribute character (valid: D,T,A,-,S,R,I,H,E,F,O)"), error.message);
-            Assert::AreEqual(wstring(L"Q=Yellow"), error.entry);
-            Assert::AreEqual(wstring(L"Q"), error.invalidText);
-            Assert::AreEqual(size_t(0), error.invalidTextOffset);
+            Assert::AreEqual (wstring(L"Invalid display attribute character (valid: D,T,A,-,S,R,I,H,E,F,O)"), error.message);
+            Assert::AreEqual (wstring(L"Q=Yellow"), error.entry);
+            Assert::AreEqual (wstring(L"Q"), error.invalidText);
+            Assert::AreEqual (size_t(0), error.invalidTextOffset);
         }
 
 
@@ -1426,13 +1426,13 @@ namespace UnitTest
             config.ApplyUserColorOverrides();
             
             CConfig::ValidationResult result = config.ValidateEnvironmentVariable();
-            Assert::AreEqual(size_t(1), result.errors.size());
+            Assert::AreEqual (size_t(1), result.errors.size());
             
             const auto& error = result.errors[0];
-            Assert::AreEqual(wstring(L"Invalid file attribute character (expected R, H, S, A, T, E, C, P or 0)"), error.message);
-            Assert::AreEqual(wstring(L"attr:Z=Yellow"), error.entry);
-            Assert::AreEqual(wstring(L"Z"), error.invalidText);
-            Assert::AreEqual(size_t(5), error.invalidTextOffset);  // "attr:" = 5 chars
+            Assert::AreEqual (wstring(L"Invalid file attribute character (expected R, H, S, A, T, E, C, P or 0)"), error.message);
+            Assert::AreEqual (wstring(L"attr:Z=Yellow"), error.entry);
+            Assert::AreEqual (wstring(L"Z"), error.invalidText);
+            Assert::AreEqual (size_t(5), error.invalidTextOffset);  // "attr:" = 5 chars
         }
 
 
@@ -1450,13 +1450,13 @@ namespace UnitTest
             config.ApplyUserColorOverrides();
             
             CConfig::ValidationResult result = config.ValidateEnvironmentVariable();
-            Assert::AreEqual(size_t(1), result.errors.size());
+            Assert::AreEqual (size_t(1), result.errors.size());
             
             const auto& error = result.errors[0];
             
             // Verify the invalid text is exactly at the offset position in entry
             wstring extracted = error.entry.substr(error.invalidTextOffset, error.invalidText.length());
-            Assert::AreEqual(error.invalidText, extracted);
+            Assert::AreEqual (error.invalidText, extracted);
         }
     };
 
@@ -1483,8 +1483,8 @@ namespace UnitTest
 
             config.ProcessSwitchOverride (L"w");
 
-            Assert::IsTrue (config.m_fWideListing.has_value ());
-            Assert::IsTrue (config.m_fWideListing.value ());
+            Assert::IsTrue (config.m_fWideListing.has_value());
+            Assert::IsTrue (config.m_fWideListing.value());
         }
 
 
@@ -1498,8 +1498,8 @@ namespace UnitTest
 
             config.ProcessSwitchOverride (L"W");
 
-            Assert::IsTrue (config.m_fWideListing.has_value ());
-            Assert::IsTrue (config.m_fWideListing.value ());
+            Assert::IsTrue (config.m_fWideListing.has_value());
+            Assert::IsTrue (config.m_fWideListing.value());
         }
 
 
@@ -1513,8 +1513,8 @@ namespace UnitTest
 
             config.ProcessSwitchOverride (L"w");
 
-            Assert::IsTrue (config.m_fWideListing.has_value ());
-            Assert::IsTrue (config.m_fWideListing.value ());
+            Assert::IsTrue (config.m_fWideListing.has_value());
+            Assert::IsTrue (config.m_fWideListing.value());
         }
 
 
@@ -1528,8 +1528,8 @@ namespace UnitTest
 
             config.ProcessSwitchOverride (L"W-");
 
-            Assert::IsTrue (config.m_fWideListing.has_value ());
-            Assert::IsFalse (config.m_fWideListing.value ());
+            Assert::IsTrue (config.m_fWideListing.has_value());
+            Assert::IsFalse (config.m_fWideListing.value());
         }
 
 
@@ -1543,8 +1543,8 @@ namespace UnitTest
 
             config.ProcessSwitchOverride (L"S");
 
-            Assert::IsTrue (config.m_fRecurse.has_value ());
-            Assert::IsTrue (config.m_fRecurse.value ());
+            Assert::IsTrue (config.m_fRecurse.has_value());
+            Assert::IsTrue (config.m_fRecurse.value());
         }
 
 
@@ -1558,8 +1558,8 @@ namespace UnitTest
 
             config.ProcessSwitchOverride (L"P");
 
-            Assert::IsTrue (config.m_fPerfTimer.has_value ());
-            Assert::IsTrue (config.m_fPerfTimer.value ());
+            Assert::IsTrue (config.m_fPerfTimer.has_value());
+            Assert::IsTrue (config.m_fPerfTimer.value());
         }
 
 
@@ -1573,8 +1573,8 @@ namespace UnitTest
 
             config.ProcessSwitchOverride (L"M");
 
-            Assert::IsTrue (config.m_fMultiThreaded.has_value ());
-            Assert::IsTrue (config.m_fMultiThreaded.value ());
+            Assert::IsTrue (config.m_fMultiThreaded.has_value());
+            Assert::IsTrue (config.m_fMultiThreaded.value());
         }
 
 
@@ -1588,8 +1588,8 @@ namespace UnitTest
 
             config.ProcessSwitchOverride (L"M-");
 
-            Assert::IsTrue (config.m_fMultiThreaded.has_value ());
-            Assert::IsFalse (config.m_fMultiThreaded.value ());
+            Assert::IsTrue (config.m_fMultiThreaded.has_value());
+            Assert::IsFalse (config.m_fMultiThreaded.value());
         }
 
 
@@ -1602,8 +1602,8 @@ namespace UnitTest
 
             config.ProcessSwitchOverride (L"Owner");
 
-            Assert::IsTrue (config.m_fShowOwner.has_value ());
-            Assert::IsTrue (config.m_fShowOwner.value ());
+            Assert::IsTrue (config.m_fShowOwner.has_value());
+            Assert::IsTrue (config.m_fShowOwner.value());
         }
 
 
@@ -1616,8 +1616,8 @@ namespace UnitTest
 
             config.ProcessSwitchOverride (L"owner");
 
-            Assert::IsTrue (config.m_fShowOwner.has_value ());
-            Assert::IsTrue (config.m_fShowOwner.value ());
+            Assert::IsTrue (config.m_fShowOwner.has_value());
+            Assert::IsTrue (config.m_fShowOwner.value());
         }
 
 
@@ -1630,8 +1630,8 @@ namespace UnitTest
 
             config.ProcessSwitchOverride (L"Streams");
 
-            Assert::IsTrue (config.m_fShowStreams.has_value ());
-            Assert::IsTrue (config.m_fShowStreams.value ());
+            Assert::IsTrue (config.m_fShowStreams.has_value());
+            Assert::IsTrue (config.m_fShowStreams.value());
         }
 
 
@@ -1644,8 +1644,8 @@ namespace UnitTest
 
             config.ProcessSwitchOverride (L"streams");
 
-            Assert::IsTrue (config.m_fShowStreams.has_value ());
-            Assert::IsTrue (config.m_fShowStreams.value ());
+            Assert::IsTrue (config.m_fShowStreams.has_value());
+            Assert::IsTrue (config.m_fShowStreams.value());
         }
 
 
@@ -1658,8 +1658,8 @@ namespace UnitTest
 
             config.ProcessSwitchOverride (L"x");
 
-            CConfig::ValidationResult result = config.ValidateEnvironmentVariable ();
-            Assert::AreEqual (size_t (1), result.errors.size ());
+            CConfig::ValidationResult result = config.ValidateEnvironmentVariable();
+            Assert::AreEqual (size_t (1), result.errors.size());
             Assert::AreEqual (wstring (L"Invalid switch (expected W, S, P, M, Owner, or Streams)"), result.errors[0].message);
         }
 
@@ -1674,8 +1674,8 @@ namespace UnitTest
 
             config.ProcessSwitchOverride (L"abc");
 
-            CConfig::ValidationResult result = config.ValidateEnvironmentVariable ();
-            Assert::AreEqual (size_t (1), result.errors.size ());
+            CConfig::ValidationResult result = config.ValidateEnvironmentVariable();
+            Assert::AreEqual (size_t (1), result.errors.size());
             Assert::AreEqual (wstring (L"Invalid switch (expected W, S, P, M, Owner, or Streams)"), result.errors[0].message);
         }
 
@@ -1690,8 +1690,8 @@ namespace UnitTest
 
             config.ProcessSwitchOverride (L"invalid");
 
-            CConfig::ValidationResult result = config.ValidateEnvironmentVariable ();
-            Assert::AreEqual (size_t (1), result.errors.size ());
+            CConfig::ValidationResult result = config.ValidateEnvironmentVariable();
+            Assert::AreEqual (size_t (1), result.errors.size());
             Assert::AreEqual (wstring (L"Invalid switch (expected W, S, P, M, Owner, or Streams)"), result.errors[0].message);
         }
 
@@ -1707,9 +1707,9 @@ namespace UnitTest
             config.ProcessColorOverrideEntry (L"/w");
 
             // Prefixed switches should be rejected
-            Assert::IsFalse (config.m_fWideListing.has_value ());
-            CConfig::ValidationResult result = config.ValidateEnvironmentVariable ();
-            Assert::AreEqual (size_t (1), result.errors.size ());
+            Assert::IsFalse (config.m_fWideListing.has_value());
+            CConfig::ValidationResult result = config.ValidateEnvironmentVariable();
+            Assert::AreEqual (size_t (1), result.errors.size());
             Assert::AreEqual (wstring (L"Switch prefixes (/, -, --) are not allowed in env var"), result.errors[0].message);
         }
 
@@ -1725,9 +1725,9 @@ namespace UnitTest
             config.ProcessColorOverrideEntry (L"-s");
 
             // Prefixed switches should be rejected
-            Assert::IsFalse (config.m_fRecurse.has_value ());
-            CConfig::ValidationResult result = config.ValidateEnvironmentVariable ();
-            Assert::AreEqual (size_t (1), result.errors.size ());
+            Assert::IsFalse (config.m_fRecurse.has_value());
+            CConfig::ValidationResult result = config.ValidateEnvironmentVariable();
+            Assert::AreEqual (size_t (1), result.errors.size());
             Assert::AreEqual (wstring (L"Switch prefixes (/, -, --) are not allowed in env var"), result.errors[0].message);
         }
 
@@ -1741,13 +1741,13 @@ namespace UnitTest
             config.Initialize (FC_LightGrey);
 
             config.SetEnvVar (TCDIR_ENV_VAR_NAME, L"W;S;D=Yellow;.cpp=LightGreen");
-            config.ApplyUserColorOverrides ();
+            config.ApplyUserColorOverrides();
 
             // Check switches
-            Assert::IsTrue (config.m_fWideListing.has_value ());
-            Assert::IsTrue (config.m_fWideListing.value ());
-            Assert::IsTrue (config.m_fRecurse.has_value ());
-            Assert::IsTrue (config.m_fRecurse.value ());
+            Assert::IsTrue (config.m_fWideListing.has_value());
+            Assert::IsTrue (config.m_fWideListing.value());
+            Assert::IsTrue (config.m_fRecurse.has_value());
+            Assert::IsTrue (config.m_fRecurse.value());
 
             // Check colors
             Assert::AreEqual ((WORD) FC_Yellow, config.m_rgAttributes[CConfig::EAttribute::Date]);
@@ -1764,12 +1764,12 @@ namespace UnitTest
             config.Initialize (FC_LightGrey);
 
             config.SetEnvVar (TCDIR_ENV_VAR_NAME, L"M-;W");
-            config.ApplyUserColorOverrides ();
+            config.ApplyUserColorOverrides();
 
-            Assert::IsTrue (config.m_fMultiThreaded.has_value ());
-            Assert::IsFalse (config.m_fMultiThreaded.value ());
-            Assert::IsTrue (config.m_fWideListing.has_value ());
-            Assert::IsTrue (config.m_fWideListing.value ());
+            Assert::IsTrue (config.m_fMultiThreaded.has_value());
+            Assert::IsFalse (config.m_fMultiThreaded.value());
+            Assert::IsTrue (config.m_fWideListing.has_value());
+            Assert::IsTrue (config.m_fWideListing.value());
         }
 
 
@@ -1782,15 +1782,15 @@ namespace UnitTest
             config.Initialize (FC_LightGrey);
 
             config.SetEnvVar (TCDIR_ENV_VAR_NAME, L"-w;-p");
-            config.ApplyUserColorOverrides ();
+            config.ApplyUserColorOverrides();
 
             // Prefixed switches should not be set
-            Assert::IsFalse (config.m_fWideListing.has_value ());
-            Assert::IsFalse (config.m_fPerfTimer.has_value ());
+            Assert::IsFalse (config.m_fWideListing.has_value());
+            Assert::IsFalse (config.m_fPerfTimer.has_value());
 
             // Should have errors
-            CConfig::ValidationResult result = config.ValidateEnvironmentVariable ();
-            Assert::AreEqual (size_t (2), result.errors.size ());
+            CConfig::ValidationResult result = config.ValidateEnvironmentVariable();
+            Assert::AreEqual (size_t (2), result.errors.size());
         }
 
 
@@ -1802,10 +1802,10 @@ namespace UnitTest
             ConfigProbe config;
             config.Initialize (FC_LightGrey);
 
-            Assert::IsFalse (config.m_fWideListing.has_value ());
-            Assert::IsFalse (config.m_fRecurse.has_value ());
-            Assert::IsFalse (config.m_fPerfTimer.has_value ());
-            Assert::IsFalse (config.m_fMultiThreaded.has_value ());
+            Assert::IsFalse (config.m_fWideListing.has_value());
+            Assert::IsFalse (config.m_fRecurse.has_value());
+            Assert::IsFalse (config.m_fPerfTimer.has_value());
+            Assert::IsFalse (config.m_fMultiThreaded.has_value());
         }
 
 
@@ -1817,14 +1817,14 @@ namespace UnitTest
             config.Initialize (FC_LightGrey);
 
             config.SetEnvVar (TCDIR_ENV_VAR_NAME, L"W;S;P");
-            config.ApplyUserColorOverrides ();
+            config.ApplyUserColorOverrides();
 
-            Assert::IsTrue (config.m_fWideListing.has_value ());
-            Assert::IsTrue (config.m_fWideListing.value ());
-            Assert::IsTrue (config.m_fRecurse.has_value ());
-            Assert::IsTrue (config.m_fRecurse.value ());
-            Assert::IsTrue (config.m_fPerfTimer.has_value ());
-            Assert::IsTrue (config.m_fPerfTimer.value ());
+            Assert::IsTrue (config.m_fWideListing.has_value());
+            Assert::IsTrue (config.m_fWideListing.value());
+            Assert::IsTrue (config.m_fRecurse.has_value());
+            Assert::IsTrue (config.m_fRecurse.value());
+            Assert::IsTrue (config.m_fPerfTimer.has_value());
+            Assert::IsTrue (config.m_fPerfTimer.value());
         }
 
 
@@ -1836,12 +1836,12 @@ namespace UnitTest
             config.Initialize (FC_LightGrey);
 
             config.SetEnvVar (TCDIR_ENV_VAR_NAME, L"M-;W");
-            config.ApplyUserColorOverrides ();
+            config.ApplyUserColorOverrides();
 
-            Assert::IsTrue (config.m_fMultiThreaded.has_value ());
-            Assert::IsFalse (config.m_fMultiThreaded.value ());
-            Assert::IsTrue (config.m_fWideListing.has_value ());
-            Assert::IsTrue (config.m_fWideListing.value ());
+            Assert::IsTrue (config.m_fMultiThreaded.has_value());
+            Assert::IsFalse (config.m_fMultiThreaded.value());
+            Assert::IsTrue (config.m_fWideListing.has_value());
+            Assert::IsTrue (config.m_fWideListing.value());
         }
 
 
@@ -1853,12 +1853,12 @@ namespace UnitTest
             config.Initialize (FC_LightGrey);
 
             config.SetEnvVar (TCDIR_ENV_VAR_NAME, L"Owner;Streams");
-            config.ApplyUserColorOverrides ();
+            config.ApplyUserColorOverrides();
 
-            Assert::IsTrue (config.m_fShowOwner.has_value ());
-            Assert::IsTrue (config.m_fShowOwner.value ());
-            Assert::IsTrue (config.m_fShowStreams.has_value ());
-            Assert::IsTrue (config.m_fShowStreams.value ());
+            Assert::IsTrue (config.m_fShowOwner.has_value());
+            Assert::IsTrue (config.m_fShowOwner.value());
+            Assert::IsTrue (config.m_fShowStreams.has_value());
+            Assert::IsTrue (config.m_fShowStreams.value());
         }
 
 
@@ -1870,15 +1870,17 @@ namespace UnitTest
             config.Initialize (FC_LightGrey);
 
             config.SetEnvVar (TCDIR_ENV_VAR_NAME, L"W;S;Owner;D=Yellow");
-            config.ApplyUserColorOverrides ();
+            config.ApplyUserColorOverrides();
 
-            Assert::IsTrue (config.m_fWideListing.has_value ());
-            Assert::IsTrue (config.m_fWideListing.value ());
-            Assert::IsTrue (config.m_fRecurse.has_value ());
-            Assert::IsTrue (config.m_fRecurse.value ());
-            Assert::IsTrue (config.m_fShowOwner.has_value ());
-            Assert::IsTrue (config.m_fShowOwner.value ());
+            Assert::IsTrue (config.m_fWideListing.has_value());
+            Assert::IsTrue (config.m_fWideListing.value());
+            Assert::IsTrue (config.m_fRecurse.has_value());
+            Assert::IsTrue (config.m_fRecurse.value());
+            Assert::IsTrue (config.m_fShowOwner.has_value());
+            Assert::IsTrue (config.m_fShowOwner.value());
             Assert::AreEqual ((WORD) FC_Yellow, config.m_rgAttributes[CConfig::EAttribute::Date]);
         }
     };
 }
+
+

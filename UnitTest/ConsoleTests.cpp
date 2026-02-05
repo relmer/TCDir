@@ -22,12 +22,12 @@ namespace UnitTest
 
         TEST_METHOD(ColorPuts_NoMarkers_OutputsEntireString)
         {
-            auto con = std::make_shared<CConsole>();
-            auto cfg = std::make_shared<CConfig>();
-            con->Initialize(cfg);
+            auto con = std::make_shared<CConsole> ();
+            auto cfg = std::make_shared<CConfig> ();
+            con->Initialize (cfg);
 
             // No markers - should output the entire string without crashing
-            con->ColorPuts(L"Hello, World!");
+            con->ColorPuts (L"Hello, World!");
         }
 
 
@@ -36,11 +36,11 @@ namespace UnitTest
 
         TEST_METHOD(ColorPuts_SingleMarker_SwitchesColor)
         {
-            auto con = std::make_shared<CConsole>();
-            auto cfg = std::make_shared<CConfig>();
-            con->Initialize(cfg);
+            auto con = std::make_shared<CConsole> ();
+            auto cfg = std::make_shared<CConfig> ();
+            con->Initialize (cfg);
 
-            con->ColorPuts(L"Normal {InformationHighlight}Highlighted");
+            con->ColorPuts (L"Normal {InformationHighlight}Highlighted");
         }
 
 
@@ -49,11 +49,11 @@ namespace UnitTest
 
         TEST_METHOD(ColorPuts_MultipleMarkers_SwitchesColorsCorrectly)
         {
-            auto con = std::make_shared<CConsole>();
-            auto cfg = std::make_shared<CConfig>();
-            con->Initialize(cfg);
+            auto con = std::make_shared<CConsole> ();
+            auto cfg = std::make_shared<CConfig> ();
+            con->Initialize (cfg);
 
-            con->ColorPuts(L"{InformationHighlight}-A{Information}  Displays files");
+            con->ColorPuts (L"{InformationHighlight}-A{Information}  Displays files");
         }
 
 
@@ -62,12 +62,12 @@ namespace UnitTest
 
         TEST_METHOD(ColorPuts_AllAttributes_ParsesCorrectly)
         {
-            auto con = std::make_shared<CConsole>();
-            auto cfg = std::make_shared<CConfig>();
-            con->Initialize(cfg);
+            auto con = std::make_shared<CConsole> ();
+            auto cfg = std::make_shared<CConfig> ();
+            con->Initialize (cfg);
 
             // Test all valid attribute names
-            con->ColorPuts(
+            con->ColorPuts (
                 L"{Default}D"
                 L"{Date}Dt"
                 L"{Time}Tm"
@@ -93,11 +93,11 @@ namespace UnitTest
 
         TEST_METHOD(ColorPuts_CloudStatusMarkers_ApplyCorrectColors)
         {
-            auto con = std::make_shared<CConsole>();
-            auto cfg = std::make_shared<CConfig>();
-            con->Initialize(cfg);
+            auto con = std::make_shared<CConsole> ();
+            auto cfg = std::make_shared<CConfig> ();
+            con->Initialize (cfg);
 
-            con->ColorPuts(
+            con->ColorPuts (
                 L"Cloud: {CloudStatusCloudOnly}○{Information} "
                 L"{CloudStatusLocallyAvailable}◐{Information} "
                 L"{CloudStatusAlwaysLocallyAvailable}●{Information}");
@@ -109,11 +109,11 @@ namespace UnitTest
 
         TEST_METHOD(ColorPuts_MarkerAtStart_ParsesCorrectly)
         {
-            auto con = std::make_shared<CConsole>();
-            auto cfg = std::make_shared<CConfig>();
-            con->Initialize(cfg);
+            auto con = std::make_shared<CConsole> ();
+            auto cfg = std::make_shared<CConfig> ();
+            con->Initialize (cfg);
 
-            con->ColorPuts(L"{InformationHighlight}Highlighted text");
+            con->ColorPuts (L"{InformationHighlight}Highlighted text");
         }
 
 
@@ -122,11 +122,11 @@ namespace UnitTest
 
         TEST_METHOD(ColorPuts_MarkerAtEnd_ParsesCorrectly)
         {
-            auto con = std::make_shared<CConsole>();
-            auto cfg = std::make_shared<CConfig>();
-            con->Initialize(cfg);
+            auto con = std::make_shared<CConsole> ();
+            auto cfg = std::make_shared<CConfig> ();
+            con->Initialize (cfg);
 
-            con->ColorPuts(L"Text then marker{Default}");
+            con->ColorPuts (L"Text then marker{Default}");
         }
 
 
@@ -135,11 +135,11 @@ namespace UnitTest
 
         TEST_METHOD(ColorPuts_ConsecutiveMarkers_ParsesCorrectly)
         {
-            auto con = std::make_shared<CConsole>();
-            auto cfg = std::make_shared<CConfig>();
-            con->Initialize(cfg);
+            auto con = std::make_shared<CConsole> ();
+            auto cfg = std::make_shared<CConfig> ();
+            con->Initialize (cfg);
 
-            con->ColorPuts(L"{Information}{InformationHighlight}Text");
+            con->ColorPuts (L"{Information}{InformationHighlight}Text");
         }
 
 
@@ -148,11 +148,11 @@ namespace UnitTest
 
         TEST_METHOD(ColorPuts_EmptyString_NoOutput)
         {
-            auto con = std::make_shared<CConsole>();
-            auto cfg = std::make_shared<CConfig>();
-            con->Initialize(cfg);
+            auto con = std::make_shared<CConsole> ();
+            auto cfg = std::make_shared<CConfig> ();
+            con->Initialize (cfg);
 
-            con->ColorPuts(L"");
+            con->ColorPuts (L"");
         }
 
 
@@ -161,11 +161,11 @@ namespace UnitTest
 
         TEST_METHOD(ColorPuts_OnlyMarkers_NoVisibleOutput)
         {
-            auto con = std::make_shared<CConsole>();
-            auto cfg = std::make_shared<CConfig>();
-            con->Initialize(cfg);
+            auto con = std::make_shared<CConsole> ();
+            auto cfg = std::make_shared<CConfig> ();
+            con->Initialize (cfg);
 
-            con->ColorPuts(L"{Information}{InformationHighlight}{Default}");
+            con->ColorPuts (L"{Information}{InformationHighlight}{Default}");
         }
 
 
@@ -174,11 +174,11 @@ namespace UnitTest
 
         TEST_METHOD(ColorPuts_MultilineWithMarkers_HandlesNewlines)
         {
-            auto con = std::make_shared<CConsole>();
-            auto cfg = std::make_shared<CConfig>();
-            con->Initialize(cfg);
+            auto con = std::make_shared<CConsole> ();
+            auto cfg = std::make_shared<CConfig> ();
+            con->Initialize (cfg);
 
-            con->ColorPuts(
+            con->ColorPuts (
                 L"Line 1 {InformationHighlight}highlighted\n"
                 L"Line 2 {Information}normal");
         }
@@ -189,11 +189,11 @@ namespace UnitTest
 
         TEST_METHOD(ColorPrintf_FormatsAndProcessesMarkers)
         {
-            auto con = std::make_shared<CConsole>();
-            auto cfg = std::make_shared<CConfig>();
-            con->Initialize(cfg);
+            auto con = std::make_shared<CConsole> ();
+            auto cfg = std::make_shared<CConfig> ();
+            con->Initialize (cfg);
 
-            con->ColorPrintf(L"{InformationHighlight}%s{Information} = %d", L"Value", 42);
+            con->ColorPrintf (L"{InformationHighlight}%s{Information} = %d", L"Value", 42);
         }
 
 
@@ -202,11 +202,11 @@ namespace UnitTest
 
         TEST_METHOD(ColorPrintf_NoMarkers_FormatsCorrectly)
         {
-            auto con = std::make_shared<CConsole>();
-            auto cfg = std::make_shared<CConfig>();
-            con->Initialize(cfg);
+            auto con = std::make_shared<CConsole> ();
+            auto cfg = std::make_shared<CConfig> ();
+            con->Initialize (cfg);
 
-            con->ColorPrintf(L"Simple format: %d", 123);
+            con->ColorPrintf (L"Simple format: %d", 123);
         }
 
 
@@ -215,12 +215,12 @@ namespace UnitTest
 
         TEST_METHOD(ColorPuts_SwitchStyleUsage_FormatsCorrectly)
         {
-            auto con = std::make_shared<CConsole>();
-            auto cfg = std::make_shared<CConfig>();
-            con->Initialize(cfg);
+            auto con = std::make_shared<CConsole> ();
+            auto cfg = std::make_shared<CConfig> ();
+            con->Initialize (cfg);
 
             // Test the actual usage pattern with switches
-            con->ColorPuts(
+            con->ColorPuts (
                 L"  {InformationHighlight}-A{Information}          Displays files with specified attributes.");
         }
 
@@ -230,12 +230,12 @@ namespace UnitTest
 
         TEST_METHOD(ColorPuts_LongSwitchStyleUsage_FormatsCorrectly)
         {
-            auto con = std::make_shared<CConsole>();
-            auto cfg = std::make_shared<CConfig>();
-            con->Initialize(cfg);
+            auto con = std::make_shared<CConsole> ();
+            auto cfg = std::make_shared<CConfig> ();
+            con->Initialize (cfg);
 
             // Test long switches like --Env
-            con->ColorPuts(
+            con->ColorPuts (
                 L"  {InformationHighlight}--Env{Information}       Displays TCDIR help.");
         }
 
@@ -245,12 +245,12 @@ namespace UnitTest
 
         TEST_METHOD(ColorPuts_AttributeLettersStyleUsage_FormatsCorrectly)
         {
-            auto con = std::make_shared<CConsole>();
-            auto cfg = std::make_shared<CConfig>();
-            con->Initialize(cfg);
+            auto con = std::make_shared<CConsole> ();
+            auto cfg = std::make_shared<CConfig> ();
+            con->Initialize (cfg);
 
             // Test attribute letters like D, R, H
-            con->ColorPuts(
+            con->ColorPuts (
                 L"  attributes   {InformationHighlight}D{Information}  Directories                "
                 L"{InformationHighlight}R{Information}  Read-only files");
         }
@@ -285,7 +285,7 @@ namespace UnitTest
             s_fAssertFired = false;
 
             // Set up our custom breakpoint handler that records the assertion
-            SetBreakpointFunction(AssertExpectedBreakpoint);
+            SetBreakpointFunction (AssertExpectedBreakpoint);
         }
 
         TEST_METHOD_CLEANUP(MethodCleanup)
@@ -301,18 +301,18 @@ namespace UnitTest
         TEST_METHOD(ColorPuts_UnclosedBrace_AssertsInDebug)
         {
 #if DBG || DEBUG || _DEBUG
-            auto con = std::make_shared<CConsole>();
-            auto cfg = std::make_shared<CConfig>();
-            con->Initialize(cfg);
+            auto con = std::make_shared<CConsole> ();
+            auto cfg = std::make_shared<CConfig> ();
+            con->Initialize (cfg);
 
             // This should trigger an ASSERT due to unclosed brace
-            con->ColorPuts(L"Text with {Information unclosed");
+            con->ColorPuts (L"Text with {Information unclosed");
 
             // Verify the assertion fired
-            Assert::IsTrue(s_fAssertFired, L"ASSERT should fire for unclosed color marker brace");
+            Assert::IsTrue (s_fAssertFired, L"ASSERT should fire for unclosed color marker brace");
 #else
             // ASSERTs are compiled out in Release builds - skip this test
-            Assert::IsTrue(true);
+            Assert::IsTrue (true);
 #endif
         }
 
@@ -323,18 +323,18 @@ namespace UnitTest
         TEST_METHOD(ColorPuts_UnknownMarkerName_AssertsInDebug)
         {
 #if DBG || DEBUG || _DEBUG
-            auto con = std::make_shared<CConsole>();
-            auto cfg = std::make_shared<CConfig>();
-            con->Initialize(cfg);
+            auto con = std::make_shared<CConsole> ();
+            auto cfg = std::make_shared<CConfig> ();
+            con->Initialize (cfg);
 
             // This should trigger an ASSERT due to unknown marker name
-            con->ColorPuts(L"Text with {UnknownMarker} here");
+            con->ColorPuts (L"Text with {UnknownMarker} here");
 
             // Verify the assertion fired
-            Assert::IsTrue(s_fAssertFired, L"ASSERT should fire for unknown color marker name");
+            Assert::IsTrue (s_fAssertFired, L"ASSERT should fire for unknown color marker name");
 #else
             // ASSERTs are compiled out in Release builds - skip this test
-            Assert::IsTrue(true);
+            Assert::IsTrue (true);
 #endif
         }
 
@@ -344,15 +344,17 @@ namespace UnitTest
 
         TEST_METHOD(ColorPuts_ValidMarker_DoesNotAssert)
         {
-            auto con = std::make_shared<CConsole>();
-            auto cfg = std::make_shared<CConfig>();
-            con->Initialize(cfg);
+            auto con = std::make_shared<CConsole> ();
+            auto cfg = std::make_shared<CConfig> ();
+            con->Initialize (cfg);
 
             // This should NOT trigger an ASSERT
-            con->ColorPuts(L"Text with {InformationHighlight}valid{Information} marker");
+            con->ColorPuts (L"Text with {InformationHighlight}valid{Information} marker");
 
             // Verify no assertion fired
-            Assert::IsFalse(s_fAssertFired, L"ASSERT should NOT fire for valid color markers");
+            Assert::IsFalse (s_fAssertFired, L"ASSERT should NOT fire for valid color markers");
         }
     };
 }
+
+

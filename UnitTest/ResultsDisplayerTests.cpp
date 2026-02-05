@@ -85,9 +85,9 @@ namespace UnitTest
             std::wstring s1234  = probe.WrapFormatNumber(1234ull);
             std::wstring s1m    = probe.WrapFormatNumber(1000000ull);
 
-            Assert::AreEqual(L"0",         s0.c_str());
-            Assert::AreEqual(L"1,234",     s1234.c_str());
-            Assert::AreEqual(L"1,000,000", s1m.c_str());
+            Assert::AreEqual (L"0",         s0.c_str());
+            Assert::AreEqual (L"1,234",     s1234.c_str());
+            Assert::AreEqual (L"1,000,000", s1m.c_str());
         }
 
 
@@ -114,8 +114,8 @@ namespace UnitTest
             std::wstring s9     = wp.Wrap(999ull);
             std::wstring s10k   = wp.Wrap(10000ull);
 
-            Assert::AreEqual(L"999",    s9.c_str());
-            Assert::AreEqual(L"10,000", s10k.c_str());
+            Assert::AreEqual (L"999",    s9.c_str());
+            Assert::AreEqual (L"10,000", s10k.c_str());
         }
 
 
@@ -139,7 +139,7 @@ namespace UnitTest
 
             ECloudStatus status = probe.WrapGetCloudStatus(fd);
 
-            Assert::AreEqual(static_cast<int>(ECloudStatus::CS_NONE), static_cast<int>(status));
+            Assert::AreEqual (static_cast<int>(ECloudStatus::CS_NONE), static_cast<int>(status));
         }
 
 
@@ -163,7 +163,7 @@ namespace UnitTest
             // fInSyncRoot = false, so cloud attributes are ignored
             ECloudStatus status = probe.WrapGetCloudStatus(fd, false);
 
-            Assert::AreEqual(static_cast<int>(ECloudStatus::CS_NONE), static_cast<int>(status));
+            Assert::AreEqual (static_cast<int>(ECloudStatus::CS_NONE), static_cast<int>(status));
         }
 
 
@@ -183,7 +183,7 @@ namespace UnitTest
 
             ECloudStatus status = probe.WrapGetCloudStatus(fd, true);
 
-            Assert::AreEqual(static_cast<int>(ECloudStatus::CS_CLOUD_ONLY), static_cast<int>(status));
+            Assert::AreEqual (static_cast<int>(ECloudStatus::CS_CLOUD_ONLY), static_cast<int>(status));
         }
 
 
@@ -203,7 +203,7 @@ namespace UnitTest
 
             ECloudStatus status = probe.WrapGetCloudStatus(fd, true);
 
-            Assert::AreEqual(static_cast<int>(ECloudStatus::CS_CLOUD_ONLY), static_cast<int>(status));
+            Assert::AreEqual (static_cast<int>(ECloudStatus::CS_CLOUD_ONLY), static_cast<int>(status));
         }
 
 
@@ -223,7 +223,7 @@ namespace UnitTest
 
             ECloudStatus status = probe.WrapGetCloudStatus(fd, true);
 
-            Assert::AreEqual(static_cast<int>(ECloudStatus::CS_CLOUD_ONLY), static_cast<int>(status));
+            Assert::AreEqual (static_cast<int>(ECloudStatus::CS_CLOUD_ONLY), static_cast<int>(status));
         }
 
 
@@ -243,7 +243,7 @@ namespace UnitTest
 
             ECloudStatus status = probe.WrapGetCloudStatus(fd, true);
 
-            Assert::AreEqual(static_cast<int>(ECloudStatus::CS_LOCAL), static_cast<int>(status));
+            Assert::AreEqual (static_cast<int>(ECloudStatus::CS_LOCAL), static_cast<int>(status));
         }
 
 
@@ -263,7 +263,7 @@ namespace UnitTest
 
             ECloudStatus status = probe.WrapGetCloudStatus(fd, true);
 
-            Assert::AreEqual(static_cast<int>(ECloudStatus::CS_PINNED), static_cast<int>(status));
+            Assert::AreEqual (static_cast<int>(ECloudStatus::CS_PINNED), static_cast<int>(status));
         }
 
 
@@ -285,7 +285,7 @@ namespace UnitTest
 
             ECloudStatus status = probe.WrapGetCloudStatus(fd, true);
 
-            Assert::AreEqual(static_cast<int>(ECloudStatus::CS_PINNED), static_cast<int>(status));
+            Assert::AreEqual (static_cast<int>(ECloudStatus::CS_PINNED), static_cast<int>(status));
         }
 
 
@@ -307,10 +307,10 @@ namespace UnitTest
 
 
 
-            Assert::IsTrue(SUCCEEDED(hr));
+            Assert::IsTrue (SUCCEEDED(hr));
             // File should match: has OFFLINE which is part of the O composite mask
             bool matches = (fd.dwFileAttributes & cl.m_dwAttributesRequired) != 0;
-            Assert::IsTrue(matches);
+            Assert::IsTrue (matches);
         }
 
 
@@ -328,10 +328,10 @@ namespace UnitTest
 
 
 
-            Assert::IsTrue(SUCCEEDED(hr));
+            Assert::IsTrue (SUCCEEDED(hr));
             // File should NOT match: has UNPINNED but none of the O composite bits
             bool matches = (fd.dwFileAttributes & cl.m_dwAttributesRequired) != 0;
-            Assert::IsFalse(matches);
+            Assert::IsFalse (matches);
         }
 
 
@@ -349,9 +349,9 @@ namespace UnitTest
 
 
 
-            Assert::IsTrue(SUCCEEDED(hr));
+            Assert::IsTrue (SUCCEEDED(hr));
             bool matches = (fd.dwFileAttributes & cl.m_dwAttributesRequired) != 0;
-            Assert::IsTrue(matches);
+            Assert::IsTrue (matches);
         }
 
 
@@ -369,9 +369,9 @@ namespace UnitTest
 
 
 
-            Assert::IsTrue(SUCCEEDED(hr));
+            Assert::IsTrue (SUCCEEDED(hr));
             bool matches = (fd.dwFileAttributes & cl.m_dwAttributesRequired) != 0;
-            Assert::IsTrue(matches);
+            Assert::IsTrue (matches);
         }
 
 
@@ -391,15 +391,15 @@ namespace UnitTest
 
 
 
-            Assert::IsTrue(SUCCEEDED(hr));
+            Assert::IsTrue (SUCCEEDED(hr));
             
             // Cloud file should be excluded (has OFFLINE)
             bool cloudExcluded = (fdCloud.dwFileAttributes & cl.m_dwAttributesExcluded) != 0;
-            Assert::IsTrue(cloudExcluded);
+            Assert::IsTrue (cloudExcluded);
 
             // Local file should NOT be excluded (no cloud-only attributes)
             bool localExcluded = (fdLocal.dwFileAttributes & cl.m_dwAttributesExcluded) != 0;
-            Assert::IsFalse(localExcluded);
+            Assert::IsFalse (localExcluded);
         }
 
 
@@ -422,7 +422,7 @@ namespace UnitTest
 
             // PINNED should take priority for display
             ECloudStatus status = probe.WrapGetCloudStatus(fd, true);
-            Assert::AreEqual(static_cast<int>(ECloudStatus::CS_PINNED), static_cast<int>(status));
+            Assert::AreEqual (static_cast<int>(ECloudStatus::CS_PINNED), static_cast<int>(status));
         }
 
 
@@ -448,12 +448,14 @@ namespace UnitTest
 
             // Should match /A:V (PINNED bit is set)
             bool matchesV = (fd.dwFileAttributes & clV.m_dwAttributesRequired) != 0;
-            Assert::IsTrue(matchesV);
+            Assert::IsTrue (matchesV);
 
             // Should also match /A:L (UNPINNED bit is also set)
             bool matchesL = (fd.dwFileAttributes & clL.m_dwAttributesRequired) != 0;
-            Assert::IsTrue(matchesL);
+            Assert::IsTrue (matchesL);
         }
 
     };
 }
+
+

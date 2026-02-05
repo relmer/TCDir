@@ -39,9 +39,9 @@ namespace UnitTest
 
 
 
-            Assert::IsTrue(SUCCEEDED(hr));
-            Assert::AreEqual(static_cast<int>(CCommandLine::ESortOrder::SO_NAME),          static_cast<int>(cl.m_sortorder));
-            Assert::AreEqual(static_cast<int>(CCommandLine::ESortDirection::SD_ASCENDING), static_cast<int>(cl.m_sortdirection));
+            Assert::IsTrue (SUCCEEDED(hr));
+            Assert::AreEqual (static_cast<int>(CCommandLine::ESortOrder::SO_NAME),          static_cast<int>(cl.m_sortorder));
+            Assert::AreEqual (static_cast<int>(CCommandLine::ESortDirection::SD_ASCENDING), static_cast<int>(cl.m_sortdirection));
         }
 
 
@@ -57,9 +57,9 @@ namespace UnitTest
 
 
 
-            Assert::IsTrue(SUCCEEDED(hr));
-            Assert::AreEqual(static_cast<int>(CCommandLine::ESortOrder::SO_SIZE),           static_cast<int>(cl.m_sortorder));
-            Assert::AreEqual(static_cast<int>(CCommandLine::ESortDirection::SD_DESCENDING), static_cast<int>(cl.m_sortdirection));
+            Assert::IsTrue (SUCCEEDED(hr));
+            Assert::AreEqual (static_cast<int>(CCommandLine::ESortOrder::SO_SIZE),           static_cast<int>(cl.m_sortorder));
+            Assert::AreEqual (static_cast<int>(CCommandLine::ESortDirection::SD_DESCENDING), static_cast<int>(cl.m_sortdirection));
         }
 
 
@@ -74,9 +74,9 @@ namespace UnitTest
 
 
 
-            Assert::IsTrue(SUCCEEDED(hr));
-            Assert::AreEqual(static_cast<int>(CCommandLine::ESortOrder::SO_DATE),          static_cast<int>(cl.m_sortorder));
-            Assert::AreEqual(static_cast<int>(CCommandLine::ESortDirection::SD_ASCENDING), static_cast<int>(cl.m_sortdirection));
+            Assert::IsTrue (SUCCEEDED(hr));
+            Assert::AreEqual (static_cast<int>(CCommandLine::ESortOrder::SO_DATE),          static_cast<int>(cl.m_sortorder));
+            Assert::AreEqual (static_cast<int>(CCommandLine::ESortDirection::SD_ASCENDING), static_cast<int>(cl.m_sortdirection));
         }
 
 
@@ -91,9 +91,9 @@ namespace UnitTest
 
 
 
-            Assert::IsTrue(SUCCEEDED(hr));
-            Assert::AreEqual(static_cast<int>(CCommandLine::ESortOrder::SO_DATE),           static_cast<int>(cl.m_sortorder));
-            Assert::AreEqual(static_cast<int>(CCommandLine::ESortDirection::SD_DESCENDING), static_cast<int>(cl.m_sortdirection));
+            Assert::IsTrue (SUCCEEDED(hr));
+            Assert::AreEqual (static_cast<int>(CCommandLine::ESortOrder::SO_DATE),           static_cast<int>(cl.m_sortorder));
+            Assert::AreEqual (static_cast<int>(CCommandLine::ESortDirection::SD_DESCENDING), static_cast<int>(cl.m_sortdirection));
         }
 
 
@@ -110,12 +110,12 @@ namespace UnitTest
             HRESULT         hr     = cl.Parse(4, argv);
 
 
-            Assert::IsTrue(SUCCEEDED(hr));
-            Assert::IsTrue((cl.m_dwAttributesExcluded & FILE_ATTRIBUTE_DIRECTORY) != 0);
-            Assert::IsTrue((cl.m_dwAttributesRequired & FILE_ATTRIBUTE_HIDDEN)    != 0);
-            Assert::IsTrue(cl.m_fRecurse);
-            Assert::IsTrue(cl.m_fWideListing);
-            Assert::IsTrue(cl.m_fPerfTimer);
+            Assert::IsTrue (SUCCEEDED(hr));
+            Assert::IsTrue ((cl.m_dwAttributesExcluded & FILE_ATTRIBUTE_DIRECTORY) != 0);
+            Assert::IsTrue ((cl.m_dwAttributesRequired & FILE_ATTRIBUTE_HIDDEN)    != 0);
+            Assert::IsTrue (cl.m_fRecurse);
+            Assert::IsTrue (cl.m_fWideListing);
+            Assert::IsTrue (cl.m_fPerfTimer);
         }
 
 
@@ -130,8 +130,8 @@ namespace UnitTest
 
 
 
-            Assert::IsTrue(SUCCEEDED(hr));
-            Assert::IsTrue((cl.m_dwAttributesRequired & FILE_ATTRIBUTE_NOT_CONTENT_INDEXED) != 0);
+            Assert::IsTrue (SUCCEEDED(hr));
+            Assert::IsTrue ((cl.m_dwAttributesRequired & FILE_ATTRIBUTE_NOT_CONTENT_INDEXED) != 0);
         }
 
 
@@ -146,11 +146,11 @@ namespace UnitTest
 
 
 
-            Assert::IsTrue(SUCCEEDED(hr));
+            Assert::IsTrue (SUCCEEDED(hr));
             // 'o' is a composite: OFFLINE | RECALL_ON_OPEN | RECALL_ON_DATA_ACCESS
-            Assert::IsTrue((cl.m_dwAttributesRequired & FILE_ATTRIBUTE_OFFLINE)               != 0);
-            Assert::IsTrue((cl.m_dwAttributesRequired & FILE_ATTRIBUTE_RECALL_ON_OPEN)        != 0);
-            Assert::IsTrue((cl.m_dwAttributesRequired & FILE_ATTRIBUTE_RECALL_ON_DATA_ACCESS) != 0);
+            Assert::IsTrue ((cl.m_dwAttributesRequired & FILE_ATTRIBUTE_OFFLINE)               != 0);
+            Assert::IsTrue ((cl.m_dwAttributesRequired & FILE_ATTRIBUTE_RECALL_ON_OPEN)        != 0);
+            Assert::IsTrue ((cl.m_dwAttributesRequired & FILE_ATTRIBUTE_RECALL_ON_DATA_ACCESS) != 0);
         }
 
 
@@ -165,8 +165,8 @@ namespace UnitTest
 
 
 
-            Assert::IsTrue(SUCCEEDED(hr));
-            Assert::IsTrue((cl.m_dwAttributesRequired & FILE_ATTRIBUTE_INTEGRITY_STREAM) != 0);
+            Assert::IsTrue (SUCCEEDED(hr));
+            Assert::IsTrue ((cl.m_dwAttributesRequired & FILE_ATTRIBUTE_INTEGRITY_STREAM) != 0);
         }
 
 
@@ -181,8 +181,8 @@ namespace UnitTest
 
 
 
-            Assert::IsTrue(SUCCEEDED(hr));
-            Assert::IsTrue((cl.m_dwAttributesRequired & FILE_ATTRIBUTE_NO_SCRUB_DATA) != 0);
+            Assert::IsTrue (SUCCEEDED(hr));
+            Assert::IsTrue ((cl.m_dwAttributesRequired & FILE_ATTRIBUTE_NO_SCRUB_DATA) != 0);
         }
 
 
@@ -197,8 +197,8 @@ namespace UnitTest
 
 
 
-            Assert::IsTrue(SUCCEEDED(hr));
-            Assert::IsTrue((cl.m_dwAttributesRequired & FILE_ATTRIBUTE_PINNED) != 0);
+            Assert::IsTrue (SUCCEEDED(hr));
+            Assert::IsTrue ((cl.m_dwAttributesRequired & FILE_ATTRIBUTE_PINNED) != 0);
         }
 
 
@@ -213,8 +213,8 @@ namespace UnitTest
 
 
 
-            Assert::IsTrue(SUCCEEDED(hr));
-            Assert::IsTrue((cl.m_dwAttributesRequired & FILE_ATTRIBUTE_UNPINNED) != 0);
+            Assert::IsTrue (SUCCEEDED(hr));
+            Assert::IsTrue ((cl.m_dwAttributesRequired & FILE_ATTRIBUTE_UNPINNED) != 0);
         }
 
 
@@ -229,11 +229,11 @@ namespace UnitTest
 
 
 
-            Assert::IsTrue(SUCCEEDED(hr));
+            Assert::IsTrue (SUCCEEDED(hr));
             // Negated 'o' should exclude all cloud-only attributes
-            Assert::IsTrue((cl.m_dwAttributesExcluded & FILE_ATTRIBUTE_OFFLINE)               != 0);
-            Assert::IsTrue((cl.m_dwAttributesExcluded & FILE_ATTRIBUTE_RECALL_ON_OPEN)        != 0);
-            Assert::IsTrue((cl.m_dwAttributesExcluded & FILE_ATTRIBUTE_RECALL_ON_DATA_ACCESS) != 0);
+            Assert::IsTrue ((cl.m_dwAttributesExcluded & FILE_ATTRIBUTE_OFFLINE)               != 0);
+            Assert::IsTrue ((cl.m_dwAttributesExcluded & FILE_ATTRIBUTE_RECALL_ON_OPEN)        != 0);
+            Assert::IsTrue ((cl.m_dwAttributesExcluded & FILE_ATTRIBUTE_RECALL_ON_DATA_ACCESS) != 0);
         }
 
 
@@ -248,9 +248,9 @@ namespace UnitTest
 
 
 
-            Assert::IsTrue(SUCCEEDED(hr));
-            Assert::IsTrue(cl.m_fEnv);
-            Assert::AreEqual(L'/', cl.GetSwitchPrefix());
+            Assert::IsTrue (SUCCEEDED(hr));
+            Assert::IsTrue (cl.m_fEnv);
+            Assert::AreEqual (L'/', cl.GetSwitchPrefix());
         }
 
 
@@ -265,9 +265,9 @@ namespace UnitTest
 
 
 
-            Assert::IsTrue(SUCCEEDED(hr));
-            Assert::IsTrue(cl.m_fEnv);
-            Assert::AreEqual(L'-', cl.GetSwitchPrefix());
+            Assert::IsTrue (SUCCEEDED(hr));
+            Assert::IsTrue (cl.m_fEnv);
+            Assert::AreEqual (L'-', cl.GetSwitchPrefix());
         }
 
 
@@ -282,7 +282,7 @@ namespace UnitTest
 
 
 
-            Assert::IsTrue(FAILED(hr));
+            Assert::IsTrue (FAILED(hr));
         }
 
 
@@ -297,9 +297,9 @@ namespace UnitTest
 
 
 
-            Assert::IsTrue(SUCCEEDED(hr));
-            Assert::IsTrue(cl.m_fConfig);
-            Assert::AreEqual(L'/', cl.GetSwitchPrefix());
+            Assert::IsTrue (SUCCEEDED(hr));
+            Assert::IsTrue (cl.m_fConfig);
+            Assert::AreEqual (L'/', cl.GetSwitchPrefix());
         }
 
 
@@ -314,9 +314,9 @@ namespace UnitTest
 
 
 
-            Assert::IsTrue(SUCCEEDED(hr));
-            Assert::IsTrue(cl.m_fConfig);
-            Assert::AreEqual(L'-', cl.GetSwitchPrefix());
+            Assert::IsTrue (SUCCEEDED(hr));
+            Assert::IsTrue (cl.m_fConfig);
+            Assert::AreEqual (L'-', cl.GetSwitchPrefix());
         }
 
 
@@ -331,7 +331,7 @@ namespace UnitTest
 
 
 
-            Assert::IsTrue(FAILED(hr));
+            Assert::IsTrue (FAILED(hr));
         }
 
 
@@ -346,9 +346,9 @@ namespace UnitTest
 
 
 
-            Assert::IsTrue(SUCCEEDED(hr));
-            Assert::IsTrue(cl.m_fHelp);
-            Assert::AreEqual(L'-', cl.GetSwitchPrefix());
+            Assert::IsTrue (SUCCEEDED(hr));
+            Assert::IsTrue (cl.m_fHelp);
+            Assert::AreEqual (L'-', cl.GetSwitchPrefix());
         }
 
 
@@ -363,9 +363,9 @@ namespace UnitTest
 
 
 
-            Assert::IsTrue(SUCCEEDED(hr));
-            Assert::IsTrue(cl.m_fHelp);
-            Assert::AreEqual(L'/', cl.GetSwitchPrefix());
+            Assert::IsTrue (SUCCEEDED(hr));
+            Assert::IsTrue (cl.m_fHelp);
+            Assert::AreEqual (L'/', cl.GetSwitchPrefix());
         }
 
 
@@ -380,7 +380,7 @@ namespace UnitTest
 
 
 
-            Assert::IsTrue(FAILED(hr));
+            Assert::IsTrue (FAILED(hr));
         }
 
 
@@ -396,9 +396,9 @@ namespace UnitTest
 
 
 
-            Assert::IsTrue(SUCCEEDED(hr));
-            Assert::IsTrue(cl.m_fDebug);
-            Assert::AreEqual(L'-', cl.GetSwitchPrefix());
+            Assert::IsTrue (SUCCEEDED(hr));
+            Assert::IsTrue (cl.m_fDebug);
+            Assert::AreEqual (L'-', cl.GetSwitchPrefix());
         }
 
 
@@ -413,9 +413,9 @@ namespace UnitTest
 
 
 
-            Assert::IsTrue(SUCCEEDED(hr));
-            Assert::IsTrue(cl.m_fDebug);
-            Assert::AreEqual(L'/', cl.GetSwitchPrefix());
+            Assert::IsTrue (SUCCEEDED(hr));
+            Assert::IsTrue (cl.m_fDebug);
+            Assert::AreEqual (L'/', cl.GetSwitchPrefix());
         }
 #endif
 
@@ -431,7 +431,7 @@ namespace UnitTest
 
 
 
-            Assert::IsTrue(FAILED(hr));
+            Assert::IsTrue (FAILED(hr));
         }
 
 
@@ -446,8 +446,8 @@ namespace UnitTest
 
 
 
-            Assert::IsTrue(SUCCEEDED(hr));
-            Assert::AreEqual(static_cast<int>(CCommandLine::ETimeField::TF_CREATION), static_cast<int>(cl.m_timeField));
+            Assert::IsTrue (SUCCEEDED(hr));
+            Assert::AreEqual (static_cast<int>(CCommandLine::ETimeField::TF_CREATION), static_cast<int>(cl.m_timeField));
         }
 
 
@@ -462,8 +462,8 @@ namespace UnitTest
 
 
 
-            Assert::IsTrue(SUCCEEDED(hr));
-            Assert::AreEqual(static_cast<int>(CCommandLine::ETimeField::TF_ACCESS), static_cast<int>(cl.m_timeField));
+            Assert::IsTrue (SUCCEEDED(hr));
+            Assert::AreEqual (static_cast<int>(CCommandLine::ETimeField::TF_ACCESS), static_cast<int>(cl.m_timeField));
         }
 
 
@@ -478,8 +478,8 @@ namespace UnitTest
 
 
 
-            Assert::IsTrue(SUCCEEDED(hr));
-            Assert::AreEqual(static_cast<int>(CCommandLine::ETimeField::TF_WRITTEN), static_cast<int>(cl.m_timeField));
+            Assert::IsTrue (SUCCEEDED(hr));
+            Assert::AreEqual (static_cast<int>(CCommandLine::ETimeField::TF_WRITTEN), static_cast<int>(cl.m_timeField));
         }
 
 
@@ -491,7 +491,7 @@ namespace UnitTest
 
 
 
-            Assert::AreEqual(static_cast<int>(CCommandLine::ETimeField::TF_WRITTEN), static_cast<int>(cl.m_timeField));
+            Assert::AreEqual (static_cast<int>(CCommandLine::ETimeField::TF_WRITTEN), static_cast<int>(cl.m_timeField));
         }
 
 
@@ -506,8 +506,8 @@ namespace UnitTest
 
 
 
-            Assert::IsTrue(SUCCEEDED(hr));
-            Assert::AreEqual(static_cast<int>(CCommandLine::ETimeField::TF_CREATION), static_cast<int>(cl.m_timeField));
+            Assert::IsTrue (SUCCEEDED(hr));
+            Assert::AreEqual (static_cast<int>(CCommandLine::ETimeField::TF_CREATION), static_cast<int>(cl.m_timeField));
         }
 
 
@@ -522,8 +522,8 @@ namespace UnitTest
 
 
 
-            Assert::IsTrue(SUCCEEDED(hr));
-            Assert::AreEqual(static_cast<int>(CCommandLine::ETimeField::TF_CREATION), static_cast<int>(cl.m_timeField));
+            Assert::IsTrue (SUCCEEDED(hr));
+            Assert::AreEqual (static_cast<int>(CCommandLine::ETimeField::TF_CREATION), static_cast<int>(cl.m_timeField));
         }
 
 
@@ -538,8 +538,8 @@ namespace UnitTest
 
 
 
-            Assert::IsTrue(SUCCEEDED(hr));
-            Assert::AreEqual(static_cast<int>(CCommandLine::ETimeField::TF_CREATION), static_cast<int>(cl.m_timeField));
+            Assert::IsTrue (SUCCEEDED(hr));
+            Assert::AreEqual (static_cast<int>(CCommandLine::ETimeField::TF_CREATION), static_cast<int>(cl.m_timeField));
         }
 
 
@@ -554,7 +554,7 @@ namespace UnitTest
 
 
 
-            Assert::IsTrue(FAILED(hr));
+            Assert::IsTrue (FAILED(hr));
         }
 
 
@@ -569,9 +569,9 @@ namespace UnitTest
 
 
 
-            Assert::IsTrue(SUCCEEDED(hr));
-            Assert::IsTrue(cl.m_fShowOwner);
-            Assert::AreEqual(L'-', cl.GetSwitchPrefix());
+            Assert::IsTrue (SUCCEEDED(hr));
+            Assert::IsTrue (cl.m_fShowOwner);
+            Assert::AreEqual (L'-', cl.GetSwitchPrefix());
         }
 
 
@@ -586,9 +586,9 @@ namespace UnitTest
 
 
 
-            Assert::IsTrue(SUCCEEDED(hr));
-            Assert::IsTrue(cl.m_fShowOwner);
-            Assert::AreEqual(L'/', cl.GetSwitchPrefix());
+            Assert::IsTrue (SUCCEEDED(hr));
+            Assert::IsTrue (cl.m_fShowOwner);
+            Assert::AreEqual (L'/', cl.GetSwitchPrefix());
         }
 
 
@@ -603,7 +603,7 @@ namespace UnitTest
 
 
 
-            Assert::IsTrue(FAILED(hr));
+            Assert::IsTrue (FAILED(hr));
         }
 
 
@@ -618,9 +618,9 @@ namespace UnitTest
 
 
 
-            Assert::IsTrue(SUCCEEDED(hr));
-            Assert::IsTrue(cl.m_fShowStreams);
-            Assert::AreEqual(L'-', cl.GetSwitchPrefix());
+            Assert::IsTrue (SUCCEEDED(hr));
+            Assert::IsTrue (cl.m_fShowStreams);
+            Assert::AreEqual (L'-', cl.GetSwitchPrefix());
         }
 
 
@@ -635,9 +635,9 @@ namespace UnitTest
 
 
 
-            Assert::IsTrue(SUCCEEDED(hr));
-            Assert::IsTrue(cl.m_fShowStreams);
-            Assert::AreEqual(L'/', cl.GetSwitchPrefix());
+            Assert::IsTrue (SUCCEEDED(hr));
+            Assert::IsTrue (cl.m_fShowStreams);
+            Assert::AreEqual (L'/', cl.GetSwitchPrefix());
         }
 
 
@@ -652,7 +652,7 @@ namespace UnitTest
 
 
 
-            Assert::IsTrue(FAILED(hr));
+            Assert::IsTrue (FAILED(hr));
         }
 
 
@@ -741,3 +741,5 @@ namespace UnitTest
 
     };
 }
+
+

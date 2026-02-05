@@ -3,6 +3,8 @@
 
 
 #include "../TCDirCore/pch.h"
-#include <CppUnitTest.h>
 
+#include <cwctype>
+
+#include <CppUnitTest.h>
 
