@@ -274,10 +274,12 @@ namespace UnitTest
             // Run the listing
             //
 
+            vector<filesystem::path> fileSpecs = { L"*" };
+
             HRESULT hr = lister.ProcessDirectoryMultiThreaded (
                 driveInfo,
                 L"C:\\MockRoot",
-                L"*",
+                fileSpecs,
                 displayer,
                 IResultsDisplayer::EDirectoryLevel::Initial,
                 totals);
@@ -289,7 +291,7 @@ namespace UnitTest
             Assert::IsTrue (SUCCEEDED (hr), L"ProcessDirectoryMultiThreaded should succeed");
 
             Assert::AreEqual (6u, totals.m_cFiles, L"Should have 6 files");
-            Assert::AreEqual (3u, totals.m_cDirectories, L"Should have 3 subdirectories");
+            Assert::AreEqual (3u, totals.m_cDirectories, L"Should have 3 directories matching '*': sub1, sub2, subsub");
             Assert::AreEqual (21000ull, totals.m_uliFileBytes.QuadPart, L"Should have 21000 bytes total");
         }
 
@@ -337,17 +339,19 @@ namespace UnitTest
             MockResultsDisplayer displayer;
             SListingTotals       totals = {};
 
+            vector<filesystem::path> fileSpecs = { L"*" };
+
             HRESULT hr = lister.ProcessDirectoryMultiThreaded (
                 driveInfo,
                 L"C:\\MockRoot",
-                L"*",
+                fileSpecs,
                 displayer,
                 IResultsDisplayer::EDirectoryLevel::Initial,
                 totals);
 
             Assert::IsTrue (SUCCEEDED (hr));
             Assert::AreEqual (2u, totals.m_cFiles, L"Should have 2 files");
-            Assert::AreEqual (3u, totals.m_cDirectories, L"Should have 3 subdirectories (including empty ones)");
+            Assert::AreEqual (3u, totals.m_cDirectories, L"Should have 3 directories matching '*': empty1, empty2, nonempty");
             Assert::AreEqual (300ull, totals.m_uliFileBytes.QuadPart, L"Should have 300 bytes total");
         }
 
@@ -384,17 +388,327 @@ namespace UnitTest
             MockResultsDisplayer displayer;
             SListingTotals       totals = {};
 
+            vector<filesystem::path> fileSpecs = { L"*" };
+
             HRESULT hr = lister.ProcessDirectoryMultiThreaded (
                 driveInfo,
                 L"C:\\MockRoot",
-                L"*",
+                fileSpecs,
                 displayer,
                 IResultsDisplayer::EDirectoryLevel::Initial,
                 totals);
 
             Assert::IsTrue (SUCCEEDED (hr));
             Assert::AreEqual (2u, totals.m_cFiles, L"Should have 2 files (not recursive)");
-            Assert::AreEqual (1u, totals.m_cDirectories, L"Should have 1 subdirectory shown (not recursed into)");
+            Assert::AreEqual (1u, totals.m_cDirectories, L"Should have 1 directory with files (MockRoot only, not recursive)");
+            Assert::AreEqual (300ull, totals.m_uliFileBytes.QuadPart);
+        }
+
+
+
+
+        ////////////////////////////////////////////////////////////////////////
+        //
+        //  MultiMask_TwoMasksSameDirectory_CombinedResults
+        //
+        //  Verifies that multiple file masks applied to the same directory
+        //  produce a single combined listing with files from both masks.
+        //
+        ////////////////////////////////////////////////////////////////////////
+
+        TEST_METHOD(MultiMask_TwoMasksSameDirectory_CombinedResults)
+        {
+            //
+            // Setup:
+            //   C:\MockRoot\
+            //     file1.cpp (100 bytes)
+            //     file2.cpp (200 bytes)
+            //     file3.h   (300 bytes)
+            //     file4.h   (400 bytes)
+            //     file5.txt (500 bytes)  -- should NOT be included
+            //
+            // With masks *.cpp and *.h, should get 4 files, 1000 bytes
+            //
+
+            MockFileTree tree;
+            tree.AddFile (L"C:\\MockRoot\\file1.cpp", 100);
+            tree.AddFile (L"C:\\MockRoot\\file2.cpp", 200);
+            tree.AddFile (L"C:\\MockRoot\\file3.h",   300);
+            tree.AddFile (L"C:\\MockRoot\\file4.h",   400);
+            tree.AddFile (L"C:\\MockRoot\\file5.txt", 500);
+
+            ScopedFileSystemMock mock (tree);
+
+            auto cmdLine = make_shared<CCommandLine> ();
+            cmdLine->m_fRecurse = false;
+
+            auto console = make_shared<CConsole> ();
+            auto config  = make_shared<CConfig> ();
+            console->Initialize (config);
+
+            CMultiThreadedLister lister (cmdLine, console, config);
+            CDriveInfo           driveInfo (L"C:\\MockRoot");
+            MockResultsDisplayer displayer;
+            SListingTotals       totals = {};
+
+            //
+            // Call with multiple file specs
+            //
+
+            vector<filesystem::path> fileSpecs = { L"*.cpp", L"*.h" };
+
+            HRESULT hr = lister.ProcessDirectoryMultiThreaded (
+                driveInfo,
+                L"C:\\MockRoot",
+                fileSpecs,
+                displayer,
+                IResultsDisplayer::EDirectoryLevel::Initial,
+                totals);
+
+            Assert::IsTrue (SUCCEEDED (hr));
+            Assert::AreEqual (4u, totals.m_cFiles, L"Should have 4 files (2 cpp + 2 h)");
+            Assert::AreEqual (1000ull, totals.m_uliFileBytes.QuadPart, L"Should have 1000 bytes");
+        }
+
+
+
+
+        ////////////////////////////////////////////////////////////////////////
+        //
+        //  MultiMask_OverlappingMasks_NoDuplicates
+        //
+        //  Verifies that when a file matches multiple masks, it only appears
+        //  once in the results (deduplication).
+        //
+        ////////////////////////////////////////////////////////////////////////
+
+        TEST_METHOD(MultiMask_OverlappingMasks_NoDuplicates)
+        {
+            //
+            // Setup:
+            //   C:\MockRoot\
+            //     test.cpp  (100 bytes) - matches *.cpp and test.*
+            //     other.cpp (200 bytes) - matches *.cpp only
+            //     test.h    (300 bytes) - matches test.* only
+            //
+            // With masks *.cpp and test.*, should get 3 files (no duplicates)
+            //
+
+            MockFileTree tree;
+            tree.AddFile (L"C:\\MockRoot\\test.cpp",  100);
+            tree.AddFile (L"C:\\MockRoot\\other.cpp", 200);
+            tree.AddFile (L"C:\\MockRoot\\test.h",    300);
+
+            ScopedFileSystemMock mock (tree);
+
+            auto cmdLine = make_shared<CCommandLine> ();
+            cmdLine->m_fRecurse = false;
+
+            auto console = make_shared<CConsole> ();
+            auto config  = make_shared<CConfig> ();
+            console->Initialize (config);
+
+            CMultiThreadedLister lister (cmdLine, console, config);
+            CDriveInfo           driveInfo (L"C:\\MockRoot");
+            MockResultsDisplayer displayer;
+            SListingTotals       totals = {};
+
+            vector<filesystem::path> fileSpecs = { L"*.cpp", L"test.*" };
+
+            HRESULT hr = lister.ProcessDirectoryMultiThreaded (
+                driveInfo,
+                L"C:\\MockRoot",
+                fileSpecs,
+                displayer,
+                IResultsDisplayer::EDirectoryLevel::Initial,
+                totals);
+
+            Assert::IsTrue (SUCCEEDED (hr));
+            Assert::AreEqual (3u, totals.m_cFiles, L"Should have 3 files (test.cpp counted once)");
+            Assert::AreEqual (600ull, totals.m_uliFileBytes.QuadPart, L"Should have 600 bytes");
+        }
+
+
+
+
+        ////////////////////////////////////////////////////////////////////////
+        //
+        //  MultiMask_Recursive_CombinedInEachSubdir
+        //
+        //  Verifies that with /s and multiple masks, each subdirectory shows
+        //  combined results from all masks.
+        //
+        ////////////////////////////////////////////////////////////////////////
+
+        TEST_METHOD(MultiMask_Recursive_CombinedInEachSubdir)
+        {
+            //
+            // Setup:
+            //   C:\MockRoot\
+            //     file1.cpp (100 bytes)
+            //     file2.h   (200 bytes)
+            //     sub\
+            //       file3.cpp (300 bytes)
+            //       file4.h   (400 bytes)
+            //       file5.txt (500 bytes)  -- not matched
+            //
+            // With masks *.cpp and *.h recursive, should get 4 files
+            //
+
+            MockFileTree tree;
+            tree.AddFile      (L"C:\\MockRoot\\file1.cpp", 100);
+            tree.AddFile      (L"C:\\MockRoot\\file2.h",   200);
+            tree.AddDirectory (L"C:\\MockRoot\\sub");
+            tree.AddFile      (L"C:\\MockRoot\\sub\\file3.cpp", 300);
+            tree.AddFile      (L"C:\\MockRoot\\sub\\file4.h",   400);
+            tree.AddFile      (L"C:\\MockRoot\\sub\\file5.txt", 500);
+
+            ScopedFileSystemMock mock (tree);
+
+            auto cmdLine = make_shared<CCommandLine> ();
+            cmdLine->m_fRecurse = true;
+
+            auto console = make_shared<CConsole> ();
+            auto config  = make_shared<CConfig> ();
+            console->Initialize (config);
+
+            CMultiThreadedLister lister (cmdLine, console, config);
+            CDriveInfo           driveInfo (L"C:\\MockRoot");
+            MockResultsDisplayer displayer;
+            SListingTotals       totals = {};
+
+            vector<filesystem::path> fileSpecs = { L"*.cpp", L"*.h" };
+
+            HRESULT hr = lister.ProcessDirectoryMultiThreaded (
+                driveInfo,
+                L"C:\\MockRoot",
+                fileSpecs,
+                displayer,
+                IResultsDisplayer::EDirectoryLevel::Initial,
+                totals);
+
+            Assert::IsTrue (SUCCEEDED (hr));
+            Assert::AreEqual (4u, totals.m_cFiles, L"Should have 4 files (2 cpp + 2 h)");
+            Assert::AreEqual (0u, totals.m_cDirectories, L"Should have 0 directories matching '*.cpp' or '*.h' (sub doesn't match)");
+            Assert::AreEqual (1000ull, totals.m_uliFileBytes.QuadPart);
+        }
+
+
+
+
+        ////////////////////////////////////////////////////////////////////////
+        //
+        //  DirectoryCount_PatternMatchesDir_CountedInTotal
+        //
+        //  Verifies that m_cDirectories counts directories whose names match
+        //  the pattern. When lib.cpp/ directory name matches *.cpp, it's
+        //  included in the directory count.
+        //
+        ////////////////////////////////////////////////////////////////////////
+
+        TEST_METHOD(DirectoryCount_PatternMatchesDir_CountedInTotal)
+        {
+            //
+            // Setup:
+            //   C:\MockRoot\
+            //     file1.cpp     (100 bytes)
+            //     lib.cpp\                    <-- directory that matches *.cpp
+            //       file2.cpp   (200 bytes)
+            //
+            // With pattern *.cpp recursive, lib.cpp should be counted
+            //
+
+            MockFileTree tree;
+            tree.AddFile      (L"C:\\MockRoot\\file1.cpp", 100);
+            tree.AddDirectory (L"C:\\MockRoot\\lib.cpp");
+            tree.AddFile      (L"C:\\MockRoot\\lib.cpp\\file2.cpp", 200);
+
+            ScopedFileSystemMock mock (tree);
+
+            auto cmdLine = make_shared<CCommandLine> ();
+            cmdLine->m_fRecurse = true;
+
+            auto console = make_shared<CConsole> ();
+            auto config  = make_shared<CConfig> ();
+            console->Initialize (config);
+
+            CMultiThreadedLister lister (cmdLine, console, config);
+            CDriveInfo           driveInfo (L"C:\\MockRoot");
+            MockResultsDisplayer displayer;
+            SListingTotals       totals = {};
+
+            vector<filesystem::path> fileSpecs = { L"*.cpp" };
+
+            HRESULT hr = lister.ProcessDirectoryMultiThreaded (
+                driveInfo,
+                L"C:\\MockRoot",
+                fileSpecs,
+                displayer,
+                IResultsDisplayer::EDirectoryLevel::Initial,
+                totals);
+
+            Assert::IsTrue (SUCCEEDED (hr));
+            Assert::AreEqual (2u, totals.m_cFiles, L"Should have 2 .cpp files");
+            Assert::AreEqual (1u, totals.m_cDirectories, L"lib.cpp matches '*.cpp' pattern");
+            Assert::AreEqual (300ull, totals.m_uliFileBytes.QuadPart);
+        }
+
+
+
+
+        ////////////////////////////////////////////////////////////////////////
+        //
+        //  DirectoryCount_PatternDoesNotMatchDir_NotCounted
+        //
+        //  Verifies that m_cDirectories counts directories whose names match
+        //  the pattern. subdir does not match '*.cpp', so it is not counted.
+        //
+        ////////////////////////////////////////////////////////////////////////
+
+        TEST_METHOD(DirectoryCount_PatternDoesNotMatchDir_NotCounted)
+        {
+            //
+            // Setup:
+            //   C:\MockRoot\
+            //     file1.cpp     (100 bytes)
+            //     subdir\                     <-- directory that does NOT match *.cpp
+            //       file2.cpp   (200 bytes)
+            //
+            // With pattern *.cpp recursive, subdir should NOT be counted
+            //
+
+            MockFileTree tree;
+            tree.AddFile      (L"C:\\MockRoot\\file1.cpp", 100);
+            tree.AddDirectory (L"C:\\MockRoot\\subdir");
+            tree.AddFile      (L"C:\\MockRoot\\subdir\\file2.cpp", 200);
+
+            ScopedFileSystemMock mock (tree);
+
+            auto cmdLine = make_shared<CCommandLine> ();
+            cmdLine->m_fRecurse = true;
+
+            auto console = make_shared<CConsole> ();
+            auto config  = make_shared<CConfig> ();
+            console->Initialize (config);
+
+            CMultiThreadedLister lister (cmdLine, console, config);
+            CDriveInfo           driveInfo (L"C:\\MockRoot");
+            MockResultsDisplayer displayer;
+            SListingTotals       totals = {};
+
+            vector<filesystem::path> fileSpecs = { L"*.cpp" };
+
+            HRESULT hr = lister.ProcessDirectoryMultiThreaded (
+                driveInfo,
+                L"C:\\MockRoot",
+                fileSpecs,
+                displayer,
+                IResultsDisplayer::EDirectoryLevel::Initial,
+                totals);
+
+            Assert::IsTrue (SUCCEEDED (hr));
+            Assert::AreEqual (2u, totals.m_cFiles, L"Should have 2 .cpp files");
+            Assert::AreEqual (0u, totals.m_cDirectories, L"subdir does not match '*.cpp' pattern");
             Assert::AreEqual (300ull, totals.m_uliFileBytes.QuadPart);
         }
 

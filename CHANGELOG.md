@@ -2,6 +2,16 @@
 
 All notable changes to TCDir are documented in this file.
 
+## [4.2.1414] - 2026-02-05
+
+### Changed
+- Multi-mask processing: masks targeting the same directory are now grouped and processed together with deduplication
+- Directory counts (both per-directory and grand total) now reflect subdirectories whose names match the pattern, not all traversed directories
+- CDirectoryInfo simplified with in-class member initializers
+
+### Added
+- Comprehensive directory count and mask matching tests
+
 ## [4.2.1322] - 2026-02-01
 
 ### Fixed

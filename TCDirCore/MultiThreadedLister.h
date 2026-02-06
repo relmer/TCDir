@@ -32,7 +32,7 @@ public:
 
     HRESULT ProcessDirectoryMultiThreaded (const CDriveInfo & driveInfo, 
                                            const filesystem::path & dirPath, 
-                                           const filesystem::path & fileSpec,
+                                           const vector<filesystem::path> & fileSpecs,
                                            IResultsDisplayer & displayer,
                                            IResultsDisplayer::EDirectoryLevel level,
                                            SListingTotals & totals);

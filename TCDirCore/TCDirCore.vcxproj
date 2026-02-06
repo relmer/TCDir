@@ -230,6 +230,7 @@
     <ClInclude Include="FileComparator.h" />
     <ClInclude Include="Flag.h" />
     <ClInclude Include="ListingTotals.h" />
+    <ClInclude Include="MaskGrouper.h" />
     <ClInclude Include="MultiThreadedLister.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="PerfTimer.h" />
@@ -252,6 +253,7 @@
     <ClCompile Include="Ehm.cpp" />
     <ClCompile Include="EnvironmentProvider.cpp" />
     <ClCompile Include="FileComparator.cpp" />
+    <ClCompile Include="MaskGrouper.cpp" />
     <ClCompile Include="MultiThreadedLister.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>

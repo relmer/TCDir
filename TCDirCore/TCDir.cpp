@@ -7,6 +7,7 @@
 #include "Config.h"
 #include "Console.h"
 #include "DirectoryLister.h"
+#include "MaskGrouper.h"
 #include "PerfTimer.h"
 #include "Usage.h"
 
@@ -83,7 +84,10 @@ int wmain (int argc, WCHAR * argv[])
     }
     
     //
-    // For each mask, show a directory listing
+    // Group masks by their target directories, then process each group.
+    // Pure masks (like *.cpp, *.h) are combined for the current directory.
+    // Directory-qualified masks (like src\*.cpp) are grouped by their directory.
+    // This allows "tcdir -s *.cpp *.h" to show combined results in each directory.
     //
 
     {
@@ -94,9 +98,11 @@ int wmain (int argc, WCHAR * argv[])
 
         CDirectoryLister dirLister (cmdlinePtr, consolePtr, configPtr);
 
-        for (const wstring & mask : cmdlinePtr->m_listMask)
+        auto groups = CMaskGrouper::GroupMasksByDirectory (cmdlinePtr->m_listMask);
+
+        for (const auto & group : groups)
         {
-            dirLister.List (mask);
+            dirLister.List (group);
         }
     }
 

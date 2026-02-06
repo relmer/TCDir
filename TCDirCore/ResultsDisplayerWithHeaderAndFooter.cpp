@@ -82,14 +82,7 @@ void CResultsDisplayerWithHeaderAndFooter::DisplayResults (const CDriveInfo & dr
 
     if (di.m_vMatches.size() == 0)
     {
-        if (di.m_fileSpec == L"*")
-        {
-            m_consolePtr->Puts (CConfig::EAttribute::Default, L"Directory is empty.");
-        }
-        else
-        {
-            m_consolePtr->Printf (CConfig::EAttribute::Default, L"No files matching '%s' found.\n", di.m_fileSpec.c_str());
-        }
+        DisplayEmptyDirectoryMessage (di);
     }
     else 
     {
@@ -209,6 +202,62 @@ void CResultsDisplayerWithHeaderAndFooter::DisplayDriveHeader (const CDriveInfo 
 void CResultsDisplayerWithHeaderAndFooter::DisplayPathHeader (const filesystem::path & dirPath)
 {
     m_consolePtr->ColorPrintf (L"{Information} Directory of {InformationHighlight}%s{Information}\n\n", dirPath.c_str());
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CResultsDisplayerWithHeaderAndFooter::DisplayEmptyDirectoryMessage
+//
+//  Displays an appropriate message when a directory has no matching files.
+//  If all specs are "*", shows "Directory is empty".  Otherwise shows
+//  "No files matching 'spec' found" with the spec(s).
+//
+////////////////////////////////////////////////////////////////////////////////  
+
+void CResultsDisplayerWithHeaderAndFooter::DisplayEmptyDirectoryMessage (const CDirectoryInfo & di)
+{
+    //
+    // If all specs are "*", show "Directory is empty"
+    // Otherwise, show "No files matching..." with the spec(s)
+    //
+
+    bool fAllStar = all_of (di.m_vFileSpecs.begin(), di.m_vFileSpecs.end(),
+                            [](const auto & spec) { return spec == L"*"; });
+
+    if (fAllStar)
+    {
+        m_consolePtr->Puts (CConfig::EAttribute::Default, L"Directory is empty.");
+    }
+    else if (di.m_vFileSpecs.size() == 1)
+    {
+        m_consolePtr->Printf (CConfig::EAttribute::Default, L"No files matching '%s' found.\n", 
+                              di.m_vFileSpecs[0].c_str());
+    }
+    else
+    {
+        //
+        // Multiple specs - build a combined string
+        //
+
+        wstring specs;
+
+        for (size_t i = 0; i < di.m_vFileSpecs.size(); ++i)
+        {
+            if (i > 0)
+            {
+                specs += L", ";
+            }
+
+            specs += di.m_vFileSpecs[i].wstring();
+        }
+
+        m_consolePtr->Printf (CConfig::EAttribute::Default, L"No files matching '%s' found.\n", 
+                              specs.c_str());
+    }
 }
 
 

@@ -70,24 +70,26 @@ void CMultiThreadedLister::StopWorkers()
 //
 //  CMultiThreadedLister::ProcessDirectoryMultiThreaded
 //
-//  Main entry point for multithreaded directory enumeration
+//  Main entry point for multithreaded directory enumeration.  Takes multiple
+//  file specs and applies them to each directory, deduplicating results when
+//  a file matches more than one spec.
 //
 ////////////////////////////////////////////////////////////////////////////////
 
 HRESULT CMultiThreadedLister::ProcessDirectoryMultiThreaded (
-    const CDriveInfo                   & driveInfo,
-    const filesystem::path             & dirPath,
-    const filesystem::path             & fileSpec,
-    IResultsDisplayer                  & displayer,
-    IResultsDisplayer::EDirectoryLevel   level,
-    SListingTotals                     & totals)
+    const CDriveInfo                     & driveInfo,
+    const filesystem::path               & dirPath,
+    const vector<filesystem::path>       & fileSpecs,
+    IResultsDisplayer                    & displayer,
+    IResultsDisplayer::EDirectoryLevel     level,
+    SListingTotals                       & totals)
 {
     HRESULT hr = S_OK;
 
     
 
-    // Create root directory info node
-    auto pRootDirInfo = make_shared<CDirectoryInfo> (dirPath, fileSpec);
+    // Create root directory info node with multiple file specs
+    auto pRootDirInfo = make_shared<CDirectoryInfo> (dirPath, fileSpecs);
 
     // Initialize work queue with root
     m_workQueue.Push (WorkItem { pRootDirInfo });
@@ -193,7 +195,9 @@ Error:
 //
 //  CMultiThreadedLister::EnumerateMatchingFiles
 //
-//  Searches for files matching the file spec pattern
+//  Searches for files matching the file spec pattern(s).
+//  If multiple file specs are provided, deduplicates results by filename
+//  (case-insensitive on Windows).
 //
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -205,51 +209,89 @@ HRESULT CMultiThreadedLister::EnumerateMatchingFiles (shared_ptr<CDirectoryInfo>
     WIN32_FIND_DATA  wfd              = { 0 };
     DWORD            dwError          = 0;
 
-    
+    //
+    // Track seen filenames for deduplication when multiple specs are used
+    //
 
-    // Build search path for files matching the pattern
-    try
-    {
-        pathAndFileSpec = pDirInfo->m_dirPath / pDirInfo->m_fileSpec;
-    }
-    catch (const filesystem::filesystem_error &)
-    {
-        return E_INVALIDARG;
-    }
+    unordered_set<wstring> seenFilenames;
+    auto toLower = [](const wstring & s) {
+        wstring lower = s;
+        transform (lower.begin(), lower.end(), lower.begin(), towlower);
+        return lower;
+    };
 
-    hFind.reset (FindFirstFile (pathAndFileSpec.c_str(), &wfd));
-    BAIL_OUT_IF (hFind.get() == INVALID_HANDLE_VALUE, S_OK);
 
-    do
+
+    //
+    // Iterate through each file spec
+    //
+
+    for (const auto & fileSpec : pDirInfo->m_vFileSpecs)
     {
+        // Build search path for files matching this pattern
+        try
+        {
+            pathAndFileSpec = pDirInfo->m_dirPath / fileSpec;
+        }
+        catch (const filesystem::filesystem_error &)
+        {
+            continue;  // Skip this spec on error
+        }
+
+        hFind.reset (FindFirstFile (pathAndFileSpec.c_str(), &wfd));
+        
+        if (hFind.get() == INVALID_HANDLE_VALUE)
+        {
+            continue;  // No matches for this spec, try next
+        }
+
+        do
+        {
+            if (StopRequested())
+            {
+                break;
+            }
+
+            // Skip "." and ".."
+            if (IsDots (wfd.cFileName))
+            {
+                continue;
+            }
+
+            //
+            // Deduplicate: skip if we've already seen this filename
+            //
+
+            wstring lowerName = toLower (wfd.cFileName);
+            if (seenFilenames.contains (lowerName))
+            {
+                continue;
+            }
+            seenFilenames.insert (lowerName);
+
+            // Check if this entry should be displayed based on attribute filters
+            if (CFlag::IsSet    (wfd.dwFileAttributes, m_cmdLinePtr->m_dwAttributesRequired) &&
+                CFlag::IsNotSet (wfd.dwFileAttributes, m_cmdLinePtr->m_dwAttributesExcluded))
+            {
+                lock_guard<mutex> lock (pDirInfo->m_mutex);
+
+                AddMatchToList (wfd, *pDirInfo, nullptr);
+            }
+
+        } 
+        while (FindNextFile (hFind.get(), &wfd));
+
+        // Check if loop ended due to error or naturally
+        dwError = GetLastError();
+        if (dwError != ERROR_NO_MORE_FILES && dwError != ERROR_FILE_NOT_FOUND)
+        {
+            CHRA (HRESULT_FROM_WIN32 (dwError));
+        }
+
         if (StopRequested())
         {
             break;
         }
-
-        // Skip "." and ".."
-        if (IsDots (wfd.cFileName))
-        {
-            continue;
-        }
-
-        // Check if this entry should be displayed based on attribute filters
-        if (CFlag::IsSet    (wfd.dwFileAttributes, m_cmdLinePtr->m_dwAttributesRequired) &&
-            CFlag::IsNotSet (wfd.dwFileAttributes, m_cmdLinePtr->m_dwAttributesExcluded))
-        {
-            lock_guard<mutex> lock (pDirInfo->m_mutex);
-
-            AddMatchToList (wfd, *pDirInfo, nullptr);
-        }
-
-    } 
-    while (FindNextFile (hFind.get(), &wfd));
-
-    // Check if loop ended due to error or naturally
-    dwError = GetLastError();
-    if (dwError != ERROR_NO_MORE_FILES)
-    {
-        CHRA (HRESULT_FROM_WIN32 (dwError));
     }
 
 Error:
@@ -332,9 +374,19 @@ Error:
 void CMultiThreadedLister::EnqueueChildDirectory (const WIN32_FIND_DATA & wfd, shared_ptr<CDirectoryInfo> pDirInfo)
 {
     filesystem::path subdirPath = pDirInfo->m_dirPath / wfd.cFileName;
-    auto             pChild     = make_shared<CDirectoryInfo> (subdirPath, pDirInfo->m_fileSpec);
+    auto             pChild     = make_shared<CDirectoryInfo> (subdirPath, pDirInfo->m_vFileSpecs);
 
     pDirInfo->m_vChildren.push_back (pChild);
+
+    //
+    // Count this subdirectory only if it won't be counted during file enumeration.
+    // When a file spec matches this directory name, HandleDirectoryMatch will
+    // count it. Avoid double-counting by checking if any pattern matches.
+    //
+    // Note: We don't increment m_cSubDirectories here. That counter tracks
+    // directories that matched the file pattern (e.g., lib.cpp matching *.cpp),
+    // which is handled in HandleDirectoryMatch when the dir is added to results.
+    //
 
     m_workQueue.Push (WorkItem { pChild });
 }
@@ -490,10 +542,15 @@ void CMultiThreadedLister::AccumulateTotals (shared_ptr<CDirectoryInfo> pDirInfo
     lock_guard<mutex> lock (pDirInfo->m_mutex);
 
     totals.m_cFiles                  += pDirInfo->m_cFiles;
-    totals.m_cDirectories            += pDirInfo->m_cSubDirectories;
     totals.m_uliFileBytes.QuadPart   += pDirInfo->m_uliBytesUsed.QuadPart;
     totals.m_cStreams                += pDirInfo->m_cStreams;
     totals.m_uliStreamBytes.QuadPart += pDirInfo->m_uliStreamBytesUsed.QuadPart;
+
+    //
+    // Count directories whose names matched the mask
+    //
+
+    totals.m_cDirectories += pDirInfo->m_cSubDirectories;
 }
 
 

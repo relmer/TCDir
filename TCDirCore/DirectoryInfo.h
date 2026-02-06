@@ -73,39 +73,36 @@ public:
 
     
     CDirectoryInfo (const filesystem::path & dirPath, const filesystem::path & fileSpec) :
-        m_dirPath            (dirPath),
-        m_fileSpec           (fileSpec),
-        m_cchLargestFileName (0),
-        m_cFiles             (0),
-        m_cSubDirectories    (0),
-        m_cStreams           (0),
-        m_status             (Status::Waiting),
-        m_hr                 (S_OK)
+        m_dirPath    (dirPath),
+        m_vFileSpecs ({ fileSpec })
     {
-        m_uliLargestFileSize.QuadPart = 0;
-        m_uliBytesUsed.QuadPart       = 0;
-        m_uliStreamBytesUsed.QuadPart = 0;
+    }
+
+    CDirectoryInfo (const filesystem::path & dirPath, const vector<filesystem::path> & fileSpecs) :
+        m_dirPath    (dirPath),
+        m_vFileSpecs (fileSpecs)
+    {
     }
 
     
 
     FileInfoVector                          m_vMatches;
     filesystem::path                        m_dirPath;
-    filesystem::path                        m_fileSpec;
-    ULARGE_INTEGER                          m_uliLargestFileSize;
-    size_t                                  m_cchLargestFileName;
-    UINT                                    m_cFiles;
-    UINT                                    m_cSubDirectories;
-    UINT                                    m_cStreams;
-    ULARGE_INTEGER                          m_uliBytesUsed;
-    ULARGE_INTEGER                          m_uliStreamBytesUsed;
+    vector<filesystem::path>                m_vFileSpecs;    // File specs to match (one or more)
+    ULARGE_INTEGER                          m_uliLargestFileSize = {};
+    size_t                                  m_cchLargestFileName = 0;
+    UINT                                    m_cFiles             = 0;
+    UINT                                    m_cSubDirectories    = 0;
+    UINT                                    m_cStreams           = 0;
+    ULARGE_INTEGER                          m_uliBytesUsed       = {};
+    ULARGE_INTEGER                          m_uliStreamBytesUsed = {};
 
     //
     // Multithreading support members (unused in single-threaded mode)
     //
 
-    Status                                  m_status;
-    HRESULT                                 m_hr;
+    Status                                  m_status = Status::Waiting;
+    HRESULT                                 m_hr     = S_OK;
     vector<shared_ptr<CDirectoryInfo>>      m_vChildren;
     mutex                                   m_mutex;
     condition_variable                      m_cvStatusChanged;

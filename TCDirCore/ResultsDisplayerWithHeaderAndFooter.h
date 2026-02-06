@@ -31,6 +31,7 @@ public:
 protected:
     void    DisplayDriveHeader                     (const CDriveInfo & driveInfo);
     void    DisplayPathHeader                      (const filesystem::path & dirPath);
+    void    DisplayEmptyDirectoryMessage           (const CDirectoryInfo & di);
     void    DisplayDirectorySummary                (const CDirectoryInfo & di);
     void    DisplayListingSummary                  (const CDirectoryInfo & di, const SListingTotals & totals);
     void    DisplayVolumeFooter                    (const CDirectoryInfo & di);

@@ -481,6 +481,12 @@ BOOL WINAPI ScopedFileSystemMock::OriginalFindClose (HANDLE hFindFile)
 //  WildcardMatch
 //
 //  Simple wildcard matching for * pattern.
+//  Supports:
+//    - "*" matches all
+//    - "*.ext" matches files with extension .ext
+//    - "prefix.*" matches files starting with prefix (any extension)
+//    - "prefix.*" where prefix has no wildcard
+//    - Exact match (case-insensitive)
 //
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -496,7 +502,7 @@ static bool WildcardMatch (const wstring & strPattern, const wstring & strName)
     }
 
     //
-    // Handle "*.ext" pattern
+    // Handle "*.ext" pattern (wildcard at start)
     //
 
     if (strPattern.length() > 1 && strPattern[0] == L'*' && strPattern[1] == L'.')
@@ -506,6 +512,28 @@ static bool WildcardMatch (const wstring & strPattern, const wstring & strName)
         {
             wstring strNameExt = strName.substr (strName.length() - strExt.length());
             return _wcsicmp (strNameExt.c_str(), strExt.c_str()) == 0;
+        }
+        return false;
+    }
+
+    //
+    // Handle "prefix.*" pattern (wildcard at end)
+    //
+
+    size_t dotStarPos = strPattern.rfind (L".*");
+    if (dotStarPos != wstring::npos && dotStarPos == strPattern.length() - 2)
+    {
+        //
+        // Pattern ends with .* - check if name starts with the prefix
+        // and has a dot somewhere after the prefix
+        //
+
+        wstring strPrefix = strPattern.substr (0, dotStarPos);
+        
+        if (strName.length() > strPrefix.length() && strName[strPrefix.length()] == L'.')
+        {
+            wstring strNamePrefix = strName.substr (0, strPrefix.length());
+            return _wcsicmp (strPrefix.c_str(), strNamePrefix.c_str()) == 0;
         }
         return false;
     }
