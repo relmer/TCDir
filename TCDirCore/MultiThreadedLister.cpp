@@ -203,22 +203,13 @@ Error:
 
 HRESULT CMultiThreadedLister::EnumerateMatchingFiles (shared_ptr<CDirectoryInfo> pDirInfo)
 {
-    HRESULT          hr               = S_OK;
-    filesystem::path pathAndFileSpec;
-    UniqueFindHandle hFind;
-    WIN32_FIND_DATA  wfd              = { 0 };
-    DWORD            dwError          = 0;
-
-    //
-    // Track seen filenames for deduplication when multiple specs are used
-    //
-
+    HRESULT                hr               = S_OK;
+    filesystem::path       pathAndFileSpec;
+    UniqueFindHandle       hFind;
+    WIN32_FIND_DATA        wfd              = { 0 };
     unordered_set<wstring> seenFilenames;
-    auto toLower = [](const wstring & s) {
-        wstring lower = s;
-        transform (lower.begin(), lower.end(), lower.begin(), towlower);
-        return lower;
-    };
+    DWORD                  dwError          = 0;
+
 
 
 
@@ -262,7 +253,7 @@ HRESULT CMultiThreadedLister::EnumerateMatchingFiles (shared_ptr<CDirectoryInfo>
             // Deduplicate: skip if we've already seen this filename
             //
 
-            wstring lowerName = toLower (wfd.cFileName);
+            wstring lowerName = ToLower (wfd.cFileName);
             if (seenFilenames.contains (lowerName))
             {
                 continue;

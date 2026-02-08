@@ -308,9 +308,9 @@ HRESULT CDirectoryLister::RecurseIntoSubdirectories (
 {
     HRESULT          hr              = S_OK;
     filesystem::path pathAndFileSpec = dirPath / L"*";    
-    BOOL             fSuccess;                    
+    BOOL             fSuccess        = FALSE;                    
     UniqueFindHandle hFind;
-    WIN32_FIND_DATA  wfd;                         
+    WIN32_FIND_DATA  wfd             = { };                         
 
     
 

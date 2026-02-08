@@ -37,6 +37,8 @@ public:
                                            IResultsDisplayer::EDirectoryLevel level,
                                            SListingTotals & totals);
 
+
+                                           
 protected:
     void    EnumerateDirectoryNode        (shared_ptr<CDirectoryInfo> pDirInfo);
     void    WorkerThreadFunc              (stop_token stopToken);
@@ -46,7 +48,21 @@ protected:
                                            IResultsDisplayer::EDirectoryLevel level,
                                            SListingTotals & totals);
 
+
+
 private:
+    static inline wstring ToLower (const wstring & s)
+    {
+        wstring lower = s;
+
+
+
+        transform (lower.begin(), lower.end(), lower.begin(), towlower);
+        return lower;
+    }
+
+
+
     HRESULT PerformEnumeration            (shared_ptr<CDirectoryInfo> pDirInfo);
     HRESULT EnumerateMatchingFiles        (shared_ptr<CDirectoryInfo> pDirInfo);
     HRESULT EnumerateSubdirectories       (shared_ptr<CDirectoryInfo> pDirInfo);

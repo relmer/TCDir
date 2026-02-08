@@ -186,12 +186,12 @@ LONGLONG FileComparator::CompareDate (const WIN32_FIND_DATA & lhs, const WIN32_F
 
 LONGLONG FileComparator::CompareExtension (const WIN32_FIND_DATA & lhs, const WIN32_FIND_DATA & rhs) const
 {
-    filesystem::path lhsPath (lhs.cFileName);
-    filesystem::path rhsPath (rhs.cFileName);
+    LPCWSTR pszLhsExt = wcsrchr (lhs.cFileName, L'.');
+    LPCWSTR pszRhsExt = wcsrchr (rhs.cFileName, L'.');
 
 
 
-    return lstrcmpiW (lhsPath.extension().c_str(), rhsPath.extension().c_str());
+    return lstrcmpiW (pszLhsExt ? pszLhsExt : L"", pszRhsExt ? pszRhsExt : L"");    
 }
 
 
