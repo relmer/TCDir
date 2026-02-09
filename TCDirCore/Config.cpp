@@ -521,7 +521,7 @@ Error:
 
 void CConfig::ProcessSwitchOverride (wstring_view entry)
 {
-    static constexpr LPCWSTR s_kpszInvalidSwitch = L"Invalid switch (expected W, S, P, M, Owner, or Streams)";
+    static constexpr LPCWSTR s_kpszInvalidSwitch = L"Invalid switch (expected W, S, P, M, B, Owner, or Streams)";
 
     HRESULT      hr                = S_OK;
     wstring_view invalidText       = entry;

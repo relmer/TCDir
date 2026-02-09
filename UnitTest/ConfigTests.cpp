@@ -1660,7 +1660,7 @@ namespace UnitTest
 
             CConfig::ValidationResult result = config.ValidateEnvironmentVariable();
             Assert::AreEqual (size_t (1), result.errors.size());
-            Assert::AreEqual (wstring (L"Invalid switch (expected W, S, P, M, Owner, or Streams)"), result.errors[0].message);
+            Assert::AreEqual (wstring (L"Invalid switch (expected W, S, P, M, B, Owner, or Streams)"), result.errors[0].message);
         }
 
 
@@ -1676,7 +1676,7 @@ namespace UnitTest
 
             CConfig::ValidationResult result = config.ValidateEnvironmentVariable();
             Assert::AreEqual (size_t (1), result.errors.size());
-            Assert::AreEqual (wstring (L"Invalid switch (expected W, S, P, M, Owner, or Streams)"), result.errors[0].message);
+            Assert::AreEqual (wstring (L"Invalid switch (expected W, S, P, M, B, Owner, or Streams)"), result.errors[0].message);
         }
 
 
@@ -1692,7 +1692,7 @@ namespace UnitTest
 
             CConfig::ValidationResult result = config.ValidateEnvironmentVariable();
             Assert::AreEqual (size_t (1), result.errors.size());
-            Assert::AreEqual (wstring (L"Invalid switch (expected W, S, P, M, Owner, or Streams)"), result.errors[0].message);
+            Assert::AreEqual (wstring (L"Invalid switch (expected W, S, P, M, B, Owner, or Streams)"), result.errors[0].message);
         }
 
 

@@ -1601,5 +1601,5 @@ Error descriptions:
 - `Invalid display attribute character (valid: D,T,A,-,S,R,I,H,E,F,O)`
 - `Invalid file attribute key (expected attr:<x>)`
 - `Invalid file attribute character (expected R, H, S, A, T, E, C, P or 0)`
-- `Invalid switch (expected W, S, P, M, Owner, or Streams)`
+- `Invalid switch (expected W, S, P, M, B, Owner, or Streams)`
 - `Switch prefixes (/, -, --) are not allowed in env var`
