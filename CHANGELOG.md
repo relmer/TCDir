@@ -8,6 +8,7 @@ All notable changes to TCDir are documented in this file.
 - TCDIR env var: entries with invalid background color (e.g., `Chartreuse`) now reject the entire entry instead of falling back to black-on-black
 - TCDIR env var: entries where foreground and background are the same color (e.g., `Blue on Blue`) are now rejected as unreadable
 - `--config` now shows validation errors after the configuration table, matching `--env` convention
+- Foreground colors matching the terminal background are now auto-corrected with a contrasting background in all display paths (listing, `--config`, `--env`)
 
 ## [4.2.1414] - 2026-02-05
 

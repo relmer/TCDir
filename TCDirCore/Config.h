@@ -91,6 +91,7 @@ public:
     void              SetEnvironmentProvider      (const IEnvironmentProvider * pProvider);
     HRESULT           ParseColorName              (wstring_view colorName, bool isBackground, WORD & colorValue);
     HRESULT           ParseColorSpec              (wstring_view colorSpec, WORD & colorAttr);
+    static WORD       EnsureVisibleColorAttr      (WORD colorAttr, WORD defaultAttr);
 
     WORD                                       m_rgAttributes[EAttribute::__count]       = { 0 };
     EAttributeSource                           m_rgAttributeSources[EAttribute::__count] = { EAttributeSource::Default };

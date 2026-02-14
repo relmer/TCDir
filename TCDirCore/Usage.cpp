@@ -481,11 +481,13 @@ void CUsage::DisplayExtensionConfigurationSingleColumn (CConsole & console, int 
 
 void CUsage::DisplayItemAndSource (CConsole & console, wstring_view item, WORD attr, bool isEnv, size_t columnWidthItem, size_t columnWidthSource, size_t cxColumnWidth, EItemDisplayMode mode)
 {
-    WORD    bgAttr     = console.m_configPtr->m_rgAttributes[CConfig::EAttribute::Default] & BC_Mask;
-    WORD    sourceAttr = static_cast<WORD> (bgAttr | (isEnv ? FC_Cyan : FC_DarkGrey));
-    LPCWSTR source     = isEnv ? L"Environment" : L"Default";
-    int     pad        = max (0, static_cast<int> (columnWidthItem) - static_cast<int> (item.size ()));
-    size_t  cxUsed     = columnWidthItem + 2 + columnWidthSource;
+    WORD    bgAttr      = console.m_configPtr->m_rgAttributes[CConfig::EAttribute::Default] & BC_Mask;
+    WORD    sourceAttr  = static_cast<WORD> (bgAttr | (isEnv ? FC_Cyan : FC_DarkGrey));
+    LPCWSTR source      = isEnv ? L"Environment" : L"Default";
+    int     pad         = max (0, static_cast<int> (columnWidthItem) - static_cast<int> (item.size ()));
+    size_t  cxUsed      = columnWidthItem + 2 + columnWidthSource;
+    WORD    defaultAttr = console.m_configPtr->m_rgAttributes[CConfig::EAttribute::Default];
+    WORD    visibleAttr = CConfig::EnsureVisibleColorAttr (attr, defaultAttr);
 
 
 
@@ -494,7 +496,7 @@ void CUsage::DisplayItemAndSource (CConsole & console, wstring_view item, WORD a
         console.Printf (CConfig::EAttribute::Information, L"  ");
     }
 
-    console.Printf (attr,                             L"%.*ls", static_cast<int> (item.size ()), item.data ());
+    console.Printf (visibleAttr,                      L"%.*ls", static_cast<int> (item.size ()), item.data ());
     console.Printf (CConfig::EAttribute::Information, L"%*ls  ", pad, L"");
     console.Printf (sourceAttr,                       L"%-*ls", static_cast<int> (columnWidthSource), source);
 
@@ -635,52 +637,6 @@ void CUsage::DisplayExtensionConfiguration (CConsole & console, int columnWidthA
 
 ////////////////////////////////////////////////////////////////////////////////
 //
-//  CUsage::EnsureVisibleColorAttr
-//
-//  Given a color attribute and a default attribute, returns a modified color
-//  attribute that ensures visibility. If the foreground matches the default
-//  background, a contrasting background is applied.
-//
-////////////////////////////////////////////////////////////////////////////////
-
-WORD CUsage::EnsureVisibleColorAttr (WORD colorAttr, WORD defaultAttr)
-{
-    WORD foreAttr        = colorAttr   & (FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_INTENSITY);
-    WORD backAttr        = colorAttr   & (BACKGROUND_RED | BACKGROUND_GREEN | BACKGROUND_BLUE | BACKGROUND_INTENSITY);
-    WORD defaultBackAttr = defaultAttr & (BACKGROUND_RED | BACKGROUND_GREEN | BACKGROUND_BLUE | BACKGROUND_INTENSITY);
-
-
-
-    //
-    // If no explicit background in colorAttr, use the default background
-    //
-
-    if (backAttr == 0)
-    {
-        backAttr = defaultBackAttr;
-    }
-
-    //
-    // If foreground matches background, use a contrasting background so text is visible.
-    // Compare by shifting foreground bits to background position.
-    //
-
-    if ((foreAttr << 4) == backAttr)
-    {
-        // Use opposite brightness: if dark background, use light; if light, use dark
-        WORD contrastBack = (backAttr & BACKGROUND_INTENSITY) ? static_cast<WORD>(BC_Black) : static_cast<WORD>(BC_LightGrey);
-        return foreAttr | contrastBack;
-    }
-
-    return foreAttr | backAttr;
-}
-
-
-
-
-
-////////////////////////////////////////////////////////////////////////////////
-//
 //  CUsage::GetColorAttribute
 //
 ////////////////////////////////////////////////////////////////////////////////
@@ -698,7 +654,7 @@ WORD CUsage::GetColorAttribute (CConsole & console, wstring_view colorName)
         foreAttr = FC_LightGrey;
     }
 
-    return EnsureVisibleColorAttr (foreAttr, defaultAttr);
+    return CConfig::EnsureVisibleColorAttr (foreAttr, defaultAttr);
 }
 
 
@@ -813,7 +769,7 @@ HRESULT CUsage::DisplayEnvVarSegment (CConsole & console, wstring_view segment)
     else
     {
         // Ensure the color is visible against the default background
-        visibleAttr = EnsureVisibleColorAttr (colorAttr, defaultAttr);
+        visibleAttr = CConfig::EnsureVisibleColorAttr (colorAttr, defaultAttr);
 
         // Print key in its color, = in default, value in its color
         console.Printf (visibleAttr, L"%.*s", 

@@ -190,6 +190,7 @@ As a power user, I want to customize colors and default switches via the TCDIR e
 6. **Given** user runs `tcdir --env`, **When** displayed, **Then** complete environment variable syntax help is shown
 7. **Given** TCDIR env var entry has an invalid background color (e.g., `.png=Black on Chartreuse`), **When** tcdir runs, **Then** the entire entry is ignored and the extension keeps its default color
 8. **Given** TCDIR env var entry has the same foreground and background color (e.g., `.cpp=Blue on Blue`), **When** tcdir runs, **Then** the entry is rejected as unreadable and the extension keeps its default color
+9. **Given** TCDIR env var sets a foreground color matching the terminal's background (e.g., `.cpp=LightGrey` on a LightGrey terminal), **When** tcdir displays that file, **Then** a contrasting background is applied so text remains visible
 
 ---
 
@@ -317,6 +318,7 @@ As a developer debugging file attribute issues, I want to see raw hexadecimal at
 - What happens when TCDIR env var has invalid syntax? Errors are displayed at the end of output with specific details.
 - What happens when TCDIR env var has an invalid background color (e.g., `Chartreuse`)? The entire entry is rejected and the extension keeps its default color.
 - What happens when TCDIR env var specifies the same foreground and background color? The entry is rejected as unreadable (e.g., `Blue on Blue`, `Black on Black`).
+- What happens when a configured foreground color matches the terminal's background? A contrasting background is automatically applied so text remains readable.
 - What happens when both `-` and `/` prefixes are mixed? Both are supported; the last-used prefix affects help display format.
 - What happens when long switches use single dash (e.g., `-env`)? Error is returned; long switches require `--` prefix with `-` style.
 
@@ -396,6 +398,7 @@ As a developer debugging file attribute issues, I want to see raw hexadecimal at
 - **FR-086**: System MUST reject TCDIR entries with invalid background color names (entire entry ignored, default preserved)
 - **FR-087**: System MUST reject TCDIR entries where foreground and background colors are the same (unreadable)
 - **FR-088**: `--config` MUST display validation errors after the configuration table, matching `--env` convention
+- **FR-089**: System MUST ensure configured foreground colors are visible against the terminal's background in all display paths (listing, `--config`, `--env`)
 
 #### Extended Features
 

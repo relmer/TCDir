@@ -1101,7 +1101,55 @@ Error:
         textAttr |= m_rgAttributes[EAttribute::Default] & BC_Mask;
     }
 
+    textAttr = EnsureVisibleColorAttr (textAttr, m_rgAttributes[EAttribute::Default]);
+
     return textAttr;
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CConfig::EnsureVisibleColorAttr
+//
+//  Given a color attribute and a default attribute, returns a modified color
+//  attribute that ensures visibility. If the foreground matches the background,
+//  a contrasting background is applied.
+//
+////////////////////////////////////////////////////////////////////////////////
+
+WORD CConfig::EnsureVisibleColorAttr (WORD colorAttr, WORD defaultAttr)
+{
+    WORD foreAttr        = colorAttr   & (FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_INTENSITY);
+    WORD backAttr        = colorAttr   & (BACKGROUND_RED | BACKGROUND_GREEN | BACKGROUND_BLUE | BACKGROUND_INTENSITY);
+    WORD defaultBackAttr = defaultAttr & (BACKGROUND_RED | BACKGROUND_GREEN | BACKGROUND_BLUE | BACKGROUND_INTENSITY);
+
+
+
+    //
+    // If no explicit background in colorAttr, use the default background
+    //
+
+    if (backAttr == 0)
+    {
+        backAttr = defaultBackAttr;
+    }
+
+    //
+    // If foreground matches background, use a contrasting background so text is visible.
+    // Compare by shifting foreground bits to background position.
+    //
+
+    if ((foreAttr << 4) == backAttr)
+    {
+        // Use opposite brightness: if dark background, use light; if light, use dark
+        WORD contrastBack = (backAttr & BACKGROUND_INTENSITY) ? static_cast<WORD>(BC_Black) : static_cast<WORD>(BC_LightGrey);
+        return foreAttr | contrastBack;
+    }
+
+    return foreAttr | backAttr;
 }
 
 
