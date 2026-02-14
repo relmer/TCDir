@@ -682,7 +682,7 @@ namespace UnitTest
 
 
 
-        TEST_METHOD(ApplyUserColorOverrides_InvalidBackgroundColor_AddsWarning_AppliesForeground)
+        TEST_METHOD(ApplyUserColorOverrides_InvalidBackgroundColor_IgnoresEntry)
         {
             ConfigProbe config;
             config.Initialize(FC_LightGrey);
@@ -690,9 +690,9 @@ namespace UnitTest
             config.SetEnvVar (TCDIR_ENV_VAR_NAME, L".cpp=White on Bluepickles");
             config.ApplyUserColorOverrides();
 
-            // Foreground should still be applied
+            // Malformed entry should be ignored entirely - .cpp keeps its default color
             Assert::IsTrue (config.m_mapExtensionToTextAttr.contains(L".cpp"));
-            Assert::AreEqual ((WORD)FC_White, config.m_mapExtensionToTextAttr[L".cpp"]);
+            Assert::AreEqual ((WORD)FC_LightGreen, config.m_mapExtensionToTextAttr[L".cpp"]);
 
             // Invalid background should produce a validation issue
             CConfig::ValidationResult result = config.ValidateEnvironmentVariable();

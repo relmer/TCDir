@@ -493,8 +493,8 @@ HRESULT CConfig::ParseColorValue (wstring_view entry, wstring_view valueView, WO
                 wstring(backView),
                 backOffset
             });
-            // Continue with foreground only - don't fail
-            backColor = 0;
+            // Reject the entire entry so we don't apply a partial/unreadable color
+            CBR (FALSE);
         }
     }
 
