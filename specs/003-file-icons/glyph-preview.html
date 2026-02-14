@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>TCDir Icon Glyph Preview — Nerd Font v3</title>
+<style>
+  @font-face {
+    font-family: 'NF Symbols';
+    src: url('https://cdn.jsdelivr.net/gh/ryanoasis/nerd-fonts@v3.4.0/patched-fonts/NerdFontsSymbolsOnly/SymbolsNerdFontMono-Regular.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+  }
+  body {
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    background: #1e1e1e;
+    color: #d4d4d4;
+    margin: 2em;
+    line-height: 1.6;
+  }
+  h1 { color: #569cd6; margin-bottom: 0.2em; }
+  h2 { color: #4ec9b0; border-bottom: 1px solid #333; padding-bottom: 0.3em; margin-top: 2em; }
+  p.subtitle { color: #808080; margin-top: 0; }
+  table { border-collapse: collapse; width: 100%; margin-bottom: 2em; }
+  th { background: #2d2d2d; color: #9cdcfe; text-align: left; padding: 8px 12px; font-weight: 600; }
+  td { padding: 6px 12px; border-bottom: 1px solid #333; vertical-align: middle; }
+  tr:hover { background: #2a2a2a; }
+  .glyph {
+    font-family: 'NF Symbols', 'Symbols Nerd Font Mono', 'CaskaydiaCove Nerd Font', 'FiraCode Nerd Font', 'JetBrainsMono Nerd Font', monospace;
+    font-size: 24px;
+    text-align: center;
+    width: 50px;
+    min-width: 50px;
+  }
+  .glyph-large {
+    font-family: 'NF Symbols', 'Symbols Nerd Font Mono', 'CaskaydiaCove Nerd Font', 'FiraCode Nerd Font', 'JetBrainsMono Nerd Font', monospace;
+    font-size: 32px;
+  }
+  .code { font-family: 'Cascadia Code', 'Consolas', monospace; color: #ce9178; font-size: 0.9em; }
+  .class { font-family: 'Cascadia Code', 'Consolas', monospace; color: #dcdcaa; font-size: 0.85em; }
+  .ext { color: #c586c0; }
+  .set-seti { color: #4ec9b0; }
+  .set-md { color: #d7ba7d; }
+  .set-dev { color: #569cd6; }
+  .set-fa { color: #6a9955; }
+  .set-oct { color: #c586c0; }
+  .set-cod { color: #9cdcfe; }
+  .surrogate { color: #d7ba7d; font-size: 0.75em; }
+  .note { color: #808080; font-size: 0.85em; }
+  .section-note { color: #808080; font-style: italic; margin-bottom: 1em; }
+  .legend { display: flex; gap: 1.5em; flex-wrap: wrap; margin: 1em 0; padding: 0.8em; background: #252525; border-radius: 4px; }
+  .legend-item { display: flex; align-items: center; gap: 0.4em; font-size: 0.9em; }
+  .legend-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+</style>
+</head>
+<body>
+
+<h1>TCDir Icon Glyph Preview</h1>
+<p class="subtitle">Nerd Font v3.4.0 — Definitive code point assignments for spec 003-file-icons</p>
+
+<div class="legend">
+  <div class="legend-item"><span class="legend-dot" style="background:#4ec9b0"></span> <span class="set-seti">Seti-UI (BMP)</span></div>
+  <div class="legend-item"><span class="legend-dot" style="background:#569cd6"></span> <span class="set-dev">Devicons (BMP)</span></div>
+  <div class="legend-item"><span class="legend-dot" style="background:#6a9955"></span> <span class="set-fa">Font Awesome (BMP)</span></div>
+  <div class="legend-item"><span class="legend-dot" style="background:#c586c0"></span> <span class="set-oct">Octicons (BMP)</span></div>
+  <div class="legend-item"><span class="legend-dot" style="background:#9cdcfe"></span> <span class="set-cod">Codicons (BMP)</span></div>
+  <div class="legend-item"><span class="legend-dot" style="background:#d7ba7d"></span> <span class="set-md">Material Design (surrogate pair)</span></div>
+</div>
+
+<h2>File Extension Icons</h2>
+
+<table>
+<tr><th>Glyph</th><th>Category</th><th>Extensions</th><th>NF Class</th><th>Code Point</th><th>Set</th></tr>
+<tr><td class="glyph">&#xE61E;</td><td>C source</td><td class="ext">.c</td><td class="class">nf-custom-c</td><td class="code">U+E61E</td><td class="set-seti">Seti-UI</td></tr>
+<tr><td class="glyph">&#xE61D;</td><td>C++ source</td><td class="ext">.cpp .cxx</td><td class="class">nf-custom-cpp</td><td class="code">U+E61D</td><td class="set-seti">Seti-UI</td></tr>
+<tr><td class="glyph">&#xE61E;</td><td>C header</td><td class="ext">.h</td><td class="class">nf-custom-c</td><td class="code">U+E61E</td><td class="set-seti">Seti-UI</td></tr>
+<tr><td class="glyph">&#xE61D;</td><td>C++ header</td><td class="ext">.hpp .hxx</td><td class="class">nf-custom-cpp</td><td class="code">U+E61D</td><td class="set-seti">Seti-UI</td></tr>
+<tr><td class="glyph">&#xE6AB;</td><td>Assembly</td><td class="ext">.asm .cod .i</td><td class="class">nf-custom-asm</td><td class="code">U+E6AB</td><td class="set-seti">Seti-UI</td></tr>
+<tr><td class="glyph">&#xE648;</td><td>C#</td><td class="ext">.cs .csx</td><td class="class">nf-seti-c_sharp</td><td class="code">U+E648</td><td class="set-seti">Seti-UI</td></tr>
+<tr><td class="glyph">&#xE70C;</td><td>C# resource</td><td class="ext">.resx .rcml</td><td class="class">nf-dev-visualstudio</td><td class="code">U+E70C</td><td class="set-dev">Devicons</td></tr>
+<tr><td class="glyph">&#xE60C;</td><td>JavaScript</td><td class="ext">.js</td><td class="class">nf-seti-javascript</td><td class="code">U+E60C</td><td class="set-seti">Seti-UI</td></tr>
+<tr><td class="glyph">&#xE7BA;</td><td>JSX</td><td class="ext">.jsx</td><td class="class">nf-dev-react</td><td class="code">U+E7BA</td><td class="set-dev">Devicons</td></tr>
+<tr><td class="glyph">&#xE628;</td><td>TypeScript</td><td class="ext">.ts</td><td class="class">nf-seti-typescript</td><td class="code">U+E628</td><td class="set-seti">Seti-UI</td></tr>
+<tr><td class="glyph">&#xE7BA;</td><td>TSX</td><td class="ext">.tsx</td><td class="class">nf-dev-react</td><td class="code">U+E7BA</td><td class="set-dev">Devicons</td></tr>
+<tr><td class="glyph">&#xE60E;</td><td>HTML</td><td class="ext">.html .htm</td><td class="class">nf-seti-html</td><td class="code">U+E60E</td><td class="set-seti">Seti-UI</td></tr>
+<tr><td class="glyph">&#xE614;</td><td>CSS</td><td class="ext">.css</td><td class="class">nf-seti-css</td><td class="code">U+E614</td><td class="set-seti">Seti-UI</td></tr>
+<tr><td class="glyph">&#xE74B;</td><td>SCSS</td><td class="ext">.scss</td><td class="class">nf-dev-sass</td><td class="code">U+E74B</td><td class="set-dev">Devicons</td></tr>
+<tr><td class="glyph">&#xE758;</td><td>LESS</td><td class="ext">.less</td><td class="class">nf-dev-less</td><td class="code">U+E758</td><td class="set-dev">Devicons</td></tr>
+<tr><td class="glyph">&#xE606;</td><td>Python</td><td class="ext">.py .pyw</td><td class="class">nf-seti-python</td><td class="code">U+E606</td><td class="set-seti">Seti-UI</td></tr>
+<tr><td class="glyph">&#xE66D;</td><td>Java</td><td class="ext">.jar .java .class</td><td class="class">nf-seti-java</td><td class="code">U+E66D</td><td class="set-seti">Seti-UI</td></tr>
+<tr><td class="glyph">&#xE619;</td><td>XML</td><td class="ext">.xml</td><td class="class">nf-seti-xml</td><td class="code">U+E619</td><td class="set-seti">Seti-UI</td></tr>
+<tr><td class="glyph">&#xE60B;</td><td>JSON</td><td class="ext">.json</td><td class="class">nf-seti-json</td><td class="code">U+E60B</td><td class="set-seti">Seti-UI</td></tr>
+<tr><td class="glyph">&#xE6A8;</td><td>YAML</td><td class="ext">.yml .yaml</td><td class="class">nf-seti-yml</td><td class="code">U+E6A8</td><td class="set-seti">Seti-UI</td></tr>
+<tr><td class="glyph">&#xF471;</td><td>Build artifacts</td><td class="ext">.obj .lib .res .pch</td><td class="class">nf-oct-file_binary</td><td class="code">U+F471</td><td class="set-oct">Octicons</td></tr>
+<tr><td class="glyph">&#xF03A;</td><td>Build logs</td><td class="ext">.wrn .err .log</td><td class="class">nf-fa-list</td><td class="code">U+F03A</td><td class="set-fa">Font Awesome</td></tr>
+<tr><td class="glyph">&#xE691;</td><td>Shell scripts</td><td class="ext">.bash .sh</td><td class="class">nf-seti-shell</td><td class="code">U+E691</td><td class="set-seti">Seti-UI</td></tr>
+<tr><td class="glyph">&#xE629;</td><td>Batch/CMD</td><td class="ext">.bat .cmd</td><td class="class">nf-custom-msdos</td><td class="code">U+E629</td><td class="set-seti">Seti-UI</td></tr>
+<tr><td class="glyph">&#xE683;</td><td>PowerShell</td><td class="ext">.ps1 .psd1 .psm1</td><td class="class">nf-seti-powershell</td><td class="code">U+E683</td><td class="set-seti">Seti-UI</td></tr>
+<tr><td class="glyph">&#xF08C6;</td><td>Executables</td><td class="ext">.exe .sys</td><td class="class">nf-md-application</td><td class="code">U+F08C6</td><td class="set-md">Material Design*</td></tr>
+<tr><td class="glyph">&#xF187;</td><td>DLL</td><td class="ext">.dll</td><td class="class">nf-fa-archive</td><td class="code">U+F187</td><td class="set-fa">Font Awesome</td></tr>
+<tr><td class="glyph">&#xE70C;</td><td>VS Solution</td><td class="ext">.sln</td><td class="class">nf-dev-visualstudio</td><td class="code">U+E70C</td><td class="set-dev">Devicons</td></tr>
+<tr><td class="glyph">&#xE70C;</td><td>VS Projects</td><td class="ext">.vcproj .vcxproj .csproj .csxproj .user .ncb</td><td class="class">nf-dev-visualstudio</td><td class="code">U+E70C</td><td class="set-dev">Devicons</td></tr>
+<tr><td class="glyph">&#xE6A5;</td><td>Word docs</td><td class="ext">.doc .docx</td><td class="class">nf-seti-word</td><td class="code">U+E6A5</td><td class="set-seti">Seti-UI</td></tr>
+<tr><td class="glyph">&#xF0227;</td><td>PowerPoint</td><td class="ext">.ppt .pptx</td><td class="class">nf-md-file_powerpoint</td><td class="code">U+F0227</td><td class="set-md">Material Design*</td></tr>
+<tr><td class="glyph">&#xE6A6;</td><td>Excel</td><td class="ext">.xls .xlsx</td><td class="class">nf-seti-xls</td><td class="code">U+E6A6</td><td class="set-seti">Seti-UI</td></tr>
+<tr><td class="glyph">&#xE609;</td><td>Markdown</td><td class="ext">.md</td><td class="class">nf-seti-markdown</td><td class="code">U+E609</td><td class="set-seti">Seti-UI</td></tr>
+<tr><td class="glyph">&#xF0219;</td><td>Text files</td><td class="ext">.txt .text .!!! .1st .me .now</td><td class="class">nf-md-file_document</td><td class="code">U+F0219</td><td class="set-md">Material Design*</td></tr>
+<tr><td class="glyph">&#xF0E0;</td><td>Email</td><td class="ext">.eml</td><td class="class">nf-fa-envelope</td><td class="code">U+F0E0</td><td class="set-fa">Font Awesome</td></tr>
+<tr><td class="glyph">&#xF410;</td><td>Archives</td><td class="ext">.7z .arj .gz .rar .tar .zip</td><td class="class">nf-oct-file_zip</td><td class="code">U+F410</td><td class="set-oct">Octicons</td></tr>
+<tr><td class="glyph">&#xE615;</td><td>Resource</td><td class="ext">.rc</td><td class="class">nf-seti-config</td><td class="code">U+E615</td><td class="set-seti">Seti-UI</td></tr>
+</table>
+
+<h2>Directory Icons</h2>
+
+<table>
+<tr><th>Glyph</th><th>Type</th><th>NF Class</th><th>Code Point</th><th>Set</th></tr>
+<tr><td class="glyph">&#xE5FF;</td><td>Default directory</td><td class="class">nf-custom-folder</td><td class="code">U+E5FF</td><td class="set-seti">Seti-UI</td></tr>
+<tr><td class="glyph">&#xEAED;</td><td>Symlink directory</td><td class="class">nf-cod-file_symlink_directory</td><td class="code">U+EAED</td><td class="set-cod">Codicons</td></tr>
+<tr><td class="glyph">&#xF08E;</td><td>Junction point</td><td class="class">nf-fa-external_link</td><td class="code">U+F08E</td><td class="set-fa">Font Awesome</td></tr>
+</table>
+
+<h2>Well-Known Directory Icons</h2>
+
+<table>
+<tr><th>Glyph</th><th>Name</th><th>NF Class</th><th>Code Point</th><th>Set</th></tr>
+<tr><td class="glyph">&#xE5FB;</td><td>.git</td><td class="class">nf-custom-folder_git</td><td class="code">U+E5FB</td><td class="set-seti">Seti-UI</td></tr>
+<tr><td class="glyph">&#xE5FD;</td><td>.github</td><td class="class">nf-custom-folder_github</td><td class="code">U+E5FD</td><td class="set-seti">Seti-UI</td></tr>
+<tr><td class="glyph">&#xE5FC;</td><td>.vscode</td><td class="class">nf-custom-folder_config</td><td class="code">U+E5FC</td><td class="set-seti">Seti-UI</td></tr>
+<tr><td class="glyph">&#xE615;</td><td>.config</td><td class="class">nf-seti-config</td><td class="code">U+E615</td><td class="set-seti">Seti-UI</td></tr>
+<tr><td class="glyph">&#xE5FA;</td><td>node_modules</td><td class="class">nf-custom-folder_npm</td><td class="code">U+E5FA</td><td class="set-seti">Seti-UI</td></tr>
+<tr><td class="glyph">&#xF489;</td><td>src / source</td><td class="class">nf-oct-terminal</td><td class="code">U+F489</td><td class="set-oct">Octicons</td></tr>
+<tr><td class="glyph">&#xF401;</td><td>docs / doc / documents</td><td class="class">nf-oct-repo</td><td class="code">U+F401</td><td class="set-oct">Octicons</td></tr>
+<tr><td class="glyph">&#xF471;</td><td>bin</td><td class="class">nf-oct-file_binary</td><td class="code">U+F471</td><td class="set-oct">Octicons</td></tr>
+<tr><td class="glyph">&#xEB9D;</td><td>build / dist / out / output</td><td class="class">nf-cod-output</td><td class="code">U+EB9D</td><td class="set-cod">Codicons</td></tr>
+<tr><td class="glyph">&#xF0668;</td><td>test / tests / __tests__ / spec / specs</td><td class="class">nf-md-test_tube</td><td class="code">U+F0668</td><td class="set-md">Material Design*</td></tr>
+<tr><td class="glyph">&#xEBDF;</td><td>lib / libs</td><td class="class">nf-cod-folder_library</td><td class="code">U+EBDF</td><td class="set-cod">Codicons</td></tr>
+<tr><td class="glyph">&#xE691;</td><td>scripts</td><td class="class">nf-seti-shell</td><td class="code">U+E691</td><td class="set-seti">Seti-UI</td></tr>
+<tr><td class="glyph">&#xE60D;</td><td>images / img / assets</td><td class="class">nf-seti-image</td><td class="code">U+E60D</td><td class="set-seti">Seti-UI</td></tr>
+<tr><td class="glyph">&#xE616;</td><td>packages</td><td class="class">nf-seti-npm</td><td class="code">U+E616</td><td class="set-seti">Seti-UI</td></tr>
+</table>
+
+<h2>Cloud Status Icons</h2>
+<p class="section-note">These replace the Unicode geometric circles in the cloud status column when icons are active.</p>
+
+<table>
+<tr><th>Glyph</th><th>Status</th><th>Replaces</th><th>NF Class</th><th>Code Point</th><th>Set</th></tr>
+<tr><td class="glyph">&#xF0163;</td><td>Cloud-only (needs download)</td><td class="glyph-large">○</td><td class="class">nf-md-cloud_outline</td><td class="code">U+F0163</td><td class="set-md">Material Design*</td></tr>
+<tr><td class="glyph">&#xF0160;</td><td>Locally available (freeable)</td><td class="glyph-large">◐</td><td class="class">nf-md-cloud_check</td><td class="code">U+F0160</td><td class="set-md">Material Design*</td></tr>
+<tr><td class="glyph">&#xF0403;</td><td>Always local (pinned)</td><td class="glyph-large">●</td><td class="class">nf-md-pin</td><td class="code">U+F0403</td><td class="set-md">Material Design*</td></tr>
+</table>
+
+<h2>Generic Fallbacks</h2>
+
+<table>
+<tr><th>Glyph</th><th>Type</th><th>NF Class</th><th>Code Point</th><th>Set</th></tr>
+<tr><td class="glyph">&#xF15B;</td><td>Unknown file extension</td><td class="class">nf-fa-file</td><td class="code">U+F15B</td><td class="set-fa">Font Awesome</td></tr>
+<tr><td class="glyph">&#xE5FF;</td><td>Unknown directory</td><td class="class">nf-custom-folder</td><td class="code">U+E5FF</td><td class="set-seti">Seti-UI</td></tr>
+</table>
+
+<h2>Simulated Listing Preview</h2>
+<p class="section-note">How a directory listing might look with icons active (approximate).</p>
+
+<pre style="font-family: 'NF Symbols', 'Symbols Nerd Font Mono', 'CaskaydiaCove Nerd Font', 'Cascadia Code', monospace; font-size: 16px; background: #1a1a1a; padding: 1.5em; border-radius: 6px; line-height: 1.8; overflow-x: auto;">
+<span style="color:#808080">2026-01-15  10:30  RHSA     1,234  </span><span style="color:#4ec9b0">&#xE5FF; </span><span style="color:#4ec9b0">src</span>
+<span style="color:#808080">2026-01-15  10:30  RHSA     2,048  </span><span style="color:#569cd6">&#xE5FB; </span><span style="color:#569cd6">.git</span>
+<span style="color:#808080">2026-01-15  10:30  RHSA     4,096  </span><span style="color:#4ec9b0">&#xE5FF; </span><span style="color:#4ec9b0">bin</span>
+<span style="color:#808080">2026-02-01  14:22  ....A    8,192  </span><span style="color:#6a9955">&#xE61D; </span><span style="color:#6a9955">main.cpp</span>
+<span style="color:#808080">2026-02-01  14:22  ....A    1,024  </span><span style="color:#6a9955">&#xE61E; </span><span style="color:#6a9955">main.h</span>
+<span style="color:#808080">2026-02-10  09:15  ....A      512  </span><span style="color:#ce9178">&#xE60B; </span><span style="color:#ce9178">config.json</span>
+<span style="color:#808080">2026-02-10  09:15  ....A    2,048  </span><span style="color:#9cdcfe">&#xE609; </span><span style="color:#9cdcfe">README.md</span>
+<span style="color:#808080">2026-02-10  09:15  ....A   16,384  </span><span style="color:#c586c0">&#xF410; </span><span style="color:#c586c0">archive.zip</span>
+<span style="color:#808080">2026-02-10  09:15  ....A    4,096  </span><span style="color:#d7ba7d">&#xE683; </span><span style="color:#d7ba7d">build.ps1</span>
+<span style="color:#808080">2026-02-10  09:15  ....A      256  </span><span style="color:#d4d4d4">&#xF15B; </span><span style="color:#d4d4d4">unknown.xyz</span>
+<span style="color:#808080">2026-02-10  09:15  .H..A      128  </span><span style="color:#666666">&#xE615; </span><span style="color:#666666">.editorconfig</span>
+<span style="color:#808080">2026-02-12  11:00  ....A      768  </span><span style="color:#569cd6">&#xE70C; </span><span style="color:#569cd6">project.sln</span>
+</pre>
+
+<p class="note">* Material Design icons use 5-digit code points (supplementary plane) requiring surrogate pairs on Windows.<br>
+Font loaded from jsDelivr CDN (Symbols Nerd Font Mono). If glyphs don't render, ensure the webfont loaded or install a local Nerd Font.</p>
+
+</body>
+</html>
