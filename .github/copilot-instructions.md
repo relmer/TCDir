@@ -95,6 +95,12 @@ g_pConsole->Printf (CConfig::Error, L"Error: %s\n", msg);
 - Include `Error:` labels for cleanup in functions returning `HRESULT`
 - Functions should only have a single exit point.  Never directly goto Error; always use EHM macros instead.
 
+### Function Size & Structure
+- Keep functions focused and short — ideally under ~50 lines (roughly one screen)
+- Aggressively factor out helper functions that do just one thing
+- Avoid excessive nesting: if a function requires more than 2–3 levels of indentation beyond the EHM pattern, extract that inner logic into its own function
+- Each function should have a single clear purpose
+
 ---
 
 ## Communication Rules

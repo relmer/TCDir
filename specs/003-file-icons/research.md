@@ -529,3 +529,251 @@ Once the font family name is obtained, determine if it's a Nerd Font by:
 
 *Last Updated: 2025-07*
 *Source: Official documentation for each terminal emulator*
+
+---
+
+# Phase 0: Implementation Research
+
+*Added: 2026-02-14 during /speckit.plan*
+
+This section consolidates implementation-specific research for the file-icons feature. The terminal host detection section above provides context; this section covers the specific Win32 APIs, design decisions, and coding patterns needed for implementation.
+
+---
+
+## R1: Glyph Canary Probe via GetGlyphIndicesW
+
+### Decision
+Use `GetGlyphIndicesW` with `GGI_MARK_NONEXISTING_GLYPHS` to definitively test whether the current console font contains a Nerd Font glyph at U+E5FA. This is the step 4 detection method for classic conhost.
+
+### Rationale
+`GetGlyphIndicesW` is the only Win32 API that can definitively answer "does font X contain glyph Y?" without rendering. It works in a memory DC and doesn't require a window. The canary code point U+E5FA (`nf-custom-folder_npm`) is in the Seti-UI BMP range, specific to Nerd Fonts v3, and absent from all standard Windows console fonts.
+
+### Alternatives Considered
+- **`GetCharacterPlacementW`**: Returns glyph indices but with more overhead (kerning, reordering). Overkill for a single-glyph probe.
+- **`ScriptShape`** (Uniscribe): Full complex script shaping — far too heavy for a boolean glyph check.
+- **Render and read back**: Write the glyph, read the screen buffer, compare. Fragile, slow, and distorts output.
+
+### API Flow
+```
+GetCurrentConsoleFontEx → fontInfo.FaceName
+CreateCompatibleDC(nullptr) → hdc
+CreateFontW(fontInfo.FaceName) → hFont
+SelectObject(hdc, hFont)
+GetGlyphIndicesW(hdc, &canary, 1, &glyphIndex, GGI_MARK_NONEXISTING_GLYPHS)
+glyphIndex != 0xFFFF → glyph exists
+Cleanup: SelectObject back, DeleteDC, DeleteObject
+```
+
+### Key Details
+- **Library**: `gdi32.lib` (add `#pragma comment(lib, "gdi32.lib")` to `pch.h`)
+- **Works for BMP only**: U+E5FA is a single `wchar_t`. `GetGlyphIndicesW` does not handle surrogate pairs — but the canary is BMP, so this is fine.
+- **Error vs missing**: `GDI_ERROR` (0xFFFFFFFF as DWORD) = API failure. Glyph index 0xFFFF = glyph not in font. Must check both.
+- **Raster fonts**: If console uses Terminal raster font, `FaceName` may be empty/unusual. The probe correctly returns false — raster fonts don't have NF glyphs.
+- **ConPTY caveat**: Under ConPTY, `GetCurrentConsoleFontEx` returns the conhost shim's font (often "Consolas"), NOT the terminal's rendering font. This probe is ONLY valid in classic conhost. The layered detection strategy ensures this probe isn't called under ConPTY.
+
+### EHM Pattern
+Single exit via `Error:` label. GDI handle cleanup in the Error block. Use `CWRA` for `GetCurrentConsoleFontEx` (sets last error), `CPRAEx` for `CreateCompatibleDC`/`CreateFontW` (return null on failure), `CWRAEx` for `GetGlyphIndicesW`.
+
+---
+
+## R2: System Font Enumeration via EnumFontFamiliesExW
+
+### Decision
+Use `EnumFontFamiliesExW` with `DEFAULT_CHARSET` and empty `lfFaceName` to enumerate all installed font families, checking each name for Nerd Font naming patterns. This is the step 5 heuristic for ConPTY terminals.
+
+### Rationale
+When running under ConPTY (Windows Terminal, VS Code, etc.), there is no API to query the real rendering font. Enumerating installed system fonts and checking for Nerd Font naming conventions ("Nerd Font", " NF", " NFM", " NFP" suffixes) is a reasonable heuristic — users don't install Nerd Fonts by accident.
+
+### Alternatives Considered
+- **Read terminal config files** (Windows Terminal settings.json, VS Code settings.json, etc.): Possible but requires parsing JSONC/TOML/Lua/XML for 7+ terminal types. Fragile, high maintenance, and the font cascade may be overridden by profiles. The research.md above documents all config formats for future reference, but the simpler enumeration heuristic is preferred for v1.
+- **`TERM_PROGRAM`-based font inference**: Knowing the terminal type but not the font doesn't help — only WezTerm guarantees NF fallback.
+
+### Name Matching Patterns
+```
+faceName.find(L"Nerd Font") != npos   — "FiraCode Nerd Font", "FiraCode Nerd Font Mono"
+faceName.ends_with(L" NF")            — "FiraCode NF"
+faceName.ends_with(L" NFM")           — "FiraCode NFM" (mono)
+faceName.ends_with(L" NFP")           — "FiraCode NFP" (proportional)
+```
+
+### Key Details
+- **Library**: `gdi32.lib` (same as R1)
+- **`DEFAULT_CHARSET`**: Critical — enumerates fonts across all character sets.
+- **Callback returns 0 to stop**: Once a Nerd Font is found, return 0 to terminate enumeration early.
+- **Performance**: Sub-millisecond on typical systems (200–500 fonts). Runs once at startup; no caching needed.
+- **C++20**: `std::wstring_view::ends_with` available with `/std:c++latest`.
+- **False positive handling**: If a NF is installed but the terminal isn't using it, icons appear as broken glyphs. User can fix with `/Icons-` or `TCDIR=Icons-`. This is acceptable per spec assumptions.
+
+---
+
+## R3: Surrogate Pair Encoding for Material Design Icons
+
+### Decision
+Store all icon code points as `char32_t` in mapping tables. Convert to UTF-16 at display time using a constexpr helper. Use `%s` (not `%c`) with a null-terminated `wchar_t[3]` buffer for Printf output.
+
+### Rationale
+Material Design icons (`nf-md-*`) use 5-digit supplementary plane code points (e.g., U+F08C6) that require surrogate pairs in UTF-16 (`wchar_t` is 16-bit on Windows). Storing as `char32_t` is clean, unambiguous, and can be validated at compile time. The conversion to `wchar_t[3]` (max 2 surrogates + null) is trivial.
+
+### Formula
+```
+For cp > 0xFFFF:
+  hi = 0xD800 + ((cp - 0x10000) >> 10)
+  lo = 0xDC00 + ((cp - 0x10000) & 0x3FF)
+```
+
+### Compile-Time Verification
+Key code points from the spec verified at compile time via `static_assert`:
+
+| Code Point | Glyph | High | Low |
+|-----------|-------|------|-----|
+| U+F08C6 (`nf-md-application`) | 0xDB82 | 0xDCC6 | Surrogate pair |
+| U+F0219 (`nf-md-file_document`) | 0xDB80 | 0xDE19 | Surrogate pair |
+| U+F0227 (`nf-md-file_powerpoint`) | 0xDB80 | 0xDE27 | Surrogate pair |
+| U+F0163 (`nf-md-cloud_outline`) | 0xDB80 | 0xDD63 | Surrogate pair |
+| U+F0160 (`nf-md-cloud_check`) | 0xDB80 | 0xDD60 | Surrogate pair |
+| U+F0403 (`nf-md-pin`) | 0xDB81 | 0xDC03 | Surrogate pair |
+| U+F0668 (`nf-md-test_tube`) | 0xDB81 | 0xDE68 | Surrogate pair |
+| U+E5FA (BMP) | 0xE5FA | — | Single wchar_t |
+| U+E61D (BMP) | 0xE61D | — | Single wchar_t |
+
+### Printf Pattern
+```cpp
+// Unified pattern for both BMP and supplementary plane:
+wchar_t szIcon[3] = {};
+auto pair = CodePointToWideChars(iconCodePoint);
+szIcon[0] = pair.chars[0];
+szIcon[1] = (pair.count > 1) ? pair.chars[1] : L'\0';
+pConsole->Printf(textAttr, L"%s %s", szIcon, wfd.cFileName);
+```
+
+### Alternatives Considered
+- **Store as `wchar_t[3]` directly**: Wastes space for BMP glyphs and obscures the actual Unicode code point. Hard to validate.
+- **Store as `wstring`**: Heap allocation for every icon mapping. Unnecessary since max length is 2 `wchar_t`.
+- **BMP-only (reject Material Design)**: Would lose `.exe`, `.ppt`, `.txt`, cloud status, and test dir icons. Too many important glyphs are in the supplementary plane.
+
+---
+
+## R4: ConPTY Detection Strategy
+
+### Decision
+Probe a fixed list of environment variables in priority order. If any are set, the process is under ConPTY and `GetCurrentConsoleFontEx` is unreliable for font detection.
+
+### Variables (in check order)
+```
+WT_SESSION         → Windows Terminal
+TERM_PROGRAM       → VS Code, WezTerm, Hyper, mintty
+ConEmuPID          → ConEmu / Cmder
+ALACRITTY_WINDOW_ID → Alacritty
+```
+
+### WezTerm Special Case
+WezTerm (`TERM_PROGRAM=WezTerm`) bundles Nerd Font Symbols as a default fallback font. The detection chain short-circuits to "icons ON" for WezTerm before checking ConPTY.
+
+### Key Details
+- **Uses existing `IEnvironmentProvider`**: All env var access goes through the injected provider, enabling full unit test coverage with `CTestEnvironmentProvider`.
+- **No additional variables needed**: The four listed cover all major ConPTY terminals on Windows. Rare terminals that don't set any of these will fall through to "no env vars set → assume classic conhost → probe glyph canary." If the probe fails (the font doesn't have NF glyphs), icons default OFF. Safe.
+- **SSH sessions**: Env vars may not be forwarded. Falls through to classic conhost probe — correct behavior since the SSH terminal's font is the local terminal's font, and the remote conhost has no knowledge of it.
+
+---
+
+## R5: Extended TCDIR Parsing Design
+
+### Decision
+Extend the existing `ProcessColorOverrideEntry()` flow to detect and parse the optional `,icon` suffix after the color value. The comma is the delimiter. Icon parsing happens after color parsing in the same entry.
+
+### Parsing Flow
+```
+Entry: ".cpp=Green,U+E61D"
+  1. ParseKeyAndValue → key=".cpp", value="Green,U+E61D"
+  2. Split value on first comma → colorPart="Green", iconPart="U+E61D"
+  3. ParseColorValue(colorPart) → WORD colorAttr
+  4. ParseIconValue(iconPart) → char32_t codePoint
+  5. Dispatch: ProcessFileExtensionOverride(key, colorAttr, codePoint)
+```
+
+### Icon Value Formats
+| Input | Interpretation |
+|-------|---------------|
+| `U+E61D` | Hex code point (4–6 digits after `U+`) |
+| `U+F0163` | Hex code point (supplementary plane) |
+| Literal glyph (1 char or surrogate pair) | Direct code point from character |
+| Empty (comma present, nothing after) | Icon suppressed (explicit removal) |
+| No comma | No icon change (backward compatible) |
+
+### Validation
+- `U+` prefix followed by 4–6 hex digits → valid code point
+- Code point must be in range U+0001–U+10FFFF (reject 0, reject surrogates D800–DFFF, reject >10FFFF)
+- Literal glyph: 1 character (BMP) or 2 characters forming a valid surrogate pair
+- Invalid icon values → `ErrorInfo` with underline at the icon portion
+
+### Duplicate Handling
+First-write-wins for both color and icon components of an extension/attribute/dir entry. If `.cpp=Green,U+E61D` appears first and `.cpp=Red` appears later, the second entry is flagged as a duplicate error. The color stays Green, the icon stays U+E61D.
+
+### Backward Compatibility
+Entries without a comma are parsed exactly as before — the icon parsing path is not entered. Zero regression for existing TCDIR configurations.
+
+---
+
+## R6: Unified Precedence Resolution Design
+
+### Decision
+Extend `GetTextAttrForFile()` to return a `SFileDisplayStyle` struct containing both resolved color (`WORD`) and resolved icon (`char32_t`). The precedence walk resolves both in a single pass, with independent locking semantics for color and icon.
+
+### Precedence Walk
+```
+for each level in [attributes, well-known-dir, extension, type-fallback]:
+    if level matches the file:
+        if !colorLocked and level has color configured:
+            resolvedColor = level's color
+            colorLocked = true
+        if !iconLocked and level has icon configured:
+            resolvedIcon = level's icon
+            iconLocked = true
+        if colorLocked and iconLocked:
+            break
+```
+
+### Key Insight
+Color and icon lock independently. A hidden `.cpp` file gets DarkGrey color from the attribute level (color locks) but falls through to extension level for the C++ icon (icon locks there). This matches the spec's precedence examples exactly.
+
+### Return Type
+```cpp
+struct SFileDisplayStyle
+{
+    WORD      m_wTextAttr;      // Resolved color attribute
+    char32_t  m_iconCodePoint;  // Resolved icon (0 = no icon)
+    bool      m_fIconSuppressed; // true if icon was explicitly set to empty
+};
+```
+
+### Attribute Precedence Order Change
+The spec reorders attribute precedence from `RHSATEC0P` to `PSHERC0TA`. This is a behavioral change for users with attribute-level color overrides relying on the old order. A new `k_rgIconAttributePrecedence[]` array defines the new order, separate from the existing `k_rgFileAttributeMap[]` (which retains display-column order `RHSATECP0`).
+
+---
+
+## R7: New gdi32.lib Dependency
+
+### Decision
+Add `#pragma comment(lib, "gdi32.lib")` to `pch.h` alongside the existing `#pragma comment(lib, "cldapi.lib")`.
+
+### Rationale
+`gdi32.lib` is required for `GetGlyphIndicesW`, `CreateCompatibleDC`, `CreateFontW`, `SelectObject`, `DeleteDC`, `DeleteObject`, and `EnumFontFamiliesExW`. All are standard Win32 APIs present in every Windows SDK version. The pragma approach matches the existing pattern in the codebase.
+
+### Alternatives Considered
+- **vcxproj AdditionalDependencies**: Works but less visible than the pragma in `pch.h`. The project already uses pragmas for `cldapi.lib`.
+
+---
+
+## Research Summary
+
+| ID | Topic | Decision | Status |
+|----|-------|----------|--------|
+| R1 | Canary probe API | `GetGlyphIndicesW` + `GGI_MARK_NONEXISTING_GLYPHS` | Resolved |
+| R2 | Font enumeration API | `EnumFontFamiliesExW` + name matching | Resolved |
+| R3 | Surrogate pairs | `char32_t` storage + constexpr converter | Resolved |
+| R4 | ConPTY detection | 4 env vars (WT_SESSION, TERM_PROGRAM, ConEmuPID, ALACRITTY_WINDOW_ID) | Resolved |
+| R5 | TCDIR icon parsing | Comma delimiter, U+XXXX hex, literal glyph, empty = suppress | Resolved |
+| R6 | Precedence resolver | Single walk, independent color/icon locking | Resolved |
+| R7 | gdi32.lib link | `#pragma comment(lib, "gdi32.lib")` in pch.h | Resolved |
+
+All NEEDS CLARIFICATION items resolved. No blockers for Phase 1 design.
