@@ -188,6 +188,8 @@ As a power user, I want to customize colors and default switches via the TCDIR e
 4. **Given** TCDIR env var includes attribute colors (e.g., `Attr:H=DarkGray`), **When** tcdir runs, **Then** hidden files use the specified color
 5. **Given** TCDIR env var has syntax errors, **When** tcdir runs, **Then** errors are displayed at the end of output with specific details
 6. **Given** user runs `tcdir --env`, **When** displayed, **Then** complete environment variable syntax help is shown
+7. **Given** TCDIR env var entry has an invalid background color (e.g., `.png=Black on Chartreuse`), **When** tcdir runs, **Then** the entire entry is ignored and the extension keeps its default color
+8. **Given** TCDIR env var entry has the same foreground and background color (e.g., `.cpp=Blue on Blue`), **When** tcdir runs, **Then** the entry is rejected as unreadable and the extension keeps its default color
 
 ---
 
@@ -204,6 +206,7 @@ As a user troubleshooting colors, I want to see my current color configuration s
 1. **Given** user runs `tcdir --config`, **When** output is displayed, **Then** all display item colors are shown with their current values
 2. **Given** user runs `tcdir --config`, **When** output is displayed, **Then** all extension color overrides are shown
 3. **Given** each configuration item, **When** displayed, **Then** the source is indicated (Default vs Environment)
+4. **Given** TCDIR env var has validation errors, **When** user runs `tcdir --config`, **Then** errors are shown after the configuration table (matching `--env` convention)
 
 ---
 
@@ -312,6 +315,8 @@ As a developer debugging file attribute issues, I want to see raw hexadecimal at
 - What happens when access is denied to a directory? Error is displayed but enumeration continues for accessible items.
 - What happens when a filename contains Unicode characters? Full Unicode support via wide character APIs.
 - What happens when TCDIR env var has invalid syntax? Errors are displayed at the end of output with specific details.
+- What happens when TCDIR env var has an invalid background color (e.g., `Chartreuse`)? The entire entry is rejected and the extension keeps its default color.
+- What happens when TCDIR env var specifies the same foreground and background color? The entry is rejected as unreadable (e.g., `Blue on Blue`, `Black on Black`).
 - What happens when both `-` and `/` prefixes are mixed? Both are supported; the last-used prefix affects help display format.
 - What happens when long switches use single dash (e.g., `-env`)? Error is returned; long switches require `--` prefix with `-` style.
 
@@ -388,6 +393,9 @@ As a developer debugging file attribute issues, I want to see raw hexadecimal at
 - **FR-083**: System MUST support extension colors in TCDIR (e.g., `.cpp=Cyan`)
 - **FR-084**: System MUST support file attribute colors in TCDIR (e.g., `Attr:H=DarkGray`)
 - **FR-085**: System MUST validate TCDIR syntax and report specific errors at end of output
+- **FR-086**: System MUST reject TCDIR entries with invalid background color names (entire entry ignored, default preserved)
+- **FR-087**: System MUST reject TCDIR entries where foreground and background colors are the same (unreadable)
+- **FR-088**: `--config` MUST display validation errors after the configuration table, matching `--env` convention
 
 #### Extended Features
 
