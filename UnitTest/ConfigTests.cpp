@@ -722,6 +722,47 @@ namespace UnitTest
 
 
 
+        TEST_METHOD(ApplyUserColorOverrides_SameForegroundAndBackground_IgnoresEntry)
+        {
+            ConfigProbe config;
+            config.Initialize(FC_LightGrey);
+
+            config.SetEnvVar (TCDIR_ENV_VAR_NAME, L".cpp=Blue on Blue");
+            config.ApplyUserColorOverrides();
+
+            // Same fore/back should be ignored - .cpp keeps its default color
+            Assert::IsTrue (config.m_mapExtensionToTextAttr.contains(L".cpp"));
+            Assert::AreEqual ((WORD)FC_LightGreen, config.m_mapExtensionToTextAttr[L".cpp"]);
+
+            CConfig::ValidationResult result = config.ValidateEnvironmentVariable();
+            Assert::AreEqual (size_t(1), result.errors.size());
+            Assert::AreEqual (wstring(L"Foreground and background colors are the same"), result.errors[0].message);
+        }
+
+
+
+
+
+        TEST_METHOD(ApplyUserColorOverrides_BlackOnBlack_IgnoresEntry)
+        {
+            ConfigProbe config;
+            config.Initialize(FC_LightGrey);
+
+            config.SetEnvVar (TCDIR_ENV_VAR_NAME, L".txt=Black on Black");
+            config.ApplyUserColorOverrides();
+
+            // Black on Black should be ignored - .txt keeps its default color
+            Assert::IsTrue (config.m_mapExtensionToTextAttr.contains(L".txt"));
+            Assert::AreEqual ((WORD)FC_White, config.m_mapExtensionToTextAttr[L".txt"]);
+
+            CConfig::ValidationResult result = config.ValidateEnvironmentVariable();
+            Assert::AreEqual (size_t(1), result.errors.size());
+        }
+
+
+
+
+
         TEST_METHOD(Initialize_DefaultFileAttributeColors_HiddenAndEncryptedPresent)
         {
             ConfigProbe config;

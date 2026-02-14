@@ -496,6 +496,21 @@ HRESULT CConfig::ParseColorValue (wstring_view entry, wstring_view valueView, WO
             // Reject the entire entry so we don't apply a partial/unreadable color
             CBR (FALSE);
         }
+
+        //
+        // Reject if foreground and background are the same color (unreadable)
+        //
+
+        if (foreColor == (backColor >> 4))
+        {
+            m_lastParseResult.errors.push_back({
+                L"Foreground and background colors are the same",
+                wstring(entry),
+                wstring(TrimWhitespace (valueView)),
+                (equalPos != wstring_view::npos) ? equalPos + 1 : 0
+            });
+            CBR (FALSE);
+        }
     }
 
     colorAttr = foreColor | backColor;

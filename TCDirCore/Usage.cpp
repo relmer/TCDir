@@ -1288,14 +1288,15 @@ void CUsage::DisplayEnvVarHelp (CConsole & console, wchar_t chPrefix)
 
 void CUsage::DisplayCurrentConfiguration (CConsole & console, wchar_t chPrefix)
 {
-    if (IsTcdirEnvVarSet ())
-    {
-        DisplayEnvVarIssues (console, chPrefix);
-    }
-    else
+    if (!IsTcdirEnvVarSet ())
     {
         console.ColorPuts (L"\n  {Information}" TCDIR_ENV_VAR_NAME L"{Default} environment variable is not set; showing default configuration.");
     }
 
     DisplayConfigurationTable (console);
+
+    if (IsTcdirEnvVarSet ())
+    {
+        DisplayEnvVarIssues (console, chPrefix);
+    }
 }
