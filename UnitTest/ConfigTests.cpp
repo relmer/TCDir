@@ -2043,7 +2043,7 @@ namespace UnitTest
             config.Initialize (FC_LightGrey);
 
             Assert::IsTrue  (config.m_mapExtensionToIcon.contains (L".cpp"));
-            Assert::AreEqual (static_cast<char32_t>(NfIcon::CustomCpp), config.m_mapExtensionToIcon[L".cpp"]);
+            Assert::AreEqual (static_cast<char32_t>(NfIcon::MdLanguageCpp), config.m_mapExtensionToIcon[L".cpp"]);
         }
 
 
@@ -2070,7 +2070,7 @@ namespace UnitTest
             config.Initialize (FC_LightGrey);
 
             Assert::IsTrue  (config.m_mapWellKnownDirToIcon.contains (L".git"));
-            Assert::AreEqual (static_cast<char32_t>(NfIcon::CustomFolderGit), config.m_mapWellKnownDirToIcon[L".git"]);
+            Assert::AreEqual (static_cast<char32_t>(NfIcon::SetiGit), config.m_mapWellKnownDirToIcon[L".git"]);
         }
 
 
@@ -2102,7 +2102,7 @@ namespace UnitTest
 
             auto style = config.GetDisplayStyleForFile (wfd);
 
-            Assert::AreEqual (static_cast<char32_t>(NfIcon::CustomCpp), style.m_iconCodePoint);
+            Assert::AreEqual (static_cast<char32_t>(NfIcon::MdLanguageCpp), style.m_iconCodePoint);
             Assert::IsFalse  (style.m_fIconSuppressed);
         }
 
@@ -2138,7 +2138,7 @@ namespace UnitTest
 
             auto style = config.GetDisplayStyleForFile (wfd);
 
-            Assert::AreEqual (static_cast<char32_t>(NfIcon::CustomFolderGit), style.m_iconCodePoint);
+            Assert::AreEqual (static_cast<char32_t>(NfIcon::SetiGit), style.m_iconCodePoint);
         }
 
 
@@ -2160,7 +2160,7 @@ namespace UnitTest
             // Color is locked by HIDDEN attribute override (DarkGrey)
             Assert::AreEqual (static_cast<WORD>(FC_DarkGrey), style.m_wTextAttr);
             // Icon falls through to extension since no attribute icon override exists
-            Assert::AreEqual (static_cast<char32_t>(NfIcon::CustomCpp), style.m_iconCodePoint);
+            Assert::AreEqual (static_cast<char32_t>(NfIcon::MdLanguageCpp), style.m_iconCodePoint);
         }
 
 
@@ -2220,7 +2220,7 @@ namespace UnitTest
             // no system color override exists by default, so hidden wins
             Assert::AreEqual (static_cast<WORD>(FC_DarkGrey), style.m_wTextAttr);
             // Well-known dir icon
-            Assert::AreEqual (static_cast<char32_t>(NfIcon::CustomFolderGit), style.m_iconCodePoint);
+            Assert::AreEqual (static_cast<char32_t>(NfIcon::SetiGit), style.m_iconCodePoint);
         }
 
 

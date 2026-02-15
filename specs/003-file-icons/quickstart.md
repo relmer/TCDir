@@ -136,8 +136,8 @@ constexpr WideCharPair CodePointToWideChars (char32_t cp)
 }
 
 // Compile-time verification of key code points
-static_assert (CodePointToWideChars(0xE5FA).count == 1);
-static_assert (CodePointToWideChars(0xE61D).count == 1);
+static_assert (CodePointToWideChars(NfIcon::DevCss3).count == 1);        // BMP (0xE749)
+static_assert (CodePointToWideChars(NfIcon::SetiTypescript).count == 1);  // BMP (0xE628)
 static_assert (CodePointToWideChars(0xF08C6).count == 2);
 static_assert (CodePointToWideChars(0xF0219).count == 2);
 static_assert (CodePointToWideChars(0xD800).count == 0);
@@ -419,13 +419,13 @@ struct IconConfigProbe : public CConfig
 10. Empty env vars → each variable individually empty/missing combinations
 
 **ConfigTests.cpp (icon extensions):**
-11. `TCDIR=.cpp=Green,U+E61D` → color=Green, icon=0xE61D
-12. `TCDIR=.cpp=,U+E61D` → default color, icon=0xE61D
+11. `TCDIR=.cpp=Green,U+F0672` → color=Green, icon=MdLanguageCpp
+12. `TCDIR=.cpp=,U+F0672` → default color, icon=MdLanguageCpp
 13. `TCDIR=.cpp=Green` → color=Green, icon=default built-in (backward compat)
 14. `TCDIR=.obj=,` → icon suppressed (m_fIconSuppressed=true)
 15. `TCDIR=dir:.git=,U+F1D3` → well-known dir icon override
 16. `TCDIR=attr:H=DarkGrey,U+F21B` → attribute icon override
-17. `TCDIR=.cpp=Green,U+E61D;.cpp=Red` → first wins, second flagged as error
+17. `TCDIR=.cpp=Green,U+F0672;.cpp=Red` → first wins, second flagged as error
 18. `TCDIR=Icons;Icons-` → first wins (Icons=ON), second flagged
 19. `TCDIR=.cpp=Green,U+ZZZZ` → invalid hex → ErrorInfo generated
 20. `TCDIR=.cpp=Green,U+D800` → surrogate code point → ErrorInfo

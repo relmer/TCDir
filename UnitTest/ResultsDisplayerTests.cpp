@@ -661,7 +661,7 @@ namespace UnitTest
             auto style = cfg->GetDisplayStyleForFile (wfd);
 
             // C++ files should have the CPP icon
-            Assert::AreEqual (static_cast<char32_t>(NfIcon::CustomCpp), style.m_iconCodePoint,
+            Assert::AreEqual (static_cast<char32_t>(NfIcon::MdLanguageCpp), style.m_iconCodePoint,
                              L"C++ file should get CPP icon");
             Assert::IsFalse (style.m_fIconSuppressed, L"Icon should not be suppressed");
         }
@@ -705,9 +705,9 @@ namespace UnitTest
 
         TEST_METHOD(CodePointToWideChars_BmpIcon_ProducesValidGlyph)
         {
-            // Verify that a typical BMP NF icon (e.g., C++ icon 0xE61D) can be 
+            // Verify that a typical BMP NF icon (e.g., CSS3 icon 0xE749) can be
             // converted to a wchar_t buffer suitable for console output
-            WideCharPair wcp = CodePointToWideChars (NfIcon::CustomCpp);
+            WideCharPair wcp = CodePointToWideChars (NfIcon::DevCss3);
 
             Assert::AreEqual (1u, wcp.count, L"BMP icon should be single wchar_t");
             Assert::AreNotEqual (static_cast<wchar_t>(0), wcp.chars[0], L"Should have non-null glyph");

@@ -633,8 +633,8 @@ Key code points from the spec verified at compile time via `static_assert`:
 | U+F0160 (`nf-md-cloud_check`) | 0xDB80 | 0xDD60 | Surrogate pair |
 | U+F0403 (`nf-md-pin`) | 0xDB81 | 0xDC03 | Surrogate pair |
 | U+F0668 (`nf-md-test_tube`) | 0xDB81 | 0xDE68 | Surrogate pair |
-| U+E5FA (BMP) | 0xE5FA | — | Single wchar_t |
-| U+E61D (BMP) | 0xE61D | — | Single wchar_t |
+| U+E749 (`nf-dev-css3`) | 0xE749 | — | Single wchar_t |
+| U+E628 (`nf-seti-typescript`) | 0xE628 | — | Single wchar_t |
 
 ### Printf Pattern
 ```cpp

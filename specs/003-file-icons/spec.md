@@ -401,53 +401,103 @@ Cloud status colors are unchanged — the existing `CloudStatusCloudOnly`, `Clou
 
 ## Default Icon Mappings
 
-The following default mappings cover every extension in TCDir's built-in color table, plus directories and well-known folders. All code points reference Nerd Font v3.
+The following default mappings are aligned with **Terminal-Icons** (devblackops default theme) with 5 explicit deviations for legibility. All code points reference Nerd Font v3.
 
-**Glyph selection criteria**: Prefer Seti-UI (`nf-seti-*` / `nf-custom-*`, BMP 4-digit code points) because they were purpose-built for file explorers and require only a single `wchar_t` on Windows. Material Design (`nf-md-*`, 5-digit supplementary plane) is used only when no suitable BMP glyph exists — these require surrogate pairs. See [nerd-font-glyphs.md](nerd-font-glyphs.md) for the full research reference including alternatives.
+**Alignment policy**: Use Terminal-Icons' default icon choice for every extension and well-known directory. TI is the de facto standard for PowerShell icon display and using the same icons provides a familiar visual language. Five deviations are made where TI's choice is less legible at small terminal font sizes — see [nerd-font-glyphs.md](nerd-font-glyphs.md) for detailed rationale.
 
 ### File Extension Icons
 
-| Category | Extensions | NF Class | Code Point | Set |
-|----------|-----------|----------|------------|-----|
-| C source | `.c` | `nf-custom-c` | U+E61E | Seti-UI |
-| C++ source | `.cpp`, `.cxx` | `nf-custom-cpp` | U+E61D | Seti-UI |
-| C header | `.h` | `nf-custom-c` | U+E61E | Seti-UI |
-| C++ header | `.hpp`, `.hxx` | `nf-custom-cpp` | U+E61D | Seti-UI |
-| Assembly | `.asm`, `.cod`, `.i` | `nf-custom-asm` | U+E6AB | Seti-UI |
-| C# | `.cs`, `.csx` | `nf-seti-c_sharp` | U+E648 | Seti-UI |
-| C# resource | `.resx`, `.rcml` | `nf-dev-visualstudio` | U+E70C | Devicons |
-| JavaScript | `.js` | `nf-seti-javascript` | U+E60C | Seti-UI |
-| JSX | `.jsx` | `nf-dev-react` | U+E7BA | Devicons |
-| TypeScript | `.ts` | `nf-seti-typescript` | U+E628 | Seti-UI |
-| TSX | `.tsx` | `nf-dev-react` | U+E7BA | Devicons |
-| HTML | `.html`, `.htm` | `nf-seti-html` | U+E60E | Seti-UI |
-| CSS | `.css` | `nf-seti-css` | U+E614 | Seti-UI |
-| SCSS | `.scss` | `nf-dev-sass` | U+E74B | Devicons |
-| LESS | `.less` | `nf-dev-less` | U+E758 | Devicons |
-| Python | `.py`, `.pyw` | `nf-seti-python` | U+E606 | Seti-UI |
-| Java | `.jar`, `.java`, `.class` | `nf-seti-java` | U+E66D | Seti-UI |
-| XML | `.xml` | `nf-seti-xml` | U+E619 | Seti-UI |
-| JSON | `.json` | `nf-seti-json` | U+E60B | Seti-UI |
-| YAML | `.yml`, `.yaml` | `nf-seti-yml` | U+E6A8 | Seti-UI |
-| Build artifacts | `.obj`, `.lib`, `.res`, `.pch` | `nf-oct-file_binary` | U+F471 | Octicons |
-| Build logs | `.wrn`, `.err`, `.log` | `nf-fa-list` | U+F03A | Font Awesome |
-| Shell scripts | `.bash`, `.sh` | `nf-seti-shell` | U+E691 | Seti-UI |
-| Batch/CMD | `.bat`, `.cmd` | `nf-custom-msdos` | U+E629 | Seti-UI |
-| PowerShell | `.ps1`, `.psd1`, `.psm1` | `nf-seti-powershell` | U+E683 | Seti-UI |
-| Executables | `.exe`, `.sys` | `nf-md-application` | U+F08C6 | Material Design* |
-| DLL | `.dll` | `nf-fa-archive` | U+F187 | Font Awesome |
-| VS Solution | `.sln` | `nf-dev-visualstudio` | U+E70C | Devicons |
-| VS Projects | `.vcproj`, `.vcxproj`, `.csproj`, `.csxproj`, `.user`, `.ncb` | `nf-dev-visualstudio` | U+E70C | Devicons |
-| Word docs | `.doc`, `.docx` | `nf-seti-word` | U+E6A5 | Seti-UI |
-| PowerPoint | `.ppt`, `.pptx` | `nf-md-file_powerpoint` | U+F0227 | Material Design* |
-| Excel | `.xls`, `.xlsx` | `nf-seti-xls` | U+E6A6 | Seti-UI |
-| Markdown | `.md` | `nf-seti-markdown` | U+E609 | Seti-UI |
-| Text files | `.txt`, `.text`, `.!!!`, `.1st`, `.me`, `.now` | `nf-md-file_document` | U+F0219 | Material Design* |
-| Email | `.eml` | `nf-fa-envelope` | U+F0E0 | Font Awesome |
-| Archives | `.7z`, `.arj`, `.gz`, `.rar`, `.tar`, `.zip` | `nf-oct-file_zip` | U+F410 | Octicons |
-| Resource | `.rc` | `nf-seti-config` | U+E615 | Seti-UI |
+| Category | Extensions | NF Class | Code Point | Set | Notes |
+|----------|-----------|----------|------------|-----|-------|
+| C source | `.c`, `.h` | `nf-md-language_c` | U+F0671 | Material Design* | TI default |
+| C++ source | `.cpp`, `.cxx`, `.c++`, `.hpp`, `.hxx` | `nf-md-language_cpp` | U+F0672 | Material Design* | TI default |
+| Assembly | `.asm`, `.cod`, `.i` | `nf-custom-asm` | U+E6AB | Seti-UI | |
+| C# | `.cs`, `.csx` | `nf-md-language_csharp` | U+F031B | Material Design* | TI default |
+| XAML | `.xaml` | `nf-md-language_xaml` | U+F0673 | Material Design* | TI default |
+| F# | `.fs`, `.fsx`, `.fsi` | `nf-dev-fsharp` | U+E7A7 | Devicons | TI default |
+| JavaScript | `.js`, `.mjs`, `.cjs` | `nf-dev-javascript_alt` | U+E74E | Devicons | TI default |
+| TypeScript | `.ts` | `nf-seti-typescript` | U+E628 | Seti-UI | TI default |
+| JSX / TSX | `.jsx`, `.tsx` | `nf-dev-react` | U+E7BA | Devicons | TI default |
+| Python | `.py`, `.pyw` | `nf-seti-python` | U+E606 | Seti-UI | **DEVIATION** — TI uses `nf-md-language_python` (U+F0320) |
+| Notebook | `.ipynb` | `nf-md-notebook` | U+F082E | Material Design* | TI default |
+| Java | `.java`, `.jar`, `.class` | `nf-fae-java` | U+E256 | FA Extension | TI default |
+| Gradle | `.gradle` | `nf-md-elephant` | U+F07C6 | Material Design* | TI default |
+| Rust | `.rs` | `nf-dev-rust` | U+E7A8 | Devicons | TI default |
+| Go | `.go` | `nf-dev-go` | U+E724 | Devicons | TI default |
+| Ruby | `.rb`, `.erb` | `nf-oct-ruby` | U+F43B | Octicons | TI default |
+| Lua | `.lua` | `nf-seti-lua` | U+E620 | Seti-UI | TI default |
+| Perl | `.pl`, `.pm` | `nf-dev-perl` | U+E769 | Devicons | TI default |
+| PHP | `.php` | `nf-dev-php` | U+E73D | Devicons | TI default |
+| Haskell | `.hs` | `nf-dev-haskell` | U+E777 | Devicons | TI default |
+| Dart | `.dart` | `nf-dev-dart` | U+E798 | Devicons | TI default |
+| Kotlin | `.kt`, `.kts` | `nf-custom-kotlin` | U+E634 | Custom | TI default |
+| Swift | `.swift` | `nf-seti-swift` | U+E699 | Seti-UI | |
+| Scala | `.scala`, `.sc`, `.sbt` | `nf-dev-scala` | U+E737 | Devicons | TI default |
+| Clojure | `.clj`, `.cljs`, `.cljc` | `nf-dev-clojure` | U+E768 | Devicons | TI default |
+| Elixir | `.ex`, `.exs` | `nf-custom-elixir` | U+E62D | Custom | TI default |
+| Erlang | `.erl` | `nf-dev-erlang` | U+E7B1 | Devicons | TI default |
+| Groovy | `.groovy` | `nf-dev-groovy` | U+E775 | Devicons | TI default |
+| Julia | `.jl` | `nf-seti-julia` | U+E624 | Seti-UI | TI default |
+| R | `.r`, `.rmd` | `nf-md-language_r` | U+F07D4 | Material Design* | TI default |
+| Elm | `.elm` | `nf-custom-elm` | U+E62C | Custom | TI default |
+| HTML | `.html`, `.htm`, `.xhtml` | `nf-seti-html` | U+E60E | Seti-UI | TI default |
+| CSS | `.css` | `nf-dev-css3` | U+E749 | Devicons | TI default |
+| SCSS / Sass | `.scss`, `.sass` | `nf-dev-sass` | U+E74B | Devicons | TI default |
+| LESS | `.less` | `nf-dev-less` | U+E758 | Devicons | TI default |
+| Vue | `.vue` | `nf-md-vuejs` | U+F0844 | Material Design* | TI default |
+| Svelte | `.svelte` | `nf-seti-svelte` | U+E697 | Seti-UI | |
+| XML | `.xml`, `.xsd`, `.xsl`, `.xslt`, `.dtd`, `.plist`, `.manifest`, `.resx` | `nf-md-xml` | U+F05C0 | Material Design* | TI default |
+| JSON | `.json` | `nf-seti-json` | U+E60B | Seti-UI | TI default |
+| YAML | `.yml`, `.yaml` | `nf-md-format_align_left` | U+F0262 | Material Design* | TI default |
+| Config | `.ini`, `.cfg`, `.conf`, `.config`, `.properties`, `.settings`, `.reg`, `.toml` | `nf-fa-gear` | U+F013 | Font Awesome | TI default |
+| SQL | `.sql`, `.sqlite`, `.mdb`, `.accdb`, `.pgsql` | `nf-dev-database` | U+E706 | Devicons | TI default |
+| Database | `.db` | `nf-seti-db` | U+E64D | Seti-UI | TI default |
+| CSV / TSV | `.csv`, `.tsv` | `nf-md-file_excel` | U+F021B | Material Design* | TI default |
+| Build artifacts | `.obj`, `.lib`, `.res`, `.pch` | `nf-oct-file_binary` | U+F471 | Octicons | TI default |
+| PDB | `.pdb` | `nf-dev-database` | U+E706 | Devicons | |
+| Build logs | `.wrn`, `.err`, `.log` | `nf-fa-list` | U+F03A | Font Awesome | TI default |
+| Shell scripts | `.bash`, `.sh`, `.zsh`, `.fish` | `nf-oct-terminal` | U+F489 | Octicons | TI default |
+| Batch/CMD | `.bat`, `.cmd` | `nf-custom-msdos` | U+E629 | Seti-UI | TI default |
+| PowerShell | `.ps1`, `.psd1`, `.psm1`, `.ps1xml` | `nf-md-console_line` | U+F07B7 | Material Design* | TI default |
+| Executables | `.exe`, `.sys` | `nf-md-application` | U+F08C6 | Material Design* | TI default |
+| DLL | `.dll` | `nf-fa-archive` | U+F187 | Font Awesome | TI default |
+| Installers | `.msi`, `.msix`, `.deb`, `.rpm` | `nf-md-package_variant` | U+F03D6 | Material Design* | TI default |
+| VS Solution/Projects | `.sln`, `.vcproj`, `.vcxproj`, `.csproj`, `.csxproj`, `.user`, `.ncb`, `.suo`, `.code-workspace` | `nf-dev-visualstudio` | U+E70C | Devicons | TI default |
+| F# Project | `.fsproj` | `nf-dev-fsharp` | U+E7A7 | Devicons | |
+| Word docs | `.doc`, `.docx`, `.rtf` | `nf-md-file_word` | U+F022C | Material Design* | TI default |
+| PowerPoint | `.ppt`, `.pptx` | `nf-md-file_powerpoint` | U+F0227 | Material Design* | TI default |
+| Excel | `.xls`, `.xlsx` | `nf-md-file_excel` | U+F021B | Material Design* | TI default |
+| PDF | `.pdf` | `nf-fa-file_pdf_o` | U+F1C1 | Font Awesome | TI default |
+| Markdown | `.md`, `.markdown`, `.rst` | `nf-dev-markdown` | U+E73E | Devicons | TI default |
+| Text files | `.txt`, `.text`, `.!!!`, `.1st`, `.me`, `.now` | `nf-md-file_document` | U+F0219 | Material Design* | |
+| Email | `.eml` | `nf-fa-envelope` | U+F0E0 | Font Awesome | TI default |
+| Images | `.png`, `.jpg`, `.jpeg`, `.gif`, `.bmp`, `.ico`, `.tif`, `.tiff`, `.webp`, `.psd`, `.cur`, `.raw` | `nf-fa-file_image_o` | U+F1C5 | Font Awesome | TI default |
+| SVG | `.svg` | `nf-md-svg` | U+F0721 | Material Design* | TI default |
+| Audio | `.mp3`, `.wav`, `.flac`, `.m4a`, `.wma`, `.aac`, `.ogg`, `.opus`, `.aiff` | `nf-fa-file_audio_o` | U+F1C7 | Font Awesome | TI default |
+| Video | `.mp4`, `.avi`, `.mkv`, `.mov`, `.wmv`, `.webm`, `.flv`, `.mpg`, `.mpeg` | `nf-fa-file_video_o` | U+F1C8 | Font Awesome | TI default |
+| Fonts | `.ttf`, `.otf`, `.woff`, `.woff2`, `.eot`, `.ttc` | `nf-fa-font` | U+F031 | Font Awesome | TI default |
+| Archives | `.7z`, `.arj`, `.gz`, `.rar`, `.tar`, `.zip`, `.xz`, `.bz2`, `.tgz`, `.cab`, `.zst` | `nf-oct-file_zip` | U+F410 | Octicons | TI default |
+| Certificates | `.cer`, `.cert`, `.crt`, `.pfx` | `nf-fa-certificate` | U+F0A3 | Font Awesome | TI default |
+| Keys | `.pem`, `.pub`, `.key`, `.asc`, `.gpg` | `nf-fa-key` | U+F084 | Font Awesome | TI default |
+| Lock files | `.lock` | `nf-fa-lock` | U+F023 | Font Awesome | TI default |
+| Docker | `.dockerfile`, `.dockerignore` | `nf-dev-docker` | U+E7B0 | Devicons | TI default |
+| Terraform | `.tf`, `.tfvars` | `nf-seti-terraform` | U+E69A | Seti-UI | NF v3 code point |
+| Bicep | `.bicep` | `nf-seti-bicep` | U+E63B | Seti-UI | |
+| Resource | `.rc` | `nf-seti-config` | U+E615 | Seti-UI | |
 
 \* Material Design code points (5-digit, U+Fxxxx) require **surrogate pairs** on Windows (`wchar_t` is 16-bit). Conversion: `hi = 0xD800 + ((cp - 0x10000) >> 10)`, `lo = 0xDC00 + ((cp - 0x10000) & 0x3FF)`.
+
+### Deviations from Terminal-Icons
+
+Five icons deliberately differ from Terminal-Icons defaults for legibility at small terminal font sizes:
+
+| Target | TCDir uses | Code Point | TI default | TI Code Point | Rationale |
+|--------|-----------|------------|-----------|---------------|-----------|
+| `.git` dir | `nf-seti-git` | U+E65D | `nf-custom-folder_git` | U+E5FB | More recognizable Git icon |
+| `.github` dir | `nf-seti-github` | U+E65B | `nf-custom-folder_github` | U+E5FD | Clearer GitHub mark |
+| `.vscode` dir | `nf-dev-vscode` | U+E8DA | `nf-custom-folder_config` | U+E5FC | VS Code logo vs generic config folder |
+| `node_modules` dir | `nf-seti-npm` | U+E616 | `nf-custom-folder_npm` | U+E5FA | Clearer npm box icon |
+| `.py`, `.pyw` | `nf-seti-python` | U+E606 | `nf-md-language_python` | U+F0320 | BMP single wchar_t; more distinct at 12pt |
 
 ### Directory Icons
 
@@ -459,22 +509,46 @@ The following default mappings cover every extension in TCDir's built-in color t
 
 ### Well-Known Directory Icons
 
-| Name | NF Class | Code Point | Set |
-|------|----------|------------|-----|
-| `.git` | `nf-custom-folder_git` | U+E5FB | Seti-UI |
-| `.github` | `nf-custom-folder_github` | U+E5FD | Seti-UI |
-| `.vscode` | `nf-custom-folder_config` | U+E5FC | Seti-UI |
-| `.config` | `nf-seti-config` | U+E615 | Seti-UI |
-| `node_modules` | `nf-custom-folder_npm` | U+E5FA | Seti-UI |
-| `src`, `source` | `nf-oct-terminal` | U+F489 | Octicons |
-| `docs`, `doc`, `documents` | `nf-oct-repo` | U+F401 | Octicons |
-| `bin` | `nf-oct-file_binary` | U+F471 | Octicons |
-| `build`, `dist`, `out`, `output` | `nf-cod-output` | U+EB9D | Codicons |
-| `test`, `tests`, `__tests__`, `spec`, `specs` | `nf-md-test_tube` | U+F0668 | Material Design* |
-| `lib`, `libs` | `nf-cod-folder_library` | U+EBDF | Codicons |
-| `scripts` | `nf-seti-shell` | U+E691 | Seti-UI |
-| `images`, `img`, `assets` | `nf-seti-image` | U+E60D | Seti-UI |
-| `packages` | `nf-seti-npm` | U+E616 | Seti-UI |
+| Name | NF Class | Code Point | Set | Notes |
+|------|----------|------------|-----|-------|
+| `.git` | `nf-seti-git` | U+E65D | Seti-UI | **DEVIATION** |
+| `.github` | `nf-seti-github` | U+E65B | Seti-UI | **DEVIATION** |
+| `.vscode`, `.vscode-insiders` | `nf-dev-vscode` | U+E8DA | Devicons | **DEVIATION** |
+| `node_modules` | `nf-seti-npm` | U+E616 | Seti-UI | **DEVIATION** |
+| `.config` | `nf-seti-config` | U+E615 | Seti-UI | TI default |
+| `.cargo` | `nf-custom-folder_config` | U+E5FC | Custom | TI default |
+| `.cache` | `nf-md-cached` | U+F00E8 | Material Design* | TI default |
+| `.docker` | `nf-dev-docker` | U+E7B0 | Devicons | TI default |
+| `.aws` | `nf-dev-aws` | U+E7AD | Devicons | TI default |
+| `.azure` | `nf-md-microsoft_azure` | U+F0805 | Material Design* | TI default |
+| `.kube` | `nf-md-ship_wheel` | U+F0833 | Material Design* | TI default |
+| `src`, `source`, `development` | `nf-oct-terminal` | U+F489 | Octicons | TI default |
+| `projects` | `nf-seti-project` | U+E601 | Seti-UI | TI default |
+| `docs`, `doc`, `documents` | `nf-oct-repo` | U+F401 | Octicons | TI default |
+| `bin` | `nf-oct-file_binary` | U+F471 | Octicons | TI default |
+| `build`, `dist`, `out`, `output` | `nf-cod-output` | U+EB9D | Codicons | TI default |
+| `artifacts` | `nf-cod-package` | U+EB29 | Codicons | TI default |
+| `test`, `tests`, `__tests__`, `spec`, `specs` | `nf-md-test_tube` | U+F0668 | Material Design* | TI default |
+| `benchmark` | `nf-md-timer` | U+F13AB | Material Design* | TI default |
+| `lib`, `libs` | `nf-cod-folder_library` | U+EBDF | Codicons | TI default |
+| `packages` | `nf-seti-npm` | U+E616 | Seti-UI | TI default |
+| `scripts` | `nf-seti-shell` | U+E691 | Seti-UI | TI default |
+| `images`, `img`, `photos`, `pictures`, `assets` | `nf-md-folder_image` | U+F024F | Material Design* | TI default |
+| `videos`, `movies` | `nf-md-movie` | U+F0381 | Material Design* | TI default |
+| `media` | `nf-oct-file_media` | U+F40F | Octicons | NF v3 code point |
+| `music`, `songs` | `nf-md-music_box_multiple` | U+F0333 | Material Design* | TI default |
+| `fonts` | `nf-fa-font` | U+F031 | Font Awesome | TI default |
+| `downloads` | `nf-md-folder_download` | U+F024D | Material Design* | TI default |
+| `desktop` | `nf-md-desktop_classic` | U+F07C0 | Material Design* | TI default |
+| `favorites` | `nf-md-folder_star` | U+F069D | Material Design* | TI default |
+| `contacts` | `nf-md-contacts` | U+F06CB | Material Design* | TI default |
+| `onedrive` | `nf-md-microsoft_onedrive` | U+F03CA | Material Design* | NF v3 code point |
+| `users` | `nf-fa-users` | U+F0C0 | Font Awesome | TI default |
+| `windows` | `nf-fa-windows` | U+F17A | Font Awesome | TI default |
+| `apps`, `applications` | `nf-md-apps` | U+F003B | Material Design* | TI default |
+| `demo`, `samples` | `nf-cod-preview` | U+EB2F | Codicons | TI default |
+| `shortcuts`, `links` | `nf-cod-file_symlink_directory` | U+EAED | Codicons | TI default |
+| `github` | `nf-fa-github_alt` | U+F113 | Font Awesome | TI default |
 
 ### Cloud Status Icons
 

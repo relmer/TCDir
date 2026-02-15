@@ -56,7 +56,7 @@ Purpose: Convert Unicode code points (stored as `char32_t`) to UTF-16 for `CCons
 struct SIconMappingEntry
 {
     LPCWSTR   m_pszKey;        // Extension (L".cpp"), dir name (L".git"), etc.
-    char32_t  m_codePoint;     // Nerd Font code point (e.g., 0xE61D)
+    char32_t  m_codePoint;     // Nerd Font code point (e.g., 0xE749 = DevCss3)
 };
 ```
 
@@ -70,68 +70,131 @@ Purpose: Static constexpr default icon mapping table entry. Parallels `CConfig::
 namespace NfIcon
 {
     // --- Custom (nf-custom-*) ---
-    constexpr char32_t CustomC                = 0xE61E;
-    constexpr char32_t CustomCpp              = 0xE61D;
     constexpr char32_t CustomAsm              = 0xE6AB;
+    constexpr char32_t CustomElixir           = 0xE62D;
+    constexpr char32_t CustomElm              = 0xE62C;
     constexpr char32_t CustomFolder           = 0xE5FF;
     constexpr char32_t CustomFolderConfig     = 0xE5FC;
-    constexpr char32_t CustomFolderGit        = 0xE5FB;
-    constexpr char32_t CustomFolderGithub     = 0xE5FD;
-    constexpr char32_t CustomFolderNpm        = 0xE5FA;
+    constexpr char32_t CustomKotlin           = 0xE634;
     constexpr char32_t CustomMsdos            = 0xE629;
 
     // --- Seti (nf-seti-*) ---
+    constexpr char32_t SetiBicep              = 0xE63B;
     constexpr char32_t SetiConfig             = 0xE615;
-    constexpr char32_t SetiCSharp             = 0xE648;
-    constexpr char32_t SetiCss                = 0xE614;
+    constexpr char32_t SetiDb                 = 0xE64D;
+    constexpr char32_t SetiGit                = 0xE65D;   // DEVIATION from TI
+    constexpr char32_t SetiGithub             = 0xE65B;   // DEVIATION from TI
     constexpr char32_t SetiHtml               = 0xE60E;
-    constexpr char32_t SetiImage              = 0xE60D;
-    constexpr char32_t SetiJava               = 0xE66D;
-    constexpr char32_t SetiJavascript         = 0xE60C;
     constexpr char32_t SetiJson               = 0xE60B;
-    constexpr char32_t SetiMarkdown           = 0xE609;
-    constexpr char32_t SetiNpm                = 0xE616;
-    constexpr char32_t SetiPowershell         = 0xE683;
-    constexpr char32_t SetiPython             = 0xE606;
+    constexpr char32_t SetiJulia              = 0xE624;
+    constexpr char32_t SetiLua                = 0xE620;
+    constexpr char32_t SetiMakefile           = 0xE673;
+    constexpr char32_t SetiNpm                = 0xE616;   // DEVIATION from TI
+    constexpr char32_t SetiProject            = 0xE601;
+    constexpr char32_t SetiPython             = 0xE606;   // DEVIATION from TI
     constexpr char32_t SetiShell              = 0xE691;
+    constexpr char32_t SetiSvelte             = 0xE697;
+    constexpr char32_t SetiSwift              = 0xE699;
+    constexpr char32_t SetiTerraform          = 0xE69A;
     constexpr char32_t SetiTypescript         = 0xE628;
-    constexpr char32_t SetiWord               = 0xE6A5;
-    constexpr char32_t SetiXls                = 0xE6A6;
-    constexpr char32_t SetiXml                = 0xE619;
-    constexpr char32_t SetiYml                = 0xE6A8;
 
     // --- Dev (nf-dev-*) ---
+    constexpr char32_t DevAws                 = 0xE7AD;
+    constexpr char32_t DevClojure             = 0xE768;
+    constexpr char32_t DevCss3                = 0xE749;
+    constexpr char32_t DevDart                = 0xE798;
+    constexpr char32_t DevDatabase            = 0xE706;
+    constexpr char32_t DevDocker              = 0xE7B0;
+    constexpr char32_t DevErlang              = 0xE7B1;
+    constexpr char32_t DevFsharp              = 0xE7A7;
+    constexpr char32_t DevGo                  = 0xE724;
+    constexpr char32_t DevGroovy              = 0xE775;
+    constexpr char32_t DevHaskell             = 0xE777;
+    constexpr char32_t DevJavascriptAlt       = 0xE74E;
     constexpr char32_t DevLess                = 0xE758;
+    constexpr char32_t DevMarkdown            = 0xE73E;
+    constexpr char32_t DevPerl                = 0xE769;
+    constexpr char32_t DevPhp                 = 0xE73D;
     constexpr char32_t DevReact               = 0xE7BA;
+    constexpr char32_t DevRust                = 0xE7A8;
     constexpr char32_t DevSass                = 0xE74B;
+    constexpr char32_t DevScala               = 0xE737;
     constexpr char32_t DevVisualStudio        = 0xE70C;
+    constexpr char32_t DevVscode              = 0xE8DA;   // DEVIATION from TI
+
+    // --- Font Awesome Extension (nf-fae-*) ---
+    constexpr char32_t FaeJava                = 0xE256;
 
     // --- Octicons (nf-oct-*) ---
     constexpr char32_t OctFileBinary          = 0xF471;
+    constexpr char32_t OctFileMedia           = 0xF40F;
     constexpr char32_t OctFileZip             = 0xF410;
     constexpr char32_t OctRepo                = 0xF401;
+    constexpr char32_t OctRuby                = 0xF43B;
     constexpr char32_t OctTerminal            = 0xF489;
 
     // --- Font Awesome (nf-fa-*) ---
     constexpr char32_t FaArchive              = 0xF187;
+    constexpr char32_t FaCertificate          = 0xF0A3;
     constexpr char32_t FaEnvelope             = 0xF0E0;
     constexpr char32_t FaExternalLink         = 0xF08E;
     constexpr char32_t FaFile                 = 0xF15B;
+    constexpr char32_t FaFileAudioO           = 0xF1C7;
+    constexpr char32_t FaFileImageO           = 0xF1C5;
+    constexpr char32_t FaFilePdfO             = 0xF1C1;
+    constexpr char32_t FaFileVideoO           = 0xF1C8;
+    constexpr char32_t FaFont                 = 0xF031;
+    constexpr char32_t FaGear                 = 0xF013;
+    constexpr char32_t FaGithubAlt            = 0xF113;
+    constexpr char32_t FaKey                  = 0xF084;
     constexpr char32_t FaList                 = 0xF03A;
+    constexpr char32_t FaLock                 = 0xF023;
+    constexpr char32_t FaUsers                = 0xF0C0;
+    constexpr char32_t FaWindows              = 0xF17A;
 
     // --- Material Design (nf-md-*) — surrogate pair range ---
     constexpr char32_t MdApplication          = 0xF08C6;
+    constexpr char32_t MdApps                 = 0xF003B;
+    constexpr char32_t MdCached               = 0xF00E8;
     constexpr char32_t MdCloudCheck           = 0xF0160;
     constexpr char32_t MdCloudOutline         = 0xF0163;
+    constexpr char32_t MdConsoleLine          = 0xF07B7;
+    constexpr char32_t MdContacts             = 0xF06CB;
+    constexpr char32_t MdDesktopClassic       = 0xF07C0;
     constexpr char32_t MdFileDocument         = 0xF0219;
+    constexpr char32_t MdFileExcel            = 0xF021B;
     constexpr char32_t MdFilePowerpoint       = 0xF0227;
+    constexpr char32_t MdFileWord             = 0xF022C;
+    constexpr char32_t MdFolderDownload       = 0xF024D;
+    constexpr char32_t MdFolderImage          = 0xF024F;
+    constexpr char32_t MdFolderStar           = 0xF069D;
+    constexpr char32_t MdFormatAlignLeft      = 0xF0262;
+    constexpr char32_t MdLanguageC            = 0xF0671;
+    constexpr char32_t MdLanguageCpp          = 0xF0672;
+    constexpr char32_t MdLanguageCsharp       = 0xF031B;
+    constexpr char32_t MdLanguageR            = 0xF07D4;
+    constexpr char32_t MdLanguageXaml         = 0xF0673;
+    constexpr char32_t MdMicrosoftAzure       = 0xF0805;
+    constexpr char32_t MdMicrosoftOnedrive    = 0xF03CA;
+    constexpr char32_t MdMovie                = 0xF0381;
+    constexpr char32_t MdMusicBoxMultiple     = 0xF0333;
+    constexpr char32_t MdNotebook             = 0xF082E;
+    constexpr char32_t MdElephant             = 0xF07C6;
+    constexpr char32_t MdPackageVariant       = 0xF03D6;
     constexpr char32_t MdPin                  = 0xF0403;
+    constexpr char32_t MdShipWheel            = 0xF0833;
+    constexpr char32_t MdSvg                  = 0xF0721;
     constexpr char32_t MdTestTube             = 0xF0668;
+    constexpr char32_t MdVuejs                = 0xF0844;
+    constexpr char32_t MdTimer                = 0xF13AB;
+    constexpr char32_t MdXml                  = 0xF05C0;
 
     // --- Codicons (nf-cod-*) ---
     constexpr char32_t CodFileSymlinkDir      = 0xEAED;
     constexpr char32_t CodFolderLibrary       = 0xEBDF;
     constexpr char32_t CodOutput              = 0xEB9D;
+    constexpr char32_t CodPackage             = 0xEB29;
+    constexpr char32_t CodPreview             = 0xEB2F;
 }
 ```
 
@@ -214,8 +277,8 @@ Purpose: Font detection with GDI-dependent methods as `protected virtual` so tes
 // Location: Config.h — added to CConfig class
 
 // Icon mapping tables (parallel to color tables)
-unordered_map<wstring, char32_t>   m_mapExtensionToIcon;          // ".cpp" → NfIcon::CustomCpp
-unordered_map<wstring, char32_t>   m_mapWellKnownDirToIcon;       // ".git" → NfIcon::CustomFolderGit
+unordered_map<wstring, char32_t>   m_mapExtensionToIcon;          // ".cpp" → NfIcon::MdLanguageCpp
+unordered_map<wstring, char32_t>   m_mapWellKnownDirToIcon;       // ".git" → NfIcon::SetiGit
 unordered_map<DWORD, char32_t>     m_mapFileAttributeToIcon;      // FILE_ATTRIBUTE_HIDDEN → 0 (none by default)
 
 // Icon source tracking (parallel to color source tracking)
@@ -272,76 +335,193 @@ ProcessSwitchOverride()     — handles Icons/Icons- switch
 
 ```cpp
 // Location: IconMapping.cpp
+// Aligned to Terminal-Icons devblackops default theme (NF v3.4.0).
+// See "Deviations from Terminal-Icons" in spec.md for rationale.
 
 const SIconMappingEntry g_rgDefaultExtensionIcons[] =
 {
-    // C/C++
-    { L".c",     NfIcon::CustomC },
-    { L".cpp",   NfIcon::CustomCpp },
-    { L".cxx",   NfIcon::CustomCpp },
-    { L".h",     NfIcon::CustomC },
-    { L".hpp",   NfIcon::CustomCpp },
-    { L".hxx",   NfIcon::CustomCpp },
-    { L".asm",   NfIcon::CustomAsm },
-    { L".cod",   NfIcon::CustomAsm },
-    { L".i",     NfIcon::CustomAsm },
+    // C/C++ (Terminal-Icons: nf-md-language_c / nf-md-language_cpp)
+    { L".c",       NfIcon::MdLanguageC },
+    { L".h",       NfIcon::MdLanguageC },
+    { L".cpp",     NfIcon::MdLanguageCpp },
+    { L".cxx",     NfIcon::MdLanguageCpp },
+    { L".c++",     NfIcon::MdLanguageCpp },
+    { L".hpp",     NfIcon::MdLanguageCpp },
+    { L".hxx",     NfIcon::MdLanguageCpp },
+    { L".asm",     NfIcon::CustomAsm },
+    { L".cod",     NfIcon::CustomAsm },
+    { L".i",       NfIcon::CustomAsm },
 
-    // C# / .NET
-    { L".cs",    NfIcon::SetiCSharp },
-    { L".csx",   NfIcon::SetiCSharp },
-    { L".resx",  NfIcon::DevVisualStudio },
-    { L".rcml",  NfIcon::DevVisualStudio },
+    // C# / .NET (Terminal-Icons: nf-md-language_csharp, nf-md-xml for resx)
+    { L".cs",      NfIcon::MdLanguageCsharp },
+    { L".csx",     NfIcon::MdLanguageCsharp },
+    { L".resx",    NfIcon::MdXml },
+    { L".xaml",    NfIcon::MdLanguageXaml },
 
-    // JavaScript / TypeScript
-    { L".js",    NfIcon::SetiJavascript },
-    { L".jsx",   NfIcon::DevReact },
-    { L".ts",    NfIcon::SetiTypescript },
-    { L".tsx",   NfIcon::DevReact },
+    // JavaScript / TypeScript (Terminal-Icons: nf-dev-javascript_alt)
+    { L".js",      NfIcon::DevJavascriptAlt },
+    { L".mjs",     NfIcon::DevJavascriptAlt },
+    { L".cjs",     NfIcon::DevJavascriptAlt },
+    { L".jsx",     NfIcon::DevReact },
+    { L".ts",      NfIcon::SetiTypescript },
+    { L".tsx",     NfIcon::DevReact },
 
-    // Web
-    { L".html",  NfIcon::SetiHtml },
-    { L".htm",   NfIcon::SetiHtml },
-    { L".css",   NfIcon::SetiCss },
-    { L".scss",  NfIcon::DevSass },
-    { L".less",  NfIcon::DevLess },
+    // Web (Terminal-Icons: nf-dev-css3)
+    { L".html",    NfIcon::SetiHtml },
+    { L".htm",     NfIcon::SetiHtml },
+    { L".xhtml",   NfIcon::SetiHtml },
+    { L".css",     NfIcon::DevCss3 },
+    { L".scss",    NfIcon::DevSass },
+    { L".sass",    NfIcon::DevSass },
+    { L".less",    NfIcon::DevLess },
+    { L".vue",     NfIcon::MdVuejs },
+    { L".svelte",  NfIcon::SetiSvelte },
 
-    // Python / Java
-    { L".py",    NfIcon::SetiPython },
-    { L".pyw",   NfIcon::SetiPython },
-    { L".jar",   NfIcon::SetiJava },
-    { L".java",  NfIcon::SetiJava },
-    { L".class", NfIcon::SetiJava },
+    // Python (DEVIATION: nf-seti-python for legibility)
+    { L".py",      NfIcon::SetiPython },
+    { L".pyw",     NfIcon::SetiPython },
+    { L".ipynb",   NfIcon::MdNotebook },
 
-    // Data formats
-    { L".xml",   NfIcon::SetiXml },
-    { L".json",  NfIcon::SetiJson },
-    { L".yml",   NfIcon::SetiYml },
-    { L".yaml",  NfIcon::SetiYml },
+    // Java (Terminal-Icons: nf-fae-java)
+    { L".java",    NfIcon::FaeJava },
+    { L".jar",     NfIcon::FaeJava },
+    { L".class",   NfIcon::FaeJava },
+    { L".gradle",  NfIcon::MdElephant },
+
+    // Rust
+    { L".rs",      NfIcon::DevRust },
+
+    // Go (Terminal-Icons: nf-dev-go)
+    { L".go",      NfIcon::DevGo },
+
+    // Ruby (Terminal-Icons: nf-oct-ruby)
+    { L".rb",      NfIcon::OctRuby },
+    { L".erb",     NfIcon::OctRuby },
+
+    // F# (Terminal-Icons: nf-dev-fsharp)
+    { L".fs",      NfIcon::DevFsharp },
+    { L".fsx",     NfIcon::DevFsharp },
+    { L".fsi",     NfIcon::DevFsharp },
+
+    // Lua
+    { L".lua",     NfIcon::SetiLua },
+
+    // Perl (Terminal-Icons: nf-dev-perl)
+    { L".pl",      NfIcon::DevPerl },
+    { L".pm",      NfIcon::DevPerl },
+
+    // PHP
+    { L".php",     NfIcon::DevPhp },
+
+    // Haskell (Terminal-Icons: nf-dev-haskell)
+    { L".hs",      NfIcon::DevHaskell },
+
+    // Dart (Terminal-Icons: nf-dev-dart)
+    { L".dart",    NfIcon::DevDart },
+
+    // Kotlin
+    { L".kt",      NfIcon::CustomKotlin },
+    { L".kts",     NfIcon::CustomKotlin },
+
+    // Swift (not in TI; keep Seti)
+    { L".swift",   NfIcon::SetiSwift },
+
+    // Scala (Terminal-Icons: nf-dev-scala)
+    { L".scala",   NfIcon::DevScala },
+    { L".sc",      NfIcon::DevScala },
+    { L".sbt",     NfIcon::DevScala },
+
+    // Clojure (Terminal-Icons: nf-dev-clojure)
+    { L".clj",     NfIcon::DevClojure },
+    { L".cljs",    NfIcon::DevClojure },
+    { L".cljc",    NfIcon::DevClojure },
+
+    // Elixir / Erlang
+    { L".ex",      NfIcon::CustomElixir },
+    { L".exs",     NfIcon::CustomElixir },
+    { L".erl",     NfIcon::DevErlang },
+
+    // Groovy
+    { L".groovy",  NfIcon::DevGroovy },
+
+    // Julia
+    { L".jl",      NfIcon::SetiJulia },
+
+    // R
+    { L".r",       NfIcon::MdLanguageR },
+    { L".rmd",     NfIcon::MdLanguageR },
+
+    // Elm
+    { L".elm",     NfIcon::CustomElm },
+
+    // Data formats (Terminal-Icons: nf-md-xml, nf-md-format_align_left)
+    { L".xml",     NfIcon::MdXml },
+    { L".xsd",     NfIcon::MdXml },
+    { L".xsl",     NfIcon::MdXml },
+    { L".xslt",    NfIcon::MdXml },
+    { L".dtd",     NfIcon::MdXml },
+    { L".plist",   NfIcon::MdXml },
+    { L".manifest",NfIcon::MdXml },
+    { L".json",    NfIcon::SetiJson },
+    { L".toml",    NfIcon::FaGear },
+    { L".yml",     NfIcon::MdFormatAlignLeft },
+    { L".yaml",    NfIcon::MdFormatAlignLeft },
+
+    // Config / Settings (Terminal-Icons: nf-fa-gear)
+    { L".ini",     NfIcon::FaGear },
+    { L".cfg",     NfIcon::FaGear },
+    { L".conf",    NfIcon::FaGear },
+    { L".config",  NfIcon::FaGear },
+    { L".properties", NfIcon::FaGear },
+    { L".settings",NfIcon::FaGear },
+    { L".reg",     NfIcon::FaGear },
+
+    // Database / SQL (Terminal-Icons: nf-dev-database, nf-seti-db)
+    { L".sql",     NfIcon::DevDatabase },
+    { L".sqlite",  NfIcon::DevDatabase },
+    { L".mdb",     NfIcon::DevDatabase },
+    { L".accdb",   NfIcon::DevDatabase },
+    { L".pgsql",   NfIcon::DevDatabase },
+    { L".db",      NfIcon::SetiDb },
+    { L".csv",     NfIcon::MdFileExcel },
+    { L".tsv",     NfIcon::MdFileExcel },
 
     // Build artifacts
-    { L".obj",   NfIcon::OctFileBinary },
-    { L".lib",   NfIcon::OctFileBinary },
-    { L".res",   NfIcon::OctFileBinary },
-    { L".pch",   NfIcon::OctFileBinary },
+    { L".obj",     NfIcon::OctFileBinary },
+    { L".lib",     NfIcon::OctFileBinary },
+    { L".res",     NfIcon::OctFileBinary },
+    { L".pch",     NfIcon::OctFileBinary },
+    { L".pdb",     NfIcon::DevDatabase },
 
     // Logs
-    { L".wrn",   NfIcon::FaList },
-    { L".err",   NfIcon::FaList },
-    { L".log",   NfIcon::FaList },
+    { L".wrn",     NfIcon::FaList },
+    { L".err",     NfIcon::FaList },
+    { L".log",     NfIcon::FaList },
 
-    // Shell
-    { L".bash",  NfIcon::SetiShell },
-    { L".sh",    NfIcon::SetiShell },
-    { L".bat",   NfIcon::CustomMsdos },
-    { L".cmd",   NfIcon::CustomMsdos },
-    { L".ps1",   NfIcon::SetiPowershell },
-    { L".psd1",  NfIcon::SetiPowershell },
-    { L".psm1",  NfIcon::SetiPowershell },
+    // Shell (Terminal-Icons: nf-oct-terminal for sh)
+    { L".bash",    NfIcon::OctTerminal },
+    { L".sh",      NfIcon::OctTerminal },
+    { L".zsh",     NfIcon::OctTerminal },
+    { L".fish",    NfIcon::OctTerminal },
+    { L".bat",     NfIcon::CustomMsdos },
+    { L".cmd",     NfIcon::CustomMsdos },
+
+    // PowerShell (Terminal-Icons: nf-md-console_line)
+    { L".ps1",     NfIcon::MdConsoleLine },
+    { L".psd1",    NfIcon::MdConsoleLine },
+    { L".psm1",    NfIcon::MdConsoleLine },
+    { L".ps1xml",  NfIcon::MdConsoleLine },
 
     // Executables
-    { L".exe",   NfIcon::MdApplication },
-    { L".sys",   NfIcon::MdApplication },
-    { L".dll",   NfIcon::FaArchive },
+    { L".exe",     NfIcon::MdApplication },
+    { L".sys",     NfIcon::MdApplication },
+    { L".dll",     NfIcon::FaArchive },
+
+    // Installers (Terminal-Icons: nf-md-package_variant)
+    { L".msi",     NfIcon::MdPackageVariant },
+    { L".msix",    NfIcon::MdPackageVariant },
+    { L".deb",     NfIcon::MdPackageVariant },
+    { L".rpm",     NfIcon::MdPackageVariant },
 
     // Visual Studio
     { L".sln",     NfIcon::DevVisualStudio },
@@ -349,39 +529,121 @@ const SIconMappingEntry g_rgDefaultExtensionIcons[] =
     { L".vcxproj", NfIcon::DevVisualStudio },
     { L".csproj",  NfIcon::DevVisualStudio },
     { L".csxproj", NfIcon::DevVisualStudio },
+    { L".fsproj",  NfIcon::DevFsharp },
     { L".user",    NfIcon::DevVisualStudio },
     { L".ncb",     NfIcon::DevVisualStudio },
+    { L".suo",     NfIcon::DevVisualStudio },
+    { L".code-workspace", NfIcon::DevVisualStudio },
 
-    // Documents
-    { L".doc",   NfIcon::SetiWord },
-    { L".docx",  NfIcon::SetiWord },
-    { L".ppt",   NfIcon::MdFilePowerpoint },
-    { L".pptx",  NfIcon::MdFilePowerpoint },
-    { L".xls",   NfIcon::SetiXls },
-    { L".xlsx",  NfIcon::SetiXls },
-    { L".md",    NfIcon::SetiMarkdown },
+    // Documents (Terminal-Icons: nf-md-file_word, nf-md-file_excel)
+    { L".doc",     NfIcon::MdFileWord },
+    { L".docx",    NfIcon::MdFileWord },
+    { L".rtf",     NfIcon::MdFileWord },
+    { L".ppt",     NfIcon::MdFilePowerpoint },
+    { L".pptx",    NfIcon::MdFilePowerpoint },
+    { L".xls",     NfIcon::MdFileExcel },
+    { L".xlsx",    NfIcon::MdFileExcel },
+    { L".pdf",     NfIcon::FaFilePdfO },
+
+    // Markdown (Terminal-Icons: nf-dev-markdown)
+    { L".md",      NfIcon::DevMarkdown },
+    { L".markdown",NfIcon::DevMarkdown },
+    { L".rst",     NfIcon::DevMarkdown },
 
     // Text
-    { L".txt",   NfIcon::MdFileDocument },
-    { L".text",  NfIcon::MdFileDocument },
-    { L".!!!",   NfIcon::MdFileDocument },
-    { L".1st",   NfIcon::MdFileDocument },
-    { L".me",    NfIcon::MdFileDocument },
-    { L".now",   NfIcon::MdFileDocument },
+    { L".txt",     NfIcon::MdFileDocument },
+    { L".text",    NfIcon::MdFileDocument },
+    { L".!!!",     NfIcon::MdFileDocument },
+    { L".1st",     NfIcon::MdFileDocument },
+    { L".me",      NfIcon::MdFileDocument },
+    { L".now",     NfIcon::MdFileDocument },
 
     // Email
-    { L".eml",   NfIcon::FaEnvelope },
+    { L".eml",     NfIcon::FaEnvelope },
+
+    // Images (Terminal-Icons: nf-fa-file_image_o)
+    { L".png",     NfIcon::FaFileImageO },
+    { L".jpg",     NfIcon::FaFileImageO },
+    { L".jpeg",    NfIcon::FaFileImageO },
+    { L".gif",     NfIcon::FaFileImageO },
+    { L".bmp",     NfIcon::FaFileImageO },
+    { L".ico",     NfIcon::FaFileImageO },
+    { L".tif",     NfIcon::FaFileImageO },
+    { L".tiff",    NfIcon::FaFileImageO },
+    { L".webp",    NfIcon::FaFileImageO },
+    { L".psd",     NfIcon::FaFileImageO },
+    { L".cur",     NfIcon::FaFileImageO },
+    { L".raw",     NfIcon::FaFileImageO },
+    { L".svg",     NfIcon::MdSvg },
+
+    // Audio (Terminal-Icons: nf-fa-file_audio_o)
+    { L".mp3",     NfIcon::FaFileAudioO },
+    { L".wav",     NfIcon::FaFileAudioO },
+    { L".flac",    NfIcon::FaFileAudioO },
+    { L".m4a",     NfIcon::FaFileAudioO },
+    { L".wma",     NfIcon::FaFileAudioO },
+    { L".aac",     NfIcon::FaFileAudioO },
+    { L".ogg",     NfIcon::FaFileAudioO },
+    { L".opus",    NfIcon::FaFileAudioO },
+    { L".aiff",    NfIcon::FaFileAudioO },
+
+    // Video (Terminal-Icons: nf-fa-file_video_o)
+    { L".mp4",     NfIcon::FaFileVideoO },
+    { L".avi",     NfIcon::FaFileVideoO },
+    { L".mkv",     NfIcon::FaFileVideoO },
+    { L".mov",     NfIcon::FaFileVideoO },
+    { L".wmv",     NfIcon::FaFileVideoO },
+    { L".webm",    NfIcon::FaFileVideoO },
+    { L".flv",     NfIcon::FaFileVideoO },
+    { L".mpg",     NfIcon::FaFileVideoO },
+    { L".mpeg",    NfIcon::FaFileVideoO },
+
+    // Fonts (Terminal-Icons: nf-fa-font)
+    { L".ttf",     NfIcon::FaFont },
+    { L".otf",     NfIcon::FaFont },
+    { L".woff",    NfIcon::FaFont },
+    { L".woff2",   NfIcon::FaFont },
+    { L".eot",     NfIcon::FaFont },
+    { L".ttc",     NfIcon::FaFont },
 
     // Archives
-    { L".7z",    NfIcon::OctFileZip },
-    { L".arj",   NfIcon::OctFileZip },
-    { L".gz",    NfIcon::OctFileZip },
-    { L".rar",   NfIcon::OctFileZip },
-    { L".tar",   NfIcon::OctFileZip },
-    { L".zip",   NfIcon::OctFileZip },
+    { L".7z",      NfIcon::OctFileZip },
+    { L".arj",     NfIcon::OctFileZip },
+    { L".gz",      NfIcon::OctFileZip },
+    { L".rar",     NfIcon::OctFileZip },
+    { L".tar",     NfIcon::OctFileZip },
+    { L".zip",     NfIcon::OctFileZip },
+    { L".xz",      NfIcon::OctFileZip },
+    { L".bz2",     NfIcon::OctFileZip },
+    { L".tgz",     NfIcon::OctFileZip },
+    { L".cab",     NfIcon::OctFileZip },
+    { L".zst",     NfIcon::OctFileZip },
 
-    // Resource
-    { L".rc",    NfIcon::SetiConfig },
+    // Certificates / Keys (Terminal-Icons: nf-fa-certificate, nf-fa-key)
+    { L".cer",     NfIcon::FaCertificate },
+    { L".cert",    NfIcon::FaCertificate },
+    { L".crt",     NfIcon::FaCertificate },
+    { L".pfx",     NfIcon::FaCertificate },
+    { L".pem",     NfIcon::FaKey },
+    { L".pub",     NfIcon::FaKey },
+    { L".key",     NfIcon::FaKey },
+    { L".asc",     NfIcon::FaKey },
+    { L".gpg",     NfIcon::FaKey },
+
+    // Docker (Terminal-Icons: nf-dev-docker)
+    { L".dockerfile", NfIcon::DevDocker },
+    { L".dockerignore", NfIcon::DevDocker },
+
+    // Terraform (using seti-terraform for NF v3 compat)
+    { L".tf",      NfIcon::SetiTerraform },
+    { L".tfvars",  NfIcon::SetiTerraform },
+    { L".bicep",   NfIcon::SetiBicep },
+
+    // Lock files (Terminal-Icons: nf-fa-lock)
+    { L".lock",    NfIcon::FaLock },
+
+    // Resource (.rc)
+    { L".rc",      NfIcon::SetiConfig },
 };
 ```
 
@@ -389,36 +651,92 @@ const SIconMappingEntry g_rgDefaultExtensionIcons[] =
 
 ```cpp
 // Location: IconMapping.cpp
+// Aligned to Terminal-Icons devblackops default theme (NF v3.4.0).
+// DEVIATION entries noted — see spec.md for rationale.
 
 const SIconMappingEntry g_rgDefaultWellKnownDirIcons[] =
 {
-    { L".git",         NfIcon::CustomFolderGit },
-    { L".github",      NfIcon::CustomFolderGithub },
-    { L".vscode",      NfIcon::CustomFolderConfig },
+    // Version control / IDEs (DEVIATIONS for legibility)
+    { L".git",         NfIcon::SetiGit },            // DEVIATION: nf-seti-git (not TI's nf-custom-folder_git)
+    { L".github",      NfIcon::SetiGithub },          // DEVIATION: nf-seti-github
+    { L".vscode",      NfIcon::DevVscode },            // DEVIATION: nf-dev-vscode
+    { L".vscode-insiders", NfIcon::DevVscode },
+    { L"node_modules", NfIcon::SetiNpm },              // DEVIATION: nf-seti-npm (not TI's nf-custom-folder_npm)
+
+    // Config / Cloud provider directories (Terminal-Icons)
     { L".config",      NfIcon::SetiConfig },
-    { L"node_modules", NfIcon::CustomFolderNpm },
+    { L".cargo",       NfIcon::CustomFolderConfig },
+    { L".cache",       NfIcon::MdCached },
+    { L".docker",      NfIcon::DevDocker },
+    { L".aws",         NfIcon::DevAws },
+    { L".azure",       NfIcon::MdMicrosoftAzure },
+    { L".kube",        NfIcon::MdShipWheel },
+
+    // Source / Development (Terminal-Icons)
     { L"src",          NfIcon::OctTerminal },
     { L"source",       NfIcon::OctTerminal },
+    { L"development",  NfIcon::OctTerminal },
+    { L"projects",     NfIcon::SetiProject },
+
+    // Documentation (Terminal-Icons)
     { L"docs",         NfIcon::OctRepo },
     { L"doc",          NfIcon::OctRepo },
     { L"documents",    NfIcon::OctRepo },
+
+    // Build outputs (Terminal-Icons)
     { L"bin",          NfIcon::OctFileBinary },
     { L"build",        NfIcon::CodOutput },
     { L"dist",         NfIcon::CodOutput },
     { L"out",          NfIcon::CodOutput },
     { L"output",       NfIcon::CodOutput },
+    { L"artifacts",    NfIcon::CodPackage },
+
+    // Testing (Terminal-Icons)
     { L"test",         NfIcon::MdTestTube },
     { L"tests",        NfIcon::MdTestTube },
     { L"__tests__",    NfIcon::MdTestTube },
     { L"spec",         NfIcon::MdTestTube },
     { L"specs",        NfIcon::MdTestTube },
+    { L"benchmark",    NfIcon::MdTimer },
+
+    // Libraries / Packages
     { L"lib",          NfIcon::CodFolderLibrary },
     { L"libs",         NfIcon::CodFolderLibrary },
-    { L"scripts",      NfIcon::SetiShell },
-    { L"images",       NfIcon::SetiImage },
-    { L"img",          NfIcon::SetiImage },
-    { L"assets",       NfIcon::SetiImage },
     { L"packages",     NfIcon::SetiNpm },
+
+    // Scripts
+    { L"scripts",      NfIcon::SetiShell },
+
+    // Media / Images (Terminal-Icons)
+    { L"images",       NfIcon::MdFolderImage },
+    { L"img",          NfIcon::MdFolderImage },
+    { L"photos",       NfIcon::MdFolderImage },
+    { L"pictures",     NfIcon::MdFolderImage },
+    { L"assets",       NfIcon::MdFolderImage },
+    { L"videos",       NfIcon::MdMovie },
+    { L"movies",       NfIcon::MdMovie },
+    { L"media",        NfIcon::OctFileMedia },
+    { L"music",        NfIcon::MdMusicBoxMultiple },
+    { L"songs",        NfIcon::MdMusicBoxMultiple },
+    { L"fonts",        NfIcon::FaFont },
+
+    // User directories (Terminal-Icons)
+    { L"downloads",    NfIcon::MdFolderDownload },
+    { L"desktop",      NfIcon::MdDesktopClassic },
+    { L"favorites",    NfIcon::MdFolderStar },
+    { L"contacts",     NfIcon::MdContacts },
+    { L"onedrive",     NfIcon::MdMicrosoftOnedrive },
+    { L"users",        NfIcon::FaUsers },
+    { L"windows",      NfIcon::FaWindows },
+
+    // Other (Terminal-Icons)
+    { L"apps",         NfIcon::MdApps },
+    { L"applications", NfIcon::MdApps },
+    { L"demo",         NfIcon::CodPreview },
+    { L"samples",      NfIcon::CodPreview },
+    { L"shortcuts",    NfIcon::CodFileSymlinkDir },
+    { L"links",        NfIcon::CodFileSymlinkDir },
+    { L"github",       NfIcon::FaGithubAlt },
 };
 ```
 

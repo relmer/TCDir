@@ -32,10 +32,10 @@ namespace UnitTest
 
         TEST_METHOD(CodePointToWideChars_BMP_ProducesCount1)
         {
-            constexpr WideCharPair pair = CodePointToWideChars (NfIcon::CustomCpp);
+            constexpr WideCharPair pair = CodePointToWideChars (NfIcon::DevCss3);
 
             Assert::AreEqual (1u, pair.count);
-            Assert::AreEqual (static_cast<wchar_t>(0xE61D), pair.chars[0]);
+            Assert::AreEqual (static_cast<wchar_t>(0xE749), pair.chars[0]);
         }
 
 
@@ -46,7 +46,7 @@ namespace UnitTest
             //  Verify a selection of BMP-range NfIcon constants produce count=1
             //
 
-            Assert::AreEqual (1u, CodePointToWideChars (NfIcon::CustomC).count);
+            Assert::AreEqual (1u, CodePointToWideChars (NfIcon::CustomAsm).count);
             Assert::AreEqual (1u, CodePointToWideChars (NfIcon::CustomFolder).count);
             Assert::AreEqual (1u, CodePointToWideChars (NfIcon::SetiConfig).count);
             Assert::AreEqual (1u, CodePointToWideChars (NfIcon::FaFile).count);
