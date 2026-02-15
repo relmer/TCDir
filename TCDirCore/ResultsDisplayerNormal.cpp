@@ -263,94 +263,6 @@ void CResultsDisplayerNormal::DisplayResultsNormalFileSize (const WIN32_FIND_DAT
 
 
 
-////////////////////////////////////////////////////////////////////////////////
-//
-//  CResultsDisplayerNormal::IsUnderSyncRoot
-//
-//  Checks if a path is under a cloud storage sync root (OneDrive, etc.)
-//  using the Cloud Files API. This is called once per directory.
-// 
-////////////////////////////////////////////////////////////////////////////////  
-
-bool CResultsDisplayerNormal::IsUnderSyncRoot (LPCWSTR pszPath)
-{
-    //
-    // CfGetSyncRootInfoByPath fails if the path is not under a sync root,
-    // so we just need to check if it succeeds. We don't need the actual info.
-    //
-
-    HRESULT                 hr   = S_OK;
-    CF_SYNC_ROOT_BASIC_INFO info = {};
-    
-
-
-    hr = CfGetSyncRootInfoByPath (pszPath, CF_SYNC_ROOT_INFO_BASIC, &info, sizeof (info), nullptr);
-
-    return SUCCEEDED (hr);
-}
-
-
-
-
-
-////////////////////////////////////////////////////////////////////////////////
-//
-//  CResultsDisplayerNormal::GetCloudStatus
-//
-//  Determines cloud sync status using a hybrid approach:
-//  1. Check explicit file attributes (PINNED, UNPINNED, RECALL_*, OFFLINE)
-//  2. If no explicit attributes but we're in a sync root, the file is
-//     locally synced (fully hydrated files lose their placeholder metadata)
-//
-//  The fInSyncRoot parameter is determined once per directory using
-//  CfGetSyncRootInfoByPath to avoid per-file overhead.
-// 
-////////////////////////////////////////////////////////////////////////////////  
-
-ECloudStatus CResultsDisplayerNormal::GetCloudStatus (const WIN32_FIND_DATA & wfd, bool fInSyncRoot)
-{
-    ECloudStatus status = ECloudStatus::CS_NONE;
-
-
-
-    // Only report cloud status for files in a registered sync root.
-    // Cloud attributes can persist on files copied from cloud locations,
-    // so we ignore them if the current path isn't cloud-managed.
-    if (!fInSyncRoot)
-    {
-        return status;
-    }
-
-    if (wfd.dwFileAttributes & FILE_ATTRIBUTE_PINNED)
-    {
-        // Pinned takes priority - always available locally
-        status = ECloudStatus::CS_PINNED;
-    }
-    else if (wfd.dwFileAttributes & (FILE_ATTRIBUTE_RECALL_ON_DATA_ACCESS | 
-                                     FILE_ATTRIBUTE_RECALL_ON_OPEN | 
-                                     FILE_ATTRIBUTE_OFFLINE))
-    {
-        // Cloud-only: placeholder that requires download
-        status = ECloudStatus::CS_CLOUD_ONLY;
-    }
-    else if (wfd.dwFileAttributes & FILE_ATTRIBUTE_UNPINNED)
-    {
-        // Unpinned means locally available but can be dehydrated
-        status = ECloudStatus::CS_LOCAL;
-    }
-    else
-    {
-        // No cloud attributes set - the file is fully hydrated (locally synced).
-        // OneDrive removes placeholder metadata from fully hydrated files.
-        status = ECloudStatus::CS_LOCAL;
-    }
-
-    return status;
-}
-
-
-
-
 
 ////////////////////////////////////////////////////////////////////////////////
 //
@@ -376,9 +288,39 @@ void CResultsDisplayerNormal::DisplayCloudStatusSymbol (ECloudStatus status)
         { L"{CloudStatusAlwaysLocallyAvailable}",  UnicodeSymbols::CircleFilled     },  // CS_PINNED
     };
 
-    const SCloudStatusEntry & entry = s_krgCloudStatusMap[static_cast<size_t>(status)];
+    static constexpr LPCWSTR s_krgCloudColorMarkers[] =
+    {
+        L"{Default}",
+        L"{CloudStatusCloudOnly}",
+        L"{CloudStatusLocallyAvailable}",
+        L"{CloudStatusAlwaysLocallyAvailable}",
+    };
 
-    m_consolePtr->ColorPrintf (L"%s%c ", entry.pszColorMarker, entry.chSymbol);
+
+
+    if (m_fIconsActive)
+    {
+        size_t   idx     = static_cast<size_t>(status);
+        char32_t iconCP  = m_configPtr->GetCloudStatusIcon (static_cast<DWORD>(status));
+
+        if (iconCP != 0)
+        {
+            WideCharPair pair   = CodePointToWideChars (iconCP);
+            wchar_t      szIcon[3] = { pair.chars[0], pair.chars[1], L'\0' };
+
+            m_consolePtr->ColorPrintf (L"%s%s ", s_krgCloudColorMarkers[idx], szIcon);
+        }
+        else
+        {
+            m_consolePtr->ColorPrintf (L"{Default}  ");
+        }
+    }
+    else
+    {
+        const SCloudStatusEntry & entry = s_krgCloudStatusMap[static_cast<size_t>(status)];
+
+        m_consolePtr->ColorPrintf (L"%s%c ", entry.pszColorMarker, entry.chSymbol);
+    }
 }
 
 

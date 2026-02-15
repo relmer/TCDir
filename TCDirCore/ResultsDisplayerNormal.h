@@ -6,18 +6,6 @@
 
 
 
-// Cloud sync status (computed from file attributes at display time)
-enum class ECloudStatus
-{
-    CS_NONE,        // Not a cloud file
-    CS_CLOUD_ONLY,  // Placeholder, not locally available
-    CS_LOCAL,       // Available locally, can be dehydrated
-    CS_PINNED       // Pinned, always available locally
-};
-
-
-
-
 
 class CResultsDisplayerNormal : public CResultsDisplayerWithHeaderAndFooter
 {
@@ -27,9 +15,6 @@ public:
     void DisplayFileResults (const CDirectoryInfo & di) override;
 
 protected:
-    static bool         IsUnderSyncRoot (LPCWSTR pszPath);
-    static ECloudStatus GetCloudStatus  (const WIN32_FIND_DATA & wfd, bool fInSyncRoot);
-
     const FILETIME & GetTimeFieldForDisplay          (const WIN32_FIND_DATA & wfd) const;
     HRESULT          DisplayResultsNormalDateAndTime (const FILETIME & ftLastWriteTime);
     void             DisplayResultsNormalAttributes  (DWORD dwFileAttributes);

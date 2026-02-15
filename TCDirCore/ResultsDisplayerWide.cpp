@@ -5,6 +5,7 @@
 #include "Config.h"
 #include "Console.h"
 #include "IconMapping.h"
+#include "UnicodeSymbols.h"
 
 
 
@@ -42,12 +43,13 @@ void CResultsDisplayerWide::DisplayFileResults (const CDirectoryInfo & di)
     size_t  cxColumnWidth; 
     size_t  cRows;
     size_t  cItemsInLastRow;
+    bool    fInSyncRoot    = IsUnderSyncRoot (di.m_dirPath.c_str());
     
 
 
     CBRA (di.m_cchLargestFileName > 0);
 
-    GetColumnInfo (di, cColumns, cxColumnWidth);
+    GetColumnInfo (di, fInSyncRoot, cColumns, cxColumnWidth);
 
     cRows           = (di.m_vMatches.size() + cColumns - 1) / cColumns;
     cItemsInLastRow = di.m_vMatches.size() % cColumns;
@@ -85,7 +87,7 @@ void CResultsDisplayerWide::DisplayFileResults (const CDirectoryInfo & di)
                 idx += cItemsInLastRow;
             }
 
-            hr = DisplayFile (di.m_vMatches[idx], cxColumnWidth);
+            hr = DisplayFile (di.m_vMatches[idx], cxColumnWidth, fInSyncRoot);
             CHR (hr);
         }
 
@@ -110,7 +112,7 @@ Error:
 //
 ////////////////////////////////////////////////////////////////////////////////  
 
-HRESULT CResultsDisplayerWide::DisplayFile (const WIN32_FIND_DATA & wfd, size_t cxColumnWidth)
+HRESULT CResultsDisplayerWide::DisplayFile (const WIN32_FIND_DATA & wfd, size_t cxColumnWidth, bool fInSyncRoot)
 {
     WCHAR                        szDirName[MAX_PATH + 3]; // '[' + MAX_PATH + ']' + '\0'
     CConfig::SFileDisplayStyle   style    = m_configPtr->GetDisplayStyleForFile (wfd);
@@ -119,6 +121,55 @@ HRESULT CResultsDisplayerWide::DisplayFile (const WIN32_FIND_DATA & wfd, size_t 
     size_t                       cchName  = name.length();
 
 
+
+    //
+    // Display cloud status symbol (when in a sync root)
+    //
+
+    if (fInSyncRoot)
+    {
+        ECloudStatus cloudStatus = GetCloudStatus (wfd, fInSyncRoot);
+
+        if (m_fIconsActive)
+        {
+            char32_t iconCP = m_configPtr->GetCloudStatusIcon (static_cast<DWORD>(cloudStatus));
+
+            if (iconCP != 0)
+            {
+                static constexpr LPCWSTR s_krgCloudColorMarkers[] =
+                {
+                    L"{Default}",
+                    L"{CloudStatusCloudOnly}",
+                    L"{CloudStatusLocallyAvailable}",
+                    L"{CloudStatusAlwaysLocallyAvailable}",
+                };
+
+                WideCharPair pair   = CodePointToWideChars (iconCP);
+                wchar_t      szIcon[3] = { pair.chars[0], pair.chars[1], L'\0' };
+
+                m_consolePtr->ColorPrintf (L"%s%s ", s_krgCloudColorMarkers[static_cast<size_t>(cloudStatus)], szIcon);
+            }
+            else
+            {
+                m_consolePtr->ColorPrintf (L"{Default}  ");
+            }
+        }
+        else
+        {
+            static constexpr struct { LPCWSTR pszColorMarker; WCHAR chSymbol; } s_krgCloudStatusMap[] =
+            {
+                { L"{Default}",                            L' '                             },
+                { L"{CloudStatusCloudOnly}",               UnicodeSymbols::CircleHollow     },
+                { L"{CloudStatusLocallyAvailable}",        UnicodeSymbols::CircleHalfFilled },
+                { L"{CloudStatusAlwaysLocallyAvailable}",  UnicodeSymbols::CircleFilled     },
+            };
+
+            const auto & entry = s_krgCloudStatusMap[static_cast<size_t>(cloudStatus)];
+            m_consolePtr->ColorPrintf (L"%s%c ", entry.pszColorMarker, entry.chSymbol);
+        }
+
+        cchName += 2;  // cloud symbol + space
+    }
 
     //
     // Display icon glyph before filename (when icons are active)
@@ -155,7 +206,7 @@ HRESULT CResultsDisplayerWide::DisplayFile (const WIN32_FIND_DATA & wfd, size_t 
 //
 ////////////////////////////////////////////////////////////////////////////////  
 
-void CResultsDisplayerWide::GetColumnInfo (const CDirectoryInfo & di, size_t & cColumns, size_t & cxColumnWidth)
+void CResultsDisplayerWide::GetColumnInfo (const CDirectoryInfo & di, bool fInSyncRoot, size_t & cColumns, size_t & cxColumnWidth)
 {
     UINT   cxConsoleWidth     = m_consolePtr->GetWidth();
     size_t cchLargestFileName = di.m_cchLargestFileName;
@@ -167,6 +218,15 @@ void CResultsDisplayerWide::GetColumnInfo (const CDirectoryInfo & di, size_t & c
     //
 
     if (m_fIconsActive)
+    {
+        cchLargestFileName += 2;
+    }
+
+    //
+    // When in a cloud sync root, account for cloud status symbol + space (+2)
+    //
+
+    if (fInSyncRoot)
     {
         cchLargestFileName += 2;
     }

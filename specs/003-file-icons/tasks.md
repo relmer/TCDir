@@ -104,9 +104,9 @@
 
 **Independent Test**: Run `tcdir /Icons` in a OneDrive-synced folder. Verify cloud-only files show cloud outline glyph, locally available files show cloud-check glyph, and pinned files show pin glyph. Run `tcdir /Icons-` and verify original circles.
 
-- [ ] T022 [US7] Implement GetCloudStatusIcon method (returns NfIcon glyph when icons active, original Unicode shape when not) in TCDirCore/Config.cpp
-- [ ] T023 [US7] Upgrade cloud status column output to call GetCloudStatusIcon in TCDirCore/ResultsDisplayerNormal.cpp
-- [ ] T024 [US7] Add per-entry cloud status with NF glyph upgrade (FR-033) in TCDirCore/ResultsDisplayerWide.cpp
+- [X] T022 [US7] Implement GetCloudStatusIcon method (returns NfIcon glyph when icons active, original Unicode shape when not) in TCDirCore/Config.cpp
+- [X] T023 [US7] Upgrade cloud status column output to call GetCloudStatusIcon in TCDirCore/ResultsDisplayerNormal.cpp
+- [X] T024 [US7] Add per-entry cloud status with NF glyph upgrade (FR-033) in TCDirCore/ResultsDisplayerWide.cpp
 
 **Checkpoint**: Cloud symbols upgrade to NF glyphs with icons active. Zero regression when icons off. US7 acceptance scenarios 1–4 are satisfied.
 

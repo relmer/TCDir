@@ -78,9 +78,9 @@ namespace UnitTest
             return GetWideFormattedName (wfd, pszBuffer, cchBuffer);
         }
 
-        void WrapGetColumnInfo (const CDirectoryInfo & di, size_t & cColumns, size_t & cxColumnWidth)
+        void WrapGetColumnInfo (const CDirectoryInfo & di, bool fInSyncRoot, size_t & cColumns, size_t & cxColumnWidth)
         {
-            GetColumnInfo (di, cColumns, cxColumnWidth);
+            GetColumnInfo (di, fInSyncRoot, cColumns, cxColumnWidth);
         }
     };
 

@@ -1401,6 +1401,31 @@ Error:
 
 ////////////////////////////////////////////////////////////////////////////////
 //
+//  CConfig::GetCloudStatusIcon
+//
+//  Returns the Nerd Font glyph code point for a given cloud status.
+//  The DWORD parameter maps to ECloudStatus enum values.
+//  Returns 0 for CS_NONE (status 0).
+//
+////////////////////////////////////////////////////////////////////////////////
+
+char32_t CConfig::GetCloudStatusIcon (DWORD dwCloudStatus)
+{
+    switch (dwCloudStatus)
+    {
+        case 1:  return m_iconCloudOnly;         // CS_CLOUD_ONLY
+        case 2:  return m_iconLocallyAvailable;  // CS_LOCAL
+        case 3:  return m_iconAlwaysLocal;       // CS_PINNED
+        default: return 0;                       // CS_NONE or invalid
+    }
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
 //  CConfig::GetTextAttrForFile
 //
 //  

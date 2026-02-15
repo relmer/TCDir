@@ -4,6 +4,17 @@
 
 
 
+// Cloud sync status (computed from file attributes at display time)
+enum class ECloudStatus
+{
+    CS_NONE,        // Not a cloud file
+    CS_CLOUD_ONLY,  // Placeholder, not locally available
+    CS_LOCAL,       // Available locally, can be dehydrated
+    CS_PINNED       // Pinned, always available locally
+};
+
+
+
 
 
 class CCommandLine;
@@ -39,6 +50,9 @@ protected:
 
     UINT    GetStringLengthOfMaxFileSize           (const ULARGE_INTEGER & uli);
     wstring FormatNumberWithSeparators              (ULONGLONG n);
+
+    static bool         IsUnderSyncRoot            (LPCWSTR pszPath);
+    static ECloudStatus GetCloudStatus             (const WIN32_FIND_DATA & wfd, bool fInSyncRoot);
 
     shared_ptr<CCommandLine> m_cmdLinePtr; 
     shared_ptr<CConsole>     m_consolePtr;
