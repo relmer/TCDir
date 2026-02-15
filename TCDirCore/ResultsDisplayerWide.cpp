@@ -4,6 +4,7 @@
 #include "CommandLine.h"
 #include "Config.h"
 #include "Console.h"
+#include "IconMapping.h"
 
 
 
@@ -111,17 +112,32 @@ Error:
 
 HRESULT CResultsDisplayerWide::DisplayFile (const WIN32_FIND_DATA & wfd, size_t cxColumnWidth)
 {
-    WCHAR        szDirName[MAX_PATH + 3]; // '[' + MAX_PATH + ']' + '\0'
-    wstring_view name     = GetWideFormattedName (wfd, szDirName, ARRAYSIZE (szDirName));
-    WORD         textAttr = m_configPtr->GetTextAttrForFile (wfd);
+    WCHAR                        szDirName[MAX_PATH + 3]; // '[' + MAX_PATH + ']' + '\0'
+    CConfig::SFileDisplayStyle   style    = m_configPtr->GetDisplayStyleForFile (wfd);
+    WORD                         textAttr = style.m_wTextAttr;
+    wstring_view                 name     = GetWideFormattedName (wfd, szDirName, ARRAYSIZE (szDirName));
+    size_t                       cchName  = name.length();
 
 
+
+    //
+    // Display icon glyph before filename (when icons are active)
+    //
+
+    if (m_fIconsActive && style.m_iconCodePoint != 0 && !style.m_fIconSuppressed)
+    {
+        WideCharPair pair   = CodePointToWideChars (style.m_iconCodePoint);
+        wchar_t      szIcon[3] = { pair.chars[0], pair.chars[1], L'\0' };
+
+        m_consolePtr->Printf (textAttr, L"%s ", szIcon);
+        cchName += 2;  // icon + space
+    }
 
     m_consolePtr->Printf (textAttr, L"%s", name.data ());
 
-    if (cxColumnWidth > name.length ())
+    if (cxColumnWidth > cchName)
     {
-        m_consolePtr->ColorPrintf (L"{Default}%*s", cxColumnWidth - name.length (), L"");
+        m_consolePtr->ColorPrintf (L"{Default}%*s", cxColumnWidth - cchName, L"");
     }
 
     return S_OK;
@@ -141,18 +157,28 @@ HRESULT CResultsDisplayerWide::DisplayFile (const WIN32_FIND_DATA & wfd, size_t 
 
 void CResultsDisplayerWide::GetColumnInfo (const CDirectoryInfo & di, size_t & cColumns, size_t & cxColumnWidth)
 {
-    UINT cxConsoleWidth = m_consolePtr->GetWidth();
+    UINT   cxConsoleWidth     = m_consolePtr->GetWidth();
+    size_t cchLargestFileName = di.m_cchLargestFileName;
 
     
 
-    if (di.m_cchLargestFileName + 1 > cxConsoleWidth)
+    //
+    // When icons are active, account for icon + space (+2) in column width
+    //
+
+    if (m_fIconsActive)
+    {
+        cchLargestFileName += 2;
+    }
+
+    if (cchLargestFileName + 1 > cxConsoleWidth)
     {
         cColumns = 1;
     }
     else
     {
         // 1 space between columns
-        cColumns = cxConsoleWidth / (di.m_cchLargestFileName + 1);    
+        cColumns = cxConsoleWidth / (cchLargestFileName + 1);    
     }
 
     cxColumnWidth = cxConsoleWidth / cColumns;
@@ -176,7 +202,12 @@ wstring_view CResultsDisplayerWide::GetWideFormattedName (const WIN32_FIND_DATA 
 
 
 
-    if (wfd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
+    //
+    // Directories: use [name] brackets in classic mode, plain name when icons active
+    // (the folder icon provides the distinction)
+    //
+
+    if ((wfd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) && !m_fIconsActive)
     {
         auto [out, _] = format_to_n (pszBuffer, cchBuffer - 1, L"[{}]", wfd.cFileName);
         *out    = L'\0';

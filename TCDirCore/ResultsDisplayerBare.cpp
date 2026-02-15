@@ -4,6 +4,7 @@
 #include "CommandLine.h"
 #include "Config.h"
 #include "Console.h"
+#include "IconMapping.h"
 
 
 
@@ -46,7 +47,20 @@ void CResultsDisplayerBare::DisplayResults (const CDriveInfo & driveInfo, const 
 
     for (const FileInfo & fileInfo : di.m_vMatches)
     {
-        WORD textAttr = m_configPtr->GetTextAttrForFile (fileInfo);
+        CConfig::SFileDisplayStyle style    = m_configPtr->GetDisplayStyleForFile (fileInfo);
+        WORD                       textAttr = style.m_wTextAttr;
+
+        //
+        // Display icon glyph before filename (when icons are active)
+        //
+
+        if (m_fIconsActive && style.m_iconCodePoint != 0 && !style.m_fIconSuppressed)
+        {
+            WideCharPair pair   = CodePointToWideChars (style.m_iconCodePoint);
+            wchar_t      szIcon[3] = { pair.chars[0], pair.chars[1], L'\0' };
+
+            m_consolePtr->Printf (textAttr, L"%s ", szIcon);
+        }
 
         if (m_cmdLinePtr->m_fRecurse)
         {

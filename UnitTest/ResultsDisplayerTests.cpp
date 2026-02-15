@@ -2,7 +2,9 @@
 #include "EhmTestHelper.h"
 #include "../TCDirCore/ResultsDisplayerNormal.h"
 #include "../TCDirCore/ResultsDisplayerWide.h"
+#include "../TCDirCore/ResultsDisplayerBare.h"
 #include "../TCDirCore/Config.h"
+#include "../TCDirCore/Color.h"
 #include "../TCDirCore/Console.h"
 #include "../TCDirCore/CommandLine.h"
 #include "../TCDirCore/DirectoryInfo.h"
@@ -53,6 +55,34 @@ namespace UnitTest
 
         return fd;
     }
+
+
+
+
+
+    ////////////////////////////////////////////////////////////////////////////
+    //
+    //  WideDisplayerProbe
+    //
+    //  Expose protected members of CResultsDisplayerWide for testing
+    //
+    ////////////////////////////////////////////////////////////////////////////
+
+    struct WideDisplayerProbe : public CResultsDisplayerWide
+    {
+        WideDisplayerProbe (std::shared_ptr<CCommandLine> cmd, std::shared_ptr<CConsole> con, std::shared_ptr<CConfig> cfg, bool fIconsActive = false)
+            : CResultsDisplayerWide (cmd, con, cfg, fIconsActive) {}
+
+        wstring_view WrapGetWideFormattedName (const WIN32_FIND_DATA & wfd, LPWSTR pszBuffer, size_t cchBuffer)
+        {
+            return GetWideFormattedName (wfd, pszBuffer, cchBuffer);
+        }
+
+        void WrapGetColumnInfo (const CDirectoryInfo & di, size_t & cColumns, size_t & cxColumnWidth)
+        {
+            GetColumnInfo (di, cColumns, cxColumnWidth);
+        }
+    };
 
 
 
@@ -455,7 +485,89 @@ namespace UnitTest
             Assert::IsTrue (matchesL);
         }
 
+
+
+
+        //
+        // Wide mode icon tests (bracket suppression when icons active)
+        //
+
+        TEST_METHOD(GetWideFormattedName_Directory_ClassicMode_HasBrackets)
+        {
+            auto cmd = std::make_shared<CCommandLine>();
+            auto con = std::make_shared<CConsole>();
+            auto cfg = std::make_shared<CConfig>();
+            con->Initialize(cfg);
+
+            WideDisplayerProbe probe (cmd, con, cfg, false /* icons off */);
+
+            WIN32_FIND_DATA wfd = CreateMockFileData (L"src", FILE_ATTRIBUTE_DIRECTORY);
+
+            WCHAR szBuf[MAX_PATH + 3];
+            wstring_view result = probe.WrapGetWideFormattedName (wfd, szBuf, ARRAYSIZE(szBuf));
+
+            Assert::AreEqual (wstring(L"[src]"), wstring(result));
+        }
+
+
+
+
+        TEST_METHOD(GetWideFormattedName_Directory_IconsActive_NoBrackets)
+        {
+            auto cmd = std::make_shared<CCommandLine>();
+            auto con = std::make_shared<CConsole>();
+            auto cfg = std::make_shared<CConfig>();
+            con->Initialize(cfg);
+
+            WideDisplayerProbe probe (cmd, con, cfg, true /* icons on */);
+
+            WIN32_FIND_DATA wfd = CreateMockFileData (L"src", FILE_ATTRIBUTE_DIRECTORY);
+
+            WCHAR szBuf[MAX_PATH + 3];
+            wstring_view result = probe.WrapGetWideFormattedName (wfd, szBuf, ARRAYSIZE(szBuf));
+
+            Assert::AreEqual (wstring(L"src"), wstring(result));
+        }
+
+
+
+
+        TEST_METHOD(GetWideFormattedName_File_ClassicMode_JustName)
+        {
+            auto cmd = std::make_shared<CCommandLine>();
+            auto con = std::make_shared<CConsole>();
+            auto cfg = std::make_shared<CConfig>();
+            con->Initialize(cfg);
+
+            WideDisplayerProbe probe (cmd, con, cfg, false);
+
+            WIN32_FIND_DATA wfd = CreateMockFileData (L"test.cpp", FILE_ATTRIBUTE_ARCHIVE);
+
+            WCHAR szBuf[MAX_PATH + 3];
+            wstring_view result = probe.WrapGetWideFormattedName (wfd, szBuf, ARRAYSIZE(szBuf));
+
+            Assert::AreEqual (wstring(L"test.cpp"), wstring(result));
+        }
+
+
+
+
+        TEST_METHOD(GetWideFormattedName_File_IconsActive_JustName)
+        {
+            auto cmd = std::make_shared<CCommandLine>();
+            auto con = std::make_shared<CConsole>();
+            auto cfg = std::make_shared<CConfig>();
+            con->Initialize(cfg);
+
+            WideDisplayerProbe probe (cmd, con, cfg, true);
+
+            WIN32_FIND_DATA wfd = CreateMockFileData (L"test.cpp", FILE_ATTRIBUTE_ARCHIVE);
+
+            WCHAR szBuf[MAX_PATH + 3];
+            wstring_view result = probe.WrapGetWideFormattedName (wfd, szBuf, ARRAYSIZE(szBuf));
+
+            Assert::AreEqual (wstring(L"test.cpp"), wstring(result));
+        }
+
     };
 }
-
-

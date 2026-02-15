@@ -91,8 +91,8 @@
 
 **Independent Test**: Run `tcdir /W /Icons` and `tcdir /B /Icons` in a directory with well-known folders (.git, src, node_modules) and mixed files. Verify icons appear, columns align, and directories show without brackets in wide mode.
 
-- [ ] T020 [P] [US5] Add icon display, directory bracket suppression when icons active, and column width adjustment (+2 for icon+space) to TCDirCore/ResultsDisplayerWide.cpp
-- [ ] T021 [P] [US5] Add icon display before each filename to TCDirCore/ResultsDisplayerBare.cpp
+- [X] T020 [P] [US5] Add icon display, directory bracket suppression when icons active, and column width adjustment (+2 for icon+space) to TCDirCore/ResultsDisplayerWide.cpp
+- [X] T021 [P] [US5] Add icon display before each filename to TCDirCore/ResultsDisplayerBare.cpp
 
 **Checkpoint**: All three display modes show icons correctly. Wide mode suppresses brackets. Column alignment accounts for icon width. US5 acceptance scenarios 1–5 and US6 acceptance scenarios 1–3 are satisfied. US6 scenario 4 (dir: override) was satisfied in Phase 5.
 
