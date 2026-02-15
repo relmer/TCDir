@@ -4,6 +4,8 @@
 #include "Color.h"
 #include "Config.h"
 #include "Console.h"
+#include "IconMapping.h"
+#include "NerdFontDetector.h"
 #include "UnicodeSymbols.h"
 #include "Version.h"
 
@@ -114,6 +116,7 @@ static constexpr SSwitchInfo s_kSwitchInfos[] =
     { L"B",       L"Bare listing format"            },
     { L"Owner",   L"Display file ownership"         },
     { L"Streams", L"Display alternate data streams" },
+    { L"Icons",   L"Enable file-type icons"         },
 };
 
 
@@ -216,7 +219,8 @@ void CUsage::DisplayUsage (CConsole & console, wchar_t chPrefix)
         L"[{{InformationHighlight}}{1}Env{{Information}}] "
         L"[{{InformationHighlight}}{1}Config{{Information}}] "
         L"[{{InformationHighlight}}{1}Owner{{Information}}] "
-        L"[{{InformationHighlight}}{1}Streams{{Information}}]"
+        L"[{{InformationHighlight}}{1}Streams{{Information}}] "
+        L"[{{InformationHighlight}}{1}Icons{{Information}}]"
 #ifdef _DEBUG
         L" [{{InformationHighlight}}{1}Debug{{Information}}]"
 #endif
@@ -260,7 +264,8 @@ void CUsage::DisplayUsage (CConsole & console, wchar_t chPrefix)
         L"  {{InformationHighlight}}{1}Env{{Information}}       {6}Displays " TCDIR_ENV_VAR_NAME L" help, syntax, and current value.\n"
         L"  {{InformationHighlight}}{1}Config{{Information}}    {6}Displays current color configuration for all items and extensions.\n"
         L"  {{InformationHighlight}}{1}Owner{{Information}}     {6}Displays file owner (DOMAIN\\User) for each file.\n"
-        L"  {{InformationHighlight}}{1}Streams{{Information}}   {6}Displays alternate data streams (NTFS only)."
+        L"  {{InformationHighlight}}{1}Streams{{Information}}   {6}Displays alternate data streams (NTFS only).\n"
+        L"  {{InformationHighlight}}{1}Icons{{Information}}     {6}Enables file-type icons (Nerd Font required). Use {{InformationHighlight}}{1}Icons-{{Information}} to disable."
 #ifdef _DEBUG
         L"\n  {{InformationHighlight}}{1}Debug{{Information}}     {6}Displays raw file attributes in hex for diagnosing edge cases."
 #endif
@@ -873,7 +878,8 @@ static bool HasEnvVarSwitches (const CConfig & config)
            config.m_fMultiThreaded.has_value() ||
            config.m_fBareListing.has_value()   ||
            config.m_fShowOwner.has_value()     ||
-           config.m_fShowStreams.has_value();
+           config.m_fShowStreams.has_value()    ||
+           config.m_fIcons.has_value();
 }
 
 
@@ -939,6 +945,24 @@ static bool HasEnvVarExtensions (const CConfig & config)
 
 ////////////////////////////////////////////////////////////////////////////////
 //
+//  HasEnvVarIconOverrides
+//
+////////////////////////////////////////////////////////////////////////////////
+
+static bool HasEnvVarIconOverrides (const CConfig & config)
+{
+    auto isFromEnv = [](const auto & pair) { return pair.second == CConfig::EAttributeSource::Environment; };
+
+    return ranges::any_of (config.m_mapExtensionIconSources,     isFromEnv) ||
+           ranges::any_of (config.m_mapWellKnownDirIconSources,  isFromEnv);
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
 //  CUsage::DisplayEnvVarSwitchesSection
 //
 ////////////////////////////////////////////////////////////////////////////////
@@ -954,6 +978,7 @@ static void DisplayEnvVarSwitchesSection (CConsole & console, const CConfig & co
         &config.m_fBareListing,
         &config.m_fShowOwner,
         &config.m_fShowStreams,
+        &config.m_fIcons,
     };
 
     static_assert (_countof (switchValues) == _countof (s_kSwitchInfos), "Switch arrays must match");
@@ -1085,6 +1110,61 @@ static void DisplayEnvVarExtensionsSection (CConsole & console, const CConfig & 
 
 ////////////////////////////////////////////////////////////////////////////////
 //
+//  DisplayEnvVarIconOverridesSection
+//
+////////////////////////////////////////////////////////////////////////////////
+
+static void DisplayEnvVarIconOverridesSection (CConsole & console, const CConfig & config)
+{
+    console.ColorPuts (L"{Default}\n    {Information}Icon overrides:");
+
+    // Extension icon overrides
+    for (const auto & [ext, source] : config.m_mapExtensionIconSources)
+    {
+        if (source != CConfig::EAttributeSource::Environment)
+            continue;
+
+        auto iter = config.m_mapExtensionToIcon.find (ext);
+        if (iter == config.m_mapExtensionToIcon.end())
+        {
+            console.Printf (CConfig::EAttribute::Default, L"      %ls (suppressed)\n", ext.c_str());
+        }
+        else
+        {
+            WideCharPair wcp = CodePointToWideChars (iter->second);
+            wchar_t      buf[3] = { wcp.chars[0], wcp.chars[1], L'\0' };
+
+            console.Printf (CConfig::EAttribute::Default, L"      %ls %ls\n", ext.c_str(), buf);
+        }
+    }
+
+    // Well-known directory icon overrides
+    for (const auto & [dirName, source] : config.m_mapWellKnownDirIconSources)
+    {
+        if (source != CConfig::EAttributeSource::Environment)
+            continue;
+
+        auto iter = config.m_mapWellKnownDirToIcon.find (dirName);
+        if (iter == config.m_mapWellKnownDirToIcon.end())
+        {
+            console.Printf (CConfig::EAttribute::Default, L"      dir:%ls (suppressed)\n", dirName.c_str());
+        }
+        else
+        {
+            WideCharPair wcp = CodePointToWideChars (iter->second);
+            wchar_t      buf[3] = { wcp.chars[0], wcp.chars[1], L'\0' };
+
+            console.Printf (CConfig::EAttribute::Default, L"      dir:%ls %ls\n", dirName.c_str(), buf);
+        }
+    }
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
 //  CUsage::DisplayEnvVarDecodedSettings
 //
 //  Display decoded settings from the TCDIR environment variable.
@@ -1095,15 +1175,16 @@ static void DisplayEnvVarExtensionsSection (CConsole & console, const CConfig & 
 
 void CUsage::DisplayEnvVarDecodedSettings (CConsole & console)
 {
-    CConfig & config      = *console.m_configPtr;
-    bool hasSwitches      = HasEnvVarSwitches     (config);
-    bool hasDisplayItems  = HasEnvVarDisplayItems (config);
-    bool hasFileAttrs     = HasEnvVarFileAttrs    (config);
-    bool hasExtensions    = HasEnvVarExtensions   (config);
+    CConfig & config       = *console.m_configPtr;
+    bool hasSwitches       = HasEnvVarSwitches      (config);
+    bool hasDisplayItems   = HasEnvVarDisplayItems  (config);
+    bool hasFileAttrs      = HasEnvVarFileAttrs     (config);
+    bool hasExtensions     = HasEnvVarExtensions    (config);
+    bool hasIconOverrides  = HasEnvVarIconOverrides (config);
 
 
 
-    if (!hasSwitches && !hasDisplayItems && !hasFileAttrs && !hasExtensions)
+    if (!hasSwitches && !hasDisplayItems && !hasFileAttrs && !hasExtensions && !hasIconOverrides)
     {
         return;
     }
@@ -1126,6 +1207,11 @@ void CUsage::DisplayEnvVarDecodedSettings (CConsole & console)
     if (hasExtensions)
     {
         DisplayEnvVarExtensionsSection (console, config);
+    }
+
+    if (hasIconOverrides)
+    {
+        DisplayEnvVarIconOverridesSection (console, config);
     }
 }
 
@@ -1159,8 +1245,10 @@ void CUsage::DisplayEnvVarHelp (CConsole & console, wchar_t chPrefix)
         L"{0}[{{InformationHighlight}}<Switch>{{Information}}] | "
         L"[{{InformationHighlight}}<Item>{{Information}} | "
         L"{{InformationHighlight}}Attr:<fileattr>{{Information}} | "
-        L"{{InformationHighlight}}<.ext>{{Information}}] = "
-        L"{{InformationHighlight}}<Fore>{{Information}} [on {{InformationHighlight}}<Back>{{Information}}][;...]"
+        L"{{InformationHighlight}}<.ext>{{Information}} | "
+        L"{{InformationHighlight}}dir:<name>{{Information}}] = "
+        L"[{{InformationHighlight}}<Fore>{{Information}} [on {{InformationHighlight}}<Back>{{Information}}]]"
+        L"[{{InformationHighlight}},<Icon>{{Information}}][;...]"
         L"{1}\n"
         L"\n"
         L"  {{InformationHighlight}}<Switch>{{Information}}    A command-line switch:\n"
@@ -1170,6 +1258,7 @@ void CUsage::DisplayEnvVarHelp (CConsole & console, wchar_t chPrefix)
         L"                  {{InformationHighlight}}M{{Information}}        Enables multi-threaded enumeration (default); use {{InformationHighlight}}M-{{Information}} to disable\n"
         L"                  {{InformationHighlight}}Owner{{Information}}    Display file ownership\n"
         L"                  {{InformationHighlight}}Streams{{Information}}  Display alternate data streams (NTFS)\n"
+        L"                  {{InformationHighlight}}Icons{{Information}}    Enable file-type icons; use {{InformationHighlight}}Icons-{{Information}} to disable\n"
         L"\n"
         L"  {{InformationHighlight}}<Item>{{Information}}      A display item:\n"
         L"                  {{InformationHighlight}}D{{Information}}  Date                     {{InformationHighlight}}T{{Information}}  Time\n"
@@ -1184,6 +1273,8 @@ void CUsage::DisplayEnvVarHelp (CConsole & console, wchar_t chPrefix)
         L"\n"
         L"  {{InformationHighlight}}<.ext>{{Information}}      A file extension, including the leading period.\n"
         L"\n"
+        L"  {{InformationHighlight}}dir:<name>{{Information}}  A well-known directory name (case-insensitive, e.g., {{InformationHighlight}}dir:.git{{Information}}).\n"
+        L"\n"
         L"  {{InformationHighlight}}<FileAttr>{{Information}}  A file attribute (see file attributes below)\n"
         L"                  {{InformationHighlight}}R{{Information}}  Read-only                {{InformationHighlight}}H{{Information}}  Hidden\n"
         L"                  {{InformationHighlight}}S{{Information}}  System                   {{InformationHighlight}}A{{Information}}  Archive\n"
@@ -1192,7 +1283,12 @@ void CUsage::DisplayEnvVarHelp (CConsole & console, wchar_t chPrefix)
         L"                  {{InformationHighlight}}0{{Information}}  Sparse file\n"
         L"\n"
         L"  {{InformationHighlight}}<Fore>{{Information}}      Foreground color\n"
-        L"  {{InformationHighlight}}<Back>{{Information}}      Background color";
+        L"  {{InformationHighlight}}<Back>{{Information}}      Background color\n"
+        L"\n"
+        L"  {{InformationHighlight}}<Icon>{{Information}}      An icon code point (requires Nerd Font):\n"
+        L"                  {{InformationHighlight}}U+XXXX{{Information}}   Hex code point (e.g., {{InformationHighlight}}U+E61D{{Information}})\n"
+        L"                  {{InformationHighlight}}<glyph>{{Information}}  A literal Nerd Font glyph character\n"
+        L"                  (empty)  Suppresses the icon for that entry";
 
     wstring_view syntaxCommand;
     wstring_view syntaxSuffix;
@@ -1235,6 +1331,124 @@ void CUsage::DisplayEnvVarHelp (CConsole & console, wchar_t chPrefix)
 
 ////////////////////////////////////////////////////////////////////////////////
 //
+//  DisplayIconStatus
+//
+//  Run Nerd Font detection and display icon activation status.
+//  Shows: resolved state (ON/OFF) and reason (CLI, env var, auto-detection).
+//
+////////////////////////////////////////////////////////////////////////////////
+
+static void DisplayIconStatus (CConsole & console)
+{
+    const CConfig & config = *console.m_configPtr;
+
+    console.Puts (CConfig::EAttribute::Information, L"\nIcon status:");
+
+    // Determine source and state
+    LPCWSTR  pszReason = L"";
+    bool     fActive   = false;
+
+    if (config.m_fIcons.has_value())
+    {
+        // ENV var was the source (CLI flags aren't available in /config context
+        // because /config exits before icon detection runs in the normal flow)
+        fActive  = config.m_fIcons.value();
+        pszReason = fActive ? L"Enabled via TCDIR=Icons" : L"Disabled via TCDIR=Icons-";
+    }
+    else
+    {
+        // Auto-detection
+        CNerdFontDetector  detector;
+        EDetectionResult   result = EDetectionResult::NotDetected;
+        HANDLE             hOut   = GetStdHandle (STD_OUTPUT_HANDLE);
+
+        if (SUCCEEDED (detector.Detect (hOut, *config.m_pEnvironmentProvider, &result)))
+        {
+            fActive = (result == EDetectionResult::Detected);
+        }
+
+        if (fActive)
+            pszReason = L"Nerd Font detected, icons enabled";
+        else
+            pszReason = L"Nerd Font not detected, icons disabled";
+    }
+
+    WORD stateAttr = static_cast<WORD> (
+        (console.m_configPtr->m_rgAttributes[CConfig::EAttribute::Default] & BC_Mask) |
+        (fActive ? FC_Green : FC_DarkGrey));
+
+    console.Printf (CConfig::EAttribute::Default, L"  ");
+    console.Printf (stateAttr, L"%ls", fActive ? L"ON" : L"OFF");
+    console.Printf (CConfig::EAttribute::Default, L"  %ls\n", pszReason);
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  DisplayIconMappingTable
+//
+//  Display the resolved icon mapping table with source indicators
+//  (Built-in vs TCDIR override). Shows extensions and well-known dirs.
+//
+////////////////////////////////////////////////////////////////////////////////
+
+static void DisplayIconMappingTable (CConsole & console)
+{
+    const CConfig & config = *console.m_configPtr;
+
+    WORD bgAttr       = config.m_rgAttributes[CConfig::EAttribute::Default] & BC_Mask;
+    WORD builtinAttr  = static_cast<WORD> (bgAttr | FC_DarkGrey);
+    WORD envAttr      = static_cast<WORD> (bgAttr | FC_Cyan);
+
+    // --- Extension icon mappings ---
+    console.Puts (CConfig::EAttribute::Information, L"\nExtension icon mappings:");
+
+    // Collect and sort extensions
+    vector<pair<wstring, char32_t>> extIcons (config.m_mapExtensionToIcon.begin(), config.m_mapExtensionToIcon.end());
+    ranges::sort (extIcons, {}, &pair<wstring, char32_t>::first);
+
+    for (const auto & [ext, cp] : extIcons)
+    {
+        WideCharPair wcp         = CodePointToWideChars (cp);
+        wchar_t      buf[3]     = { wcp.chars[0], wcp.chars[1], L'\0' };
+        auto         sourceIter = config.m_mapExtensionIconSources.find (ext);
+        bool         isEnv      = (sourceIter != config.m_mapExtensionIconSources.end() &&
+                                   sourceIter->second == CConfig::EAttributeSource::Environment);
+
+        console.Printf (CConfig::EAttribute::Default, L"  %-10ls %ls  ", ext.c_str(), buf);
+        console.Printf (isEnv ? envAttr : builtinAttr, L"%ls", isEnv ? L"TCDIR" : L"Built-in");
+        console.Puts   (CConfig::EAttribute::Default, L"");
+    }
+
+    // --- Well-known directory icon mappings ---
+    console.Puts (CConfig::EAttribute::Information, L"\nWell-known directory icon mappings:");
+
+    vector<pair<wstring, char32_t>> dirIcons (config.m_mapWellKnownDirToIcon.begin(), config.m_mapWellKnownDirToIcon.end());
+    ranges::sort (dirIcons, {}, &pair<wstring, char32_t>::first);
+
+    for (const auto & [dirName, cp] : dirIcons)
+    {
+        WideCharPair wcp        = CodePointToWideChars (cp);
+        wchar_t      buf[3]    = { wcp.chars[0], wcp.chars[1], L'\0' };
+        auto         sourceIter = config.m_mapWellKnownDirIconSources.find (dirName);
+        bool         isEnv      = (sourceIter != config.m_mapWellKnownDirIconSources.end() &&
+                                   sourceIter->second == CConfig::EAttributeSource::Environment);
+
+        console.Printf (CConfig::EAttribute::Default, L"  %-10ls %ls  ", dirName.c_str(), buf);
+        console.Printf (isEnv ? envAttr : builtinAttr, L"%ls", isEnv ? L"TCDIR" : L"Built-in");
+        console.Puts   (CConfig::EAttribute::Default, L"");
+    }
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
 //  CUsage::DisplayCurrentConfiguration
 //
 //  Display the current color configuration tables for display items,
@@ -1250,6 +1464,8 @@ void CUsage::DisplayCurrentConfiguration (CConsole & console, wchar_t chPrefix)
     }
 
     DisplayConfigurationTable (console);
+    DisplayIconStatus         (console);
+    DisplayIconMappingTable   (console);
 
     if (IsTcdirEnvVarSet ())
     {

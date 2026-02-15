@@ -116,10 +116,10 @@
 
 **Purpose**: Diagnostics, help text, version bump, and documentation updates
 
-- [ ] T025 Extend DisplayUsage (`/?`) with /Icons and /Icons- flag documentation in TCDirCore/Usage.cpp
-- [ ] T026 Extend DisplayEnvVarHelp (`/env`) with icon syntax documentation ([color][,icon], U+XXXX, dir: prefix, literal glyph) in TCDirCore/Usage.cpp
-- [ ] T027 Extend DisplayCurrentConfiguration (`/config`) with icon detection status, resolved state, and icon mapping table with source indicators in TCDirCore/Usage.cpp
-- [ ] T028 [P] Bump VERSION_MAJOR from 4 to 5 in TCDirCore/Version.h
+- [X] T025 Extend DisplayUsage (`/?`) with /Icons and /Icons- flag documentation in TCDirCore/Usage.cpp
+- [X] T026 Extend DisplayEnvVarHelp (`/env`) with icon syntax documentation ([color][,icon], U+XXXX, dir: prefix, literal glyph) in TCDirCore/Usage.cpp
+- [X] T027 Extend DisplayCurrentConfiguration (`/config`) with icon detection status, resolved state, and icon mapping table with source indicators in TCDirCore/Usage.cpp
+- [X] T028 [P] Bump VERSION_MAJOR from 4 to 5 in TCDirCore/Version.h
 
 ---
 
