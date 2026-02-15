@@ -1935,6 +1935,71 @@ namespace UnitTest
             Assert::IsTrue (config.m_fShowOwner.value());
             Assert::AreEqual ((WORD) FC_Yellow, config.m_rgAttributes[CConfig::EAttribute::Date]);
         }
+
+
+
+
+        TEST_METHOD(EnvVar_Icons_SetsIconsTrue)
+        {
+            ConfigProbe config;
+            config.Initialize (FC_LightGrey);
+
+            config.SetEnvVar (TCDIR_ENV_VAR_NAME, L"Icons");
+            config.ApplyUserColorOverrides();
+
+            Assert::IsTrue (config.m_fIcons.has_value());
+            Assert::IsTrue (config.m_fIcons.value());
+        }
+
+
+
+
+        TEST_METHOD(EnvVar_IconsDisable_SetsIconsFalse)
+        {
+            ConfigProbe config;
+            config.Initialize (FC_LightGrey);
+
+            config.SetEnvVar (TCDIR_ENV_VAR_NAME, L"Icons-");
+            config.ApplyUserColorOverrides();
+
+            Assert::IsTrue  (config.m_fIcons.has_value());
+            Assert::IsFalse (config.m_fIcons.value());
+        }
+
+
+
+
+        TEST_METHOD(EnvVar_IconsWithOtherSwitches_ParsesCorrectly)
+        {
+            ConfigProbe config;
+            config.Initialize (FC_LightGrey);
+
+            config.SetEnvVar (TCDIR_ENV_VAR_NAME, L"Icons;W;.cpp=Green");
+            config.ApplyUserColorOverrides();
+
+            Assert::IsTrue  (config.m_fIcons.has_value());
+            Assert::IsTrue  (config.m_fIcons.value());
+            Assert::IsTrue  (config.m_fWideListing.has_value());
+            Assert::IsTrue  (config.m_fWideListing.value());
+            Assert::AreEqual ((WORD) FC_Green, config.m_mapExtensionToTextAttr[L".cpp"]);
+        }
+
+
+
+
+        TEST_METHOD(EnvVar_IconsIsRecognizedSwitch)
+        {
+            // Verify IsSwitchName recognizes Icons and Icons-
+            ConfigProbe config;
+            config.Initialize (FC_LightGrey);
+
+            // Icons without equals should be treated as a switch, not an error
+            config.SetEnvVar (TCDIR_ENV_VAR_NAME, L"Icons");
+            config.ApplyUserColorOverrides();
+
+            auto result = config.ValidateEnvironmentVariable();
+            Assert::IsFalse (result.hasIssues());
+        }
     };
 
 

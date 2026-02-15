@@ -61,10 +61,10 @@
 
 **Independent Test**: On a system with a Nerd Font as console font, run `tcdir` (no flags) and verify icons appear automatically. On a non-NF system, verify classic output. Test `/Icons` and `/Icons-` overrides in both environments.
 
-- [ ] T012 [P] [US2] Create TCDirCore/NerdFontDetector.h with EDetectionResult enum and CNerdFontDetector class (Detect method, protected virtual ProbeConsoleFontForGlyph and IsNerdFontInstalled, private static IsWezTerm and IsConPtyTerminal)
-- [ ] T013 [US2] Create TCDirCore/NerdFontDetector.cpp implementing the layered detection chain: WezTerm short-circuit → ConPTY check → classic conhost canary probe via GetGlyphIndicesW (R1) → system font enumeration via EnumFontFamiliesExW (R2) → fallback OFF
-- [ ] T014 [US2] Implement full detection orchestration (CLI → config.m_fIcons → CNerdFontDetector::Detect) in TCDirCore/TCDir.cpp, replacing the CLI-only path from T011
-- [ ] T015 [US2] Add Icons/Icons- switch handling to CConfig env var processing (IsSwitchName and ProcessSwitchOverride) in TCDirCore/Config.cpp
+- [X] T012 [P] [US2] Create TCDirCore/NerdFontDetector.h with EDetectionResult enum and CNerdFontDetector class (Detect method, protected virtual ProbeConsoleFontForGlyph and IsNerdFontInstalled, private static IsWezTerm and IsConPtyTerminal)
+- [X] T013 [US2] Create TCDirCore/NerdFontDetector.cpp implementing the layered detection chain: WezTerm short-circuit → ConPTY check → classic conhost canary probe via GetGlyphIndicesW (R1) → system font enumeration via EnumFontFamiliesExW (R2) → fallback OFF
+- [X] T014 [US2] Implement full detection orchestration (CLI → config.m_fIcons → CNerdFontDetector::Detect) in TCDirCore/TCDir.cpp, replacing the CLI-only path from T011
+- [X] T015 [US2] Add Icons/Icons- switch handling to CConfig env var processing (IsSwitchName and ProcessSwitchOverride) in TCDirCore/Config.cpp
 
 **Checkpoint**: `tcdir` auto-detects NF availability. `/Icons` and `/Icons-` override detection. `TCDIR=Icons` and `TCDIR=Icons-` control default state. US2 acceptance scenarios 1–10 are satisfied.
 

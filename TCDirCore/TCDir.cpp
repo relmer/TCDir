@@ -8,6 +8,7 @@
 #include "Console.h"
 #include "DirectoryLister.h"
 #include "MaskGrouper.h"
+#include "NerdFontDetector.h"
 #include "PerfTimer.h"
 #include "Usage.h"
 
@@ -98,19 +99,32 @@ int wmain (int argc, WCHAR * argv[])
 
         //
         // Resolve icon activation state
-        // Phase 3: CLI-only path — /Icons or /Icons- from command line or env var.
-        // Phase 4 will add full CNerdFontDetector auto-detection chain.
+        // Priority: CLI flag → env var → auto-detection
         //
 
         bool fIconsActive = false;
 
         if (cmdlinePtr->m_fIcons.has_value())
         {
+            // CLI flag always wins
             fIconsActive = cmdlinePtr->m_fIcons.value();
         }
         else if (configPtr->m_fIcons.has_value())
         {
+            // TCDIR env var Icons/Icons- switch
             fIconsActive = configPtr->m_fIcons.value();
+        }
+        else
+        {
+            // Auto-detect: probe console font / enumerate system fonts
+            CNerdFontDetector  detector;
+            EDetectionResult   result = EDetectionResult::NotDetected;
+            HANDLE             hOut   = GetStdHandle (STD_OUTPUT_HANDLE);
+
+            if (SUCCEEDED (detector.Detect (hOut, *configPtr->m_pEnvironmentProvider, &result)))
+            {
+                fIconsActive = (result == EDetectionResult::Detected);
+            }
         }
 
         CDirectoryLister dirLister (cmdlinePtr, consolePtr, configPtr, fIconsActive);

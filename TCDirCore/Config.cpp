@@ -705,6 +705,16 @@ bool CConfig::IsSwitchName (wstring_view entry)
         return true;
     }
 
+    if (entry.length() == 5 && _wcsnicmp (entry.data(), L"icons", 5) == 0)
+    {
+        return true;
+    }
+
+    if (entry.length() == 6 && _wcsnicmp (entry.data(), L"icons-", 6) == 0)
+    {
+        return true;
+    }
+
     return false;
 }
 
@@ -741,6 +751,16 @@ HRESULT CConfig::ProcessLongSwitchOverride (wstring_view switchName)
     {
         m_fShowStreams = true;
         hr             = S_OK;
+    }
+    else if (switchName.length() == 5 && _wcsnicmp (switchName.data(), L"icons", 5) == 0)
+    {
+        m_fIcons = true;
+        hr       = S_OK;
+    }
+    else if (switchName.length() == 6 && _wcsnicmp (switchName.data(), L"icons-", 6) == 0)
+    {
+        m_fIcons = false;
+        hr       = S_OK;
     }
 
     return hr;

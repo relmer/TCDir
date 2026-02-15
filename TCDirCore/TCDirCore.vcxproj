@@ -233,6 +233,7 @@
     <ClInclude Include="ListingTotals.h" />
     <ClInclude Include="MaskGrouper.h" />
     <ClInclude Include="MultiThreadedLister.h" />
+    <ClInclude Include="NerdFontDetector.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="PerfTimer.h" />
     <ClInclude Include="IResultsDisplayer.h" />
@@ -257,6 +258,7 @@
     <ClCompile Include="IconMapping.cpp" />
     <ClCompile Include="MaskGrouper.cpp" />
     <ClCompile Include="MultiThreadedLister.cpp" />
+    <ClCompile Include="NerdFontDetector.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
