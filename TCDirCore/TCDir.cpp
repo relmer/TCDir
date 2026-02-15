@@ -96,7 +96,24 @@ int wmain (int argc, WCHAR * argv[])
             perfTimerPtr = make_unique<PerfTimer> (L"TCDir time elapsed", PerfTimer::Automatic, PerfTimer::Msec, [] (const wchar_t * msg) { fputws (msg, stdout); });
         }
 
-        CDirectoryLister dirLister (cmdlinePtr, consolePtr, configPtr);
+        //
+        // Resolve icon activation state
+        // Phase 3: CLI-only path — /Icons or /Icons- from command line or env var.
+        // Phase 4 will add full CNerdFontDetector auto-detection chain.
+        //
+
+        bool fIconsActive = false;
+
+        if (cmdlinePtr->m_fIcons.has_value())
+        {
+            fIconsActive = cmdlinePtr->m_fIcons.value();
+        }
+        else if (configPtr->m_fIcons.has_value())
+        {
+            fIconsActive = configPtr->m_fIcons.value();
+        }
+
+        CDirectoryLister dirLister (cmdlinePtr, consolePtr, configPtr, fIconsActive);
 
         auto groups = CMaskGrouper::GroupMasksByDirectory (cmdlinePtr->m_listMask);
 

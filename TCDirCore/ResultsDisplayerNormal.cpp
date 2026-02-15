@@ -5,6 +5,7 @@
 #include "Config.h"
 #include "Console.h"
 #include "FileAttributeMap.h"
+#include "IconMapping.h"
 #include "UnicodeSymbols.h"
 
 
@@ -19,8 +20,8 @@
 //
 ////////////////////////////////////////////////////////////////////////////////  
 
-CResultsDisplayerNormal::CResultsDisplayerNormal (shared_ptr<CCommandLine> cmdLinePtr, shared_ptr<CConsole> consolePtr, shared_ptr<CConfig> configPtr) :
-    CResultsDisplayerWithHeaderAndFooter (cmdLinePtr, consolePtr, configPtr)
+CResultsDisplayerNormal::CResultsDisplayerNormal (shared_ptr<CCommandLine> cmdLinePtr, shared_ptr<CConsole> consolePtr, shared_ptr<CConfig> configPtr, bool fIconsActive) :
+    CResultsDisplayerWithHeaderAndFooter (cmdLinePtr, consolePtr, configPtr, fIconsActive)
 {
 }
 
@@ -61,7 +62,8 @@ void CResultsDisplayerNormal::DisplayFileResults (const CDirectoryInfo & di)
 
     for (auto && [idxFile, fileInfo] : views::enumerate (di.m_vMatches))
     {
-        WORD             textAttr    = m_configPtr->GetTextAttrForFile (fileInfo);
+        CConfig::SFileDisplayStyle style = m_configPtr->GetDisplayStyleForFile (fileInfo);
+        WORD             textAttr    = style.m_wTextAttr;
         ECloudStatus     cloudStatus = GetCloudStatus (fileInfo, fInSyncRoot);
         const FILETIME & ftDisplay   = GetTimeFieldForDisplay (fileInfo);
 
@@ -80,6 +82,18 @@ void CResultsDisplayerNormal::DisplayFileResults (const CDirectoryInfo & di)
         if (m_cmdLinePtr->m_fShowOwner)
         {
             DisplayFileOwner (owners[idxFile], cchMaxOwnerLength);
+        }
+
+        //
+        // Display icon glyph before filename (when icons are active)
+        //
+
+        if (m_fIconsActive && style.m_iconCodePoint != 0 && !style.m_fIconSuppressed)
+        {
+            WideCharPair pair = CodePointToWideChars (style.m_iconCodePoint);
+            wchar_t      szIcon[3] = { pair.chars[0], pair.chars[1], L'\0' };
+
+            m_consolePtr->Printf (textAttr, L"%s ", szIcon);
         }
 
         m_consolePtr->Printf (textAttr, L"%s\n", fileInfo.cFileName);

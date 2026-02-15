@@ -24,7 +24,7 @@
 //
 ////////////////////////////////////////////////////////////////////////////////  
 
-CDirectoryLister::CDirectoryLister (shared_ptr<CCommandLine> pCmdLine, shared_ptr<CConsole> pConsole, shared_ptr<CConfig> pConfig) :
+CDirectoryLister::CDirectoryLister (shared_ptr<CCommandLine> pCmdLine, shared_ptr<CConsole> pConsole, shared_ptr<CConfig> pConfig, bool fIconsActive) :
     m_cmdLinePtr        (pCmdLine),
     m_consolePtr        (pConsole),
     m_configPtr         (pConfig)
@@ -33,15 +33,15 @@ CDirectoryLister::CDirectoryLister (shared_ptr<CCommandLine> pCmdLine, shared_pt
     // Bare mode takes precedence over wide mode
     if (m_cmdLinePtr->m_fBareListing)
     {
-        m_displayer = make_unique<CResultsDisplayerBare>(m_cmdLinePtr, m_consolePtr, m_configPtr);
+        m_displayer = make_unique<CResultsDisplayerBare>(m_cmdLinePtr, m_consolePtr, m_configPtr, fIconsActive);
     }
     else if (m_cmdLinePtr->m_fWideListing)
     {
-        m_displayer = make_unique<CResultsDisplayerWide>(m_cmdLinePtr, m_consolePtr, m_configPtr);
+        m_displayer = make_unique<CResultsDisplayerWide>(m_cmdLinePtr, m_consolePtr, m_configPtr, fIconsActive);
     }
     else
     {
-        m_displayer = make_unique<CResultsDisplayerNormal>(m_cmdLinePtr, m_consolePtr, m_configPtr);
+        m_displayer = make_unique<CResultsDisplayerNormal>(m_cmdLinePtr, m_consolePtr, m_configPtr, fIconsActive);
     }
 }
 

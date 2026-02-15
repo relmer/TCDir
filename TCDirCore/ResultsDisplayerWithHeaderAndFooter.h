@@ -17,7 +17,7 @@ class CConsole;
 class CResultsDisplayerWithHeaderAndFooter : public IResultsDisplayer
 {
 public:
-    CResultsDisplayerWithHeaderAndFooter           (shared_ptr<CCommandLine> cmdLinePtr, shared_ptr<CConsole> consolePtr, shared_ptr<CConfig> configPtr);
+    CResultsDisplayerWithHeaderAndFooter           (shared_ptr<CCommandLine> cmdLinePtr, shared_ptr<CConsole> consolePtr, shared_ptr<CConfig> configPtr, bool fIconsActive = false);
     virtual ~CResultsDisplayerWithHeaderAndFooter  (void);
 
     void    DisplayResults                         (const CDriveInfo & driveInfo, const CDirectoryInfo & di, EDirectoryLevel level) override;
@@ -43,4 +43,5 @@ protected:
     shared_ptr<CCommandLine> m_cmdLinePtr; 
     shared_ptr<CConsole>     m_consolePtr;
     shared_ptr<CConfig>      m_configPtr;
+    bool                     m_fIconsActive = false;
 };

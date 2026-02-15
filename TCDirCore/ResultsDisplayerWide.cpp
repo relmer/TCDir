@@ -17,8 +17,8 @@
 //
 ////////////////////////////////////////////////////////////////////////////////  
 
-CResultsDisplayerWide::CResultsDisplayerWide (shared_ptr<CCommandLine> cmdLinePtr, shared_ptr<CConsole> consolePtr, shared_ptr<CConfig> configPtr) :
-    CResultsDisplayerWithHeaderAndFooter (cmdLinePtr, consolePtr, configPtr)
+CResultsDisplayerWide::CResultsDisplayerWide (shared_ptr<CCommandLine> cmdLinePtr, shared_ptr<CConsole> consolePtr, shared_ptr<CConfig> configPtr, bool fIconsActive) :
+    CResultsDisplayerWithHeaderAndFooter (cmdLinePtr, consolePtr, configPtr, fIconsActive)
 {
 }
 

@@ -17,10 +17,11 @@
 //
 ////////////////////////////////////////////////////////////////////////////////  
 
-CResultsDisplayerWithHeaderAndFooter::CResultsDisplayerWithHeaderAndFooter (shared_ptr<CCommandLine> cmdLinePtr, shared_ptr<CConsole> consolePtr, shared_ptr<CConfig> configPtr) :
-    m_cmdLinePtr (cmdLinePtr),
-    m_consolePtr (consolePtr),
-    m_configPtr  (configPtr)
+CResultsDisplayerWithHeaderAndFooter::CResultsDisplayerWithHeaderAndFooter (shared_ptr<CCommandLine> cmdLinePtr, shared_ptr<CConsole> consolePtr, shared_ptr<CConfig> configPtr, bool fIconsActive) :
+    m_cmdLinePtr   (cmdLinePtr),
+    m_consolePtr   (consolePtr),
+    m_configPtr    (configPtr),
+    m_fIconsActive (fIconsActive)
 {
 }
 

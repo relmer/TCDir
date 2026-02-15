@@ -2,6 +2,7 @@
 #include "EhmTestHelper.h"
 #include "../TCDirCore/Config.h"
 #include "../TCDirCore/Color.h"
+#include "../TCDirCore/IconMapping.h"
 
 
 
@@ -10,6 +11,16 @@
 using namespace Microsoft::VisualStudio::CppUnitTestFramework;
 
 
+
+namespace Microsoft { namespace VisualStudio { namespace CppUnitTestFramework
+{
+    template<> inline std::wstring ToString<char32_t> (const char32_t & value)
+    {
+        wchar_t buf[16];
+        swprintf_s (buf, L"U+%05X", static_cast<unsigned>(value));
+        return buf;
+    }
+}}}
 
 
 
@@ -76,6 +87,8 @@ namespace UnitTest
         using CConfig::ProcessFileExtensionOverride;
         using CConfig::ProcessDisplayAttributeOverride;
         using CConfig::ProcessFileAttributeOverride;
+        using CConfig::InitializeExtensionToIconMap;
+        using CConfig::InitializeWellKnownDirToIconMap;
 
     private:
         CTestEnvironmentProvider m_environmentProvider;
@@ -835,7 +848,8 @@ namespace UnitTest
             wfd.dwFileAttributes = FILE_ATTRIBUTE_HIDDEN | FILE_ATTRIBUTE_SYSTEM;
             wcscpy_s(wfd.cFileName, L"foo.txt");
 
-            Assert::AreEqual (static_cast<WORD>(FC_Red | BC_Blue), config.GetTextAttrForFile(wfd));
+            // PSHERC0TA precedence: System (S) has higher priority than Hidden (H)
+            Assert::AreEqual (static_cast<WORD>(FC_Green | BC_Blue), config.GetTextAttrForFile(wfd));
         }
 
 
@@ -1920,6 +1934,271 @@ namespace UnitTest
             Assert::IsTrue (config.m_fShowOwner.has_value());
             Assert::IsTrue (config.m_fShowOwner.value());
             Assert::AreEqual ((WORD) FC_Yellow, config.m_rgAttributes[CConfig::EAttribute::Date]);
+        }
+    };
+
+
+
+
+
+    TEST_CLASS(ConfigIconPrecedenceTests)
+    {
+    public:
+
+        TEST_CLASS_INITIALIZE(ClassInitialize)
+        {
+            SetupEhmForUnitTests();
+        }
+
+
+
+
+        //
+        // Test that extension icon map is populated from defaults
+        //
+
+        TEST_METHOD(InitializeExtensionToIconMap_CppExtension_HasCppIcon)
+        {
+            ConfigProbe config;
+            config.Initialize (FC_LightGrey);
+
+            Assert::IsTrue  (config.m_mapExtensionToIcon.contains (L".cpp"));
+            Assert::AreEqual (static_cast<char32_t>(NfIcon::CustomCpp), config.m_mapExtensionToIcon[L".cpp"]);
+        }
+
+
+
+
+        TEST_METHOD(InitializeExtensionToIconMap_AllDefaultsLoaded)
+        {
+            ConfigProbe config;
+            config.Initialize (FC_LightGrey);
+
+            Assert::AreEqual (g_cDefaultExtensionIcons, config.m_mapExtensionToIcon.size());
+        }
+
+
+
+
+        //
+        // Test that well-known directory icon map is populated from defaults
+        //
+
+        TEST_METHOD(InitializeWellKnownDirToIconMap_GitDir_HasGitIcon)
+        {
+            ConfigProbe config;
+            config.Initialize (FC_LightGrey);
+
+            Assert::IsTrue  (config.m_mapWellKnownDirToIcon.contains (L".git"));
+            Assert::AreEqual (static_cast<char32_t>(NfIcon::CustomFolderGit), config.m_mapWellKnownDirToIcon[L".git"]);
+        }
+
+
+
+
+        TEST_METHOD(InitializeWellKnownDirToIconMap_AllDefaultsLoaded)
+        {
+            ConfigProbe config;
+            config.Initialize (FC_LightGrey);
+
+            Assert::AreEqual (g_cDefaultWellKnownDirIcons, config.m_mapWellKnownDirToIcon.size());
+        }
+
+
+
+
+        //
+        // GetDisplayStyleForFile — precedence tests
+        //
+
+        TEST_METHOD(GetDisplayStyle_PlainCppFile_ReturnsCppIcon)
+        {
+            ConfigProbe config;
+            config.Initialize (FC_LightGrey);
+
+            WIN32_FIND_DATA wfd = { 0 };
+            wfd.dwFileAttributes = FILE_ATTRIBUTE_ARCHIVE;
+            wcscpy_s (wfd.cFileName, L"main.cpp");
+
+            auto style = config.GetDisplayStyleForFile (wfd);
+
+            Assert::AreEqual (static_cast<char32_t>(NfIcon::CustomCpp), style.m_iconCodePoint);
+            Assert::IsFalse  (style.m_fIconSuppressed);
+        }
+
+
+
+
+        TEST_METHOD(GetDisplayStyle_PlainDirectory_ReturnsDirectoryColor)
+        {
+            ConfigProbe config;
+            config.Initialize (FC_LightGrey);
+
+            WIN32_FIND_DATA wfd = { 0 };
+            wfd.dwFileAttributes = FILE_ATTRIBUTE_DIRECTORY;
+            wcscpy_s (wfd.cFileName, L"somedir");
+
+            auto style = config.GetDisplayStyleForFile (wfd);
+
+            Assert::AreEqual (static_cast<WORD>(FC_LightBlue), style.m_wTextAttr);
+            Assert::AreEqual (static_cast<char32_t>(NfIcon::CustomFolder), style.m_iconCodePoint);
+        }
+
+
+
+
+        TEST_METHOD(GetDisplayStyle_WellKnownDir_ReturnsSpecificIcon)
+        {
+            ConfigProbe config;
+            config.Initialize (FC_LightGrey);
+
+            WIN32_FIND_DATA wfd = { 0 };
+            wfd.dwFileAttributes = FILE_ATTRIBUTE_DIRECTORY;
+            wcscpy_s (wfd.cFileName, L".git");
+
+            auto style = config.GetDisplayStyleForFile (wfd);
+
+            Assert::AreEqual (static_cast<char32_t>(NfIcon::CustomFolderGit), style.m_iconCodePoint);
+        }
+
+
+
+
+        TEST_METHOD(GetDisplayStyle_HiddenCppFile_HiddenColorLocks)
+        {
+            // Hidden attribute has a color override (DarkGrey) that should win
+            // over the extension color, but icon should still come from extension
+            ConfigProbe config;
+            config.Initialize (FC_LightGrey);
+
+            WIN32_FIND_DATA wfd = { 0 };
+            wfd.dwFileAttributes = FILE_ATTRIBUTE_HIDDEN | FILE_ATTRIBUTE_ARCHIVE;
+            wcscpy_s (wfd.cFileName, L"secret.cpp");
+
+            auto style = config.GetDisplayStyleForFile (wfd);
+
+            // Color is locked by HIDDEN attribute override (DarkGrey)
+            Assert::AreEqual (static_cast<WORD>(FC_DarkGrey), style.m_wTextAttr);
+            // Icon falls through to extension since no attribute icon override exists
+            Assert::AreEqual (static_cast<char32_t>(NfIcon::CustomCpp), style.m_iconCodePoint);
+        }
+
+
+
+
+        TEST_METHOD(GetDisplayStyle_UnknownExtension_ReturnsFileDefault)
+        {
+            ConfigProbe config;
+            config.Initialize (FC_LightGrey);
+
+            WIN32_FIND_DATA wfd = { 0 };
+            wfd.dwFileAttributes = FILE_ATTRIBUTE_ARCHIVE;
+            wcscpy_s (wfd.cFileName, L"data.xyz");
+
+            auto style = config.GetDisplayStyleForFile (wfd);
+
+            Assert::AreEqual (static_cast<char32_t>(NfIcon::FaFile), style.m_iconCodePoint);
+        }
+
+
+
+
+        TEST_METHOD(GetDisplayStyle_HiddenDirectory_HiddenColorWithDirIcon)
+        {
+            // Hidden dir: attribute color (DarkGrey) wins, but icon comes from
+            // directory fallback since no attribute icon is set
+            ConfigProbe config;
+            config.Initialize (FC_LightGrey);
+
+            WIN32_FIND_DATA wfd = { 0 };
+            wfd.dwFileAttributes = FILE_ATTRIBUTE_DIRECTORY | FILE_ATTRIBUTE_HIDDEN;
+            wcscpy_s (wfd.cFileName, L".hidden");
+
+            auto style = config.GetDisplayStyleForFile (wfd);
+
+            Assert::AreEqual (static_cast<WORD>(FC_DarkGrey), style.m_wTextAttr);
+            Assert::AreEqual (static_cast<char32_t>(NfIcon::CustomFolder), style.m_iconCodePoint);
+        }
+
+
+
+
+        TEST_METHOD(GetDisplayStyle_HiddenGitDir_HiddenColorGitIcon)
+        {
+            // .git directory that is also hidden:
+            // Color locked by hidden attribute, icon from well-known dir
+            ConfigProbe config;
+            config.Initialize (FC_LightGrey);
+
+            WIN32_FIND_DATA wfd = { 0 };
+            wfd.dwFileAttributes = FILE_ATTRIBUTE_DIRECTORY | FILE_ATTRIBUTE_HIDDEN | FILE_ATTRIBUTE_SYSTEM;
+            wcscpy_s (wfd.cFileName, L".git");
+
+            auto style = config.GetDisplayStyleForFile (wfd);
+
+            // System has higher precedence than Hidden in PSHERC0TA, but
+            // no system color override exists by default, so hidden wins
+            Assert::AreEqual (static_cast<WORD>(FC_DarkGrey), style.m_wTextAttr);
+            // Well-known dir icon
+            Assert::AreEqual (static_cast<char32_t>(NfIcon::CustomFolderGit), style.m_iconCodePoint);
+        }
+
+
+
+
+        TEST_METHOD(GetDisplayStyle_AttributeIconOverride_LocksIcon)
+        {
+            // When an attribute has both color and icon overrides, both lock
+            ConfigProbe config;
+            config.Initialize (FC_LightGrey);
+
+            // Manually add an attribute icon override for HIDDEN
+            config.m_mapFileAttributeToIcon[FILE_ATTRIBUTE_HIDDEN] = NfIcon::OctFileBinary;
+
+            WIN32_FIND_DATA wfd = { 0 };
+            wfd.dwFileAttributes = FILE_ATTRIBUTE_HIDDEN;
+            wcscpy_s (wfd.cFileName, L"secret.cpp");
+
+            auto style = config.GetDisplayStyleForFile (wfd);
+
+            Assert::AreEqual (static_cast<WORD>(FC_DarkGrey), style.m_wTextAttr);
+            Assert::AreEqual (static_cast<char32_t>(NfIcon::OctFileBinary), style.m_iconCodePoint);
+        }
+
+
+
+
+        TEST_METHOD(GetDisplayStyle_SymlinkDir_ReturnsSymlinkIcon)
+        {
+            ConfigProbe config;
+            config.Initialize (FC_LightGrey);
+
+            WIN32_FIND_DATA wfd = { 0 };
+            wfd.dwFileAttributes = FILE_ATTRIBUTE_DIRECTORY | FILE_ATTRIBUTE_REPARSE_POINT;
+            wfd.dwReserved0      = IO_REPARSE_TAG_SYMLINK;
+            wcscpy_s (wfd.cFileName, L"link");
+
+            auto style = config.GetDisplayStyleForFile (wfd);
+
+            Assert::AreEqual (static_cast<char32_t>(NfIcon::CodFileSymlinkDir), style.m_iconCodePoint);
+        }
+
+
+
+
+        TEST_METHOD(GetDisplayStyle_JunctionDir_ReturnsJunctionIcon)
+        {
+            ConfigProbe config;
+            config.Initialize (FC_LightGrey);
+
+            WIN32_FIND_DATA wfd = { 0 };
+            wfd.dwFileAttributes = FILE_ATTRIBUTE_DIRECTORY | FILE_ATTRIBUTE_REPARSE_POINT;
+            wfd.dwReserved0      = IO_REPARSE_TAG_MOUNT_POINT;
+            wcscpy_s (wfd.cFileName, L"junction");
+
+            auto style = config.GetDisplayStyleForFile (wfd);
+
+            Assert::AreEqual (static_cast<char32_t>(NfIcon::FaExternalLink), style.m_iconCodePoint);
         }
     };
 }

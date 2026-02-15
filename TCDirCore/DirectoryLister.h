@@ -20,7 +20,7 @@ class CConsole;
 class CDirectoryLister
 {
 public:
-    CDirectoryLister  (shared_ptr<CCommandLine> cmdLinePtr, shared_ptr<CConsole> consolePtr, shared_ptr<CConfig> configPtr);
+    CDirectoryLister  (shared_ptr<CCommandLine> cmdLinePtr, shared_ptr<CConsole> consolePtr, shared_ptr<CConfig> configPtr, bool fIconsActive = false);
     ~CDirectoryLister (void); 
 
     void List         (const MaskGroup & group);

@@ -70,6 +70,7 @@ void CCommandLine::ApplyConfigDefaults (const CConfig & config)
     if (config.m_fMultiThreaded.has_value()) m_fMultiThreaded = config.m_fMultiThreaded.value();
     if (config.m_fShowOwner.has_value())     m_fShowOwner     = config.m_fShowOwner.value();
     if (config.m_fShowStreams.has_value())   m_fShowStreams   = config.m_fShowStreams.value();
+    if (config.m_fIcons.has_value() && !m_fIcons.has_value())  m_fIcons = config.m_fIcons.value();
 }
 
 

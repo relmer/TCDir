@@ -176,7 +176,9 @@ void CConfig::Initialize (WORD wDefaultAttr)
     m_rgAttributes[EAttribute::CloudStatusAlwaysLocallyAvailable] = FC_LightGreen;
   
     InitializeExtensionToTextAttrMap();
+    InitializeExtensionToIconMap();
     InitializeFileAttributeToTextAttrMap();
+    InitializeWellKnownDirToIconMap();
     ApplyUserColorOverrides();
 }
 
@@ -249,6 +251,65 @@ void CConfig::InitializeFileAttributeToTextAttrMap (void)
 
     m_mapFileAttributesTextAttr[FILE_ATTRIBUTE_HIDDEN]    = { FC_DarkGrey,   EAttributeSource::Default };
     m_mapFileAttributesTextAttr[FILE_ATTRIBUTE_ENCRYPTED] = { FC_LightGreen, EAttributeSource::Default };
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CConfig::InitializeExtensionToIconMap
+//
+//  Seed the extension → icon map from the default icon table.
+//  Parallels InitializeExtensionToTextAttrMap for colors.
+//
+////////////////////////////////////////////////////////////////////////////////
+
+void CConfig::InitializeExtensionToIconMap (void)
+{
+    for (size_t i = 0; i < g_cDefaultExtensionIcons; i++)
+    {
+        const SIconMappingEntry & entry = g_rgDefaultExtensionIcons[i];
+
+        wstring key (entry.m_pszKey);
+
+        std::ranges::transform (key, key.begin(), towlower);
+
+        ASSERT (!m_mapExtensionToIcon.contains (key));
+
+        m_mapExtensionToIcon[key]        = entry.m_codePoint;
+        m_mapExtensionIconSources[key]   = EAttributeSource::Default;
+    }
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CConfig::InitializeWellKnownDirToIconMap
+//
+//  Seed the well-known directory name → icon map from the default table.
+//
+////////////////////////////////////////////////////////////////////////////////
+
+void CConfig::InitializeWellKnownDirToIconMap (void)
+{
+    for (size_t i = 0; i < g_cDefaultWellKnownDirIcons; i++)
+    {
+        const SIconMappingEntry & entry = g_rgDefaultWellKnownDirIcons[i];
+
+        wstring key (entry.m_pszKey);
+
+        std::ranges::transform (key, key.begin(), towlower);
+
+        ASSERT (!m_mapWellKnownDirToIcon.contains (key));
+
+        m_mapWellKnownDirToIcon[key]        = entry.m_codePoint;
+        m_mapWellKnownDirIconSources[key]   = EAttributeSource::Default;
+    }
 }
 
 
@@ -1036,66 +1097,185 @@ Error:
 
 WORD CConfig::GetTextAttrForFile (const WIN32_FIND_DATA & wfd)
 {
-    HRESULT              hr           = S_OK;
-    WORD                 textAttr     = m_rgAttributes[EAttribute::Default];
-    filesystem::path     filename       (wfd.cFileName);
-    wstring              strExtension;
-    TextAttrMapConstIter iter;
+    return GetDisplayStyleForFile (wfd).m_wTextAttr;
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CConfig::GetDisplayStyleForFile
+//
+//  Unified precedence resolver.  Walks the attribute → well-known dir →
+//  extension → type-fallback levels with independent color and icon locking.
+//  Color and icon are resolved in a single pass.
+//
+////////////////////////////////////////////////////////////////////////////////
+
+CConfig::SFileDisplayStyle CConfig::GetDisplayStyleForFile (const WIN32_FIND_DATA & wfd)
+{
+    WORD             textAttr       = m_rgAttributes[EAttribute::Default];
+    char32_t         iconCodePoint  = 0;
+    bool             fIconSuppressed = false;
+    bool             fColorLocked   = false;
+    bool             fIconLocked    = false;
+    filesystem::path filename         (wfd.cFileName);
+    wstring          strExtension;
+    wstring          strFilename;
 
 
 
     //
-    // File attribute colors override everything else (including directory color)
-    // and follow a fixed precedence order.
+    // Level 1 — File attribute precedence (highest priority)
+    // Walk the fixed precedence order (PSHERC0TA).  Each attribute can
+    // independently lock color and/or icon.
     //
 
-    for (const SFileAttributeMap & mapping : k_rgFileAttributeMap)
+    for (size_t i = 0; i < g_cAttributePrecedenceOrder; i++)
     {
+        const SFileAttributeMap & mapping = g_rgAttributePrecedenceOrder[i];
+
         if ((wfd.dwFileAttributes & mapping.m_dwAttribute) == 0)
         {
             continue;
         }
 
-        auto attrIter = m_mapFileAttributesTextAttr.find (mapping.m_dwAttribute);
-        if (attrIter == m_mapFileAttributesTextAttr.end())
+        // Lock color if this attribute has a color override
+        if (!fColorLocked)
         {
-            continue;
+            auto colorIter = m_mapFileAttributesTextAttr.find (mapping.m_dwAttribute);
+            if (colorIter != m_mapFileAttributesTextAttr.end())
+            {
+                textAttr     = colorIter->second.m_wAttr;
+                fColorLocked = true;
+            }
         }
 
-        textAttr = attrIter->second.m_wAttr;
-        BAIL_OUT_IF (TRUE, S_OK);
-    }
+        // Lock icon if this attribute has an icon override
+        if (!fIconLocked)
+        {
+            auto iconIter = m_mapFileAttributeToIcon.find (mapping.m_dwAttribute);
+            if (iconIter != m_mapFileAttributeToIcon.end())
+            {
+                iconCodePoint = iconIter->second;
+                fIconLocked   = true;
+            }
+        }
 
-
-
-    if (wfd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
-    {
-        textAttr = m_rgAttributes[EAttribute::Directory];
-        BAIL_OUT_IF (TRUE, S_OK);
+        if (fColorLocked && fIconLocked)
+        {
+            break;
+        }
     }
 
     //
-    // Convert the extension to lowecase
+    // Level 2 — Directory handling (well-known dir names and type fallback)
+    //
+
+    if (wfd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
+    {
+        if (!fColorLocked)
+        {
+            textAttr     = m_rgAttributes[EAttribute::Directory];
+            fColorLocked = true;
+        }
+
+        if (!fIconLocked)
+        {
+            // Check well-known directory names
+            strFilename = filename.filename().wstring();
+            std::ranges::transform (strFilename, strFilename.begin(), towlower);
+
+            auto dirIter = m_mapWellKnownDirToIcon.find (strFilename);
+            if (dirIter != m_mapWellKnownDirToIcon.end())
+            {
+                iconCodePoint = dirIter->second;
+                fIconLocked   = true;
+            }
+            else
+            {
+                // Reparse points get special icons
+                if (wfd.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT)
+                {
+                    if (wfd.dwReserved0 == IO_REPARSE_TAG_SYMLINK)
+                    {
+                        iconCodePoint = m_iconSymlink;
+                    }
+                    else if (wfd.dwReserved0 == IO_REPARSE_TAG_MOUNT_POINT)
+                    {
+                        iconCodePoint = m_iconJunction;
+                    }
+                    else
+                    {
+                        iconCodePoint = m_iconDirectoryDefault;
+                    }
+                }
+                else
+                {
+                    iconCodePoint = m_iconDirectoryDefault;
+                }
+                fIconLocked = true;
+            }
+        }
+
+        goto Done;
+    }
+
+    //
+    // Level 3 — Extension-based lookup (files only)
     //
 
     strExtension = filename.extension().wstring();
 
-    transform (strExtension.begin(),
-               strExtension.end(),
-               strExtension.begin(),
-               [] (wchar_t c) { return towlower (c); });
+    std::ranges::transform (strExtension, strExtension.begin(), towlower);
+
+    if (!fColorLocked)
+    {
+        auto colorIter = m_mapExtensionToTextAttr.find (strExtension);
+        if (colorIter != m_mapExtensionToTextAttr.end())
+        {
+            textAttr     = colorIter->second;
+            fColorLocked = true;
+        }
+    }
+
+    if (!fIconLocked)
+    {
+        auto iconIter = m_mapExtensionToIcon.find (strExtension);
+        if (iconIter != m_mapExtensionToIcon.end())
+        {
+            iconCodePoint = iconIter->second;
+            fIconLocked   = true;
+        }
+    }
 
     //
-    // Look up the color for this extension.  If no match, bail out and use the default.
+    // Level 4 — Type fallback (file default icon if nothing else matched)
     //
 
-    iter = m_mapExtensionToTextAttr.find (strExtension);
-    BAIL_OUT_IF (iter == m_mapExtensionToTextAttr.end(), S_OK);
+    if (!fIconLocked)
+    {
+        // Reparse points (file symlinks) get the symlink icon
+        if (wfd.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT)
+        {
+            if (wfd.dwReserved0 == IO_REPARSE_TAG_SYMLINK)
+            {
+                iconCodePoint = m_iconSymlink;
+            }
+            else
+            {
+                iconCodePoint = m_iconFileDefault;
+            }
+        }
+        else
+        {
+            iconCodePoint = m_iconFileDefault;
+        }
+    }
 
-    textAttr = iter->second;
-  
-
-Error:
+Done:
     if ((textAttr & BC_Mask) == 0)
     {
         textAttr |= m_rgAttributes[EAttribute::Default] & BC_Mask;
@@ -1103,7 +1283,7 @@ Error:
 
     textAttr = EnsureVisibleColorAttr (textAttr, m_rgAttributes[EAttribute::Default]);
 
-    return textAttr;
+    return { textAttr, iconCodePoint, fIconSuppressed };
 }
 
 

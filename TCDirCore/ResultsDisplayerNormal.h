@@ -22,7 +22,7 @@ enum class ECloudStatus
 class CResultsDisplayerNormal : public CResultsDisplayerWithHeaderAndFooter
 {
 public:
-    CResultsDisplayerNormal (shared_ptr<CCommandLine> cmdLinePtr, shared_ptr<CConsole> consolePtr, shared_ptr<CConfig> configPtr);
+    CResultsDisplayerNormal (shared_ptr<CCommandLine> cmdLinePtr, shared_ptr<CConsole> consolePtr, shared_ptr<CConfig> configPtr, bool fIconsActive = false);
 
     void DisplayFileResults (const CDirectoryInfo & di) override;
 

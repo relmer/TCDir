@@ -44,12 +44,12 @@
 
 **Independent Test**: Run `tcdir /Icons` in a directory with .cpp, .h, .exe, .txt, folders, and symlinks. Verify each entry shows an appropriate icon glyph in the correct color before the filename.
 
-- [ ] T006 [US1] Implement InitializeExtensionToIconMap (seed m_mapExtensionToIcon from g_rgDefaultExtensionIcons) in TCDirCore/Config.cpp
-- [ ] T007 [US1] Implement InitializeWellKnownDirToIconMap (seed m_mapWellKnownDirToIcon from g_rgDefaultWellKnownDirIcons) in TCDirCore/Config.cpp
-- [ ] T008 [US1] Implement GetDisplayStyleForFile unified precedence resolver in TCDirCore/Config.cpp — single walk over attribute/well-known-dir/extension/type-fallback levels with independent color and icon locking per R6 design
-- [ ] T009 [US1] Add fIconsActive parameter to displayer construction and storage in TCDirCore/ResultsDisplayerWithHeaderAndFooter.h and TCDirCore/ResultsDisplayerWithHeaderAndFooter.cpp
-- [ ] T010 [US1] Implement icon column display (CodePointToWideChars + Printf with wchar_t[3] buffer) before filename in TCDirCore/ResultsDisplayerNormal.cpp — adjust truncation logic to account for +2 character width (icon + space)
-- [ ] T011 [US1] Wire CLI /Icons flag to fIconsActive and pass to displayer construction in TCDirCore/TCDir.cpp (CLI-only path — full detection chain added in US2)
+- [X] T006 [US1] Implement InitializeExtensionToIconMap (seed m_mapExtensionToIcon from g_rgDefaultExtensionIcons) in TCDirCore/Config.cpp
+- [X] T007 [US1] Implement InitializeWellKnownDirToIconMap (seed m_mapWellKnownDirToIcon from g_rgDefaultWellKnownDirIcons) in TCDirCore/Config.cpp
+- [X] T008 [US1] Implement GetDisplayStyleForFile unified precedence resolver in TCDirCore/Config.cpp — single walk over attribute/well-known-dir/extension/type-fallback levels with independent color and icon locking per R6 design
+- [X] T009 [US1] Add fIconsActive parameter to displayer construction and storage in TCDirCore/ResultsDisplayerWithHeaderAndFooter.h and TCDirCore/ResultsDisplayerWithHeaderAndFooter.cpp
+- [X] T010 [US1] Implement icon column display (CodePointToWideChars + Printf with wchar_t[3] buffer) before filename in TCDirCore/ResultsDisplayerNormal.cpp — adjust truncation logic to account for +2 character width (icon + space)
+- [X] T011 [US1] Wire CLI /Icons flag to fIconsActive and pass to displayer construction in TCDirCore/TCDir.cpp (CLI-only path — full detection chain added in US2)
 
 **Checkpoint**: `tcdir /Icons` shows icons in normal mode with correct colors. `tcdir` without /Icons shows classic output. US1 acceptance scenarios 1–4 and US3 acceptance scenarios 1–4 are satisfied.
 
