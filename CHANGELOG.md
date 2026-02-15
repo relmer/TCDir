@@ -2,6 +2,31 @@
 
 All notable changes to TCDir are documented in this file.
 
+## [5.0.1038] - 2026-02-15
+
+### Added
+- Nerd Font file and folder icons in directory listings (normal, wide, and bare modes)
+- ~200 file extension icon mappings aligned with Terminal-Icons default theme
+- ~65 well-known directory icon mappings (Terminal-Icons aligned with 5 intentional deviations)
+- Auto-detection of Nerd Font availability via GDI glyph canary probe and system font enumeration
+- WezTerm auto-detection (bundles Nerd Font symbols natively)
+- ConPTY terminal detection (Windows Terminal, VS Code, etc.)
+- `/Icons` and `/Icons-` CLI switches for manual icon override
+- `TCDIR=Icons` / `TCDIR=Icons-` env var switch for persistent icon preference
+- `TCDIR=.ext=Color,U+XXXX` icon override syntax for per-extension custom icons
+- Cloud status Nerd Font glyph upgrade (☁/✓/📌 → nf-md glyphs when NF available)
+- Icon display in `/config` and `/env` diagnostics
+- Rust language support (.rs, .toml, .cargo)
+- IconMapping module (IconMapping.h/cpp) with compile-time sorted lookup tables
+- NerdFontDetector module (NerdFontDetector.h/cpp) with GDI and heuristic detection
+- Comprehensive icon tests: mapping lookups, NF detection, display integration (307 total tests)
+
+### Changed
+- Major version bump from 4.x to 5.0
+
+### Fixed
+- Nerd Font suffix detection now matches abbreviated suffixes (NF, NFM, NFP)
+
 ## [4.2.1436] - 2026-02-13
 
 ### Fixed

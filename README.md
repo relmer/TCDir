@@ -1,7 +1,7 @@
 # TCDir
 
 TCDir ("Technicolor Directory") is a fast, colorized directory listing tool for Windows consoles.
-It’s designed as a practical `dir`-style command with useful defaults (color by extension/attributes, sorting, recursion, wide output, and a multi-threaded enumerator).
+It's designed as a practical `dir`-style command with useful defaults (color by extension/attributes, Nerd Font file/folder icons, sorting, recursion, wide output, and a multi-threaded enumerator).
 
 ![TCDir basic listing](Assets/TCDir.png)
 
@@ -44,7 +44,7 @@ Show help:
 
 Basic syntax:
 
-- `TCDIR [drive:][path][filename] [-A[[:]attributes]] [-O[[:]sortorder]] [-S] [-W] [-B] [-P] [-M] [--Env] [--Config]`
+- `TCDIR [drive:][path][filename] [-A[[:]attributes]] [-O[[:]sortorder]] [-S] [-W] [-B] [-P] [-M] [--Env] [--Config] [--Icons]`
 
 Common switches:
 
@@ -64,6 +64,7 @@ Common switches:
 - `--Streams`: display NTFS alternate data streams
 - `--Env`: show `TCDIR` environment variable help/syntax/current value
 - `--Config`: show current color configuration
+- `--Icons`: enable Nerd Font file/folder icons; use `--Icons-` to disable
 
 ### Attribute filters (`/A:`)
 
@@ -89,6 +90,22 @@ When browsing cloud-synced folders (OneDrive, iCloud Drive, etc.), TCDir display
 - `○` (hollow) - cloud-only placeholder, not available offline
 - `◐` (half) - locally available, can be dehydrated
 - `●` (solid) - pinned, always available offline
+
+When a Nerd Font is detected, the cloud symbols are automatically upgraded to dedicated NF glyphs (cloud-outline, cloud-check, pin).
+
+### Nerd Font icons
+
+When TCDir detects a [Nerd Font](https://www.nerdfonts.com/) in the console, it automatically displays file and folder icons next to each entry — in normal, wide, and bare listing modes.
+
+Detection works via:
+1. **GDI glyph probe** — renders a canary glyph to confirm Nerd Font symbols are available in the active console font
+2. **System font enumeration** — checks whether any installed font's name contains "Nerd Font" or a "NF", "NFM", or "NFP" suffix
+3. **WezTerm detection** — WezTerm bundles Nerd Font symbols natively, so icons are enabled automatically
+4. **ConPTY detection** — Windows Terminal, VS Code terminal, and other modern terminals are recognized
+
+Icon mappings (~200 extensions, ~65 well-known directories) are aligned with the [Terminal-Icons](https://github.com/devblackops/Terminal-Icons) PowerShell module default theme.
+
+Use `--Icons` to force icons on, or `--Icons-` to force them off, regardless of detection.
 
 Examples:
 - Recurse through subdirectories: `TCDir.exe -s`
@@ -119,6 +136,7 @@ Enable default switches by including the switch name:
 - `B` - enable bare listing by default
 - `Owner` - display file ownership by default
 - `Streams` - display NTFS alternate data streams by default
+- `Icons` - enable Nerd Font icons by default; `Icons-` to force off
 
 ### Color customization
 
@@ -144,6 +162,11 @@ Decoded breakdown of the example:
 Display items for color configuration:
 - `D` (Date), `S` (Size), `N` (Name), `Attr` (Attributes)
 - `CloudOnly`, `Local`, `Pinned` - cloud sync status symbol colors
+
+Icon override (`<.ext>=<Color>,U+<codepoint>`):
+- Override the icon glyph for any extension: `.rs=DarkRed,U+E7A8`
+- Color-only override (keep default glyph): `.js=Yellow`
+- Glyph-only override (keep default color): `.md=,U+F48A`
 
 File attribute colors (`Attr:<letter>`):
 - `H` (hidden), `S` (system), `R` (read-only), `D` (directory)
