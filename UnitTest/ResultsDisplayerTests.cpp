@@ -8,14 +8,21 @@
 #include "../TCDirCore/Console.h"
 #include "../TCDirCore/CommandLine.h"
 #include "../TCDirCore/DirectoryInfo.h"
-
-
-
-
+#include "../TCDirCore/IconMapping.h"
 
 
 
 using namespace Microsoft::VisualStudio::CppUnitTestFramework;
+
+namespace Microsoft { namespace VisualStudio { namespace CppUnitTestFramework
+{
+    template<> inline std::wstring ToString<char32_t> (const char32_t & value)
+    {
+        wchar_t buf[16];
+        swprintf_s (buf, L"U+%05X", static_cast<unsigned>(value));
+        return buf;
+    }
+}}}
 
 namespace UnitTest
 {
@@ -567,6 +574,143 @@ namespace UnitTest
             wstring_view result = probe.WrapGetWideFormattedName (wfd, szBuf, ARRAYSIZE(szBuf));
 
             Assert::AreEqual (wstring(L"test.cpp"), wstring(result));
+        }
+
+
+
+
+        //
+        // Column width adjustment tests (scenario 42)
+        //
+
+        TEST_METHOD(GetColumnInfo_IconsActive_WidthIncreasedByTwo)
+        {
+            auto cmd = std::make_shared<CCommandLine>();
+            auto con = std::make_shared<CConsole>();
+            auto cfg = std::make_shared<CConfig>();
+            con->Initialize(cfg);
+
+            WideDisplayerProbe probeOn  (cmd, con, cfg, true  /* icons on  */);
+            WideDisplayerProbe probeOff (cmd, con, cfg, false /* icons off */);
+
+            CDirectoryInfo di (L"C:\\Test", L"*");
+            di.m_cchLargestFileName = 10;
+
+            size_t colsOn = 0, widthOn = 0;
+            size_t colsOff = 0, widthOff = 0;
+
+            probeOn.WrapGetColumnInfo  (di, false, colsOn,  widthOn);
+            probeOff.WrapGetColumnInfo (di, false, colsOff, widthOff);
+
+            // Icons add +2 to column width, so columns should be wider or columns fewer
+            Assert::IsTrue (widthOn >= widthOff, L"Icon column width should be >= non-icon width");
+
+            // With same console, icons-on should have wider columns (or fewer columns)
+            if (colsOn == colsOff)
+                Assert::IsTrue (widthOn > widthOff, L"Same columns: icon width should be wider");
+            else
+                Assert::IsTrue (colsOn < colsOff, L"Different counts: icon mode should have fewer columns");
+        }
+
+
+
+
+        TEST_METHOD(GetColumnInfo_SyncRootWithIcons_WidthAccountsForBoth)
+        {
+            auto cmd = std::make_shared<CCommandLine>();
+            auto con = std::make_shared<CConsole>();
+            auto cfg = std::make_shared<CConfig>();
+            con->Initialize(cfg);
+
+            WideDisplayerProbe probeIcons   (cmd, con, cfg, true  /* icons on  */);
+            WideDisplayerProbe probeNoIcons (cmd, con, cfg, false /* icons off */);
+
+            CDirectoryInfo di (L"C:\\Test", L"*");
+            di.m_cchLargestFileName = 10;
+
+            size_t colsIconSync = 0, widthIconSync = 0;
+            size_t colsPlainSync = 0, widthPlainSync = 0;
+            size_t colsPlainNoSync = 0, widthPlainNoSync = 0;
+
+            probeIcons.WrapGetColumnInfo   (di, true,  colsIconSync,   widthIconSync);
+            probeNoIcons.WrapGetColumnInfo (di, true,  colsPlainSync,  widthPlainSync);
+            probeNoIcons.WrapGetColumnInfo (di, false, colsPlainNoSync, widthPlainNoSync);
+
+            // Sync root adds +2 for cloud symbol
+            Assert::IsTrue (widthPlainSync >= widthPlainNoSync, L"Sync root should widen or reduce columns");
+
+            // Icons + sync root together add even more
+            Assert::IsTrue (widthIconSync >= widthPlainSync, L"Icons + sync should be widest");
+        }
+
+
+
+
+        //
+        // GetDisplayStyleForFile integration tests (scenarios 33, 35)
+        //
+
+        TEST_METHOD(GetDisplayStyle_NormalMode_CppFileReturnsIcon)
+        {
+            auto cmd = std::make_shared<CCommandLine>();
+            auto con = std::make_shared<CConsole>();
+            auto cfg = std::make_shared<CConfig>();
+            con->Initialize(cfg);
+
+            WIN32_FIND_DATA wfd = CreateMockFileData (L"main.cpp", FILE_ATTRIBUTE_ARCHIVE);
+            auto style = cfg->GetDisplayStyleForFile (wfd);
+
+            // C++ files should have the CPP icon
+            Assert::AreEqual (static_cast<char32_t>(NfIcon::CustomCpp), style.m_iconCodePoint,
+                             L"C++ file should get CPP icon");
+            Assert::IsFalse (style.m_fIconSuppressed, L"Icon should not be suppressed");
+        }
+
+
+
+
+        TEST_METHOD(GetDisplayStyle_DirectoryReturnsDirectoryIcon)
+        {
+            auto cmd = std::make_shared<CCommandLine>();
+            auto con = std::make_shared<CConsole>();
+            auto cfg = std::make_shared<CConfig>();
+            con->Initialize(cfg);
+
+            WIN32_FIND_DATA wfd = CreateMockFileData (L"mydir", FILE_ATTRIBUTE_DIRECTORY);
+            auto style = cfg->GetDisplayStyleForFile (wfd);
+
+            Assert::AreEqual (static_cast<char32_t>(NfIcon::CustomFolder), style.m_iconCodePoint,
+                             L"Non-well-known directory should get default folder icon");
+        }
+
+
+
+
+        TEST_METHOD(GetDisplayStyle_UnknownExtension_FallsBackToFileIcon)
+        {
+            auto cmd = std::make_shared<CCommandLine>();
+            auto con = std::make_shared<CConsole>();
+            auto cfg = std::make_shared<CConfig>();
+            con->Initialize(cfg);
+
+            WIN32_FIND_DATA wfd = CreateMockFileData (L"data.xyz123", FILE_ATTRIBUTE_ARCHIVE);
+            auto style = cfg->GetDisplayStyleForFile (wfd);
+
+            Assert::AreEqual (static_cast<char32_t>(NfIcon::FaFile), style.m_iconCodePoint,
+                             L"Unknown extension should get default file icon");
+        }
+
+
+
+
+        TEST_METHOD(CodePointToWideChars_BmpIcon_ProducesValidGlyph)
+        {
+            // Verify that a typical BMP NF icon (e.g., C++ icon 0xE61D) can be 
+            // converted to a wchar_t buffer suitable for console output
+            WideCharPair wcp = CodePointToWideChars (NfIcon::CustomCpp);
+
+            Assert::AreEqual (1u, wcp.count, L"BMP icon should be single wchar_t");
+            Assert::AreNotEqual (static_cast<wchar_t>(0), wcp.chars[0], L"Should have non-null glyph");
         }
 
     };

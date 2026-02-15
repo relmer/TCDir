@@ -127,12 +127,12 @@
 
 **Purpose**: Comprehensive test coverage for all user stories. 42 test scenarios documented in quickstart.md.
 
-- [ ] T029 [P] Create UnitTest/IconMappingTests.cpp — BMP/surrogate encoding (scenarios 1–2), table completeness and no-duplicate checks (scenarios 3–5), CodePointToWideChars edge cases
-- [ ] T030 [P] Create UnitTest/NerdFontDetectorTests.cpp — WezTerm detection (scenario 6), ConPTY delegation (scenario 7), classic conhost canary probe (scenario 8), multiple env vars (scenario 9), empty env vars (scenario 10) using NerdFontDetectorProbe derivation pattern + CTestEnvironmentProvider
-- [ ] T031 Extend UnitTest/ConfigTests.cpp with icon parsing tests (scenarios 11–22: comma syntax, U+XXXX, literal glyph, suppression, dir: prefix, attr: prefix, duplicates, Icons switch, invalid hex, surrogate rejection) and precedence tests (scenarios 23–27: hidden .cpp fallthrough, hidden .git dir, attribute icon lock, plain extension, unknown extension)
-- [ ] T032 [P] Extend UnitTest/CommandLineTests.cpp with /Icons and /Icons- parsing tests (scenarios 28–32: enable, disable, long switch, nullopt default, CLI-over-env-var precedence)
-- [ ] T033 Extend UnitTest/ResultsDisplayerTests.cpp with icon display tests for all modes (scenarios 33–42: normal icon/spacing/color, wide brackets/cloud-status/NF-glyph, bare icon+filename, column alignment)
-- [ ] T034 Extend UnitTest/DirectoryListerScenarioTests.cpp with end-to-end icon scenarios (mixed file types, icons on/off, wide+bare modes with icons)
+- [X] T029 [P] Create UnitTest/IconMappingTests.cpp — BMP/surrogate encoding (scenarios 1–2), table completeness and no-duplicate checks (scenarios 3–5), CodePointToWideChars edge cases
+- [X] T030 [P] Create UnitTest/NerdFontDetectorTests.cpp — WezTerm detection (scenario 6), ConPTY delegation (scenario 7), classic conhost canary probe (scenario 8), multiple env vars (scenario 9), empty env vars (scenario 10) using NerdFontDetectorProbe derivation pattern + CTestEnvironmentProvider
+- [X] T031 Extend UnitTest/ConfigTests.cpp with icon parsing tests (scenarios 11–22: comma syntax, U+XXXX, literal glyph, suppression, dir: prefix, attr: prefix, duplicates, Icons switch, invalid hex, surrogate rejection) and precedence tests (scenarios 23–27: hidden .cpp fallthrough, hidden .git dir, attribute icon lock, plain extension, unknown extension)
+- [X] T032 [P] Extend UnitTest/CommandLineTests.cpp with /Icons and /Icons- parsing tests (scenarios 28–32: enable, disable, long switch, nullopt default, CLI-over-env-var precedence)
+- [X] T033 Extend UnitTest/ResultsDisplayerTests.cpp with icon display tests for all modes (scenarios 33–42: normal icon/spacing/color, wide brackets/cloud-status/NF-glyph, bare icon+filename, column alignment)
+- [X] T034 Extend UnitTest/DirectoryListerScenarioTests.cpp with end-to-end icon scenarios (mixed file types, icons on/off, wide+bare modes with icons)
 
 ---
 

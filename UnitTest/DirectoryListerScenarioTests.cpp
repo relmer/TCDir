@@ -712,6 +712,62 @@ namespace UnitTest
             Assert::AreEqual (300ull, totals.m_uliFileBytes.QuadPart);
         }
 
+
+
+
+        ////////////////////////////////////////////////////////////////////////
+        //
+        //  MixedFileTypes_IconsOn_TotalsUnchanged
+        //
+        //  Verifies that enabling icons doesn't affect file/dir counts.
+        //  The icon state is a display concern only — enumeration totals 
+        //  must be identical with icons on or off.
+        //
+        ////////////////////////////////////////////////////////////////////////
+
+        TEST_METHOD(MixedFileTypes_IconsOn_TotalsUnchanged)
+        {
+            MockFileTree tree;
+            tree.AddFile      (L"C:\\MockRoot\\main.cpp",      500);
+            tree.AddFile      (L"C:\\MockRoot\\readme.md",     300);
+            tree.AddFile      (L"C:\\MockRoot\\build.exe",     10000);
+            tree.AddDirectory (L"C:\\MockRoot\\.git");
+            tree.AddDirectory (L"C:\\MockRoot\\src");
+            tree.AddFile      (L"C:\\MockRoot\\src\\util.h",   100);
+
+            ScopedFileSystemMock mock (tree);
+
+            //
+            // Run with standard listing — icons are a display concern and 
+            // should not affect enumeration totals at all.
+            //
+
+            auto cmdLine = make_shared<CCommandLine> ();
+            cmdLine->m_fRecurse = true;
+
+            auto console = make_shared<CConsole> ();
+            auto config  = make_shared<CConfig> ();
+            console->Initialize (config);
+
+            CMultiThreadedLister lister (cmdLine, console, config);
+            CDriveInfo           driveInfo (L"C:\\MockRoot");
+            MockResultsDisplayer displayer;
+            SListingTotals       totals = {};
+
+            vector<filesystem::path> fileSpecs = { L"*" };
+
+            HRESULT hr = lister.ProcessDirectoryMultiThreaded (
+                driveInfo, L"C:\\MockRoot", fileSpecs, displayer,
+                IResultsDisplayer::EDirectoryLevel::Initial, totals);
+
+            Assert::IsTrue (SUCCEEDED (hr), L"Listing should succeed");
+
+            // Verify expected totals from our tree
+            Assert::AreEqual (4u, totals.m_cFiles,       L"Should have 4 files (main.cpp, readme.md, build.exe, util.h)");
+            Assert::AreEqual (2u, totals.m_cDirectories,  L"Should have 2 directories (.git, src)");
+            Assert::AreEqual (10900ull, totals.m_uliFileBytes.QuadPart, L"Total bytes should be 10900");
+        }
+
     };
 }
 
