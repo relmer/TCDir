@@ -294,15 +294,41 @@ HRESULT CCommandLine::HandleLongSwitch (LPCWSTR pszArg)
 
     HRESULT hr = E_INVALIDARG;
 
+    //
+    //  Check for trailing '-' suffix which indicates negation (e.g., /Icons-)
+    //
 
+    size_t  cch       = wcslen (pszArg);
+    bool    fNegated  = (cch > 1) && (pszArg[cch - 1] == L'-');
+    wstring strSwitch = fNegated ? wstring (pszArg, cch - 1) : wstring (pszArg);
 
-    for (const LongSwitchEntry & entry : s_krgLongSwitches)
+    //
+    //  Check the bool table first (negation not supported for these)
+    //
+
+    if (!fNegated)
     {
-        if (_wcsicmp (pszArg, entry.m_pszSwitch) == 0)
+        for (const LongSwitchEntry & entry : s_krgLongSwitches)
         {
-            this->*(entry.m_pfValue) = true;
+            if (_wcsicmp (strSwitch.c_str (), entry.m_pszSwitch) == 0)
+            {
+                this->*(entry.m_pfValue) = true;
+                hr = S_OK;
+                break;
+            }
+        }
+    }
+
+    //
+    //  Icons switch — supports negation via /Icons- (sets optional<bool>)
+    //
+
+    if (hr != S_OK)
+    {
+        if (_wcsicmp (strSwitch.c_str (), L"icons") == 0)
+        {
+            m_fIcons = !fNegated;
             hr = S_OK;
-            break;
         }
     }
 

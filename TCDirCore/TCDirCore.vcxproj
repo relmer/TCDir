@@ -229,6 +229,7 @@
     <ClInclude Include="EnvironmentProvider.h" />
     <ClInclude Include="FileComparator.h" />
     <ClInclude Include="Flag.h" />
+    <ClInclude Include="IconMapping.h" />
     <ClInclude Include="ListingTotals.h" />
     <ClInclude Include="MaskGrouper.h" />
     <ClInclude Include="MultiThreadedLister.h" />
@@ -253,6 +254,7 @@
     <ClCompile Include="Ehm.cpp" />
     <ClCompile Include="EnvironmentProvider.cpp" />
     <ClCompile Include="FileComparator.cpp" />
+    <ClCompile Include="IconMapping.cpp" />
     <ClCompile Include="MaskGrouper.cpp" />
     <ClCompile Include="MultiThreadedLister.cpp" />
     <ClCompile Include="pch.cpp">

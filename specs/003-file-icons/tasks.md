@@ -19,7 +19,7 @@
 
 **Purpose**: Add new library dependency required by font detection APIs
 
-- [ ] T001 Add `#pragma comment(lib, "gdi32.lib")` to TCDirCore/pch.h alongside existing cldapi.lib pragma
+- [X] T001 Add `#pragma comment(lib, "gdi32.lib")` to TCDirCore/pch.h alongside existing cldapi.lib pragma
 
 ---
 
@@ -29,10 +29,10 @@
 
 **CRITICAL**: No user story work can begin until this phase is complete
 
-- [ ] T002 [P] Create TCDirCore/IconMapping.h with WideCharPair struct, SIconMappingEntry struct, NfIcon namespace (42 constexpr constants), and extern declarations for default tables and attribute precedence array
-- [ ] T003 Create TCDirCore/IconMapping.cpp with constexpr CodePointToWideChars implementation, static_asserts for key code points, default extension icon table (75+ entries), well-known directory icon table (27 entries), and attribute precedence array (PSHERC0TA order)
-- [ ] T004 [P] Add /Icons and /Icons- long switch (optional&lt;bool&gt; m_fIcons) to TCDirCore/CommandLine.h and s_krgLongSwitches[] in TCDirCore/CommandLine.cpp
-- [ ] T005 Add SFileDisplayStyle struct, EIconActivation enum, icon mapping members (m_mapExtensionToIcon, m_mapWellKnownDirToIcon, m_mapFileAttributeToIcon, fallback icons, cloud icons, m_fIcons), and icon method declarations to TCDirCore/Config.h
+- [X] T002 [P] Create TCDirCore/IconMapping.h with WideCharPair struct, SIconMappingEntry struct, NfIcon namespace (42 constexpr constants), and extern declarations for default tables and attribute precedence array
+- [X] T003 Create TCDirCore/IconMapping.cpp with constexpr CodePointToWideChars implementation, static_asserts for key code points, default extension icon table (75+ entries), well-known directory icon table (27 entries), and attribute precedence array (PSHERC0TA order)
+- [X] T004 [P] Add /Icons and /Icons- long switch (optional&lt;bool&gt; m_fIcons) to TCDirCore/CommandLine.h and s_krgLongSwitches[] in TCDirCore/CommandLine.cpp
+- [X] T005 Add SFileDisplayStyle struct, EIconActivation enum, icon mapping members (m_mapExtensionToIcon, m_mapWellKnownDirToIcon, m_mapFileAttributeToIcon, fallback icons, cloud icons, m_fIcons), and icon method declarations to TCDirCore/Config.h
 
 **Checkpoint**: Icon data tables exist, CLI flag parses, Config header ready for implementation
 

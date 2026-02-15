@@ -22,6 +22,7 @@
 #include <strsafe.h>
 
 #pragma comment(lib, "cldapi.lib")
+#pragma comment(lib, "gdi32.lib")
 
 
 

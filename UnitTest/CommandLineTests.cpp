@@ -739,7 +739,122 @@ namespace UnitTest
             Assert::IsTrue (cl.m_fWideListing);
         }
 
+
+
+        //
+        //  Scenario 28: /Icons → m_fIcons = true
+        //
+
+        TEST_METHOD(ParseIconsSwitchSlash)
+        {
+            CCommandLine    cl;
+            const wchar_t * a1      = L"/Icons";
+            wchar_t       * argv1[] = { const_cast<wchar_t *>(a1) };
+            HRESULT         hr      = cl.Parse(1, argv1);
+
+
+
+            Assert::IsTrue (SUCCEEDED(hr));
+            Assert::IsTrue (cl.m_fIcons.has_value ());
+            Assert::IsTrue (cl.m_fIcons.value ());
+        }
+
+
+
+        //
+        //  Scenario 29: /Icons- → m_fIcons = false
+        //
+
+        TEST_METHOD(ParseIconsDisableSwitchSlash)
+        {
+            CCommandLine    cl;
+            const wchar_t * a1      = L"/Icons-";
+            wchar_t       * argv1[] = { const_cast<wchar_t *>(a1) };
+            HRESULT         hr      = cl.Parse(1, argv1);
+
+
+
+            Assert::IsTrue (SUCCEEDED(hr));
+            Assert::IsTrue (cl.m_fIcons.has_value ());
+            Assert::IsFalse (cl.m_fIcons.value ());
+        }
+
+
+
+        //
+        //  Scenario 30: --Icons → m_fIcons = true (long switch with double dash)
+        //
+
+        TEST_METHOD(ParseIconsSwitchDoubleDash)
+        {
+            CCommandLine    cl;
+            const wchar_t * a1      = L"--Icons";
+            wchar_t       * argv1[] = { const_cast<wchar_t *>(a1) };
+            HRESULT         hr      = cl.Parse(1, argv1);
+
+
+
+            Assert::IsTrue (SUCCEEDED(hr));
+            Assert::IsTrue (cl.m_fIcons.has_value ());
+            Assert::IsTrue (cl.m_fIcons.value ());
+        }
+
+
+
+        //
+        //  Scenario 31: No icons flag → m_fIcons = nullopt
+        //
+
+        TEST_METHOD(ParseNoIconsFlag_DefaultIsNullopt)
+        {
+            CCommandLine    cl;
+            const wchar_t * a1      = L"/on";
+            wchar_t       * argv1[] = { const_cast<wchar_t *>(a1) };
+            HRESULT         hr      = cl.Parse(1, argv1);
+
+
+
+            Assert::IsTrue (SUCCEEDED(hr));
+            Assert::IsFalse (cl.m_fIcons.has_value ());
+        }
+
+
+
+        //
+        //  Icons switch is case-insensitive
+        //
+
+        TEST_METHOD(ParseIconsSwitchCaseInsensitive)
+        {
+            CCommandLine    cl;
+            const wchar_t * a1      = L"/icons";
+            wchar_t       * argv1[] = { const_cast<wchar_t *>(a1) };
+            HRESULT         hr      = cl.Parse(1, argv1);
+
+
+
+            Assert::IsTrue (SUCCEEDED(hr));
+            Assert::IsTrue (cl.m_fIcons.has_value ());
+            Assert::IsTrue (cl.m_fIcons.value ());
+        }
+
+
+
+        //
+        //  Single dash -Icons should fail (just like -env)
+        //
+
+        TEST_METHOD(ParseIconsSwitchSingleDashFails)
+        {
+            CCommandLine    cl;
+            const wchar_t * a1      = L"-Icons";
+            wchar_t       * argv1[] = { const_cast<wchar_t *>(a1) };
+            HRESULT         hr      = cl.Parse(1, argv1);
+
+
+
+            Assert::IsTrue (FAILED(hr));
+        }
+
     };
 }
-
-

@@ -77,7 +77,7 @@ public:
     bool               m_fShowOwner                                        = false;    // --owner switch
     bool               m_fShowStreams                                      = false;    // --streams switch
     bool               m_fDebug                                            = false;    // --debug switch (raw hex attributes)
-
+    optional<bool>     m_fIcons;                                                        // /Icons (true), /Icons- (false), absent (nullopt)
 
 
     //
