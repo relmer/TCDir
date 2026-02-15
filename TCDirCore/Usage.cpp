@@ -674,7 +674,7 @@ WORD CUsage::GetColorAttribute (CConsole & console, wstring_view colorName)
 
 void CUsage::DisplayColorConfiguration (CConsole & console)
 {
-    static constexpr int COLUMN_WIDTH_COLOR_LEFT = 18;
+    static constexpr int COLUMN_WIDTH_COLOR_LEFT = 28;
 
     struct ColorRow
     {
@@ -1283,12 +1283,7 @@ void CUsage::DisplayEnvVarHelp (CConsole & console, wchar_t chPrefix)
         L"                  {{InformationHighlight}}0{{Information}}  Sparse file\n"
         L"\n"
         L"  {{InformationHighlight}}<Fore>{{Information}}      Foreground color\n"
-        L"  {{InformationHighlight}}<Back>{{Information}}      Background color\n"
-        L"\n"
-        L"  {{InformationHighlight}}<Icon>{{Information}}      An icon code point (requires Nerd Font):\n"
-        L"                  {{InformationHighlight}}U+XXXX{{Information}}   Hex code point (e.g., {{InformationHighlight}}U+E61D{{Information}})\n"
-        L"                  {{InformationHighlight}}<glyph>{{Information}}  A literal Nerd Font glyph character\n"
-        L"                  (empty)  Suppresses the icon for that entry";
+        L"  {{InformationHighlight}}<Back>{{Information}}      Background color";
 
     wstring_view syntaxCommand;
     wstring_view syntaxSuffix;
@@ -1298,20 +1293,34 @@ void CUsage::DisplayEnvVarHelp (CConsole & console, wchar_t chPrefix)
     {
         syntaxCommand = L"  {InformationHighlight}$env:" TCDIR_ENV_VAR_NAME L"{Information} = \"";
         syntaxSuffix  = L"\"";
-        exampleCmd    = L"{Information}  Example: {InformationHighlight}$env:" TCDIR_ENV_VAR_NAME L"{Information} = \"W;D=LightGreen;S=Yellow;Attr:H=DarkGrey;.cpp=White on Blue\"";
+        exampleCmd    = L"{Information}  Example: {InformationHighlight}$env:" TCDIR_ENV_VAR_NAME L"{Information} = \"W;D=LightGreen;S=Yellow;Attr:H=DarkGrey;.cpp=White on Blue,U+E61D\"";
     }
     else
     {
         syntaxCommand = L"  set {InformationHighlight}" TCDIR_ENV_VAR_NAME L"{Information} =";
         syntaxSuffix  = L"";
-        exampleCmd    = L"{Information}  Example: {InformationHighlight}set "  TCDIR_ENV_VAR_NAME L"{Information} = W;D=LightGreen;S=Yellow;Attr:H=DarkGrey;.cpp=White on Blue";
+        exampleCmd    = L"{Information}  Example: {InformationHighlight}set "  TCDIR_ENV_VAR_NAME L"{Information} = W;D=LightGreen;S=Yellow;Attr:H=DarkGrey;.cpp=White on Blue,U+E61D";
     }
 
     console.ColorPuts (format (k_wszEnvVarHelpBody, syntaxCommand, syntaxSuffix, exampleCmd).c_str());
 
     DisplayColorConfiguration (console);
 
-    console.ColorPrintf (L"{Default}%s\n\n", exampleCmd.data ());
+    console.ColorPuts (
+        L"  {InformationHighlight}<Icon>{Information}      An icon code point (requires Nerd Font):\n"
+        L"                  {InformationHighlight}U+XXXX{Information}   Hex code point (e.g., {InformationHighlight}U+E61D{Information})\n"
+        L"                  {InformationHighlight}<glyph>{Information}  A literal Nerd Font glyph character\n"
+        L"                  (empty)  Suppresses the icon for that entry\n");
+
+    console.ColorPrintf (L"{Default}%s\n", exampleCmd.data ());
+
+    if (IsPowerShell ())
+    {
+        console.ColorPuts (
+            L"  {Information}Persist: {InformationHighlight}[Environment]::SetEnvironmentVariable(\"" TCDIR_ENV_VAR_NAME L"\", $env:" TCDIR_ENV_VAR_NAME L", \"User\"){Information}");
+    }
+
+    console.Puts (CConfig::EAttribute::Default, L"");
 
     if (IsTcdirEnvVarSet ())
     {

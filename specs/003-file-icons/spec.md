@@ -377,7 +377,11 @@ Cloud status colors are unchanged — the existing `CloudStatusCloudOnly`, `Clou
 
 - **FR-026**: The `/config` output MUST include an icon status line showing the detection result and resolved icon state (e.g., "Nerd Font installed, icons enabled", "Nerd Font not detected, icons disabled", "Icons disabled via TCDIR=Icons-", "Icons forced via /Icons").
 - **FR-027**: The `/config` output MUST show the resolved icon mapping table (extension→glyph, well-known dir→glyph) with source indicators (built-in vs TCDIR override), mirroring how color mappings are displayed.
-- **FR-028**: The `/env` output MUST document the `Icons`/`Icons-` switch, the `[color][,icon]` comma syntax, the `dir:` prefix, and the `U+XXXX` code point format.
+- **FR-028**: The `/env` output MUST document the `Icons`/`Icons-` switch, the `[color][,icon]` comma syntax, the `dir:` prefix, and the `U+XXXX` code point format. Layout requirements:
+  - The `<Fore>` and `<Back>` descriptions MUST appear immediately before the color name list (not separated by other content).
+  - The `<Icon>` description (U+XXXX, literal glyph, empty=suppressed) MUST appear *after* the color name list, not between `<Fore>/<Back>` and the colors.
+  - The example MUST include an icon code point (e.g., `.cpp=White on Blue,U+E61D`) to demonstrate the comma syntax.
+  - When running under PowerShell, a persist hint MUST be shown after the example: `[Environment]::SetEnvironmentVariable("TCDIR", $env:TCDIR, "User")`.
 - **FR-029**: The `/env` output MUST show any icon-related overrides parsed from the current `TCDIR` value.
 - **FR-030**: The `/?` usage display MUST document the `/Icons` and `/Icons-` command-line flags.
 
