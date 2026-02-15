@@ -20,6 +20,16 @@ namespace Microsoft { namespace VisualStudio { namespace CppUnitTestFramework
         swprintf_s (buf, L"U+%05X", static_cast<unsigned>(value));
         return buf;
     }
+
+    template<> inline std::wstring ToString<CConfig::EAttributeSource> (const CConfig::EAttributeSource & value)
+    {
+        switch (value)
+        {
+            case CConfig::EAttributeSource::Default:     return L"Default";
+            case CConfig::EAttributeSource::Environment: return L"Environment";
+            default:                                     return L"Unknown";
+        }
+    }
 }}}
 
 
@@ -89,6 +99,11 @@ namespace UnitTest
         using CConfig::ProcessFileAttributeOverride;
         using CConfig::InitializeExtensionToIconMap;
         using CConfig::InitializeWellKnownDirToIconMap;
+        using CConfig::ParseIconValue;
+        using CConfig::ProcessFileExtensionIconOverride;
+        using CConfig::ProcessWellKnownDirIconOverride;
+        using CConfig::ProcessFileAttributeIconOverride;
+        using CConfig::m_lastParseResult;
 
     private:
         CTestEnvironmentProvider m_environmentProvider;
@@ -1440,7 +1455,7 @@ namespace UnitTest
             Assert::AreEqual (size_t(1), result.errors.size());
             
             const auto& error = result.errors[0];
-            Assert::AreEqual (wstring(L"Invalid key (expected single character, .extension, or attr:x)"), error.message);
+            Assert::AreEqual (wstring(L"Invalid key (expected single character, .extension, dir:name, or attr:x)"), error.message);
             Assert::AreEqual (wstring(L"InvalidKey=Yellow"), error.entry);
             Assert::AreEqual (wstring(L"InvalidKey"), error.invalidText);
             Assert::AreEqual (size_t(0), error.invalidTextOffset);
@@ -2266,6 +2281,567 @@ namespace UnitTest
             Assert::AreEqual (static_cast<char32_t>(NfIcon::FaExternalLink), style.m_iconCodePoint);
         }
     };
-}
 
 
+
+
+
+    ////////////////////////////////////////////////////////////////////////////
+    //
+    //  ConfigIconParsingTests
+    //
+    //  Phase 5 tests: icon value parsing, comma syntax, dir: prefix, attr:
+    //  prefix, duplicate detection, and error reporting.
+    //
+    ////////////////////////////////////////////////////////////////////////////
+
+    TEST_CLASS(ConfigIconParsingTests)
+    {
+        TEST_CLASS_INITIALIZE(Setup)
+        {
+            SetupEhmForUnitTests();
+        }
+
+
+
+        //
+        // ParseIconValue — U+XXXX hex notation
+        //
+
+        TEST_METHOD(ParseIconValue_HexFourDigits_ParsesCorrectly)
+        {
+            ConfigProbe config;
+            char32_t    cp         = 0;
+            bool        suppressed = false;
+
+            HRESULT hr = config.ParseIconValue (L"U+E61D", cp, suppressed);
+
+            Assert::AreEqual (S_OK, hr);
+            Assert::AreEqual (static_cast<char32_t>(0xE61D), cp);
+            Assert::IsFalse (suppressed);
+        }
+
+
+
+
+        TEST_METHOD(ParseIconValue_HexFiveDigits_ParsesCorrectly)
+        {
+            ConfigProbe config;
+            char32_t    cp         = 0;
+            bool        suppressed = false;
+
+            HRESULT hr = config.ParseIconValue (L"U+1F4C4", cp, suppressed);
+
+            Assert::AreEqual (S_OK, hr);
+            Assert::AreEqual (static_cast<char32_t>(0x1F4C4), cp);
+            Assert::IsFalse (suppressed);
+        }
+
+
+
+
+        TEST_METHOD(ParseIconValue_HexSixDigits_ParsesCorrectly)
+        {
+            ConfigProbe config;
+            char32_t    cp         = 0;
+            bool        suppressed = false;
+
+            HRESULT hr = config.ParseIconValue (L"U+10FFFF", cp, suppressed);
+
+            Assert::AreEqual (S_OK, hr);
+            Assert::AreEqual (static_cast<char32_t>(0x10FFFF), cp);
+            Assert::IsFalse (suppressed);
+        }
+
+
+
+
+        TEST_METHOD(ParseIconValue_LowercaseU_ParsesCorrectly)
+        {
+            ConfigProbe config;
+            char32_t    cp         = 0;
+            bool        suppressed = false;
+
+            HRESULT hr = config.ParseIconValue (L"u+E61D", cp, suppressed);
+
+            Assert::AreEqual (S_OK, hr);
+            Assert::AreEqual (static_cast<char32_t>(0xE61D), cp);
+        }
+
+
+
+
+        TEST_METHOD(ParseIconValue_SurrogateRange_RejectsD800)
+        {
+            ConfigProbe config;
+            char32_t    cp         = 0;
+            bool        suppressed = false;
+
+            HRESULT hr = config.ParseIconValue (L"U+D800", cp, suppressed);
+
+            Assert::AreEqual (E_FAIL, hr);
+        }
+
+
+
+
+        TEST_METHOD(ParseIconValue_SurrogateRange_RejectsDFFF)
+        {
+            ConfigProbe config;
+            char32_t    cp         = 0;
+            bool        suppressed = false;
+
+            HRESULT hr = config.ParseIconValue (L"U+DFFF", cp, suppressed);
+
+            Assert::AreEqual (E_FAIL, hr);
+        }
+
+
+
+
+        TEST_METHOD(ParseIconValue_ZeroCodePoint_Rejects)
+        {
+            ConfigProbe config;
+            char32_t    cp         = 0;
+            bool        suppressed = false;
+
+            HRESULT hr = config.ParseIconValue (L"U+0000", cp, suppressed);
+
+            Assert::AreEqual (E_FAIL, hr);
+        }
+
+
+
+
+        TEST_METHOD(ParseIconValue_TooFewHexDigits_Rejects)
+        {
+            ConfigProbe config;
+            char32_t    cp         = 0;
+            bool        suppressed = false;
+
+            HRESULT hr = config.ParseIconValue (L"U+E6", cp, suppressed);
+
+            Assert::AreEqual (E_FAIL, hr);
+        }
+
+
+
+
+        TEST_METHOD(ParseIconValue_InvalidHexChars_Rejects)
+        {
+            ConfigProbe config;
+            char32_t    cp         = 0;
+            bool        suppressed = false;
+
+            HRESULT hr = config.ParseIconValue (L"U+ZZZZ", cp, suppressed);
+
+            Assert::AreEqual (E_FAIL, hr);
+        }
+
+
+
+
+        //
+        // ParseIconValue — empty (suppressed)
+        //
+
+        TEST_METHOD(ParseIconValue_Empty_Suppressed)
+        {
+            ConfigProbe config;
+            char32_t    cp         = 0;
+            bool        suppressed = false;
+
+            HRESULT hr = config.ParseIconValue (L"", cp, suppressed);
+
+            Assert::AreEqual (S_OK, hr);
+            Assert::AreEqual (static_cast<char32_t>(0), cp);
+            Assert::IsTrue (suppressed);
+        }
+
+
+
+
+        TEST_METHOD(ParseIconValue_WhitespaceOnly_Suppressed)
+        {
+            ConfigProbe config;
+            char32_t    cp         = 0;
+            bool        suppressed = false;
+
+            HRESULT hr = config.ParseIconValue (L"  ", cp, suppressed);
+
+            Assert::AreEqual (S_OK, hr);
+            Assert::IsTrue (suppressed);
+        }
+
+
+
+
+        //
+        // ParseIconValue — literal glyph
+        //
+
+        TEST_METHOD(ParseIconValue_LiteralBmpGlyph_ParsesCorrectly)
+        {
+            ConfigProbe config;
+            char32_t    cp         = 0;
+            bool        suppressed = false;
+
+            HRESULT hr = config.ParseIconValue (L"\xE61D", cp, suppressed);
+
+            Assert::AreEqual (S_OK, hr);
+            Assert::AreEqual (static_cast<char32_t>(0xE61D), cp);
+            Assert::IsFalse (suppressed);
+        }
+
+
+
+
+        TEST_METHOD(ParseIconValue_SurrogatePair_ParsesCorrectly)
+        {
+            ConfigProbe config;
+            char32_t    cp         = 0;
+            bool        suppressed = false;
+
+            // U+1F4C4 = surrogate pair D83D DCC4
+            wchar_t pair[] = { 0xD83D, 0xDCC4, 0 };
+
+            HRESULT hr = config.ParseIconValue (pair, cp, suppressed);
+
+            Assert::AreEqual (S_OK, hr);
+            Assert::AreEqual (static_cast<char32_t>(0x1F4C4), cp);
+            Assert::IsFalse (suppressed);
+        }
+
+
+
+
+        TEST_METHOD(ParseIconValue_LoneSurrogate_Rejects)
+        {
+            ConfigProbe config;
+            char32_t    cp         = 0;
+            bool        suppressed = false;
+
+            wchar_t lone[] = { 0xD83D, 0 };
+
+            HRESULT hr = config.ParseIconValue (lone, cp, suppressed);
+
+            Assert::AreEqual (E_FAIL, hr);
+        }
+
+
+
+
+        //
+        // Comma syntax — ProcessColorOverrideEntry
+        //
+
+        TEST_METHOD(CommaSyntax_ColorAndIcon_BothApplied)
+        {
+            ConfigProbe config;
+            config.Initialize (FC_LightGrey);
+
+            config.ProcessColorOverrideEntry (L".cpp=Green,U+E61D");
+
+            Assert::AreEqual (static_cast<WORD>(FC_Green), config.m_mapExtensionToTextAttr[L".cpp"]);
+            Assert::AreEqual (static_cast<char32_t>(0xE61D), config.m_mapExtensionToIcon[L".cpp"]);
+        }
+
+
+
+
+        TEST_METHOD(CommaSyntax_IconOnly_NoColorOverride)
+        {
+            ConfigProbe config;
+            config.Initialize (FC_LightGrey);
+
+            config.ProcessColorOverrideEntry (L".cpp=,U+E61D");
+
+            // No color override — extension should NOT be in the color map from this entry
+            Assert::AreEqual (static_cast<char32_t>(0xE61D), config.m_mapExtensionToIcon[L".cpp"]);
+            Assert::AreEqual (CConfig::EAttributeSource::Environment, config.m_mapExtensionIconSources[L".cpp"]);
+        }
+
+
+
+
+        TEST_METHOD(CommaSyntax_ColorOnly_NoComma_BackwardCompatible)
+        {
+            ConfigProbe config;
+            config.Initialize (FC_LightGrey);
+
+            config.ProcessColorOverrideEntry (L".cpp=Green");
+
+            Assert::AreEqual (static_cast<WORD>(FC_Green), config.m_mapExtensionToTextAttr[L".cpp"]);
+            // No icon override from this entry — icon sources should not have Environment for .cpp
+            // (the default icon table seeds it during Initialize, so just verify icon wasn't changed)
+            Assert::AreEqual (CConfig::EAttributeSource::Default, config.m_mapExtensionIconSources[L".cpp"]);
+        }
+
+
+
+
+        TEST_METHOD(CommaSyntax_SuppressIcon_TrailingComma)
+        {
+            ConfigProbe config;
+            config.Initialize (FC_LightGrey);
+
+            config.ProcessColorOverrideEntry (L".obj=Green,");
+
+            Assert::AreEqual (static_cast<WORD>(FC_Green), config.m_mapExtensionToTextAttr[L".obj"]);
+            Assert::AreEqual (static_cast<char32_t>(0), config.m_mapExtensionToIcon[L".obj"]);
+        }
+
+
+
+
+        TEST_METHOD(CommaSyntax_ColorOnBack_WithIcon)
+        {
+            ConfigProbe config;
+            config.Initialize (FC_LightGrey);
+
+            config.ProcessColorOverrideEntry (L".exe=Red on Blue,U+E61D");
+
+            Assert::AreEqual (static_cast<WORD>(FC_Red | BC_Blue), config.m_mapExtensionToTextAttr[L".exe"]);
+            Assert::AreEqual (static_cast<char32_t>(0xE61D), config.m_mapExtensionToIcon[L".exe"]);
+        }
+
+
+
+
+        TEST_METHOD(CommaSyntax_InvalidIcon_ReportsError)
+        {
+            ConfigProbe config;
+            config.Initialize (FC_LightGrey);
+
+            config.ProcessColorOverrideEntry (L".cpp=Green,U+ZZZZ");
+
+            auto result = config.ValidateEnvironmentVariable();
+            Assert::IsTrue (result.hasIssues());
+            Assert::IsTrue (result.errors[0].message.find (L"Invalid icon") != wstring::npos);
+        }
+
+
+
+
+        //
+        // dir: prefix for well-known directory icons
+        //
+
+        TEST_METHOD(DirPrefix_IconOverride_SetsWellKnownDirMap)
+        {
+            ConfigProbe config;
+            config.Initialize (FC_LightGrey);
+
+            config.ProcessColorOverrideEntry (L"dir:.git=,U+E5FB");
+
+            Assert::AreEqual (static_cast<char32_t>(0xE5FB), config.m_mapWellKnownDirToIcon[L".git"]);
+            Assert::AreEqual (CConfig::EAttributeSource::Environment, config.m_mapWellKnownDirIconSources[L".git"]);
+        }
+
+
+
+
+        TEST_METHOD(DirPrefix_CaseInsensitive_Works)
+        {
+            ConfigProbe config;
+            config.Initialize (FC_LightGrey);
+
+            config.ProcessColorOverrideEntry (L"DIR:.git=,U+E5FB");
+
+            Assert::AreEqual (static_cast<char32_t>(0xE5FB), config.m_mapWellKnownDirToIcon[L".git"]);
+        }
+
+
+
+
+        TEST_METHOD(DirPrefix_WithColor_AppliesColorAsExtension)
+        {
+            ConfigProbe config;
+            config.Initialize (FC_LightGrey);
+
+            config.ProcessColorOverrideEntry (L"dir:.git=Yellow,U+E5FB");
+
+            Assert::AreEqual (static_cast<WORD>(FC_Yellow), config.m_mapExtensionToTextAttr[L".git"]);
+            Assert::AreEqual (static_cast<char32_t>(0xE5FB), config.m_mapWellKnownDirToIcon[L".git"]);
+        }
+
+
+
+
+        TEST_METHOD(DirPrefix_NonDotName_Works)
+        {
+            ConfigProbe config;
+            config.Initialize (FC_LightGrey);
+
+            config.ProcessColorOverrideEntry (L"dir:src=,U+F120");
+
+            Assert::AreEqual (static_cast<char32_t>(0xF120), config.m_mapWellKnownDirToIcon[L"src"]);
+        }
+
+
+
+
+        //
+        // attr: prefix with icon
+        //
+
+        TEST_METHOD(AttrPrefix_ColorAndIcon_BothApplied)
+        {
+            ConfigProbe config;
+            config.Initialize (FC_LightGrey);
+
+            config.ProcessColorOverrideEntry (L"attr:h=Red,U+F023");
+
+            DWORD dwHidden = FILE_ATTRIBUTE_HIDDEN;
+            Assert::AreEqual (static_cast<WORD>(FC_Red), config.m_mapFileAttributesTextAttr[dwHidden].m_wAttr);
+            Assert::AreEqual (static_cast<char32_t>(0xF023), config.m_mapFileAttributeToIcon[dwHidden]);
+        }
+
+
+
+
+        TEST_METHOD(AttrPrefix_IconOnly_NoColorOverride)
+        {
+            ConfigProbe config;
+            config.Initialize (FC_LightGrey);
+
+            config.ProcessColorOverrideEntry (L"attr:s=,U+F023");
+
+            DWORD dwSystem = FILE_ATTRIBUTE_SYSTEM;
+            Assert::AreEqual (static_cast<char32_t>(0xF023), config.m_mapFileAttributeToIcon[dwSystem]);
+            Assert::AreEqual (size_t(0), config.m_mapFileAttributesTextAttr.count (dwSystem));
+        }
+
+
+
+
+        //
+        // Duplicate detection (first-write-wins)
+        //
+
+        TEST_METHOD(Duplicate_ExtensionIcon_FirstWriteWins)
+        {
+            ConfigProbe config;
+            config.Initialize (FC_LightGrey);
+
+            config.ProcessColorOverrideEntry (L".cpp=,U+E61D");
+            config.ProcessColorOverrideEntry (L".cpp=,U+AAAA");
+
+            // First write wins — icon should be 0xE61D
+            Assert::AreEqual (static_cast<char32_t>(0xE61D), config.m_mapExtensionToIcon[L".cpp"]);
+
+            // Duplicate flagged
+            Assert::IsTrue (config.m_lastParseResult.hasIssues());
+            Assert::IsTrue (config.m_lastParseResult.errors[0].message.find (L"Duplicate") != wstring::npos);
+        }
+
+
+
+
+        TEST_METHOD(Duplicate_WellKnownDirIcon_FirstWriteWins)
+        {
+            ConfigProbe config;
+            config.Initialize (FC_LightGrey);
+
+            config.ProcessColorOverrideEntry (L"dir:.git=,U+E5FB");
+            config.ProcessColorOverrideEntry (L"dir:.git=,U+AAAA");
+
+            Assert::AreEqual (static_cast<char32_t>(0xE5FB), config.m_mapWellKnownDirToIcon[L".git"]);
+            Assert::IsTrue (config.m_lastParseResult.hasIssues());
+        }
+
+
+
+
+        //
+        // Integration: full env var with mixed entries
+        //
+
+        TEST_METHOD(EnvVar_MixedIconAndColorEntries_ParsesCorrectly)
+        {
+            ConfigProbe config;
+            config.SetEnvVar (TCDIR_ENV_VAR_NAME, L".cpp=Green,U+E61D;dir:.git=,U+E5FB;.obj=,;D=Yellow");
+            config.Initialize (FC_LightGrey);
+
+            // .cpp = Green color + C++ icon
+            Assert::AreEqual (static_cast<WORD>(FC_Green), config.m_mapExtensionToTextAttr[L".cpp"]);
+            Assert::AreEqual (static_cast<char32_t>(0xE61D), config.m_mapExtensionToIcon[L".cpp"]);
+
+            // .git = icon only
+            Assert::AreEqual (static_cast<char32_t>(0xE5FB), config.m_mapWellKnownDirToIcon[L".git"]);
+
+            // .obj = suppressed icon with no color change
+            Assert::AreEqual (static_cast<char32_t>(0), config.m_mapExtensionToIcon[L".obj"]);
+
+            // D=Yellow is a display attribute override (backward compatible, no icon)
+            Assert::AreEqual (static_cast<WORD>(FC_Yellow), config.m_rgAttributes[CConfig::EAttribute::Date]);
+        }
+
+
+
+
+        TEST_METHOD(EnvVar_IconEntries_NoValidationErrors)
+        {
+            ConfigProbe config;
+            config.SetEnvVar (TCDIR_ENV_VAR_NAME, L".cpp=Green,U+E61D;dir:src=,U+F120;attr:h=Red,U+F023");
+            config.Initialize (FC_LightGrey);
+
+            auto result = config.ValidateEnvironmentVariable();
+            Assert::IsFalse (result.hasIssues());
+        }
+
+
+
+
+        TEST_METHOD(GetDisplayStyle_ExtensionIconOverride_UsesOverride)
+        {
+            ConfigProbe config;
+            config.SetEnvVar (TCDIR_ENV_VAR_NAME, L".cpp=,U+AAAA");
+            config.Initialize (FC_LightGrey);
+
+            WIN32_FIND_DATA wfd = { 0 };
+            wfd.dwFileAttributes = FILE_ATTRIBUTE_ARCHIVE;
+            wcscpy_s (wfd.cFileName, L"test.cpp");
+
+            auto style = config.GetDisplayStyleForFile (wfd);
+
+            Assert::AreEqual (static_cast<char32_t>(0xAAAA), style.m_iconCodePoint);
+        }
+
+
+
+
+        TEST_METHOD(GetDisplayStyle_WellKnownDirIconOverride_UsesOverride)
+        {
+            ConfigProbe config;
+            config.SetEnvVar (TCDIR_ENV_VAR_NAME, L"dir:.git=,U+BBBB");
+            config.Initialize (FC_LightGrey);
+
+            WIN32_FIND_DATA wfd = { 0 };
+            wfd.dwFileAttributes = FILE_ATTRIBUTE_DIRECTORY;
+            wcscpy_s (wfd.cFileName, L".git");
+
+            auto style = config.GetDisplayStyleForFile (wfd);
+
+            Assert::AreEqual (static_cast<char32_t>(0xBBBB), style.m_iconCodePoint);
+        }
+
+
+
+
+        TEST_METHOD(GetDisplayStyle_SuppressedIcon_MarkedAsSuppressed)
+        {
+            ConfigProbe config;
+            config.SetEnvVar (TCDIR_ENV_VAR_NAME, L".obj=,");
+            config.Initialize (FC_LightGrey);
+
+            WIN32_FIND_DATA wfd = { 0 };
+            wfd.dwFileAttributes = FILE_ATTRIBUTE_ARCHIVE;
+            wcscpy_s (wfd.cFileName, L"test.obj");
+
+            auto style = config.GetDisplayStyleForFile (wfd);
+
+            Assert::AreEqual (static_cast<char32_t>(0), style.m_iconCodePoint);
+            Assert::IsTrue (style.m_fIconSuppressed);
+        }
+    };}

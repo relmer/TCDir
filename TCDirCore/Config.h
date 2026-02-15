@@ -162,7 +162,7 @@ protected:
     HRESULT      ProcessLongSwitchOverride            (wstring_view switchName);
     void         ProcessFileExtensionOverride         (wstring_view extension, WORD colorAttr);
     void         ProcessDisplayAttributeOverride      (wchar_t attrChar, WORD colorAttr, wstring_view entry);
-    void         ProcessFileAttributeOverride         (wstring_view keyView, WORD colorAttr, wstring_view entry);
+    void         ProcessFileAttributeOverride         (wstring_view keyView, WORD colorAttr, wstring_view entry, bool fHasColor, bool fHasIcon, char32_t iconCP);
     HRESULT      ParseKeyAndValue                     (wstring_view entry, wstring_view & keyView, wstring_view & valueView);
     HRESULT      ParseColorValue                      (wstring_view entry, wstring_view valueView, WORD & colorAttr);
     HRESULT      ParseIconValue                       (wstring_view iconSpec, char32_t & codePoint, bool & fSuppressed);

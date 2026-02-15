@@ -375,10 +375,14 @@ Error:
 
 void CConfig::ProcessColorOverrideEntry (wstring_view entry)
 {
-    HRESULT      hr        = S_OK;
+    HRESULT      hr          = S_OK;
     wstring_view keyView;
     wstring_view valueView;
-    WORD         colorAttr = 0;
+    WORD         colorAttr   = 0;
+    char32_t     iconCP      = 0;
+    bool         fSuppressed = false;
+    bool         fHasColor   = false;
+    bool         fHasIcon    = false;
 
 
 
@@ -414,16 +418,98 @@ void CConfig::ProcessColorOverrideEntry (wstring_view entry)
 
     CBR (!keyView.empty());
 
-    hr = ParseColorValue (entry, valueView, colorAttr);
-    CHR (hr);
+    //
+    // Check for comma in value — split into [color][,icon]
+    //
+
+    {
+        size_t commaPos = valueView.find (L',');
+
+        if (commaPos != wstring_view::npos)
+        {
+            wstring_view colorView = TrimWhitespace (valueView.substr (0, commaPos));
+            wstring_view iconView  = valueView.substr (commaPos + 1);
+
+            //
+            // Parse color part (if non-empty)
+            //
+
+            if (!colorView.empty())
+            {
+                hr = ParseColorValue (entry, colorView, colorAttr);
+                CHR (hr);
+                fHasColor = true;
+            }
+
+            //
+            // Parse icon part
+            //
+
+            hr = ParseIconValue (iconView, iconCP, fSuppressed);
+            if (FAILED (hr))
+            {
+                wstring_view trimmedIcon = TrimWhitespace (iconView);
+                size_t       entryComma  = entry.find (L',');
+                size_t       iconOffset  = (entryComma != wstring_view::npos) ? entryComma + 1 : 0;
+                m_lastParseResult.errors.push_back ({
+                    L"Invalid icon specification (expected U+XXXX, literal glyph, or empty)",
+                    wstring (entry),
+                    wstring (trimmedIcon),
+                    iconOffset
+                });
+                CHR (hr);
+            }
+            fHasIcon = true;
+        }
+        else
+        {
+            //
+            // No comma — entire value is color (backward compatible)
+            //
+
+            hr = ParseColorValue (entry, valueView, colorAttr);
+            CHR (hr);
+            fHasColor = true;
+        }
+    }
     
     //
     // Apply the override based on key type
     //
-    
-    if (keyView[0] == L'.')
+
+    if (keyView.length() > 4 &&
+        towlower (keyView[0]) == L'd' &&
+        towlower (keyView[1]) == L'i' &&
+        towlower (keyView[2]) == L'r' &&
+        keyView[3] == L':')
     {
-        ProcessFileExtensionOverride (keyView, colorAttr);
+        //
+        // Well-known directory override (dir:name)
+        //
+
+        wstring_view dirName = keyView.substr (4);
+
+        if (fHasColor)
+        {
+            ProcessFileExtensionOverride (dirName, colorAttr);
+        }
+
+        if (fHasIcon)
+        {
+            ProcessWellKnownDirIconOverride (dirName, iconCP, fSuppressed);
+        }
+    }
+    else if (keyView[0] == L'.')
+    {
+        if (fHasColor)
+        {
+            ProcessFileExtensionOverride (keyView, colorAttr);
+        }
+
+        if (fHasIcon)
+        {
+            ProcessFileExtensionIconOverride (keyView, iconCP, fSuppressed);
+        }
     }
     else if (keyView.length() == 6 &&
              towlower (keyView[0]) == L'a' &&
@@ -432,15 +518,18 @@ void CConfig::ProcessColorOverrideEntry (wstring_view entry)
              towlower (keyView[3]) == L'r' &&
              keyView[4] == L':')
     {
-        ProcessFileAttributeOverride (keyView, colorAttr, entry);
+        ProcessFileAttributeOverride (keyView, colorAttr, entry, fHasColor, fHasIcon, iconCP);
     }
     else if (keyView.length() == 1)
     {
-        ProcessDisplayAttributeOverride (keyView[0], colorAttr, entry);
+        if (fHasColor)
+        {
+            ProcessDisplayAttributeOverride (keyView[0], colorAttr, entry);
+        }
     }
     else
     {
-        m_lastParseResult.errors.push_back ( { L"Invalid key (expected single character, .extension, or attr:x)",
+        m_lastParseResult.errors.push_back ( { L"Invalid key (expected single character, .extension, dir:name, or attr:x)",
                                                wstring (entry), wstring (keyView), entry.find (keyView) } );
     }
 
@@ -575,6 +664,116 @@ HRESULT CConfig::ParseColorValue (wstring_view entry, wstring_view valueView, WO
     }
 
     colorAttr = foreColor | backColor;
+
+Error:
+    return hr;
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CConfig::ParseIconValue
+//
+//  Parse an icon specification from the value part after a comma.
+//  Supported formats:
+//    - U+XXXX  (4-6 hex digits, range 0x0001-0x10FFFF, not surrogates)
+//    - Single BMP character (literal glyph)
+//    - Empty string (suppressed — user typed trailing comma)
+//  Returns S_OK on success, E_FAIL on invalid input.
+//
+////////////////////////////////////////////////////////////////////////////////
+
+HRESULT CConfig::ParseIconValue (wstring_view iconSpec, char32_t & codePoint, bool & fSuppressed)
+{
+    HRESULT hr         = S_OK;
+    bool    fIsSuppressed = false;
+    char32_t cpResult  = 0;
+
+
+
+    iconSpec = TrimWhitespace (iconSpec);
+
+    //
+    // Empty icon spec means suppressed (user typed e.g., ".obj=Green," or ".obj=,")
+    //
+
+    if (iconSpec.empty())
+    {
+        fIsSuppressed = true;
+        goto Done;
+    }
+
+    //
+    // U+XXXX hex notation
+    //
+
+    if (iconSpec.length() >= 6 &&
+        (iconSpec[0] == L'U' || iconSpec[0] == L'u') &&
+        iconSpec[1] == L'+')
+    {
+        wstring_view hexPart = iconSpec.substr (2);
+
+        // Must be 4-6 hex digits
+        CBR (hexPart.length() >= 4 && hexPart.length() <= 6);
+
+        // Validate all characters are hex digits
+        for (wchar_t ch : hexPart)
+        {
+            CBR (iswxdigit (ch));
+        }
+
+        // Parse the hex value
+        unsigned long ulValue = wcstoul (wstring (hexPart).c_str(), nullptr, 16);
+
+        // Range check: 0x0001 - 0x10FFFF, excluding surrogates D800-DFFF
+        CBR (ulValue >= 0x0001 && ulValue <= 0x10FFFF);
+        CBR (ulValue < 0xD800 || ulValue > 0xDFFF);
+
+        cpResult = static_cast<char32_t>(ulValue);
+        goto Done;
+    }
+
+    //
+    // Literal glyph: single BMP character or a surrogate pair
+    //
+
+    if (iconSpec.length() == 1)
+    {
+        // Single BMP character — must not be a lone surrogate
+        wchar_t ch = iconSpec[0];
+        CBR (ch < 0xD800 || ch > 0xDFFF);
+
+        cpResult = static_cast<char32_t>(ch);
+        goto Done;
+    }
+
+    if (iconSpec.length() == 2)
+    {
+        // Possible surrogate pair
+        wchar_t high = iconSpec[0];
+        wchar_t low  = iconSpec[1];
+
+        CBR (high >= 0xD800 && high <= 0xDBFF);
+        CBR (low  >= 0xDC00 && low  <= 0xDFFF);
+
+        cpResult = static_cast<char32_t>(
+            ((high - 0xD800) << 10) + (low - 0xDC00) + 0x10000
+        );
+        goto Done;
+    }
+
+    //
+    // Anything else is invalid
+    //
+
+    CBR (FALSE);
+
+Done:
+    codePoint   = cpResult;
+    fSuppressed = fIsSuppressed;
 
 Error:
     return hr;
@@ -794,6 +993,91 @@ void CConfig::ProcessFileExtensionOverride (wstring_view extension, WORD colorAt
 
 ////////////////////////////////////////////////////////////////////////////////
 //
+//  CConfig::ProcessFileExtensionIconOverride
+//
+//  Apply icon override for a file extension (e.g., ".cpp").
+//  First-write-wins: subsequent duplicates are flagged in m_lastParseResult.
+//
+////////////////////////////////////////////////////////////////////////////////
+
+void CConfig::ProcessFileExtensionIconOverride (wstring_view extension, char32_t iconCodePoint, bool fSuppressed)
+{
+    wstring key (extension);
+
+    std::ranges::transform (key, key.begin(), towlower);
+
+    if (m_mapExtensionIconSources.count (key) && m_mapExtensionIconSources[key] == EAttributeSource::Environment)
+    {
+        m_lastParseResult.errors.push_back ({
+            L"Duplicate icon override (first-write-wins)",
+            wstring (extension),
+            wstring (extension),
+            0
+        });
+        return;
+    }
+
+    m_mapExtensionToIcon[key]      = fSuppressed ? U'\0' : iconCodePoint;
+    m_mapExtensionIconSources[key] = EAttributeSource::Environment;
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CConfig::ProcessWellKnownDirIconOverride
+//
+//  Apply icon override for a well-known directory name (e.g., ".git", "src").
+//  First-write-wins: subsequent duplicates are flagged in m_lastParseResult.
+//
+////////////////////////////////////////////////////////////////////////////////
+
+void CConfig::ProcessWellKnownDirIconOverride (wstring_view dirName, char32_t iconCodePoint, bool fSuppressed)
+{
+    wstring key (dirName);
+
+    std::ranges::transform (key, key.begin(), towlower);
+
+    if (m_mapWellKnownDirIconSources.count (key) && m_mapWellKnownDirIconSources[key] == EAttributeSource::Environment)
+    {
+        m_lastParseResult.errors.push_back ({
+            L"Duplicate icon override (first-write-wins)",
+            wstring (dirName),
+            wstring (dirName),
+            0
+        });
+        return;
+    }
+
+    m_mapWellKnownDirToIcon[key]        = fSuppressed ? U'\0' : iconCodePoint;
+    m_mapWellKnownDirIconSources[key]   = EAttributeSource::Environment;
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CConfig::ProcessFileAttributeIconOverride
+//
+//  Apply icon override for a file attribute (e.g., hidden, system).
+//
+////////////////////////////////////////////////////////////////////////////////
+
+void CConfig::ProcessFileAttributeIconOverride (DWORD dwAttribute, char32_t iconCodePoint)
+{
+    m_mapFileAttributeToIcon[dwAttribute] = iconCodePoint;
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
 //  CConfig::ProcessDisplayAttributeOverride
 //
 //  Apply color override for a display attribute (e.g., "D" for Date)
@@ -856,7 +1140,7 @@ void CConfig::ProcessDisplayAttributeOverride (wchar_t attrChar, WORD colorAttr,
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-void CConfig::ProcessFileAttributeOverride (wstring_view keyView, WORD colorAttr, wstring_view entry)
+void CConfig::ProcessFileAttributeOverride (wstring_view keyView, WORD colorAttr, wstring_view entry, bool fHasColor, bool fHasIcon, char32_t iconCP)
 {
     DWORD   dwFileAttribute = 0;
     bool    found           = false;
@@ -907,7 +1191,15 @@ void CConfig::ProcessFileAttributeOverride (wstring_view keyView, WORD colorAttr
         return;
     }
 
-    m_mapFileAttributesTextAttr[dwFileAttribute] = { colorAttr, EAttributeSource::Environment };
+    if (fHasColor)
+    {
+        m_mapFileAttributesTextAttr[dwFileAttribute] = { colorAttr, EAttributeSource::Environment };
+    }
+
+    if (fHasIcon)
+    {
+        ProcessFileAttributeIconOverride (dwFileAttribute, iconCP);
+    }
 }
 
 
@@ -1179,8 +1471,9 @@ CConfig::SFileDisplayStyle CConfig::GetDisplayStyleForFile (const WIN32_FIND_DAT
             auto iconIter = m_mapFileAttributeToIcon.find (mapping.m_dwAttribute);
             if (iconIter != m_mapFileAttributeToIcon.end())
             {
-                iconCodePoint = iconIter->second;
-                fIconLocked   = true;
+                iconCodePoint   = iconIter->second;
+                fIconSuppressed = (iconCodePoint == 0);
+                fIconLocked     = true;
             }
         }
 
@@ -1211,8 +1504,9 @@ CConfig::SFileDisplayStyle CConfig::GetDisplayStyleForFile (const WIN32_FIND_DAT
             auto dirIter = m_mapWellKnownDirToIcon.find (strFilename);
             if (dirIter != m_mapWellKnownDirToIcon.end())
             {
-                iconCodePoint = dirIter->second;
-                fIconLocked   = true;
+                iconCodePoint   = dirIter->second;
+                fIconSuppressed = (iconCodePoint == 0);
+                fIconLocked     = true;
             }
             else
             {
@@ -1266,8 +1560,9 @@ CConfig::SFileDisplayStyle CConfig::GetDisplayStyleForFile (const WIN32_FIND_DAT
         auto iconIter = m_mapExtensionToIcon.find (strExtension);
         if (iconIter != m_mapExtensionToIcon.end())
         {
-            iconCodePoint = iconIter->second;
-            fIconLocked   = true;
+            iconCodePoint   = iconIter->second;
+            fIconSuppressed = (iconCodePoint == 0);
+            fIconLocked     = true;
         }
     }
 

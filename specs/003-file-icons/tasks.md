@@ -76,10 +76,10 @@
 
 **Independent Test**: Set `TCDIR=.cpp=Green,U+E61D;dir:.git=,U+E5FB;.obj=,` and verify: .cpp files show C++ icon in Green, .git directories show Git icon, .obj files show no icon (suppressed).
 
-- [ ] T016 [US4] Implement ParseIconValue (U+XXXX hex parsing, literal glyph extraction, empty = suppressed, validation with ErrorInfo) in TCDirCore/Config.cpp
-- [ ] T017 [US4] Extend ProcessColorOverrideEntry with first-comma splitting to separate color and icon values per R5 design in TCDirCore/Config.cpp
-- [ ] T018 [US4] Implement icon override dispatch methods (ProcessFileExtensionIconOverride, ProcessWellKnownDirIconOverride, ProcessFileAttributeIconOverride) with source tracking in TCDirCore/Config.cpp
-- [ ] T019 [US4] Add duplicate and conflict detection for icon entries (first-write-wins, ErrorInfo on subsequent duplicates) in TCDirCore/Config.cpp
+- [X] T016 [US4] Implement ParseIconValue (U+XXXX hex parsing, literal glyph extraction, empty = suppressed, validation with ErrorInfo) in TCDirCore/Config.cpp
+- [X] T017 [US4] Extend ProcessColorOverrideEntry with first-comma splitting to separate color and icon values per R5 design in TCDirCore/Config.cpp
+- [X] T018 [US4] Implement icon override dispatch methods (ProcessFileExtensionIconOverride, ProcessWellKnownDirIconOverride, ProcessFileAttributeIconOverride) with source tracking in TCDirCore/Config.cpp
+- [X] T019 [US4] Add duplicate and conflict detection for icon entries (first-write-wins, ErrorInfo on subsequent duplicates) in TCDirCore/Config.cpp
 
 **Checkpoint**: `TCDIR=.cpp=Green,U+E61D` sets Green color + C++ icon. Entries without comma behave identically to pre-feature (zero regression). US4 acceptance scenarios 1–8 are satisfied.
 
