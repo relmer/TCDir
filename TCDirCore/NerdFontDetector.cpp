@@ -221,13 +221,23 @@ HRESULT CNerdFontDetector::IsNerdFontInstalled (_Out_ bool * pfFound)
             auto pfResult = reinterpret_cast<bool *>(lParam);
 
             //
-            // Check if the font family name contains "Nerd Font" (case-insensitive)
+            // Check if the font family name contains "Nerd Font" or ends
+            // with the abbreviated suffixes " NF", " NFM", or " NFP"
+            // (case-insensitive).
             //
 
             wstring fontName (plf->lfFaceName);
             std::ranges::transform (fontName, fontName.begin(), towlower);
 
             if (fontName.find (L"nerd font") != wstring::npos)
+            {
+                *pfResult = true;
+                return 0;  // Stop enumeration
+            }
+
+            if (fontName.ends_with (L" nf")  ||
+                fontName.ends_with (L" nfm") ||
+                fontName.ends_with (L" nfp"))
             {
                 *pfResult = true;
                 return 0;  // Stop enumeration
