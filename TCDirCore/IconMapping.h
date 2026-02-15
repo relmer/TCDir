@@ -105,6 +105,7 @@ namespace NfIcon
     // --- Dev (nf-dev-*) ---
     constexpr char32_t DevLess                = 0xE758;
     constexpr char32_t DevReact               = 0xE7BA;
+    constexpr char32_t DevRust                = 0xE7A8;
     constexpr char32_t DevSass                = 0xE74B;
     constexpr char32_t DevVisualStudio        = 0xE70C;
 

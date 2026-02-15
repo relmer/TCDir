@@ -82,12 +82,16 @@ const SIconMappingEntry g_rgDefaultExtensionIcons[] =
     { L".py",      NfIcon::SetiPython },
     { L".pyw",     NfIcon::SetiPython },
     { L".jar",     NfIcon::SetiJava },
+
+    // Rust
+    { L".rs",      NfIcon::DevRust },
     { L".java",    NfIcon::SetiJava },
     { L".class",   NfIcon::SetiJava },
 
     // Data formats
     { L".xml",     NfIcon::SetiXml },
     { L".json",    NfIcon::SetiJson },
+    { L".toml",    NfIcon::SetiConfig },
     { L".yml",     NfIcon::SetiYml },
     { L".yaml",    NfIcon::SetiYml },
 
@@ -174,6 +178,7 @@ const SIconMappingEntry g_rgDefaultWellKnownDirIcons[] =
     { L".git",         NfIcon::CustomFolderGit },
     { L".github",      NfIcon::CustomFolderGithub },
     { L".vscode",      NfIcon::CustomFolderConfig },
+    { L".cargo",       NfIcon::CustomFolderConfig },
     { L".config",      NfIcon::SetiConfig },
     { L"node_modules", NfIcon::CustomFolderNpm },
     { L"src",          NfIcon::OctTerminal },

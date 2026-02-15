@@ -44,12 +44,15 @@ constexpr CConfig::STextAttr CConfig::s_rgTextAttrs[] =
     { L".py",             FC_LightGreen   },
     { L".pyw",            FC_LightGreen   },
 
+    { L".rs",             FC_LightGreen   },
+
     { L".jar",            FC_LightGreen   },
     { L".java",           FC_LightGreen   },
     { L".class",          FC_LightGreen   },
 
     { L".xml",            FC_Brown       },
     { L".json",           FC_Brown       },
+    { L".toml",           FC_Brown       },
     { L".yml",            FC_Brown       },
     { L".yaml",           FC_Brown       },
 
