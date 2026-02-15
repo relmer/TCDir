@@ -375,9 +375,10 @@ Cloud status colors are unchanged — the existing `CloudStatusCloudOnly`, `Clou
 
 #### Diagnostics & Help
 
-- **FR-026**: The `/config` output MUST include an icon status line showing the detection result and resolved icon state (e.g., "Nerd Font detected, icons enabled", "Nerd Font not detected, icons disabled", "Icons disabled via TCDIR=Icons-"). The icon status line MUST appear before the configuration tables so the user immediately sees whether icons are active.
+- **FR-026**: The `/config` output MUST include an icon status line showing the detection result and resolved icon state. The icon activation priority chain MUST be: CLI flag (`/Icons`, `/Icons-`) → env var (`TCDIR=Icons`/`Icons-`) → auto-detection. Status messages: "Enabled via /Icons", "Disabled via /Icons-", "Enabled via TCDIR=Icons", "Disabled via TCDIR=Icons-", "Nerd Font detected, icons enabled", "Nerd Font not detected, icons disabled". The icon status line MUST appear before the configuration tables so the user immediately sees whether icons are active.
 - **FR-027**: When icons are active, the `/config` output MUST show icon glyphs inline in the file extension color table (renamed to "file extension color and icon configuration") and in a separate "well-known directory icon configuration" table. Both tables use multi-column layout with source indicators (Default vs Environment). Well-known directories are shown in the Directory display color. When icons are not active, icon glyphs MUST be omitted from the extension table, and the well-known directory table MUST NOT be shown. There MUST NOT be a separate icon mapping table.
 - **FR-028**: The `/env` output MUST document the `Icons`/`Icons-` switch, the `[color][,icon]` comma syntax, the `dir:` prefix, and the `U+XXXX` code point format. Layout requirements:
+  - Section descriptions MUST follow the syntax line order: `<Item>`, `Attr:<FileAttr>`, `<FileAttr>` attributes table, `<.ext>`, `<name>` (well-known directory), `<Fore>`, `<Back>`, color list, `<Icon>`.
   - The `<Fore>` and `<Back>` descriptions MUST appear immediately before the color name list (not separated by other content).
   - The `<Icon>` description (U+XXXX, literal glyph, empty=suppressed) MUST appear *after* the color name list, not between `<Fore>/<Back>` and the colors.
   - The example MUST include an icon code point (e.g., `.cpp=White on Blue,U+E61D`) to demonstrate the comma syntax.
@@ -387,7 +388,7 @@ Cloud status colors are unchanged — the existing `CloudStatusCloudOnly`, `Clou
 
 #### Cloud Status
 
-- **FR-031**: When icons are active, cloud status symbols MUST upgrade from Unicode geometric shapes to Nerd Font glyphs in the existing cloud status column.
+- **FR-031**: When icons are active, cloud status symbols MUST upgrade from Unicode geometric shapes to Nerd Font glyphs in the existing cloud status column. The `/config` display item table MUST also show the Nerd Font glyph instead of the Unicode shape for each cloud status entry.
 - **FR-032**: When icons are not active, cloud status symbols MUST remain unchanged (zero regression).
 - **FR-033**: Wide display mode MUST show cloud status for each entry when in a cloud sync root, similar to File Explorer's List view. The cloud status symbol is placed immediately before the icon (or before the filename if icons are off).
 

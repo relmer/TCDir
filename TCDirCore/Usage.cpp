@@ -385,7 +385,7 @@ void CUsage::DisplayConfigurationTable (CConsole & console, bool fShowIcons)
 
     tableSeparator += wstring (COLUMN_WIDTH_ATTR + COLUMN_WIDTH_SOURCE + 2, UnicodeSymbols::LineHorizontal);
 
-    DisplayAttributeConfiguration     (console, COLUMN_WIDTH_ATTR, COLUMN_WIDTH_SOURCE);
+    DisplayAttributeConfiguration     (console, COLUMN_WIDTH_ATTR, COLUMN_WIDTH_SOURCE, fShowIcons);
     DisplayFileAttributeConfiguration (console, COLUMN_WIDTH_ATTR, COLUMN_WIDTH_SOURCE);
     DisplayExtensionConfiguration     (console, COLUMN_WIDTH_ATTR, COLUMN_WIDTH_SOURCE, fShowIcons);
     DisplayWellKnownDirConfiguration  (console, fShowIcons);
@@ -401,7 +401,7 @@ void CUsage::DisplayConfigurationTable (CConsole & console, bool fShowIcons)
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-void CUsage::DisplayAttributeConfiguration (CConsole & console, int columnWidthAttr, int columnWidthSource)
+void CUsage::DisplayAttributeConfiguration (CConsole & console, int columnWidthAttr, int columnWidthSource, bool fShowIcons)
 {
     console.Puts (CConfig::EAttribute::Information, L"\nCurrent display item configuration:\n");
 
@@ -415,11 +415,46 @@ void CUsage::DisplayAttributeConfiguration (CConsole & console, int columnWidthA
 
     for (const auto & info : s_kCloudStatusInfos)
     {
-        WORD    attr    = console.m_configPtr->m_rgAttributes[info.attr];
-        bool    isEnv   = (console.m_configPtr->m_rgAttributeSources[info.attr] == CConfig::EAttributeSource::Environment);
-        wstring display = format (L"{} ({})", info.baseName, info.symbol);
+        const CConfig & config = *console.m_configPtr;
+        WORD            attr   = config.m_rgAttributes[info.attr];
+        bool            isEnv  = (config.m_rgAttributeSources[info.attr] == CConfig::EAttributeSource::Environment);
 
-        DisplayItemAndSource (console, display, attr, isEnv, columnWidthAttr, columnWidthSource, 0, EItemDisplayMode::SingleColumn);
+        wstring symbol;
+
+        if (fShowIcons)
+        {
+            // Use the Nerd Font glyph from config instead of the Unicode geometric shape
+            char32_t cp = 0;
+
+            switch (info.attr)
+            {
+                case CConfig::EAttribute::CloudStatusCloudOnly:              cp = config.m_iconCloudOnly;        break;
+                case CConfig::EAttribute::CloudStatusLocallyAvailable:       cp = config.m_iconLocallyAvailable; break;
+                case CConfig::EAttribute::CloudStatusAlwaysLocallyAvailable: cp = config.m_iconAlwaysLocal;      break;
+                default:                                                                                         break;
+            }
+
+            if (cp != 0)
+            {
+                WideCharPair wcp = CodePointToWideChars (cp);
+                symbol += wcp.chars[0];
+                if (wcp.chars[1] != L'\0')
+                    symbol += wcp.chars[1];
+            }
+        }
+
+        if (symbol.empty ())
+        {
+            symbol = info.symbol;
+        }
+
+        wstring display = format (L"{} ({})", info.baseName, symbol);
+
+        // Surrogate pairs are 2 wchar_t but 1 display cell; widen the column
+        // for this item so the source label still aligns with non-surrogate rows.
+        int cxSurrogateAdjust = max (0, static_cast<int> (symbol.size ()) - 1);
+
+        DisplayItemAndSource (console, display, attr, isEnv, columnWidthAttr + cxSurrogateAdjust, columnWidthSource, 0, EItemDisplayMode::SingleColumn);
     }
 }
 
@@ -486,7 +521,7 @@ void CUsage::DisplayExtensionConfigurationSingleColumn (CConsole & console, int 
             }
         }
 
-        DisplayItemAndSource (console, ext, extAttr, isEnv, columnWidthAttr, columnWidthSource, 0, EItemDisplayMode::SingleColumn, iconPrefix);
+        DisplayItemAndSource (console, ext, extAttr, isEnv, columnWidthAttr, columnWidthSource, 0, EItemDisplayMode::SingleColumn, iconPrefix, fShowIcons);
     }
 }
 
@@ -500,13 +535,15 @@ void CUsage::DisplayExtensionConfigurationSingleColumn (CConsole & console, int 
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-void CUsage::DisplayItemAndSource (CConsole & console, wstring_view item, WORD attr, bool isEnv, size_t columnWidthItem, size_t columnWidthSource, size_t cxColumnWidth, EItemDisplayMode mode, wstring_view iconPrefix)
+void CUsage::DisplayItemAndSource (CConsole & console, wstring_view item, WORD attr, bool isEnv, size_t columnWidthItem, size_t columnWidthSource, size_t cxColumnWidth, EItemDisplayMode mode, wstring_view iconPrefix, bool fShowIcons)
 {
+    static constexpr size_t CX_ICON_COLUMN = 3;  // 2 display cells (glyph) + 1 space
+
     WORD    bgAttr       = console.m_configPtr->m_rgAttributes[CConfig::EAttribute::Default] & BC_Mask;
     WORD    sourceAttr   = static_cast<WORD> (bgAttr | (isEnv ? FC_Cyan : FC_DarkGrey));
     LPCWSTR source       = isEnv ? L"Environment" : L"Default";
     int     pad          = max (0, static_cast<int> (columnWidthItem) - static_cast<int> (item.size ()));
-    size_t  cxIconWidth  = iconPrefix.empty () ? 0 : (iconPrefix.size () + 1);  // glyph + space
+    size_t  cxIconWidth  = fShowIcons ? CX_ICON_COLUMN : 0;
     size_t  cxUsed       = cxIconWidth + columnWidthItem + 2 + columnWidthSource;
     WORD    defaultAttr  = console.m_configPtr->m_rgAttributes[CConfig::EAttribute::Default];
     WORD    visibleAttr  = CConfig::EnsureVisibleColorAttr (attr, defaultAttr);
@@ -521,6 +558,10 @@ void CUsage::DisplayItemAndSource (CConsole & console, wstring_view item, WORD a
     if (!iconPrefix.empty ())
     {
         console.Printf (visibleAttr, L"%.*ls ", static_cast<int> (iconPrefix.size ()), iconPrefix.data ());
+    }
+    else if (fShowIcons)
+    {
+        console.Printf (CConfig::EAttribute::Information, L"   ");
     }
 
     console.Printf (visibleAttr,                      L"%.*ls", static_cast<int> (item.size ()), item.data ());
@@ -604,7 +645,7 @@ void CUsage::DisplayExtensionConfigurationMultiColumn (CConsole & console, const
                 }
             }
 
-            DisplayItemAndSource (console, ext, extAttr, isEnv, maxExtLen, cxSourceWidth, cxColumnWidth, EItemDisplayMode::MultiColumn, iconPrefix);
+            DisplayItemAndSource (console, ext, extAttr, isEnv, maxExtLen, cxSourceWidth, cxColumnWidth, EItemDisplayMode::MultiColumn, iconPrefix, fShowIcons);
         }
 
         console.Puts (CConfig::EAttribute::Default, L"");
@@ -650,9 +691,9 @@ void CUsage::DisplayExtensionConfiguration (CConsole & console, int columnWidthA
         maxExtLen = max (maxExtLen, ext.size ());
     }
 
-    // Minimum width per column: [icon + " "] + <extension> + "  " + <source> + padding
+    // Minimum width per column: [icon(2) + " "] + <extension> + "  " + <source> + padding
     {
-        size_t cxIconWidth      = fShowIcons ? 2 : 0;  // glyph + space
+        size_t cxIconWidth      = fShowIcons ? 3 : 0;  // 2 display cells (glyph) + 1 space
         size_t cxMinColumnWidth = cxIconWidth + maxExtLen + 2 + cxSourceWidth + 1 + 2;
 
         if (cxMinColumnWidth > 0 && cxMinColumnWidth <= cxAvailable)
@@ -717,9 +758,9 @@ void CUsage::DisplayWellKnownDirConfiguration (CConsole & console, bool fShowIco
         maxNameLen = max (maxNameLen, name.size ());
     }
 
-    // Minimum width per column: icon + " " + <name> + "  " + <source> + padding
+    // Minimum width per column: icon(2) + " " + <name> + "  " + <source> + padding
     {
-        size_t cxIconWidth      = 2;  // glyph + space (always present since fShowIcons is true)
+        size_t cxIconWidth      = 3;  // 2 display cells (glyph) + 1 space
         size_t cxMinColumnWidth = cxIconWidth + maxNameLen + 2 + cxSourceWidth + 1 + 2;
 
         if (cxMinColumnWidth > 0 && cxMinColumnWidth <= cxAvailable)
@@ -742,7 +783,7 @@ void CUsage::DisplayWellKnownDirConfiguration (CConsole & console, bool fShowIco
             if (wcp.chars[1] != L'\0')
                 iconPrefix += wcp.chars[1];
 
-            DisplayItemAndSource (console, name, dirAttr, isEnv, maxNameLen, cxSourceWidth, 0, EItemDisplayMode::SingleColumn, iconPrefix);
+            DisplayItemAndSource (console, name, dirAttr, isEnv, maxNameLen, cxSourceWidth, 0, EItemDisplayMode::SingleColumn, iconPrefix, true);
         }
     }
     else
@@ -791,7 +832,7 @@ void CUsage::DisplayWellKnownDirConfiguration (CConsole & console, bool fShowIco
                 if (wcp.chars[1] != L'\0')
                     iconPrefix += wcp.chars[1];
 
-                DisplayItemAndSource (console, name, dirAttr, isEnv, maxNameLen, cxSourceWidth, cxColumnWidth, EItemDisplayMode::MultiColumn, iconPrefix);
+                DisplayItemAndSource (console, name, dirAttr, isEnv, maxNameLen, cxSourceWidth, cxColumnWidth, EItemDisplayMode::MultiColumn, iconPrefix, true);
             }
 
             console.Puts (CConfig::EAttribute::Default, L"");
@@ -1407,7 +1448,7 @@ void CUsage::DisplayEnvVarHelp (CConsole & console, wchar_t chPrefix)
         L" items, file attributes, or file extensions:\n"
         L"{0}[{{InformationHighlight}}<Switch>{{Information}}] | "
         L"[{{InformationHighlight}}<Item>{{Information}} | "
-        L"{{InformationHighlight}}Attr:<fileattr>{{Information}} | "
+        L"{{InformationHighlight}}Attr:<FileAttr>{{Information}} | "
         L"{{InformationHighlight}}<.ext>{{Information}} | "
         L"{{InformationHighlight}}dir:<name>{{Information}}] = "
         L"[{{InformationHighlight}}<Fore>{{Information}} [on {{InformationHighlight}}<Back>{{Information}}]]"
@@ -1434,16 +1475,16 @@ void CUsage::DisplayEnvVarHelp (CConsole & console, wchar_t chPrefix)
         L"                  {{InformationHighlight}}CloudOnly{{Information}}                   {{InformationHighlight}}LocallyAvailable{{Information}}\n"
         L"                  {{InformationHighlight}}AlwaysLocallyAvailable{{Information}}\n"
         L"\n"
-        L"  {{InformationHighlight}}<.ext>{{Information}}      A file extension, including the leading period.\n"
-        L"\n"
-        L"  {{InformationHighlight}}dir:<name>{{Information}}  A well-known directory name (case-insensitive, e.g., {{InformationHighlight}}dir:.git{{Information}}).\n"
-        L"\n"
         L"  {{InformationHighlight}}<FileAttr>{{Information}}  A file attribute (see file attributes below)\n"
         L"                  {{InformationHighlight}}R{{Information}}  Read-only                {{InformationHighlight}}H{{Information}}  Hidden\n"
         L"                  {{InformationHighlight}}S{{Information}}  System                   {{InformationHighlight}}A{{Information}}  Archive\n"
         L"                  {{InformationHighlight}}T{{Information}}  Temporary                {{InformationHighlight}}E{{Information}}  Encrypted\n"
         L"                  {{InformationHighlight}}C{{Information}}  Compressed               {{InformationHighlight}}P{{Information}}  Reparse point\n"
         L"                  {{InformationHighlight}}0{{Information}}  Sparse file\n"
+        L"\n"
+        L"  {{InformationHighlight}}<.ext>{{Information}}      A file extension, including the leading period.\n"
+        L"\n"
+        L"  {{InformationHighlight}}<name>    {{Information}}  A well-known directory name (case-insensitive, e.g., {{InformationHighlight}}dir:.git{{Information}}).\n"
         L"\n"
         L"  {{InformationHighlight}}<Fore>{{Information}}      Foreground color\n"
         L"  {{InformationHighlight}}<Back>{{Information}}      Background color";
@@ -1510,20 +1551,24 @@ void CUsage::DisplayEnvVarHelp (CConsole & console, wchar_t chPrefix)
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-static bool DisplayIconStatus (CConsole & console)
+static bool DisplayIconStatus (CConsole & console, optional<bool> fIconsCli = nullopt)
 {
     const CConfig & config = *console.m_configPtr;
 
     console.Puts (CConfig::EAttribute::Information, L"\nIcon status:");
 
     // Determine source and state
+    // Priority: CLI flag (/Icons, /Icons-) → env var (TCDIR=Icons) → auto-detection
     LPCWSTR  pszReason = L"";
     bool     fActive   = false;
 
-    if (config.m_fIcons.has_value())
+    if (fIconsCli.has_value())
     {
-        // ENV var was the source (CLI flags aren't available in /config context
-        // because /config exits before icon detection runs in the normal flow)
+        fActive   = fIconsCli.value();
+        pszReason = fActive ? L"Enabled via /Icons" : L"Disabled via /Icons-";
+    }
+    else if (config.m_fIcons.has_value())
+    {
         fActive  = config.m_fIcons.value();
         pszReason = fActive ? L"Enabled via TCDIR=Icons" : L"Disabled via TCDIR=Icons-";
     }
@@ -1569,14 +1614,14 @@ static bool DisplayIconStatus (CConsole & console)
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-void CUsage::DisplayCurrentConfiguration (CConsole & console, wchar_t chPrefix)
+void CUsage::DisplayCurrentConfiguration (CConsole & console, wchar_t chPrefix, optional<bool> fIconsCli)
 {
     if (!IsTcdirEnvVarSet ())
     {
         console.ColorPuts (L"\n  {Information}" TCDIR_ENV_VAR_NAME L"{Default} environment variable is not set; showing default configuration.");
     }
 
-    bool fActive = DisplayIconStatus (console);
+    bool fActive = DisplayIconStatus (console, fIconsCli);
 
     DisplayConfigurationTable (console, fActive);
 

@@ -71,7 +71,7 @@ int wmain (int argc, WCHAR * argv[])
 
     if (cmdlinePtr->m_fConfig)
     {
-        CUsage::DisplayCurrentConfiguration (*consolePtr, cmdlinePtr->GetSwitchPrefix ());
+        CUsage::DisplayCurrentConfiguration (*consolePtr, cmdlinePtr->GetSwitchPrefix (), cmdlinePtr->m_fIcons);
         BAIL_OUT_IF (cmdlinePtr->m_fConfig, S_OK);
     }
 
