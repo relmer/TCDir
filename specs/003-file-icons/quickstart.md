@@ -407,7 +407,7 @@ struct IconConfigProbe : public CConfig
 **IconMappingTests.cpp:**
 1. `CodePointToWideChars` — BMP produces count=1, supplementary produces count=2, surrogates rejected
 2. `CodePointToWideChars` — verify exact surrogate values for all Material Design code points in spec
-3. Default extension table — every extension in `s_rgDefaultExtensionIcons` has non-zero code point
+3. Default extension table — every extension in `g_rgDefaultExtensionIcons` has non-zero code point
 4. Default well-known dir table — every entry has non-zero code point, no duplicates
 5. Table completeness — every extension in `s_rgTextAttrs[]` (color table) has a matching icon entry
 
@@ -494,7 +494,7 @@ Use `get_errors` to verify no compiler warnings or errors after each file change
 | `TCDirCore/ResultsDisplayerWide.cpp` | MODIFY | 2 |
 | `TCDirCore/ResultsDisplayerBare.cpp` | MODIFY | 2 |
 | `TCDirCore/ResultsDisplayerWithHeaderAndFooter.h` | MODIFY | 2 |
-| `TCDir/Main.cpp` or `TCDirCore/TCDir.cpp` | MODIFY | 2 |
+| `TCDirCore/TCDir.cpp` | MODIFY | 2 |
 | `TCDirCore/Usage.cpp` | MODIFY | 3 |
 | `TCDirCore/Usage.h` | MODIFY | 3 |
 | `TCDirCore/Version.h` | MODIFY | 3 |

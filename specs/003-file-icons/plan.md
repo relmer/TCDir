@@ -66,7 +66,9 @@ TCDirCore/
 ├── ResultsDisplayerNormal.cpp   # MODIFIED — Insert icon glyph before filename
 ├── ResultsDisplayerWide.cpp     # MODIFIED — Insert icon, suppress brackets, add cloud status
 ├── ResultsDisplayerBare.cpp     # MODIFIED — Insert icon before filename
-├── ResultsDisplayerWithHeaderAndFooter.h  # MODIFIED — Pass icon active state
+├── ResultsDisplayerWithHeaderAndFooter.h   # MODIFIED — Pass icon active state
+├── ResultsDisplayerWithHeaderAndFooter.cpp # MODIFIED — Pass icon active state
+├── TCDir.cpp                # MODIFIED — Detection orchestration, displayer wiring
 ├── Usage.cpp                # MODIFIED — Document /Icons flags, icon syntax, config display
 ├── Usage.h                  # MODIFIED — Add icon-related display helpers if needed
 ├── Version.h                # MODIFIED — Major version bump
@@ -74,8 +76,7 @@ TCDirCore/
 
 UnitTest/
 ├── IconMappingTests.cpp         # NEW — Icon lookup, precedence, surrogate encoding, fallbacks
-├── NerdFontDetectorTests.cpp    # NEW — Detection chain with mock env provider
-├── NerdFontDetectorTests.cpp    # Uses derivation to override GDI calls
+├── NerdFontDetectorTests.cpp    # NEW — Detection chain with mock env provider (derivation pattern)
 ├── CommandLineTests.cpp         # MODIFIED — /Icons, /Icons- parsing tests
 ├── ConfigTests.cpp              # MODIFIED — TCDIR icon syntax, duplicates, precedence tests
 ├── ResultsDisplayerTests.cpp    # MODIFIED — Icon display in all modes
@@ -112,6 +113,6 @@ No constitution violations. All changes extend existing patterns or add well-sco
 |-------|--------|-----------|
 | Phase 0: Research | ✅ COMPLETE | [research.md](research.md) (appended with R1–R7 implementation research) |
 | Phase 1: Design | ✅ COMPLETE | [data-model.md](data-model.md), [quickstart.md](quickstart.md) |
-| Phase 2: Tasks | ⬜ NOT STARTED | tasks.md (/speckit.tasks — next step) |
+| Phase 2: Tasks | ✅ COMPLETE | [tasks.md](tasks.md) (34 tasks across 9 phases) |
 
-**Ready for**: `/speckit.tasks` to generate implementation task breakdown
+**Ready for**: Implementation — start with Phase 1 (Setup) and Phase 2 (Foundational)

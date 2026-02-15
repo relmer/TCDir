@@ -494,7 +494,7 @@ The following default mappings cover every extension in TCDir's built-in color t
 - Icon mappings for extensions not in the default table silently fall back to the generic file icon. Users can add custom mappings via the comma syntax.
 - The `dir:` prefix entries match exact directory names, case-insensitive on Windows.
 - Changing the attribute precedence order (from the historical `RHSATEC0P` to `PSHERC0TA`) is a deliberate improvement. This is a **behavioral change** for users who have configured attribute-level color overrides and rely on the old precedence. It should be documented in the changelog.
-- This feature warrants a **major version bump** (e.g., v2.0→v3.0 or similar). The combination of new icon functionality, attribute precedence reordering, and env var syntax extension represents a significant milestone.
+- This feature warrants a **major version bump** (v4→v5). The combination of new icon functionality, attribute precedence reordering, and env var syntax extension represents a significant milestone.
 
 ## Out of Scope
 

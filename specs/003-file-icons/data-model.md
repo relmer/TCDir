@@ -273,7 +273,7 @@ ProcessSwitchOverride()     — handles Icons/Icons- switch
 ```cpp
 // Location: IconMapping.cpp
 
-static constexpr SIconMappingEntry s_rgDefaultExtensionIcons[] =
+const SIconMappingEntry g_rgDefaultExtensionIcons[] =
 {
     // C/C++
     { L".c",     NfIcon::CustomC },
@@ -390,7 +390,7 @@ static constexpr SIconMappingEntry s_rgDefaultExtensionIcons[] =
 ```cpp
 // Location: IconMapping.cpp
 
-static constexpr SIconMappingEntry s_rgDefaultWellKnownDirIcons[] =
+const SIconMappingEntry g_rgDefaultWellKnownDirIcons[] =
 {
     { L".git",         NfIcon::CustomFolderGit },
     { L".github",      NfIcon::CustomFolderGithub },
@@ -425,12 +425,12 @@ static constexpr SIconMappingEntry s_rgDefaultWellKnownDirIcons[] =
 ### Attribute Precedence Array (New Order)
 
 ```cpp
-// Location: IconMapping.h
+// Location: IconMapping.cpp
 // Note: This is for color+icon precedence ONLY, NOT for display column order.
 // The display column order (k_rgFileAttributeMap in FileAttributeMap.h) retains
 // the existing RHSATECP0 order.
 
-static constexpr SFileAttributeMap k_rgAttributePrecedenceOrder[] =
+const SFileAttributeMap k_rgAttributePrecedenceOrder[] =
 {
     { FILE_ATTRIBUTE_REPARSE_POINT, L'P' },   // Priority 1 (highest)
     { FILE_ATTRIBUTE_SYSTEM,        L'S' },   // Priority 2
