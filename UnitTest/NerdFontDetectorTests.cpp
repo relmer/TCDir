@@ -57,7 +57,7 @@ namespace UnitTest
         bool    m_fFontInstalledCalled = false;
 
     protected:
-        HRESULT ProbeConsoleFontForGlyph (HANDLE, WCHAR, _Out_ bool * pfHasGlyph) override
+        HRESULT ProbeConsoleFontForGlyph (HANDLE, WCHAR, bool & fHasGlyph) override
         {
             m_fProbeCalled = true;
 
@@ -66,11 +66,11 @@ namespace UnitTest
                 return m_hrProbe;
             }
 
-            *pfHasGlyph = m_fProbeResult;
+            fHasGlyph = m_fProbeResult;
             return S_OK;
         }
 
-        HRESULT IsNerdFontInstalled (_Out_ bool * pfFound) override
+        HRESULT IsNerdFontInstalled (bool & fFound) override
         {
             m_fFontInstalledCalled = true;
 
@@ -79,7 +79,7 @@ namespace UnitTest
                 return m_hrFontInstalled;
             }
 
-            *pfFound = m_fFontInstalled;
+            fFound = m_fFontInstalled;
             return S_OK;
         }
     };
@@ -112,7 +112,7 @@ namespace UnitTest
 
             env.Set (L"TERM_PROGRAM", L"WezTerm");
 
-            HRESULT hr = detector.Detect (nullptr, env, &result);
+            HRESULT hr = detector.Detect (nullptr, env, result);
 
             Assert::AreEqual (S_OK, hr);
             Assert::IsTrue   (result == EDetectionResult::Detected);
@@ -131,7 +131,7 @@ namespace UnitTest
 
             env.Set (L"TERM_PROGRAM", L"wezterm");
 
-            HRESULT hr = detector.Detect (nullptr, env, &result);
+            HRESULT hr = detector.Detect (nullptr, env, result);
 
             Assert::AreEqual (S_OK, hr);
             Assert::IsTrue   (result == EDetectionResult::Detected);
@@ -153,7 +153,7 @@ namespace UnitTest
             env.Set (L"WT_SESSION", L"{some-guid}");
             detector.m_fFontInstalled = true;
 
-            HRESULT hr = detector.Detect (nullptr, env, &result);
+            HRESULT hr = detector.Detect (nullptr, env, result);
 
             Assert::AreEqual (S_OK, hr);
             Assert::IsTrue   (result == EDetectionResult::Detected);
@@ -173,7 +173,7 @@ namespace UnitTest
             env.Set (L"TERM_PROGRAM", L"vscode");
             detector.m_fFontInstalled = false;
 
-            HRESULT hr = detector.Detect (nullptr, env, &result);
+            HRESULT hr = detector.Detect (nullptr, env, result);
 
             Assert::AreEqual (S_OK, hr);
             Assert::IsTrue   (result == EDetectionResult::NotDetected);
@@ -195,7 +195,7 @@ namespace UnitTest
             // No ConPTY env vars → classic path
             detector.m_fProbeResult = true;
 
-            HRESULT hr = detector.Detect (nullptr, env, &result);
+            HRESULT hr = detector.Detect (nullptr, env, result);
 
             Assert::AreEqual (S_OK, hr);
             Assert::IsTrue   (result == EDetectionResult::Detected);
@@ -213,7 +213,7 @@ namespace UnitTest
 
             detector.m_fProbeResult = false;
 
-            HRESULT hr = detector.Detect (nullptr, env, &result);
+            HRESULT hr = detector.Detect (nullptr, env, result);
 
             Assert::AreEqual (S_OK, hr);
             Assert::IsTrue   (result == EDetectionResult::NotDetected);
@@ -235,7 +235,7 @@ namespace UnitTest
             detector.m_hrProbe        = E_FAIL;
             detector.m_fFontInstalled = true;
 
-            HRESULT hr = detector.Detect (nullptr, env, &result);
+            HRESULT hr = detector.Detect (nullptr, env, result);
 
             Assert::AreEqual (S_OK, hr);
             Assert::IsTrue   (result == EDetectionResult::Detected);
@@ -255,7 +255,7 @@ namespace UnitTest
             detector.m_hrProbe        = E_FAIL;
             detector.m_hrFontInstalled = E_FAIL;
 
-            HRESULT hr = detector.Detect (nullptr, env, &result);
+            HRESULT hr = detector.Detect (nullptr, env, result);
 
             Assert::AreEqual (S_OK, hr);
             Assert::IsTrue   (result == EDetectionResult::Inconclusive);
@@ -278,7 +278,7 @@ namespace UnitTest
             env.Set (L"WT_SESSION", L"{guid}");
             env.Set (L"TERM_PROGRAM", L"WezTerm");
 
-            HRESULT hr = detector.Detect (nullptr, env, &result);
+            HRESULT hr = detector.Detect (nullptr, env, result);
 
             Assert::AreEqual (S_OK, hr);
             Assert::IsTrue   (result == EDetectionResult::Detected);
@@ -305,7 +305,7 @@ namespace UnitTest
             // Empty env vars should not trigger ConPTY path
             detector.m_fProbeResult = true;
 
-            HRESULT hr = detector.Detect (nullptr, env, &result);
+            HRESULT hr = detector.Detect (nullptr, env, result);
 
             Assert::AreEqual (S_OK, hr);
             Assert::IsTrue   (result == EDetectionResult::Detected);

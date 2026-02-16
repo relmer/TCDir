@@ -121,7 +121,7 @@ int wmain (int argc, WCHAR * argv[])
             EDetectionResult   result = EDetectionResult::NotDetected;
             HANDLE             hOut   = GetStdHandle (STD_OUTPUT_HANDLE);
 
-            if (SUCCEEDED (detector.Detect (hOut, *configPtr->m_pEnvironmentProvider, &result)))
+            if (SUCCEEDED (detector.Detect (hOut, *configPtr->m_pEnvironmentProvider, result)))
             {
                 fIconsActive = (result == EDetectionResult::Detected);
             }

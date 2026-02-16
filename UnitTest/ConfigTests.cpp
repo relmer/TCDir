@@ -93,15 +93,15 @@ namespace UnitTest
         using CConfig::ParseKeyAndValue;
         using CConfig::ApplyUserColorOverrides;
         using CConfig::ProcessColorOverrideEntry;
+        using CConfig::ParseOverrideValue;
+        using CConfig::ApplyOverrideByKeyType;
         using CConfig::ProcessSwitchOverride;
         using CConfig::ProcessFileExtensionOverride;
         using CConfig::ProcessDisplayAttributeOverride;
         using CConfig::ProcessFileAttributeOverride;
-        using CConfig::InitializeExtensionToIconMap;
-        using CConfig::InitializeWellKnownDirToIconMap;
+        using CConfig::PopulateIconMap;
         using CConfig::ParseIconValue;
-        using CConfig::ProcessFileExtensionIconOverride;
-        using CConfig::ProcessWellKnownDirIconOverride;
+        using CConfig::ApplyIconOverride;
         using CConfig::ProcessFileAttributeIconOverride;
         using CConfig::m_lastParseResult;
 
@@ -830,7 +830,7 @@ namespace UnitTest
 
 
 
-        TEST_METHOD(GetTextAttrForFile_FileAttributeColor_WinsOverDirectoryAndExtension)
+        TEST_METHOD(GetDisplayStyleForFile_FileAttributeColor_WinsOverDirectoryAndExtension)
         {
             ConfigProbe config;
             WIN32_FIND_DATA wfd = { 0 };
@@ -841,18 +841,18 @@ namespace UnitTest
 
             wfd.dwFileAttributes = FILE_ATTRIBUTE_DIRECTORY | FILE_ATTRIBUTE_HIDDEN;
             wcscpy_s(wfd.cFileName, L"somedir");
-            Assert::AreEqual (expected, config.GetTextAttrForFile(wfd));
+            Assert::AreEqual (expected, config.GetDisplayStyleForFile(wfd).m_wTextAttr);
 
             wfd.dwFileAttributes = FILE_ATTRIBUTE_HIDDEN;
             wcscpy_s(wfd.cFileName, L"foo.cpp");
-            Assert::AreEqual (expected, config.GetTextAttrForFile(wfd));
+            Assert::AreEqual (expected, config.GetDisplayStyleForFile(wfd).m_wTextAttr);
         }
 
 
 
 
 
-        TEST_METHOD(GetTextAttrForFile_MultipleAttributeColors_UsesFixedPriorityOrder)
+        TEST_METHOD(GetDisplayStyleForFile_MultipleAttributeColors_UsesFixedPriorityOrder)
         {
             ConfigProbe config;
             WIN32_FIND_DATA wfd = { 0 };
@@ -864,7 +864,7 @@ namespace UnitTest
             wcscpy_s(wfd.cFileName, L"foo.txt");
 
             // PSHERC0TA precedence: System (S) has higher priority than Hidden (H)
-            Assert::AreEqual (static_cast<WORD>(FC_Green | BC_Blue), config.GetTextAttrForFile(wfd));
+            Assert::AreEqual (static_cast<WORD>(FC_Green | BC_Blue), config.GetDisplayStyleForFile(wfd).m_wTextAttr);
         }
 
 
@@ -1730,7 +1730,7 @@ namespace UnitTest
 
             CConfig::ValidationResult result = config.ValidateEnvironmentVariable();
             Assert::AreEqual (size_t (1), result.errors.size());
-            Assert::AreEqual (wstring (L"Invalid switch (expected W, S, P, M, B, Owner, or Streams)"), result.errors[0].message);
+            Assert::AreEqual (wstring (L"Invalid switch"), result.errors[0].message);
         }
 
 
@@ -1746,7 +1746,7 @@ namespace UnitTest
 
             CConfig::ValidationResult result = config.ValidateEnvironmentVariable();
             Assert::AreEqual (size_t (1), result.errors.size());
-            Assert::AreEqual (wstring (L"Invalid switch (expected W, S, P, M, B, Owner, or Streams)"), result.errors[0].message);
+            Assert::AreEqual (wstring (L"Invalid switch"), result.errors[0].message);
         }
 
 
@@ -1762,7 +1762,7 @@ namespace UnitTest
 
             CConfig::ValidationResult result = config.ValidateEnvironmentVariable();
             Assert::AreEqual (size_t (1), result.errors.size());
-            Assert::AreEqual (wstring (L"Invalid switch (expected W, S, P, M, B, Owner, or Streams)"), result.errors[0].message);
+            Assert::AreEqual (wstring (L"Invalid switch"), result.errors[0].message);
         }
 
 

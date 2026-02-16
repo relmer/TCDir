@@ -4,14 +4,16 @@
 
 
 
-// ============================================================================
+
+
+////////////////////////////////////////////////////////////////////////////////
 //
 //  WideCharPair
 //
 //  Converts a Unicode code point (char32_t) to its UTF-16 representation.
 //  Constexpr enables compile-time verification via static_assert.
 //
-// ============================================================================
+////////////////////////////////////////////////////////////////////////////////
 
 struct WideCharPair
 {
@@ -42,14 +44,16 @@ constexpr WideCharPair CodePointToWideChars (char32_t cp)
 
 
 
-// ============================================================================
+
+
+////////////////////////////////////////////////////////////////////////////////
 //
 //  SIconMappingEntry
 //
 //  Static default icon mapping table entry. Parallels CConfig::STextAttr
 //  for colors.
 //
-// ============================================================================
+////////////////////////////////////////////////////////////////////////////////
 
 struct SIconMappingEntry
 {
@@ -59,7 +63,9 @@ struct SIconMappingEntry
 
 
 
-// ============================================================================
+
+
+////////////////////////////////////////////////////////////////////////////////
 //
 //  NfIcon Namespace
 //
@@ -67,11 +73,14 @@ struct SIconMappingEntry
 //  hex literals — every usage site references a named constant. Grouped by
 //  Nerd Font prefix, alphabetical within each group.
 //
-// ============================================================================
+////////////////////////////////////////////////////////////////////////////////
 
 namespace NfIcon
 {
-    // --- Custom (nf-custom-*) ---
+    //
+    // Custom (nf-custom-*)
+    //
+
     constexpr char32_t CustomAsm              = 0xE6AB;
     constexpr char32_t CustomElixir           = 0xE62D;
     constexpr char32_t CustomElm              = 0xE62C;
@@ -80,7 +89,10 @@ namespace NfIcon
     constexpr char32_t CustomKotlin           = 0xE634;
     constexpr char32_t CustomMsdos            = 0xE629;
 
-    // --- Seti (nf-seti-*) ---
+    //
+    // Seti (nf-seti-*)
+    //
+
     constexpr char32_t SetiBicep              = 0xE63B;
     constexpr char32_t SetiConfig             = 0xE615;
     constexpr char32_t SetiDb                 = 0xE64D;
@@ -100,7 +112,10 @@ namespace NfIcon
     constexpr char32_t SetiTerraform          = 0xE69A;
     constexpr char32_t SetiTypescript         = 0xE628;
 
-    // --- Dev (nf-dev-*) ---
+    //
+    // Dev (nf-dev-*)
+    //
+
     constexpr char32_t DevAws                 = 0xE7AD;
     constexpr char32_t DevClojure             = 0xE768;
     constexpr char32_t DevCss3                = 0xE749;
@@ -124,10 +139,16 @@ namespace NfIcon
     constexpr char32_t DevVisualStudio        = 0xE70C;
     constexpr char32_t DevVscode              = 0xE8DA;
 
-    // --- Font Awesome Extension (nf-fae-*) ---
+    //
+    // Font Awesome Extension (nf-fae-*)
+    //
+
     constexpr char32_t FaeJava                = 0xE256;
 
-    // --- Octicons (nf-oct-*) ---
+    //
+    // Octicons (nf-oct-*)
+    //
+
     constexpr char32_t OctFileBinary          = 0xF471;
     constexpr char32_t OctFileMedia           = 0xF40F;
     constexpr char32_t OctFileZip             = 0xF410;
@@ -135,7 +156,10 @@ namespace NfIcon
     constexpr char32_t OctRuby                = 0xF43B;
     constexpr char32_t OctTerminal            = 0xF489;
 
-    // --- Font Awesome (nf-fa-*) ---
+    //
+    // Font Awesome (nf-fa-*)
+    //
+
     constexpr char32_t FaArchive              = 0xF187;
     constexpr char32_t FaCertificate          = 0xF0A3;
     constexpr char32_t FaEnvelope             = 0xF0E0;
@@ -154,7 +178,10 @@ namespace NfIcon
     constexpr char32_t FaUsers                = 0xF0C0;
     constexpr char32_t FaWindows              = 0xF17A;
 
-    // --- Material Design (nf-md-*) — surrogate pair range ---
+    //
+    // Material Design (nf-md-*) — surrogate pair range
+    //
+
     constexpr char32_t MdApplication          = 0xF08C6;
     constexpr char32_t MdApps                 = 0xF003B;
     constexpr char32_t MdCached               = 0xF00E8;
@@ -191,7 +218,10 @@ namespace NfIcon
     constexpr char32_t MdTimer                = 0xF13AB;
     constexpr char32_t MdXml                  = 0xF05C0;
 
-    // --- Codicons (nf-cod-*) ---
+    //
+    // Codicons (nf-cod-*)
+    //
+
     constexpr char32_t CodFileSymlinkDir      = 0xEAED;
     constexpr char32_t CodFolderLibrary       = 0xEBDF;
     constexpr char32_t CodOutput              = 0xEB9D;
@@ -201,14 +231,16 @@ namespace NfIcon
 
 
 
-// ============================================================================
+
+
+////////////////////////////////////////////////////////////////////////////////
 //
 //  Default Tables (extern declarations)
 //
 //  Defined in IconMapping.cpp. Seeded into CConfig's runtime maps during
 //  Initialize.
 //
-// ============================================================================
+////////////////////////////////////////////////////////////////////////////////
 
 extern const SIconMappingEntry    g_rgDefaultExtensionIcons[];
 extern const size_t               g_cDefaultExtensionIcons;

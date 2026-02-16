@@ -4,13 +4,15 @@
 
 
 
-// ============================================================================
+
+
+////////////////////////////////////////////////////////////////////////////////
 //
 //  EDetectionResult
 //
 //  Outcome of the Nerd Font auto-detection chain.
 //
-// ============================================================================
+////////////////////////////////////////////////////////////////////////////////
 
 enum class EDetectionResult
 {
@@ -21,7 +23,9 @@ enum class EDetectionResult
 
 
 
-// ============================================================================
+
+
+////////////////////////////////////////////////////////////////////////////////
 //
 //  CNerdFontDetector
 //
@@ -35,7 +39,7 @@ enum class EDetectionResult
 //  GDI-dependent methods are protected virtual so tests can derive
 //  and override them (same pattern as ConfigProbe : public CConfig).
 //
-// ============================================================================
+////////////////////////////////////////////////////////////////////////////////
 
 class CNerdFontDetector
 {
@@ -43,12 +47,12 @@ public:
     HRESULT Detect (
         HANDLE                       hConsole,
         const IEnvironmentProvider & envProvider,
-        _Out_ EDetectionResult *     pResult);
+        EDetectionResult &           result);
 
 protected:
     // GDI-dependent methods — virtual so tests can derive and override
-    virtual HRESULT ProbeConsoleFontForGlyph (HANDLE hConsole, WCHAR wchCanary, _Out_ bool * pfHasGlyph);
-    virtual HRESULT IsNerdFontInstalled      (_Out_ bool * pfFound);
+    virtual HRESULT ProbeConsoleFontForGlyph (HANDLE hConsole, WCHAR wchCanary, bool & fHasGlyph);
+    virtual HRESULT IsNerdFontInstalled      (bool & fFound);
 
 private:
     static bool  IsWezTerm        (const IEnvironmentProvider & envProvider);

@@ -4,14 +4,16 @@
 
 
 
-// ============================================================================
+
+
+////////////////////////////////////////////////////////////////////////////////
 //
 //  Compile-time verification of CodePointToWideChars
 //
 //  Verify BMP code points produce count=1 and supplementary code points
 //  produce correct surrogate pairs with count=2.
 //
-// ============================================================================
+////////////////////////////////////////////////////////////////////////////////
 
 // BMP code point (Nerd Font Private Use Area)
 static_assert(CodePointToWideChars (NfIcon::DevCss3).count == 1,
@@ -37,14 +39,16 @@ static_assert(CodePointToWideChars (0x110000).count == 0,
 
 
 
-// ============================================================================
+
+
+////////////////////////////////////////////////////////////////////////////////
 //
 //  g_rgDefaultExtensionIcons
 //
 //  Default extension-to-icon mapping. Seeded into CConfig's
 //  m_mapExtensionToIcon during Initialize.
 //
-// ============================================================================
+////////////////////////////////////////////////////////////////////////////////
 
 const SIconMappingEntry g_rgDefaultExtensionIcons[] =
 {
@@ -358,104 +362,108 @@ const size_t g_cDefaultExtensionIcons = _countof(g_rgDefaultExtensionIcons);
 
 
 
-// ============================================================================
+
+
+////////////////////////////////////////////////////////////////////////////////
 //
 //  g_rgDefaultWellKnownDirIcons
 //
 //  Default well-known directory name to icon mapping.
 //
-// ============================================================================
+////////////////////////////////////////////////////////////////////////////////
 
 const SIconMappingEntry g_rgDefaultWellKnownDirIcons[] =
 {
     // Version control / IDEs (DEVIATIONS for legibility)
-    { L".git",         NfIcon::SetiGit },            // DEVIATION: nf-seti-git (not TI's nf-custom-folder_git)
-    { L".github",      NfIcon::SetiGithub },          // DEVIATION: nf-seti-github
-    { L".vscode",      NfIcon::DevVscode },            // DEVIATION: nf-dev-vscode
-    { L".vscode-insiders", NfIcon::DevVscode },
-    { L"node_modules", NfIcon::SetiNpm },              // DEVIATION: nf-seti-npm (not TI's nf-custom-folder_npm)
+    { L".git",             NfIcon::SetiGit             },  // DEVIATION: nf-seti-git (not TI's nf-custom-folder_git)
+    { L".github",          NfIcon::SetiGithub          },  // DEVIATION: nf-seti-github
+    { L".vscode",          NfIcon::DevVscode           },  // DEVIATION: nf-dev-vscode
+    { L".vscode-insiders", NfIcon::DevVscode           },
+    { L"node_modules",     NfIcon::SetiNpm             },  // DEVIATION: nf-seti-npm (not TI's nf-custom-folder_npm)
 
     // Config / Cloud provider directories (Terminal-Icons)
-    { L".config",      NfIcon::SetiConfig },
-    { L".cargo",       NfIcon::CustomFolderConfig },
-    { L".cache",       NfIcon::MdCached },
-    { L".docker",      NfIcon::DevDocker },
-    { L".aws",         NfIcon::DevAws },
-    { L".azure",       NfIcon::MdMicrosoftAzure },
-    { L".kube",        NfIcon::MdShipWheel },
+    { L".config",          NfIcon::SetiConfig          },
+    { L".cargo",           NfIcon::CustomFolderConfig  },
+    { L".cache",           NfIcon::MdCached            },
+    { L".docker",          NfIcon::DevDocker           },
+    { L".aws",             NfIcon::DevAws              },
+    { L".azure",           NfIcon::MdMicrosoftAzure    },
+    { L".kube",            NfIcon::MdShipWheel         },
 
     // Source / Development (Terminal-Icons)
-    { L"src",          NfIcon::OctTerminal },
-    { L"source",       NfIcon::OctTerminal },
-    { L"development",  NfIcon::OctTerminal },
-    { L"projects",     NfIcon::SetiProject },
+    { L"src",              NfIcon::OctTerminal         },
+    { L"source",           NfIcon::OctTerminal         },
+    { L"development",      NfIcon::OctTerminal         },
+    { L"projects",         NfIcon::SetiProject         },
 
     // Documentation (Terminal-Icons)
-    { L"docs",         NfIcon::OctRepo },
-    { L"doc",          NfIcon::OctRepo },
-    { L"documents",    NfIcon::OctRepo },
+    { L"docs",             NfIcon::OctRepo             },
+    { L"doc",              NfIcon::OctRepo             },
+    { L"documents",        NfIcon::OctRepo             },
 
     // Build outputs (Terminal-Icons)
-    { L"bin",          NfIcon::OctFileBinary },
-    { L"build",        NfIcon::CodOutput },
-    { L"dist",         NfIcon::CodOutput },
-    { L"out",          NfIcon::CodOutput },
-    { L"output",       NfIcon::CodOutput },
-    { L"artifacts",    NfIcon::CodPackage },
+    { L"bin",              NfIcon::OctFileBinary       },
+    { L"build",            NfIcon::CodOutput           },
+    { L"dist",             NfIcon::CodOutput           },
+    { L"out",              NfIcon::CodOutput           },
+    { L"output",           NfIcon::CodOutput           },
+    { L"artifacts",        NfIcon::CodPackage          },
 
     // Testing (Terminal-Icons)
-    { L"test",         NfIcon::MdTestTube },
-    { L"tests",        NfIcon::MdTestTube },
-    { L"__tests__",    NfIcon::MdTestTube },
-    { L"spec",         NfIcon::MdTestTube },
-    { L"specs",        NfIcon::MdTestTube },
-    { L"benchmark",    NfIcon::MdTimer },
+    { L"test",             NfIcon::MdTestTube          },
+    { L"tests",            NfIcon::MdTestTube          },
+    { L"__tests__",        NfIcon::MdTestTube          },
+    { L"spec",             NfIcon::MdTestTube          },
+    { L"specs",            NfIcon::MdTestTube          },
+    { L"benchmark",        NfIcon::MdTimer             },
 
     // Libraries / Packages
-    { L"lib",          NfIcon::CodFolderLibrary },
-    { L"libs",         NfIcon::CodFolderLibrary },
-    { L"packages",     NfIcon::SetiNpm },
+    { L"lib",              NfIcon::CodFolderLibrary    },
+    { L"libs",             NfIcon::CodFolderLibrary    },
+    { L"packages",         NfIcon::SetiNpm             },
 
     // Scripts
-    { L"scripts",      NfIcon::SetiShell },
+    { L"scripts",          NfIcon::SetiShell           },
 
     // Media / Images (Terminal-Icons)
-    { L"images",       NfIcon::MdFolderImage },
-    { L"img",          NfIcon::MdFolderImage },
-    { L"photos",       NfIcon::MdFolderImage },
-    { L"pictures",     NfIcon::MdFolderImage },
-    { L"assets",       NfIcon::MdFolderImage },
-    { L"videos",       NfIcon::MdMovie },
-    { L"movies",       NfIcon::MdMovie },
-    { L"media",        NfIcon::OctFileMedia },
-    { L"music",        NfIcon::MdMusicBoxMultiple },
-    { L"songs",        NfIcon::MdMusicBoxMultiple },
-    { L"fonts",        NfIcon::FaFont },
+    { L"images",           NfIcon::MdFolderImage       },
+    { L"img",              NfIcon::MdFolderImage       },
+    { L"photos",           NfIcon::MdFolderImage       },
+    { L"pictures",         NfIcon::MdFolderImage       },
+    { L"assets",           NfIcon::MdFolderImage       },
+    { L"videos",           NfIcon::MdMovie             },
+    { L"movies",           NfIcon::MdMovie             },
+    { L"media",            NfIcon::OctFileMedia        },
+    { L"music",            NfIcon::MdMusicBoxMultiple  },
+    { L"songs",            NfIcon::MdMusicBoxMultiple  },
+    { L"fonts",            NfIcon::FaFont              },
 
     // User directories (Terminal-Icons)
-    { L"downloads",    NfIcon::MdFolderDownload },
-    { L"desktop",      NfIcon::MdDesktopClassic },
-    { L"favorites",    NfIcon::MdFolderStar },
-    { L"contacts",     NfIcon::MdContacts },
-    { L"onedrive",     NfIcon::MdMicrosoftOnedrive },
-    { L"users",        NfIcon::FaUsers },
-    { L"windows",      NfIcon::FaWindows },
+    { L"downloads",        NfIcon::MdFolderDownload    },
+    { L"desktop",          NfIcon::MdDesktopClassic    },
+    { L"favorites",        NfIcon::MdFolderStar        },
+    { L"contacts",         NfIcon::MdContacts          },
+    { L"onedrive",         NfIcon::MdMicrosoftOnedrive },
+    { L"users",            NfIcon::FaUsers             },
+    { L"windows",          NfIcon::FaWindows           },
 
     // Other (Terminal-Icons)
-    { L"apps",         NfIcon::MdApps },
-    { L"applications", NfIcon::MdApps },
-    { L"demo",         NfIcon::CodPreview },
-    { L"samples",      NfIcon::CodPreview },
-    { L"shortcuts",    NfIcon::CodFileSymlinkDir },
-    { L"links",        NfIcon::CodFileSymlinkDir },
-    { L"github",       NfIcon::FaGithubAlt },
+    { L"apps",             NfIcon::MdApps              },
+    { L"applications",     NfIcon::MdApps              },
+    { L"demo",             NfIcon::CodPreview          },
+    { L"samples",          NfIcon::CodPreview          },
+    { L"shortcuts",        NfIcon::CodFileSymlinkDir   },
+    { L"links",            NfIcon::CodFileSymlinkDir   },
+    { L"github",           NfIcon::FaGithubAlt         },
 };
 
 const size_t g_cDefaultWellKnownDirIcons = _countof(g_rgDefaultWellKnownDirIcons);
 
 
 
-// ============================================================================
+
+
+////////////////////////////////////////////////////////////////////////////////
 //
 //  g_rgAttributePrecedenceOrder
 //
@@ -465,7 +473,7 @@ const size_t g_cDefaultWellKnownDirIcons = _countof(g_rgDefaultWellKnownDirIcons
 //
 //  Order: PSHERC0TA (reparse highest, archive lowest).
 //
-// ============================================================================
+////////////////////////////////////////////////////////////////////////////////
 
 const SFileAttributeMap g_rgAttributePrecedenceOrder[] =
 {

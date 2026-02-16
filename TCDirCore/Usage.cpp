@@ -1579,7 +1579,7 @@ static bool DisplayIconStatus (CConsole & console, optional<bool> fIconsCli = nu
         EDetectionResult   result = EDetectionResult::NotDetected;
         HANDLE             hOut   = GetStdHandle (STD_OUTPUT_HANDLE);
 
-        if (SUCCEEDED (detector.Detect (hOut, *config.m_pEnvironmentProvider, &result)))
+        if (SUCCEEDED (detector.Detect (hOut, *config.m_pEnvironmentProvider, result)))
         {
             fActive = (result == EDetectionResult::Detected);
         }

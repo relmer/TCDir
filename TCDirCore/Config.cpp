@@ -268,6 +268,28 @@ constexpr CConfig::STextAttr CConfig::s_rgTextAttrs[] =
 
 
 
+constexpr CConfig::SSwitchMapping CConfig::s_switchMappings[] =
+{
+    { L"s"sv,       true,  &CConfig::m_fRecurse       },
+    { L"s-"sv,      false, &CConfig::m_fRecurse       },
+    { L"w"sv,       true,  &CConfig::m_fWideListing   },
+    { L"w-"sv,      false, &CConfig::m_fWideListing   },
+    { L"b"sv,       true,  &CConfig::m_fBareListing   },
+    { L"b-"sv,      false, &CConfig::m_fBareListing   },
+    { L"p"sv,       true,  &CConfig::m_fPerfTimer     },
+    { L"p-"sv,      false, &CConfig::m_fPerfTimer     },
+    { L"m"sv,       true,  &CConfig::m_fMultiThreaded },
+    { L"m-"sv,      false, &CConfig::m_fMultiThreaded },
+    { L"owner"sv,   true,  &CConfig::m_fShowOwner     },
+    { L"streams"sv, true,  &CConfig::m_fShowStreams   },
+    { L"icons"sv,   true,  &CConfig::m_fIcons         },
+    { L"icons-"sv,  false, &CConfig::m_fIcons         },
+};
+
+
+
+
+
 ////////////////////////////////////////////////////////////////////////////////
 //
 //  CConfig::CConfig
@@ -311,9 +333,11 @@ void CConfig::Initialize (WORD wDefaultAttr)
     m_rgAttributes[EAttribute::CloudStatusAlwaysLocallyAvailable] = FC_LightGreen;
   
     InitializeExtensionToTextAttrMap();
-    InitializeExtensionToIconMap();
     InitializeFileAttributeToTextAttrMap();
-    InitializeWellKnownDirToIconMap();
+  
+    PopulateIconMap (g_rgDefaultExtensionIcons,    g_cDefaultExtensionIcons,    m_mapExtensionToIcon,    m_mapExtensionIconSources);
+    PopulateIconMap (g_rgDefaultWellKnownDirIcons, g_cDefaultWellKnownDirIcons, m_mapWellKnownDirToIcon, m_mapWellKnownDirIconSources);
+  
     ApplyUserColorOverrides();
 }
 
@@ -365,7 +389,7 @@ void CConfig::InitializeExtensionToTextAttrMap (void)
         ASSERT (!m_mapExtensionToTextAttr.contains (strExtension));
 
         m_mapExtensionToTextAttr[strExtension] = textAttr.m_wAttr;
-        m_mapExtensionSources[strExtension] = EAttributeSource::Default;
+        m_mapExtensionSources[strExtension]    = EAttributeSource::Default;
     }
 }
 
@@ -394,56 +418,32 @@ void CConfig::InitializeFileAttributeToTextAttrMap (void)
 
 ////////////////////////////////////////////////////////////////////////////////
 //
-//  CConfig::InitializeExtensionToIconMap
+//  CConfig::PopulateIconMap
 //
-//  Seed the extension → icon map from the default icon table.
-//  Parallels InitializeExtensionToTextAttrMap for colors.
+//  Shared helper that seeds an icon map and its companion source-tracking
+//  map from a default SIconMappingEntry table.
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-void CConfig::InitializeExtensionToIconMap (void)
+void CConfig::PopulateIconMap (
+    const SIconMappingEntry                  * prgEntries,
+    size_t                                     cEntries,
+    unordered_map<wstring, char32_t>         & mapIcons,
+    unordered_map<wstring, EAttributeSource> & mapSources)
 {
-    for (size_t i = 0; i < g_cDefaultExtensionIcons; i++)
+    for (size_t i = 0; i < cEntries; i++)
     {
-        const SIconMappingEntry & entry = g_rgDefaultExtensionIcons[i];
+        const SIconMappingEntry & entry = prgEntries[i];
+        wstring                   key     (entry.m_pszKey);
 
-        wstring key (entry.m_pszKey);
+
 
         std::ranges::transform (key, key.begin(), towlower);
 
-        ASSERT (!m_mapExtensionToIcon.contains (key));
+        ASSERT (!mapIcons.contains (key));
 
-        m_mapExtensionToIcon[key]        = entry.m_codePoint;
-        m_mapExtensionIconSources[key]   = EAttributeSource::Default;
-    }
-}
-
-
-
-
-
-////////////////////////////////////////////////////////////////////////////////
-//
-//  CConfig::InitializeWellKnownDirToIconMap
-//
-//  Seed the well-known directory name → icon map from the default table.
-//
-////////////////////////////////////////////////////////////////////////////////
-
-void CConfig::InitializeWellKnownDirToIconMap (void)
-{
-    for (size_t i = 0; i < g_cDefaultWellKnownDirIcons; i++)
-    {
-        const SIconMappingEntry & entry = g_rgDefaultWellKnownDirIcons[i];
-
-        wstring key (entry.m_pszKey);
-
-        std::ranges::transform (key, key.begin(), towlower);
-
-        ASSERT (!m_mapWellKnownDirToIcon.contains (key));
-
-        m_mapWellKnownDirToIcon[key]        = entry.m_codePoint;
-        m_mapWellKnownDirIconSources[key]   = EAttributeSource::Default;
+        mapIcons[key]    = entry.m_codePoint;
+        mapSources[key]  = EAttributeSource::Default;
     }
 }
 
@@ -510,14 +510,10 @@ Error:
 
 void CConfig::ProcessColorOverrideEntry (wstring_view entry)
 {
-    HRESULT      hr          = S_OK;
-    wstring_view keyView;
-    wstring_view valueView;
-    WORD         colorAttr   = 0;
-    char32_t     iconCP      = 0;
-    bool         fSuppressed = false;
-    bool         fHasColor   = false;
-    bool         fHasIcon    = false;
+    HRESULT        hr = S_OK;
+    wstring_view   keyView;
+    wstring_view   valueView;
+    SOverrideValue ov;
 
 
 
@@ -553,113 +549,161 @@ void CConfig::ProcessColorOverrideEntry (wstring_view entry)
 
     CBR (!keyView.empty());
 
+    hr = ParseOverrideValue (entry, valueView, ov);
+    CHR (hr);
+
+    ApplyOverrideByKeyType (entry, keyView, ov);
+
+
+Error:
+    return;
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CConfig::ParseOverrideValue
+//
+//  Parse the value portion of a color/icon override entry.  The value may
+//  contain a color spec, a comma-separated icon spec, or both:
+//    "Yellow"              → color only
+//    "Yellow,U+E0A0"      → color + icon
+//    ",U+E0A0"            → icon only
+//    "Yellow,"            → color + suppressed icon
+//
+////////////////////////////////////////////////////////////////////////////////
+
+HRESULT CConfig::ParseOverrideValue (
+    wstring_view     entry,
+    wstring_view     valueView,
+    SOverrideValue & ov)
+{
+    HRESULT      hr        = S_OK;
+    wstring_view colorView;
+    wstring_view iconView;
+    bool         fHasComma = false;
+
+
+
     //
-    // Check for comma in value — split into [color][,icon]
+    // Split on comma: [color][,icon]
+    // No comma means the entire value is a color (backward compatible).
     //
 
+    size_t commaPos = valueView.find (L',');
+
+    if (commaPos != wstring_view::npos)
     {
-        size_t commaPos = valueView.find (L',');
+        colorView = TrimWhitespace (valueView.substr (0, commaPos));
+        iconView  = valueView.substr (commaPos + 1);
+        fHasComma = true;
+    }
+    else
+    {
+        colorView = valueView;
+    }
 
-        if (commaPos != wstring_view::npos)
+    //
+    // Parse color part (if non-empty)
+    //
+
+    if (!colorView.empty())
+    {
+        hr = ParseColorValue (entry, colorView, ov.m_colorAttr);
+        CHR (hr);
+        ov.m_fHasColor = true;
+    }
+
+    //
+    // Parse icon part (only when comma was present)
+    //
+
+    if (fHasComma)
+    {
+        hr = ParseIconValue (iconView, ov.m_iconCP, ov.m_fSuppressed);
+        if (FAILED (hr))
         {
-            wstring_view colorView = TrimWhitespace (valueView.substr (0, commaPos));
-            wstring_view iconView  = valueView.substr (commaPos + 1);
-
-            //
-            // Parse color part (if non-empty)
-            //
-
-            if (!colorView.empty())
-            {
-                hr = ParseColorValue (entry, colorView, colorAttr);
-                CHR (hr);
-                fHasColor = true;
-            }
-
-            //
-            // Parse icon part
-            //
-
-            hr = ParseIconValue (iconView, iconCP, fSuppressed);
-            if (FAILED (hr))
-            {
-                wstring_view trimmedIcon = TrimWhitespace (iconView);
-                size_t       entryComma  = entry.find (L',');
-                size_t       iconOffset  = (entryComma != wstring_view::npos) ? entryComma + 1 : 0;
-                m_lastParseResult.errors.push_back ({
-                    L"Invalid icon specification (expected U+XXXX, literal glyph, or empty)",
-                    wstring (entry),
-                    wstring (trimmedIcon),
-                    iconOffset
-                });
-                CHR (hr);
-            }
-            fHasIcon = true;
-        }
-        else
-        {
-            //
-            // No comma — entire value is color (backward compatible)
-            //
-
-            hr = ParseColorValue (entry, valueView, colorAttr);
+            wstring_view trimmedIcon = TrimWhitespace (iconView);
+            size_t       entryComma  = entry.find (L',');
+            size_t       iconOffset  = (entryComma != wstring_view::npos) ? entryComma + 1 : 0;
+           
+           
+           
+            m_lastParseResult.errors.push_back ({
+                L"Invalid icon specification (expected U+XXXX, literal glyph, or empty)",
+                wstring (entry),
+                wstring (trimmedIcon),
+                iconOffset
+            });
             CHR (hr);
-            fHasColor = true;
         }
-    }
-    
-    //
-    // Apply the override based on key type
-    //
 
-    if (keyView.length() > 4 &&
-        towlower (keyView[0]) == L'd' &&
-        towlower (keyView[1]) == L'i' &&
-        towlower (keyView[2]) == L'r' &&
-        keyView[3] == L':')
+        ov.m_fHasIcon = true;
+    }
+
+
+
+Error:
+    return hr;
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CConfig::ApplyOverrideByKeyType
+//
+//  Route the parsed color/icon override to the appropriate handler based
+//  on the key type:
+//    .ext     → file extension override
+//    dir:name → well-known directory override
+//    attr:x   → file attribute override
+//    D, T, …  → display attribute override (single character)
+//
+////////////////////////////////////////////////////////////////////////////////
+
+void CConfig::ApplyOverrideByKeyType (
+    wstring_view           entry,
+    wstring_view           keyView,
+    const SOverrideValue & ov)
+{
+    bool         fIsDir = (keyView.length() > 4 && _wcsnicmp (keyView.data(), L"dir:", 4) == 0);
+    wstring_view name   = fIsDir ? keyView.substr (4) : keyView;
+
+
+
+    if (fIsDir || keyView[0] == L'.')
     {
         //
-        // Well-known directory override (dir:name)
+        // Extension or well-known directory override
         //
 
-        wstring_view dirName = keyView.substr (4);
-
-        if (fHasColor)
+        if (ov.m_fHasColor)
         {
-            ProcessFileExtensionOverride (dirName, colorAttr);
+            ProcessFileExtensionOverride (name, ov.m_colorAttr);
         }
 
-        if (fHasIcon)
+        if (ov.m_fHasIcon)
         {
-            ProcessWellKnownDirIconOverride (dirName, iconCP, fSuppressed);
+            ApplyIconOverride (name, ov.m_iconCP, ov.m_fSuppressed,
+                               fIsDir ? m_mapWellKnownDirToIcon      : m_mapExtensionToIcon,
+                               fIsDir ? m_mapWellKnownDirIconSources : m_mapExtensionIconSources);
         }
     }
-    else if (keyView[0] == L'.')
+    else if (keyView.length() == 6 && _wcsnicmp (keyView.data(), L"attr:", 5) == 0)
     {
-        if (fHasColor)
-        {
-            ProcessFileExtensionOverride (keyView, colorAttr);
-        }
-
-        if (fHasIcon)
-        {
-            ProcessFileExtensionIconOverride (keyView, iconCP, fSuppressed);
-        }
-    }
-    else if (keyView.length() == 6 &&
-             towlower (keyView[0]) == L'a' &&
-             towlower (keyView[1]) == L't' &&
-             towlower (keyView[2]) == L't' &&
-             towlower (keyView[3]) == L'r' &&
-             keyView[4] == L':')
-    {
-        ProcessFileAttributeOverride (keyView, colorAttr, entry, fHasColor, fHasIcon, iconCP);
+        ProcessFileAttributeOverride (keyView, entry, ov);
     }
     else if (keyView.length() == 1)
     {
-        if (fHasColor)
+        if (ov.m_fHasColor)
         {
-            ProcessDisplayAttributeOverride (keyView[0], colorAttr, entry);
+            ProcessDisplayAttributeOverride (keyView[0], ov.m_colorAttr, entry);
         }
     }
     else
@@ -667,10 +711,6 @@ void CConfig::ProcessColorOverrideEntry (wstring_view entry)
         m_lastParseResult.errors.push_back ( { L"Invalid key (expected single character, .extension, dir:name, or attr:x)",
                                                wstring (entry), wstring (keyView), entry.find (keyView) } );
     }
-
-
-Error:
-    return;
 }
 
 
@@ -720,6 +760,9 @@ HRESULT CConfig::ParseColorValue (wstring_view entry, wstring_view valueView, WO
     {
         // Foreground and background
         size_t onPosValue = result.begin() - valueView.begin();
+
+
+
         foreView = TrimWhitespace (valueView.substr (0, onPosValue));
         backView = TrimWhitespace (valueView.substr (onPosValue + 4));
 
@@ -800,6 +843,8 @@ HRESULT CConfig::ParseColorValue (wstring_view entry, wstring_view valueView, WO
 
     colorAttr = foreColor | backColor;
 
+
+
 Error:
     return hr;
 }
@@ -815,7 +860,9 @@ Error:
 //  Parse an icon specification from the value part after a comma.
 //  Supported formats:
 //    - U+XXXX  (4-6 hex digits, range 0x0001-0x10FFFF, not surrogates)
-//    - Single BMP character (literal glyph)
+//    - Single BMP character (literal glyph, U+0000-U+FFFF — fits in one
+//      wchar_t, no surrogate pair needed)
+//    - Surrogate pair (two wchar_t values encoding U+10000-U+10FFFF)
 //    - Empty string (suppressed — user typed trailing comma)
 //  Returns S_OK on success, E_FAIL on invalid input.
 //
@@ -823,90 +870,92 @@ Error:
 
 HRESULT CConfig::ParseIconValue (wstring_view iconSpec, char32_t & codePoint, bool & fSuppressed)
 {
-    HRESULT hr         = S_OK;
-    bool    fIsSuppressed = false;
-    char32_t cpResult  = 0;
+    HRESULT  hr            = S_OK;
+    bool     fIsSuppressed = false;
+    char32_t cpResult      = 0;
 
 
 
     iconSpec = TrimWhitespace (iconSpec);
 
-    //
-    // Empty icon spec means suppressed (user typed e.g., ".obj=Green," or ".obj=,")
-    //
-
-    if (iconSpec.empty())
+    switch (iconSpec.length())
     {
-        fIsSuppressed = true;
-        goto Done;
-    }
-
-    //
-    // U+XXXX hex notation
-    //
-
-    if (iconSpec.length() >= 6 &&
-        (iconSpec[0] == L'U' || iconSpec[0] == L'u') &&
-        iconSpec[1] == L'+')
-    {
-        wstring_view hexPart = iconSpec.substr (2);
-
-        // Must be 4-6 hex digits
-        CBR (hexPart.length() >= 4 && hexPart.length() <= 6);
-
-        // Validate all characters are hex digits
-        for (wchar_t ch : hexPart)
+        case 0:
         {
-            CBR (iswxdigit (ch));
+            //
+            // Empty icon spec means suppressed (user typed e.g., ".obj=Green," or ".obj=,")
+            //
+
+            fIsSuppressed = true;
+            break;
         }
 
-        // Parse the hex value
-        unsigned long ulValue = wcstoul (wstring (hexPart).c_str(), nullptr, 16);
+        case 1:
+        {
+            //
+            // Single BMP character — must not be a lone surrogate.
+            // U+D800-U+DFFF is the surrogate range, reserved by Unicode
+            // for UTF-16 encoding pairs.  A lone surrogate is malformed.
+            //
 
-        // Range check: 0x0001 - 0x10FFFF, excluding surrogates D800-DFFF
-        CBR (ulValue >= 0x0001 && ulValue <= 0x10FFFF);
-        CBR (ulValue < 0xD800 || ulValue > 0xDFFF);
+            wchar_t ch = iconSpec[0];
+            CBR (ch < 0xD800 || ch > 0xDFFF);
 
-        cpResult = static_cast<char32_t>(ulValue);
-        goto Done;
+            cpResult = static_cast<char32_t>(ch);
+            break;
+        }
+
+        case 2:
+        {
+            //
+            // Surrogate pair — two wchar_t values that together encode a
+            // supplementary character (U+10000-U+10FFFF).  The first must
+            // be a high surrogate (U+D800-U+DBFF) and the second a low
+            // surrogate (U+DC00-U+DFFF).
+            //
+
+            wchar_t high = iconSpec[0];
+            wchar_t low  = iconSpec[1];
+
+            CBR (high >= 0xD800 && high <= 0xDBFF);
+            CBR (low  >= 0xDC00 && low  <= 0xDFFF);
+
+            cpResult = static_cast<char32_t>(((high - 0xD800) << 10) + (low - 0xDC00) + 0x10000);
+            break;
+        }
+
+        default:
+        {
+            //
+            // U+XXXX hex notation (length >= 6)
+            //
+
+            CBR (iconSpec.length() >= 6);
+            CBR ((iconSpec[0] == L'U' || iconSpec[0] == L'u') && iconSpec[1] == L'+');
+
+            wstring_view hexPart = iconSpec.substr (2);
+
+            // Must be 4-6 hex digits
+            CBR (hexPart.length() >= 4 && hexPart.length() <= 6);
+
+            // Validate all characters are hex digits
+            for (wchar_t ch : hexPart)
+            {
+                CBR (iswxdigit (ch));
+            }
+
+            // Parse the hex value
+            unsigned long ulValue = wcstoul (wstring (hexPart).c_str(), nullptr, 16);
+
+            // Range check: 0x0001 - 0x10FFFF, excluding surrogates D800-DFFF
+            CBR (ulValue >= 0x0001 && ulValue <= 0x10FFFF);
+            CBR (ulValue < 0xD800 || ulValue > 0xDFFF);
+
+            cpResult = static_cast<char32_t>(ulValue);
+            break;
+        }
     }
 
-    //
-    // Literal glyph: single BMP character or a surrogate pair
-    //
-
-    if (iconSpec.length() == 1)
-    {
-        // Single BMP character — must not be a lone surrogate
-        wchar_t ch = iconSpec[0];
-        CBR (ch < 0xD800 || ch > 0xDFFF);
-
-        cpResult = static_cast<char32_t>(ch);
-        goto Done;
-    }
-
-    if (iconSpec.length() == 2)
-    {
-        // Possible surrogate pair
-        wchar_t high = iconSpec[0];
-        wchar_t low  = iconSpec[1];
-
-        CBR (high >= 0xD800 && high <= 0xDBFF);
-        CBR (low  >= 0xDC00 && low  <= 0xDFFF);
-
-        cpResult = static_cast<char32_t>(
-            ((high - 0xD800) << 10) + (low - 0xDC00) + 0x10000
-        );
-        goto Done;
-    }
-
-    //
-    // Anything else is invalid
-    //
-
-    CBR (FALSE);
-
-Done:
     codePoint   = cpResult;
     fSuppressed = fIsSuppressed;
 
@@ -922,88 +971,30 @@ Error:
 //
 //  CConfig::ProcessSwitchOverride
 //
-//  Process a switch override entry (e.g., /s, /w, /m-, -s, -w, --owner)
-//  Short switches: /S (recurse), /W (wide), /P (perf timer), /M (multithreaded)
-//  Long switches: --owner
-//  Use trailing '-' to disable (e.g., /M-)
+//  Look up entry in the s_switchMappings table (case-insensitive).
+//  On match, set the corresponding bool member.
+//  On miss, record a parse error.
 //
 ////////////////////////////////////////////////////////////////////////////////
 
 void CConfig::ProcessSwitchOverride (wstring_view entry)
 {
-    static constexpr LPCWSTR s_kpszInvalidSwitch = L"Invalid switch (expected W, S, P, M, B, Owner, or Streams)";
-
-    HRESULT      hr                = S_OK;
-    wstring_view invalidText       = entry;
-    size_t       invalidTextOffset = 0;
-    wchar_t      ch                = 0;
-    bool         fValue            = true;
-
-
-
-    //
-    // Check for long switch names first (owner, streams)
-    //
-
-    if (entry.length() >= 5)
+    for (const SSwitchMapping & mapping : s_switchMappings)
     {
-        hr = ProcessLongSwitchOverride (entry);
-        BAIL_OUT_IF (SUCCEEDED (hr), S_OK);  // Success - skip short switch processing
-
-        // Not a recognized long switch, fall through to try short switch
-        hr = S_OK;
+        if (entry.length() == mapping.m_name.length() &&
+            _wcsnicmp (entry.data(), mapping.m_name.data(), mapping.m_name.length()) == 0)
+        {
+            this->*mapping.m_pMember = mapping.m_state;
+            return;
+        }
     }
 
-    //
-    // Short switch: single letter, optionally followed by '-' to disable
-    //
-
-    switch (entry.length())
-    {
-        case 1:
-            break;
-
-        case 2:
-            CBR (entry[1] == L'-');
-            fValue = false;
-            break;  
-
-        default:
-            invalidText       = entry;
-            invalidTextOffset = 0;
-            CBR (FALSE);
-            break;
-    }
-
-    ch = towlower (entry[0]);
-    switch (ch)
-    {
-        case L's':  m_fRecurse       = fValue;  break;
-        case L'w':  m_fWideListing   = fValue;  break;
-        case L'b':  m_fBareListing   = fValue;  break;
-        case L'p':  m_fPerfTimer     = fValue;  break;
-        case L'm':  m_fMultiThreaded = fValue;  break;
-
-        default:
-            invalidText       = entry.substr (0, 1);
-            invalidTextOffset = 0;
-            CBR (FALSE);
-            break;
-    }
-
-    
-Error:
-    if (FAILED (hr))
-    {
-        m_lastParseResult.errors.push_back ( {
-            s_kpszInvalidSwitch,
-            wstring (entry), 
-            wstring (invalidText),
-            invalidTextOffset 
-        } );
-    }
-
-    return;
+    m_lastParseResult.errors.push_back ({
+        L"Invalid switch",
+        wstring (entry),
+        wstring (entry),
+        0
+    });
 }
 
 
@@ -1014,90 +1005,23 @@ Error:
 //
 //  CConfig::IsSwitchName
 //
-//  Check if entry is a valid switch name without prefix.
-//  Returns true for: W, S, P, M, B, M-, Owner, Streams (case-insensitive)
+//  Check if entry matches any name in the s_switchMappings table
+//  (case-insensitive).
 //
 ////////////////////////////////////////////////////////////////////////////////
 
 bool CConfig::IsSwitchName (wstring_view entry)
 {
-    // Single-letter switches (optionally with '-' suffix)
-    if (entry.length() == 1 || (entry.length() == 2 && entry[1] == L'-'))
+    for (const SSwitchMapping & mapping : s_switchMappings)
     {
-        wchar_t ch = towlower (entry[0]);
-        return ch == L'w' || ch == L's' || ch == L'p' || ch == L'm' || ch == L'b';
-    }
-
-    // Long switch names
-    if (entry.length() == 5 && _wcsnicmp (entry.data(), L"owner", 5) == 0)
-    {
-        return true;
-    }
-
-    if (entry.length() == 7 && _wcsnicmp (entry.data(), L"streams", 7) == 0)
-    {
-        return true;
-    }
-
-    if (entry.length() == 5 && _wcsnicmp (entry.data(), L"icons", 5) == 0)
-    {
-        return true;
-    }
-
-    if (entry.length() == 6 && _wcsnicmp (entry.data(), L"icons-", 6) == 0)
-    {
-        return true;
+        if (entry.length() == mapping.m_name.length() &&
+            _wcsnicmp (entry.data(), mapping.m_name.data(), mapping.m_name.length()) == 0)
+        {
+            return true;
+        }
     }
 
     return false;
-}
-
-
-
-
-
-////////////////////////////////////////////////////////////////////////////////
-//
-//  CConfig::ProcessLongSwitchOverride
-//
-//  Process a long switch entry (e.g., "--owner" or "/owner").
-//  Sets idxExample for error reporting (0 = dash prefix, 1 = slash prefix).
-//  Returns S_OK if recognized, E_INVALIDARG if not.
-//
-////////////////////////////////////////////////////////////////////////////////
-
-HRESULT CConfig::ProcessLongSwitchOverride (wstring_view switchName)
-{
-    HRESULT hr = E_INVALIDARG;
-
-
-
-    //
-    // Match against known long switch names (case-insensitive)
-    //
-
-    if (switchName.length() == 5 && _wcsnicmp (switchName.data(), L"owner", 5) == 0)
-    {
-        m_fShowOwner = true;
-        hr           = S_OK;
-    }
-    else if (switchName.length() == 7 && _wcsnicmp (switchName.data(), L"streams", 7) == 0)
-    {
-        m_fShowStreams = true;
-        hr             = S_OK;
-    }
-    else if (switchName.length() == 5 && _wcsnicmp (switchName.data(), L"icons", 5) == 0)
-    {
-        m_fIcons = true;
-        hr       = S_OK;
-    }
-    else if (switchName.length() == 6 && _wcsnicmp (switchName.data(), L"icons-", 6) == 0)
-    {
-        m_fIcons = false;
-        hr       = S_OK;
-    }
-
-    return hr;
 }
 
 
@@ -1128,66 +1052,38 @@ void CConfig::ProcessFileExtensionOverride (wstring_view extension, WORD colorAt
 
 ////////////////////////////////////////////////////////////////////////////////
 //
-//  CConfig::ProcessFileExtensionIconOverride
+//  CConfig::ApplyIconOverride
 //
-//  Apply icon override for a file extension (e.g., ".cpp").
-//  First-write-wins: subsequent duplicates are flagged in m_lastParseResult.
+//  Apply an icon override (extension or well-known directory) to the
+//  specified icon/source maps.  First-write-wins: subsequent duplicates
+//  for the same key are flagged in m_lastParseResult.
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-void CConfig::ProcessFileExtensionIconOverride (wstring_view extension, char32_t iconCodePoint, bool fSuppressed)
+void CConfig::ApplyIconOverride (
+    wstring_view                               name,
+    char32_t                                   iconCodePoint,
+    bool                                       fSuppressed,
+    unordered_map<wstring, char32_t>         & mapIcons,
+    unordered_map<wstring, EAttributeSource> & mapSources)
 {
-    wstring key (extension);
+    wstring key (name);
 
     std::ranges::transform (key, key.begin(), towlower);
 
-    if (m_mapExtensionIconSources.count (key) && m_mapExtensionIconSources[key] == EAttributeSource::Environment)
+    if (mapSources.count (key) && mapSources[key] == EAttributeSource::Environment)
     {
         m_lastParseResult.errors.push_back ({
             L"Duplicate icon override (first-write-wins)",
-            wstring (extension),
-            wstring (extension),
+            wstring (name),
+            wstring (name),
             0
         });
         return;
     }
 
-    m_mapExtensionToIcon[key]      = fSuppressed ? U'\0' : iconCodePoint;
-    m_mapExtensionIconSources[key] = EAttributeSource::Environment;
-}
-
-
-
-
-
-////////////////////////////////////////////////////////////////////////////////
-//
-//  CConfig::ProcessWellKnownDirIconOverride
-//
-//  Apply icon override for a well-known directory name (e.g., ".git", "src").
-//  First-write-wins: subsequent duplicates are flagged in m_lastParseResult.
-//
-////////////////////////////////////////////////////////////////////////////////
-
-void CConfig::ProcessWellKnownDirIconOverride (wstring_view dirName, char32_t iconCodePoint, bool fSuppressed)
-{
-    wstring key (dirName);
-
-    std::ranges::transform (key, key.begin(), towlower);
-
-    if (m_mapWellKnownDirIconSources.count (key) && m_mapWellKnownDirIconSources[key] == EAttributeSource::Environment)
-    {
-        m_lastParseResult.errors.push_back ({
-            L"Duplicate icon override (first-write-wins)",
-            wstring (dirName),
-            wstring (dirName),
-            0
-        });
-        return;
-    }
-
-    m_mapWellKnownDirToIcon[key]        = fSuppressed ? U'\0' : iconCodePoint;
-    m_mapWellKnownDirIconSources[key]   = EAttributeSource::Environment;
+    mapIcons[key]   = fSuppressed ? U'\0' : iconCodePoint;
+    mapSources[key] = EAttributeSource::Environment;
 }
 
 
@@ -1275,29 +1171,13 @@ void CConfig::ProcessDisplayAttributeOverride (wchar_t attrChar, WORD colorAttr,
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-void CConfig::ProcessFileAttributeOverride (wstring_view keyView, WORD colorAttr, wstring_view entry, bool fHasColor, bool fHasIcon, char32_t iconCP)
+void CConfig::ProcessFileAttributeOverride (wstring_view keyView, wstring_view entry, const SOverrideValue & ov)
 {
     DWORD   dwFileAttribute = 0;
     bool    found           = false;
     wchar_t chAttr          = 0;
-    
 
-    // Expected key format: attr:<x> (e.g., attr:h, attr:r, attr:0). Case-insensitive.
-    if (keyView.length() != 6 ||
-        towlower (keyView[0]) != L'a' ||
-        towlower (keyView[1]) != L't' ||
-        towlower (keyView[2]) != L't' ||
-        towlower (keyView[3]) != L'r' ||
-        keyView[4] != L':')
-    {
-        m_lastParseResult.errors.push_back({
-            L"Invalid file attribute key (expected attr:<x>)",
-            wstring(entry),
-            wstring(keyView),
-            entry.find(keyView)
-        });
-        return;
-    }
+
 
     chAttr = towupper (keyView[5]);
 
@@ -1326,14 +1206,14 @@ void CConfig::ProcessFileAttributeOverride (wstring_view keyView, WORD colorAttr
         return;
     }
 
-    if (fHasColor)
+    if (ov.m_fHasColor)
     {
-        m_mapFileAttributesTextAttr[dwFileAttribute] = { colorAttr, EAttributeSource::Environment };
+        m_mapFileAttributesTextAttr[dwFileAttribute] = { ov.m_colorAttr, EAttributeSource::Environment };
     }
 
-    if (fHasIcon)
+    if (ov.m_fHasIcon)
     {
-        ProcessFileAttributeIconOverride (dwFileAttribute, iconCP);
+        ProcessFileAttributeIconOverride (dwFileAttribute, ov.m_iconCP);
     }
 }
 
@@ -1405,11 +1285,12 @@ HRESULT CConfig::ParseColorSpec (wstring_view colorSpec, WORD & colorAttr)
     }
     else
     {
-        size_t onPos = result.begin() - colorSpec.begin();
-
         // Both foreground and background specified
+        size_t       onPos    = result.begin() - colorSpec.begin();
         wstring_view foreView = TrimWhitespace (colorSpec.substr (0, onPos));
         wstring_view backView = TrimWhitespace (colorSpec.substr (onPos + 4));
+
+
 
         hr = ParseColorName (foreView, false, foreColor);
         CHR (hr);
@@ -1511,10 +1392,10 @@ HRESULT CConfig::ParseColorName (wstring_view colorName, bool isBackground, WORD
     {
         // Use ranges::equal with case-insensitive comparison
         if (std::ranges::equal (
-            colorName,
-            mapping.name,
-            [] (wchar_t a, wchar_t b) { return towlower (a) == towlower (b); }
-        ))
+                colorName,
+                mapping.name,
+                [] (wchar_t a, wchar_t b) { return towlower (a) == towlower (b); }
+            ))
         {
             colorValue = isBackground ? mapping.backValue : mapping.foreValue;
             BAIL_OUT_IF (TRUE, S_OK);
@@ -1561,15 +1442,156 @@ char32_t CConfig::GetCloudStatusIcon (DWORD dwCloudStatus)
 
 ////////////////////////////////////////////////////////////////////////////////
 //
-//  CConfig::GetTextAttrForFile
+//  CConfig::ResolveFileAttributeStyle
 //
-//  
+//  Highest priority.  Walk the attribute precedence order in reverse
+//  (lowest priority first) so the highest-priority attribute overwrites.
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-WORD CConfig::GetTextAttrForFile (const WIN32_FIND_DATA & wfd)
+void CConfig::ResolveFileAttributeStyle (const WIN32_FIND_DATA & wfd, SFileDisplayStyle & style)
 {
-    return GetDisplayStyleForFile (wfd).m_wTextAttr;
+    for (size_t i = g_cAttributePrecedenceOrder; i-- > 0; )
+    {
+        const SFileAttributeMap & mapping = g_rgAttributePrecedenceOrder[i];
+
+
+
+        if ((wfd.dwFileAttributes & mapping.m_dwAttribute) == 0)
+        {
+            continue;
+        }
+
+        auto colorIter = m_mapFileAttributesTextAttr.find (mapping.m_dwAttribute);
+        if (colorIter != m_mapFileAttributesTextAttr.end())
+        {
+            style.m_wTextAttr = colorIter->second.m_wAttr;
+        }
+
+        auto iconIter = m_mapFileAttributeToIcon.find (mapping.m_dwAttribute);
+        if (iconIter != m_mapFileAttributeToIcon.end())
+        {
+            style.m_iconCodePoint   = iconIter->second;
+            style.m_fIconSuppressed = (style.m_iconCodePoint == 0);
+        }
+    }
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CConfig::ResolveDirectoryStyle
+//
+//  Directory color and icon from well-known names or reparse-point type.
+//  Called before ResolveFileAttributeStyle so attributes can overwrite.
+//
+////////////////////////////////////////////////////////////////////////////////
+
+void CConfig::ResolveDirectoryStyle (const WIN32_FIND_DATA & wfd, SFileDisplayStyle & style)
+{
+    filesystem::path filename      (wfd.cFileName);
+    wstring          strFilename = filename.filename().wstring();
+
+
+
+    style.m_wTextAttr = m_rgAttributes[EAttribute::Directory];
+
+    //
+    // Check well-known directory names
+    //
+
+    std::ranges::transform (strFilename, strFilename.begin(), towlower);
+
+    auto dirIter = m_mapWellKnownDirToIcon.find (strFilename);
+    if (dirIter != m_mapWellKnownDirToIcon.end())
+    {
+        style.m_iconCodePoint   = dirIter->second;
+        style.m_fIconSuppressed = (style.m_iconCodePoint == 0);
+        return;
+    }
+
+    //
+    // Reparse points get special icons
+    //
+
+    if (wfd.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT)
+    {
+        switch (wfd.dwReserved0)
+        {
+            case IO_REPARSE_TAG_SYMLINK:     style.m_iconCodePoint = m_iconSymlink;          break;
+            case IO_REPARSE_TAG_MOUNT_POINT: style.m_iconCodePoint = m_iconJunction;         break;
+            default:                         style.m_iconCodePoint = m_iconDirectoryDefault; break;
+        }
+    }
+    else
+    {
+        style.m_iconCodePoint = m_iconDirectoryDefault;
+    }
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CConfig::ResolveExtensionStyle
+//
+//  Extension-based color and icon lookup (files only).
+//  Called before ResolveFileAttributeStyle so attributes can overwrite.
+//
+////////////////////////////////////////////////////////////////////////////////
+
+void CConfig::ResolveExtensionStyle (const WIN32_FIND_DATA & wfd, SFileDisplayStyle & style)
+{
+    filesystem::path filename (wfd.cFileName);
+    wstring          strExtension = filename.extension().wstring();
+
+
+
+    std::ranges::transform (strExtension, strExtension.begin(), towlower);
+
+    auto colorIter = m_mapExtensionToTextAttr.find (strExtension);
+    if (colorIter != m_mapExtensionToTextAttr.end())
+    {
+        style.m_wTextAttr = colorIter->second;
+    }
+
+    auto iconIter = m_mapExtensionToIcon.find (strExtension);
+    if (iconIter != m_mapExtensionToIcon.end())
+    {
+        style.m_iconCodePoint   = iconIter->second;
+        style.m_fIconSuppressed = (style.m_iconCodePoint == 0);
+    }
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CConfig::ResolveFileFallbackIcon
+//
+//  Lowest priority.  Assigns the default file icon.
+//  File symlinks get the symlink icon instead.
+//
+////////////////////////////////////////////////////////////////////////////////
+
+void CConfig::ResolveFileFallbackIcon (const WIN32_FIND_DATA & wfd, SFileDisplayStyle & style)
+{
+    if (wfd.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT &&
+        wfd.dwReserved0 == IO_REPARSE_TAG_SYMLINK)
+    {
+        style.m_iconCodePoint = m_iconSymlink;
+    }
+    else
+    {
+        style.m_iconCodePoint = m_iconFileDefault;
+    }
 }
 
 
@@ -1580,185 +1602,42 @@ WORD CConfig::GetTextAttrForFile (const WIN32_FIND_DATA & wfd)
 //
 //  CConfig::GetDisplayStyleForFile
 //
-//  Unified precedence resolver.  Walks the attribute → well-known dir →
-//  extension → type-fallback levels with independent color and icon locking.
-//  Color and icon are resolved in a single pass.
+//  Unified precedence resolver.  Levels are called lowest-priority first
+//  so that higher-priority levels overwrite.
+//
+//                (lower priority)   <      ...       < (higher priority)    
+//  
+//  Directories:  fallback dir icon  < well-known dir < attributes
+//  Files:        fallback file icon < extension      < attributes
 //
 ////////////////////////////////////////////////////////////////////////////////
 
 CConfig::SFileDisplayStyle CConfig::GetDisplayStyleForFile (const WIN32_FIND_DATA & wfd)
 {
-    WORD             textAttr       = m_rgAttributes[EAttribute::Default];
-    char32_t         iconCodePoint  = 0;
-    bool             fIconSuppressed = false;
-    bool             fColorLocked   = false;
-    bool             fIconLocked    = false;
-    filesystem::path filename         (wfd.cFileName);
-    wstring          strExtension;
-    wstring          strFilename;
+    SFileDisplayStyle style = { m_rgAttributes[EAttribute::Default], 0, false };
 
 
-
-    //
-    // Level 1 — File attribute precedence (highest priority)
-    // Walk the fixed precedence order (PSHERC0TA).  Each attribute can
-    // independently lock color and/or icon.
-    //
-
-    for (size_t i = 0; i < g_cAttributePrecedenceOrder; i++)
-    {
-        const SFileAttributeMap & mapping = g_rgAttributePrecedenceOrder[i];
-
-        if ((wfd.dwFileAttributes & mapping.m_dwAttribute) == 0)
-        {
-            continue;
-        }
-
-        // Lock color if this attribute has a color override
-        if (!fColorLocked)
-        {
-            auto colorIter = m_mapFileAttributesTextAttr.find (mapping.m_dwAttribute);
-            if (colorIter != m_mapFileAttributesTextAttr.end())
-            {
-                textAttr     = colorIter->second.m_wAttr;
-                fColorLocked = true;
-            }
-        }
-
-        // Lock icon if this attribute has an icon override
-        if (!fIconLocked)
-        {
-            auto iconIter = m_mapFileAttributeToIcon.find (mapping.m_dwAttribute);
-            if (iconIter != m_mapFileAttributeToIcon.end())
-            {
-                iconCodePoint   = iconIter->second;
-                fIconSuppressed = (iconCodePoint == 0);
-                fIconLocked     = true;
-            }
-        }
-
-        if (fColorLocked && fIconLocked)
-        {
-            break;
-        }
-    }
-
-    //
-    // Level 2 — Directory handling (well-known dir names and type fallback)
-    //
 
     if (wfd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
     {
-        if (!fColorLocked)
-        {
-            textAttr     = m_rgAttributes[EAttribute::Directory];
-            fColorLocked = true;
-        }
-
-        if (!fIconLocked)
-        {
-            // Check well-known directory names
-            strFilename = filename.filename().wstring();
-            std::ranges::transform (strFilename, strFilename.begin(), towlower);
-
-            auto dirIter = m_mapWellKnownDirToIcon.find (strFilename);
-            if (dirIter != m_mapWellKnownDirToIcon.end())
-            {
-                iconCodePoint   = dirIter->second;
-                fIconSuppressed = (iconCodePoint == 0);
-                fIconLocked     = true;
-            }
-            else
-            {
-                // Reparse points get special icons
-                if (wfd.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT)
-                {
-                    if (wfd.dwReserved0 == IO_REPARSE_TAG_SYMLINK)
-                    {
-                        iconCodePoint = m_iconSymlink;
-                    }
-                    else if (wfd.dwReserved0 == IO_REPARSE_TAG_MOUNT_POINT)
-                    {
-                        iconCodePoint = m_iconJunction;
-                    }
-                    else
-                    {
-                        iconCodePoint = m_iconDirectoryDefault;
-                    }
-                }
-                else
-                {
-                    iconCodePoint = m_iconDirectoryDefault;
-                }
-                fIconLocked = true;
-            }
-        }
-
-        goto Done;
+        ResolveDirectoryStyle     (wfd, style);
     }
-
-    //
-    // Level 3 — Extension-based lookup (files only)
-    //
-
-    strExtension = filename.extension().wstring();
-
-    std::ranges::transform (strExtension, strExtension.begin(), towlower);
-
-    if (!fColorLocked)
+    else
     {
-        auto colorIter = m_mapExtensionToTextAttr.find (strExtension);
-        if (colorIter != m_mapExtensionToTextAttr.end())
-        {
-            textAttr     = colorIter->second;
-            fColorLocked = true;
-        }
+        ResolveFileFallbackIcon   (wfd, style);
+        ResolveExtensionStyle     (wfd, style);
     }
 
-    if (!fIconLocked)
+    ResolveFileAttributeStyle (wfd, style);
+
+    if ((style.m_wTextAttr & BC_Mask) == 0)
     {
-        auto iconIter = m_mapExtensionToIcon.find (strExtension);
-        if (iconIter != m_mapExtensionToIcon.end())
-        {
-            iconCodePoint   = iconIter->second;
-            fIconSuppressed = (iconCodePoint == 0);
-            fIconLocked     = true;
-        }
+        style.m_wTextAttr |= m_rgAttributes[EAttribute::Default] & BC_Mask;
     }
 
-    //
-    // Level 4 — Type fallback (file default icon if nothing else matched)
-    //
+    style.m_wTextAttr = EnsureVisibleColorAttr (style.m_wTextAttr, m_rgAttributes[EAttribute::Default]);
 
-    if (!fIconLocked)
-    {
-        // Reparse points (file symlinks) get the symlink icon
-        if (wfd.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT)
-        {
-            if (wfd.dwReserved0 == IO_REPARSE_TAG_SYMLINK)
-            {
-                iconCodePoint = m_iconSymlink;
-            }
-            else
-            {
-                iconCodePoint = m_iconFileDefault;
-            }
-        }
-        else
-        {
-            iconCodePoint = m_iconFileDefault;
-        }
-    }
-
-Done:
-    if ((textAttr & BC_Mask) == 0)
-    {
-        textAttr |= m_rgAttributes[EAttribute::Default] & BC_Mask;
-    }
-
-    textAttr = EnsureVisibleColorAttr (textAttr, m_rgAttributes[EAttribute::Default]);
-
-    return { textAttr, iconCodePoint, fIconSuppressed };
+    return style;
 }
 
 

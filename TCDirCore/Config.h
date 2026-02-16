@@ -19,6 +19,13 @@ protected:
         WORD    m_wAttr;
     };
 
+    struct SSwitchMapping
+    {
+        wstring_view              m_name;
+        bool                      m_state;
+        optional<bool> CConfig::* m_pMember;
+    };
+
     typedef unordered_map<wstring, WORD> TextAttrMap;
     typedef TextAttrMap::const_iterator  TextAttrMapConstIter;
 
@@ -96,12 +103,20 @@ public:
         bool              hasIssues() const { return !errors.empty(); }
     };
 
+    struct SOverrideValue
+    {
+        WORD     m_colorAttr   = 0;
+        char32_t m_iconCP      = 0;
+        bool     m_fSuppressed = false;
+        bool     m_fHasColor   = false;
+        bool     m_fHasIcon    = false;
+    };
+
 
 
     CConfig (void);
    
     void              Initialize                  (WORD wDefaultAttr);
-    WORD              GetTextAttrForFile          (const WIN32_FIND_DATA & wfd);
     SFileDisplayStyle GetDisplayStyleForFile      (const WIN32_FIND_DATA & wfd);
     char32_t          GetCloudStatusIcon          (DWORD dwCloudStatus);
     ValidationResult  ValidateEnvironmentVariable (void);
@@ -153,25 +168,29 @@ public:
 protected:
     void         InitializeExtensionToTextAttrMap     (void);
     void         InitializeFileAttributeToTextAttrMap (void);
-    void         InitializeExtensionToIconMap         (void);
-    void         InitializeWellKnownDirToIconMap      (void);
+    void         PopulateIconMap                      (const SIconMappingEntry * rgEntries, size_t cEntries, unordered_map<wstring, char32_t> & mapIcons, unordered_map<wstring, EAttributeSource> & mapSources);
     void         ApplyUserColorOverrides              (void);
     void         ProcessColorOverrideEntry            (wstring_view entry);
+    HRESULT      ParseOverrideValue                   (wstring_view entry, wstring_view valueView, SOverrideValue & ov);
+    void         ApplyOverrideByKeyType               (wstring_view entry, wstring_view keyView, const SOverrideValue & ov);
     void         ProcessSwitchOverride                (wstring_view entry);
     bool         IsSwitchName                         (wstring_view entry);
-    HRESULT      ProcessLongSwitchOverride            (wstring_view switchName);
     void         ProcessFileExtensionOverride         (wstring_view extension, WORD colorAttr);
     void         ProcessDisplayAttributeOverride      (wchar_t attrChar, WORD colorAttr, wstring_view entry);
-    void         ProcessFileAttributeOverride         (wstring_view keyView, WORD colorAttr, wstring_view entry, bool fHasColor, bool fHasIcon, char32_t iconCP);
+    void         ProcessFileAttributeOverride         (wstring_view keyView, wstring_view entry, const SOverrideValue & ov);
     HRESULT      ParseKeyAndValue                     (wstring_view entry, wstring_view & keyView, wstring_view & valueView);
     HRESULT      ParseColorValue                      (wstring_view entry, wstring_view valueView, WORD & colorAttr);
     HRESULT      ParseIconValue                       (wstring_view iconSpec, char32_t & codePoint, bool & fSuppressed);
-    void         ProcessFileExtensionIconOverride     (wstring_view extension, char32_t iconCodePoint, bool fSuppressed);
-    void         ProcessWellKnownDirIconOverride      (wstring_view dirName, char32_t iconCodePoint, bool fSuppressed);
+    void         ApplyIconOverride                    (wstring_view name, char32_t iconCodePoint, bool fSuppressed, unordered_map<wstring, char32_t> & mapIcons, unordered_map<wstring, EAttributeSource> & mapSources);
     void         ProcessFileAttributeIconOverride     (DWORD dwAttribute, char32_t iconCodePoint);
+    void         ResolveFileAttributeStyle             (const WIN32_FIND_DATA & wfd, SFileDisplayStyle & style);
+    void         ResolveDirectoryStyle                 (const WIN32_FIND_DATA & wfd, SFileDisplayStyle & style);
+    void         ResolveExtensionStyle                 (const WIN32_FIND_DATA & wfd, SFileDisplayStyle & style);
+    void         ResolveFileFallbackIcon               (const WIN32_FIND_DATA & wfd, SFileDisplayStyle & style);
     wstring_view TrimWhitespace                       (wstring_view str);
 
     ValidationResult m_lastParseResult;
 
-    static const STextAttr s_rgTextAttrs[];
+    static const STextAttr      s_rgTextAttrs[];
+    static const SSwitchMapping s_switchMappings[];
 };

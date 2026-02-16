@@ -8,6 +8,80 @@
 - **NEVER** delete blank lines between variable declaration blocks
 - Preserve all existing vertical spacing in code
 
+### Project-Specific Vertical Spacing
+
+#### Top-Level Constructs (File Scope)
+- **EXACTLY 5 blank lines** between all top-level file constructs:
+  - Between preprocessor directives (#include, #define, etc.) and first function
+  - Between include blocks and namespace declarations
+  - Between namespace and struct/class definitions
+  - Between structs/classes and global variables
+  - Between global variables and first function
+  - Between all function definitions
+  - **After the last function in the file**
+- **NEVER** add more than 5 blank lines
+- **NEVER** delete blank lines if it would result in fewer than 5
+
+#### Function/Block Internal Spacing
+- **EXACTLY 3 blank lines** between variable definitions at the top of a function/block and the first real statement
+- **1 blank line** for standard code separation within functions
+
+#### Correct Spacing Example:
+```cpp
+#include "pch.h"
+
+#include "Header.h"
+#include "Header2.h"
+
+
+
+
+namespace ns = std::something;
+
+
+
+
+
+struct MyStruct
+{
+    int value;
+};
+
+
+
+
+
+static int g_globalVar = 0;
+
+
+
+
+
+void Function1()
+{
+    Type var1;
+    Type var2;
+
+    Type var3 = value;  // Different semantic group
+
+
+
+    // Code section
+    DoSomething();
+}
+
+
+
+
+
+void Function2()
+{
+    // ...
+}
+```
+
+### Special Code Patterns
+
 ### **NEVER** Break Column Alignment
 - **NEVER** break existing column alignment in variable declarations
 - **NEVER** break alignment of:
@@ -139,6 +213,17 @@ g_pConsole->Printf (CConfig::Error, L"Error: %s\n", msg);
 
 ---
 
+## Shell and Terminal Rules
+
+### PowerShell is the Default Shell
+- **ALL** terminal windows use PowerShell, not CMD
+- **ALWAYS** format commands for PowerShell syntax
+
+---
+
+
+---
+
 ## Remember
 - **Formatting preservation is non-negotiable**
 - **Read-only files must stay read-only**
@@ -147,5 +232,5 @@ g_pConsole->Printf (CConfig::Error, L"Error: %s\n", msg);
 
 ---
 
-*Last Updated: 2025-01-XX*
+*Last Updated: 2025-02-15*
 *These rules apply globally to all projects and conversations*
