@@ -56,5 +56,8 @@
     <ClInclude Include="EhmTestHelper.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Mocks\TestConsole.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

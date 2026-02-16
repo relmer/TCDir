@@ -10,19 +10,19 @@ class CConsole
 {
 public:
 
-    CConsole   (void);
-     ~CConsole (void);
+             CConsole   (void);
+    virtual ~CConsole   (void);
     
-    HRESULT Initialize                (shared_ptr<CConfig> configPtr);
-    void    Putchar                   (WORD attr, WCHAR ch);
-    void    Puts                      (int attributeIndex, LPCWSTR psz);
-    int     Printf                    (CConfig::EAttribute attributeIndex, LPCWSTR pszFormat, ...);
-    int     Printf                    (WORD attr, LPCWSTR pszFormat, ...);
-    void    ColorPuts                 (LPCWSTR psz);
-    void    ColorPrintf               (LPCWSTR pszFormat, ...);
-    void    PrintColorfulString       (LPCWSTR psz);
-    void    WriteSeparatorLine        (WORD attr);
-    HRESULT Flush                     (void);
+    HRESULT         Initialize                (shared_ptr<CConfig> configPtr);
+    void            Putchar                   (WORD attr, WCHAR ch);
+    void            Puts                      (int attributeIndex, LPCWSTR psz);
+    int             Printf                    (CConfig::EAttribute attributeIndex, LPCWSTR pszFormat, ...);
+    int             Printf                    (WORD attr, LPCWSTR pszFormat, ...);
+    void            ColorPuts                 (LPCWSTR psz);
+    void            ColorPrintf               (LPCWSTR pszFormat, ...);
+    void            PrintColorfulString       (LPCWSTR psz);
+    void            WriteSeparatorLine        (WORD attr);
+    virtual HRESULT Flush                     (void);
 
     UINT    GetWidth                  (void)     { return m_cxConsoleWidth; }
 

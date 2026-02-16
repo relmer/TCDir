@@ -2,8 +2,17 @@
 #include "EhmTestHelper.h"
 #include "../TCDirCore/Console.h"
 #include "../TCDirCore/Config.h"
+#include "Mocks/TestConsole.h"
+
+
+
+
 
 using namespace Microsoft::VisualStudio::CppUnitTestFramework;
+
+
+
+
 
 namespace UnitTest
 {
@@ -22,7 +31,7 @@ namespace UnitTest
 
         TEST_METHOD(ColorPuts_NoMarkers_OutputsEntireString)
         {
-            auto con = std::make_shared<CConsole> ();
+            auto con = std::make_shared<CTestConsole> ();
             auto cfg = std::make_shared<CConfig> ();
             con->Initialize (cfg);
 
@@ -36,7 +45,7 @@ namespace UnitTest
 
         TEST_METHOD(ColorPuts_SingleMarker_SwitchesColor)
         {
-            auto con = std::make_shared<CConsole> ();
+            auto con = std::make_shared<CTestConsole> ();
             auto cfg = std::make_shared<CConfig> ();
             con->Initialize (cfg);
 
@@ -49,7 +58,7 @@ namespace UnitTest
 
         TEST_METHOD(ColorPuts_MultipleMarkers_SwitchesColorsCorrectly)
         {
-            auto con = std::make_shared<CConsole> ();
+            auto con = std::make_shared<CTestConsole> ();
             auto cfg = std::make_shared<CConfig> ();
             con->Initialize (cfg);
 
@@ -62,7 +71,7 @@ namespace UnitTest
 
         TEST_METHOD(ColorPuts_AllAttributes_ParsesCorrectly)
         {
-            auto con = std::make_shared<CConsole> ();
+            auto con = std::make_shared<CTestConsole> ();
             auto cfg = std::make_shared<CConfig> ();
             con->Initialize (cfg);
 
@@ -93,7 +102,7 @@ namespace UnitTest
 
         TEST_METHOD(ColorPuts_CloudStatusMarkers_ApplyCorrectColors)
         {
-            auto con = std::make_shared<CConsole> ();
+            auto con = std::make_shared<CTestConsole> ();
             auto cfg = std::make_shared<CConfig> ();
             con->Initialize (cfg);
 
@@ -109,7 +118,7 @@ namespace UnitTest
 
         TEST_METHOD(ColorPuts_MarkerAtStart_ParsesCorrectly)
         {
-            auto con = std::make_shared<CConsole> ();
+            auto con = std::make_shared<CTestConsole> ();
             auto cfg = std::make_shared<CConfig> ();
             con->Initialize (cfg);
 
@@ -122,7 +131,7 @@ namespace UnitTest
 
         TEST_METHOD(ColorPuts_MarkerAtEnd_ParsesCorrectly)
         {
-            auto con = std::make_shared<CConsole> ();
+            auto con = std::make_shared<CTestConsole> ();
             auto cfg = std::make_shared<CConfig> ();
             con->Initialize (cfg);
 
@@ -135,7 +144,7 @@ namespace UnitTest
 
         TEST_METHOD(ColorPuts_ConsecutiveMarkers_ParsesCorrectly)
         {
-            auto con = std::make_shared<CConsole> ();
+            auto con = std::make_shared<CTestConsole> ();
             auto cfg = std::make_shared<CConfig> ();
             con->Initialize (cfg);
 
@@ -148,7 +157,7 @@ namespace UnitTest
 
         TEST_METHOD(ColorPuts_EmptyString_NoOutput)
         {
-            auto con = std::make_shared<CConsole> ();
+            auto con = std::make_shared<CTestConsole> ();
             auto cfg = std::make_shared<CConfig> ();
             con->Initialize (cfg);
 
@@ -161,7 +170,7 @@ namespace UnitTest
 
         TEST_METHOD(ColorPuts_OnlyMarkers_NoVisibleOutput)
         {
-            auto con = std::make_shared<CConsole> ();
+            auto con = std::make_shared<CTestConsole> ();
             auto cfg = std::make_shared<CConfig> ();
             con->Initialize (cfg);
 
@@ -174,7 +183,7 @@ namespace UnitTest
 
         TEST_METHOD(ColorPuts_MultilineWithMarkers_HandlesNewlines)
         {
-            auto con = std::make_shared<CConsole> ();
+            auto con = std::make_shared<CTestConsole> ();
             auto cfg = std::make_shared<CConfig> ();
             con->Initialize (cfg);
 
@@ -189,7 +198,7 @@ namespace UnitTest
 
         TEST_METHOD(ColorPrintf_FormatsAndProcessesMarkers)
         {
-            auto con = std::make_shared<CConsole> ();
+            auto con = std::make_shared<CTestConsole> ();
             auto cfg = std::make_shared<CConfig> ();
             con->Initialize (cfg);
 
@@ -202,7 +211,7 @@ namespace UnitTest
 
         TEST_METHOD(ColorPrintf_NoMarkers_FormatsCorrectly)
         {
-            auto con = std::make_shared<CConsole> ();
+            auto con = std::make_shared<CTestConsole> ();
             auto cfg = std::make_shared<CConfig> ();
             con->Initialize (cfg);
 
@@ -215,7 +224,7 @@ namespace UnitTest
 
         TEST_METHOD(ColorPuts_SwitchStyleUsage_FormatsCorrectly)
         {
-            auto con = std::make_shared<CConsole> ();
+            auto con = std::make_shared<CTestConsole> ();
             auto cfg = std::make_shared<CConfig> ();
             con->Initialize (cfg);
 
@@ -230,7 +239,7 @@ namespace UnitTest
 
         TEST_METHOD(ColorPuts_LongSwitchStyleUsage_FormatsCorrectly)
         {
-            auto con = std::make_shared<CConsole> ();
+            auto con = std::make_shared<CTestConsole> ();
             auto cfg = std::make_shared<CConfig> ();
             con->Initialize (cfg);
 
@@ -245,7 +254,7 @@ namespace UnitTest
 
         TEST_METHOD(ColorPuts_AttributeLettersStyleUsage_FormatsCorrectly)
         {
-            auto con = std::make_shared<CConsole> ();
+            auto con = std::make_shared<CTestConsole> ();
             auto cfg = std::make_shared<CConfig> ();
             con->Initialize (cfg);
 
@@ -301,7 +310,7 @@ namespace UnitTest
         TEST_METHOD(ColorPuts_UnclosedBrace_AssertsInDebug)
         {
 #if DBG || DEBUG || _DEBUG
-            auto con = std::make_shared<CConsole> ();
+            auto con = std::make_shared<CTestConsole> ();
             auto cfg = std::make_shared<CConfig> ();
             con->Initialize (cfg);
 
@@ -323,7 +332,7 @@ namespace UnitTest
         TEST_METHOD(ColorPuts_UnknownMarkerName_AssertsInDebug)
         {
 #if DBG || DEBUG || _DEBUG
-            auto con = std::make_shared<CConsole> ();
+            auto con = std::make_shared<CTestConsole> ();
             auto cfg = std::make_shared<CConfig> ();
             con->Initialize (cfg);
 
@@ -344,7 +353,7 @@ namespace UnitTest
 
         TEST_METHOD(ColorPuts_ValidMarker_DoesNotAssert)
         {
-            auto con = std::make_shared<CConsole> ();
+            auto con = std::make_shared<CTestConsole> ();
             auto cfg = std::make_shared<CConfig> ();
             con->Initialize (cfg);
 

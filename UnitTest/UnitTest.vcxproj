@@ -281,6 +281,7 @@
     <ClInclude Include="IatHook\IatPatch.h" />
     <ClInclude Include="IatHook\ScopedIatPatch.h" />
     <ClInclude Include="Mocks\FileSystemMock.h" />
+    <ClInclude Include="Mocks\TestConsole.h" />
     <ClInclude Include="pch.h" />
   </ItemGroup>
   <ItemGroup>
