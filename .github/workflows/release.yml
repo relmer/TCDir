@@ -1,0 +1,194 @@
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release tag (e.g., v5.0.1105)'
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+env:
+  MSBUILD_FLAGS: -p:PlatformToolset=v143 -p:PreBuildEventUseInBuild=false -p:PostBuildEventUseInBuild=false
+
+jobs:
+  build-and-release:
+    runs-on: windows-latest
+
+    steps:
+      - name: Determine tag
+        id: tag
+        shell: pwsh
+        run: |
+          if ("${{ github.event_name }}" -eq "workflow_dispatch") {
+            $tag = "${{ inputs.tag }}"
+          } else {
+            $tag = "${{ github.ref_name }}"
+          }
+
+          if ($tag -notmatch '^v\d+\.\d+\.\d+$') {
+            Write-Error "Invalid tag format: $tag (expected v#.#.#)"
+            exit 1
+          }
+
+          $version = $tag.TrimStart('v')
+          Write-Output "tag=$tag" >> $env:GITHUB_OUTPUT
+          Write-Output "version=$version" >> $env:GITHUB_OUTPUT
+          Write-Host "Release tag: $tag  Version: $version"
+
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Validate tag matches Version.h
+        shell: pwsh
+        run: |
+          $content = Get-Content "TCDirCore/Version.h" -Raw
+          $major = [regex]::Match($content, '#define VERSION_MAJOR\s+(\d+)').Groups[1].Value
+          $minor = [regex]::Match($content, '#define VERSION_MINOR\s+(\d+)').Groups[1].Value
+          $build = [regex]::Match($content, '#define VERSION_BUILD\s+(\d+)').Groups[1].Value
+          $headerVersion = "$major.$minor.$build"
+          $tagVersion = "${{ steps.tag.outputs.version }}"
+
+          if ($headerVersion -ne $tagVersion) {
+            Write-Error "Version mismatch: Version.h has $headerVersion but tag is v$tagVersion"
+            exit 1
+          }
+
+          Write-Host "Version validated: $headerVersion"
+
+      - name: Add MSBuild to PATH
+        uses: microsoft/setup-msbuild@v2
+
+      - name: Setup VSTest
+        uses: darenm/Setup-VSTest@v1.3
+
+      # --- Build ---
+
+      - name: Build Release x64
+        run: msbuild TCDir.sln -p:Configuration=Release -p:Platform=x64 ${{ env.MSBUILD_FLAGS }}
+
+      - name: Build Release ARM64
+        run: msbuild TCDir.sln -p:Configuration=Release -p:Platform=ARM64 ${{ env.MSBUILD_FLAGS }}
+
+      # --- Test ---
+
+      - name: Run Tests (x64)
+        run: vstest.console.exe x64/Release/UnitTest.dll
+
+      # --- Prepare release assets ---
+
+      - name: Stage release assets
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Path release -Force | Out-Null
+          Copy-Item "x64/Release/TCDir.exe"   "release/TCDir.exe"
+          Copy-Item "ARM64/Release/TCDir.exe"  "release/TCDir-ARM64.exe"
+
+      - name: Generate SHA256 checksums
+        shell: pwsh
+        run: |
+          Push-Location release
+          $files = @("TCDir.exe", "TCDir-ARM64.exe")
+          $lines = foreach ($f in $files) {
+            $hash = (Get-FileHash $f -Algorithm SHA256).Hash.ToLower()
+            "$hash  $f"
+          }
+          $lines | Set-Content "SHA256SUMS.txt" -Encoding UTF8
+          Write-Host (Get-Content "SHA256SUMS.txt" -Raw)
+          Pop-Location
+
+      # --- Extract changelog ---
+
+      - name: Extract changelog since previous release
+        id: changelog
+        shell: pwsh
+        run: |
+          $currentVersion = "${{ steps.tag.outputs.version }}"
+
+          # Find previous release tag
+          $prevTag = $null
+          try {
+            $tags = git tag --list 'v*' --sort=-version:refname
+            foreach ($t in $tags) {
+              $v = $t.TrimStart('v')
+              if ($v -ne $currentVersion -and $v -match '^\d+\.\d+\.\d+$') {
+                $prevTag = $t
+                break
+              }
+            }
+          } catch {
+            Write-Host "Could not enumerate tags: $_"
+          }
+
+          $changelog = Get-Content "CHANGELOG.md" -Raw
+          $sections = [regex]::Matches($changelog, '(?m)^## \[(.+?)\]')
+
+          $collecting = $false
+          $lines = @()
+
+          foreach ($line in (Get-Content "CHANGELOG.md")) {
+            if ($line -match '^## \[(.+?)\]') {
+              $sectionVersion = $Matches[1]
+
+              if ($collecting) {
+                # We've been collecting; check if we've reached the previous release
+                if ($prevTag -and $sectionVersion -eq $prevTag.TrimStart('v')) {
+                  break
+                }
+                # If this section has no version-style format (e.g., "3.x"), stop
+                if ($sectionVersion -notmatch '^\d+\.\d+') {
+                  break
+                }
+              }
+
+              # Start collecting at or before the current version
+              if (-not $collecting) {
+                $collecting = $true
+              }
+
+              $lines += ""
+              $lines += $line
+            }
+            elseif ($collecting) {
+              $lines += $line
+            }
+          }
+
+          $body = ($lines -join "`n").Trim()
+
+          if (-not $body) {
+            $body = "Release $currentVersion"
+          }
+
+          # Write to file to avoid escaping issues with multiline output
+          $body | Set-Content "release/RELEASE_NOTES.md" -Encoding UTF8
+          Write-Host "--- Release notes ---"
+          Write-Host $body
+          Write-Host "--- End ---"
+
+      # --- Create GitHub Release ---
+
+      - name: Create tag (workflow_dispatch only)
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          git tag ${{ steps.tag.outputs.tag }}
+          git push origin ${{ steps.tag.outputs.tag }}
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.tag.outputs.tag }}
+          name: TCDir ${{ steps.tag.outputs.version }}
+          body_path: release/RELEASE_NOTES.md
+          files: |
+            release/TCDir.exe
+            release/TCDir-ARM64.exe
+            release/SHA256SUMS.txt
+          draft: false
+          prerelease: false
