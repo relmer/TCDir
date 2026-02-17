@@ -42,6 +42,10 @@
     .\Build.ps1 -Target Clean
     Cleans the build outputs for the current configuration and platform.
 
+.EXAMPLE
+    .\Build.ps1 -Configuration Release -SkipVersionIncrement
+    Builds Release without incrementing the version number.
+
 .NOTES
     Requires Visual Studio 2026 (v18.x) with the "Desktop development with C++" workload.
     ARM64 builds require the MSVC ARM64 build tools to be installed.
@@ -56,7 +60,9 @@ param(
     [ValidateSet('Build', 'Clean', 'Rebuild', 'BuildAllRelease', 'CleanAll', 'RebuildAllRelease')]
     [string]$Target = 'Build',
 
-    [switch]$RunCodeAnalysis
+    [switch]$RunCodeAnalysis,
+
+    [switch]$SkipVersionIncrement
 )
 
 # Resolve 'Auto' platform to actual architecture
@@ -226,6 +232,10 @@ try {
                     "-t:$msbuildTarget"
                 )
 
+                if ($SkipVersionIncrement) {
+                    $msbuildArgs += '-p:PreBuildEventUseInBuild=false'
+                }
+
                 Write-Host "Using MSBuild: $msbuildPath"
                 Write-Host "Building: $solutionPath ($config|$platformToBuild) Target=$msbuildTarget"
 
@@ -285,6 +295,10 @@ try {
         if ($RunCodeAnalysis) {
             $msbuildArgs += '-p:EnableCppCoreCheck=true'
             $msbuildArgs += '-p:RunCodeAnalysis=true'
+        }
+
+        if ($SkipVersionIncrement) {
+            $msbuildArgs += '-p:PreBuildEventUseInBuild=false'
         }
 
         if ($Target -ne 'Build') {
