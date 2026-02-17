@@ -7,9 +7,6 @@
 #include "FileComparator.h"
 #include "Flag.h"
 #include "MultiThreadedLister.h"
-#include "ResultsDisplayerBare.h"
-#include "ResultsDisplayerNormal.h"
-#include "ResultsDisplayerWide.h"
 #include "UniqueFindHandle.h"
 
 
@@ -24,25 +21,32 @@
 //
 ////////////////////////////////////////////////////////////////////////////////  
 
-CDirectoryLister::CDirectoryLister (shared_ptr<CCommandLine> pCmdLine, shared_ptr<CConsole> pConsole, shared_ptr<CConfig> pConfig, bool fIconsActive) :
+CDirectoryLister::CDirectoryLister (shared_ptr<CCommandLine> pCmdLine, shared_ptr<CConsole> pConsole, shared_ptr<CConfig> pConfig, unique_ptr<IResultsDisplayer> displayer) :
+    m_cmdLinePtr        (pCmdLine),
+    m_consolePtr        (pConsole),
+    m_configPtr         (pConfig),
+    m_displayer         (std::move (displayer))
+{
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CDirectoryLister::CDirectoryLister  (protected)
+//
+//  Lightweight constructor for subclasses (e.g. CMultiThreadedLister) that
+//  do not own a displayer.
+//
+////////////////////////////////////////////////////////////////////////////////
+
+CDirectoryLister::CDirectoryLister (shared_ptr<CCommandLine> pCmdLine, shared_ptr<CConsole> pConsole, shared_ptr<CConfig> pConfig) :
     m_cmdLinePtr        (pCmdLine),
     m_consolePtr        (pConsole),
     m_configPtr         (pConfig)
 {
-    // Create the appropriate displayer based on listing mode flags
-    // Bare mode takes precedence over wide mode
-    if (m_cmdLinePtr->m_fBareListing)
-    {
-        m_displayer = make_unique<CResultsDisplayerBare>(m_cmdLinePtr, m_consolePtr, m_configPtr, fIconsActive);
-    }
-    else if (m_cmdLinePtr->m_fWideListing)
-    {
-        m_displayer = make_unique<CResultsDisplayerWide>(m_cmdLinePtr, m_consolePtr, m_configPtr, fIconsActive);
-    }
-    else
-    {
-        m_displayer = make_unique<CResultsDisplayerNormal>(m_cmdLinePtr, m_consolePtr, m_configPtr, fIconsActive);
-    }
 }
 
 
@@ -84,6 +88,8 @@ void CDirectoryLister::List (const MaskGroup & group)
     const vector<filesystem::path> & fileSpecs = group.second;
 
 
+
+    CBRAEx (m_displayer != nullptr, E_UNEXPECTED);
 
     //
     // Validate the directory exists
@@ -266,7 +272,7 @@ HRESULT CDirectoryLister::ProcessDirectoryMultiThreaded (
     const CDriveInfo                   & driveInfo,
     const filesystem::path             & dirPath,
     const vector<filesystem::path>     & fileSpecs,
-    IResultsDisplayer::EDirectoryLevel level)
+    IResultsDisplayer::EDirectoryLevel   level)
 {
     HRESULT              hr             = S_OK;
     CMultiThreadedLister mtLister         (m_cmdLinePtr, m_consolePtr, m_configPtr);

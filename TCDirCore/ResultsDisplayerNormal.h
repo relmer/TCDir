@@ -10,7 +10,7 @@
 class CResultsDisplayerNormal : public CResultsDisplayerWithHeaderAndFooter
 {
 public:
-    CResultsDisplayerNormal (shared_ptr<CCommandLine> cmdLinePtr, shared_ptr<CConsole> consolePtr, shared_ptr<CConfig> configPtr, bool fIconsActive = false);
+    CResultsDisplayerNormal (shared_ptr<CCommandLine> cmdLinePtr, shared_ptr<CConsole> consolePtr, shared_ptr<CConfig> configPtr, bool fIconsActive);
 
     void DisplayFileResults (const CDirectoryInfo & di) override;
 

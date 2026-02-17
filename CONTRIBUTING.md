@@ -32,7 +32,7 @@ This project uses [Conventional Commits](https://www.conventionalcommits.org/). 
 ```
 feat(cloud): add sync root detection for cloud status display
 fix(display): correct column alignment for wide filenames
-docs: update README with new command-line options
+docs(readme): update README with new command-line options
 chore(build): skip ARM64 tests on x64 hosts
 ```
 

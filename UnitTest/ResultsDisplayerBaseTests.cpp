@@ -32,7 +32,7 @@ namespace UnitTest
             struct DisplayerProbe : public CResultsDisplayerWithHeaderAndFooter
             {
                 DisplayerProbe (std::shared_ptr<CCommandLine> a, std::shared_ptr<CConsole> b, std::shared_ptr<CConfig> c)
-                    : CResultsDisplayerWithHeaderAndFooter (a, b, c) {}
+                    : CResultsDisplayerWithHeaderAndFooter (a, b, c, false) {}
                 void    DisplayFileResults (const CDirectoryInfo &) override {}
                 wstring WrapFormat (ULONGLONG n) { return FormatNumberWithSeparators (n); }
             };
@@ -59,7 +59,7 @@ namespace UnitTest
             struct DisplayerProbe : public CResultsDisplayerWithHeaderAndFooter
             {
                 DisplayerProbe (std::shared_ptr<CCommandLine> a, std::shared_ptr<CConsole> b, std::shared_ptr<CConfig> c)
-                    : CResultsDisplayerWithHeaderAndFooter (a, b, c) {}
+                    : CResultsDisplayerWithHeaderAndFooter (a, b, c, false) {}
                 void  DisplayFileResults (const CDirectoryInfo &) override {}
                 UINT  WrapLen (ULONGLONG n) { ULARGE_INTEGER u; u.QuadPart = n; return GetStringLengthOfMaxFileSize (u); }
             };
@@ -94,7 +94,7 @@ namespace UnitTest
             struct DisplayerProbe : public CResultsDisplayerWithHeaderAndFooter
             {
                 DisplayerProbe (std::shared_ptr<CCommandLine> a, std::shared_ptr<CConsole> b, std::shared_ptr<CConfig> c)
-                    : CResultsDisplayerWithHeaderAndFooter (a, b, c) {}
+                    : CResultsDisplayerWithHeaderAndFooter (a, b, c, false) {}
                 void    DisplayFileResults (const CDirectoryInfo &) override {}
                 wstring WrapFormat (ULONGLONG n) { return FormatNumberWithSeparators (n); }
             };

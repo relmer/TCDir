@@ -63,14 +63,14 @@ CCommandLine::~CCommandLine (void)
 
 void CCommandLine::ApplyConfigDefaults (const CConfig & config)
 {
-    if (config.m_fWideListing.has_value())   m_fWideListing   = config.m_fWideListing.value();
-    if (config.m_fBareListing.has_value())   m_fBareListing   = config.m_fBareListing.value();
-    if (config.m_fRecurse.has_value())       m_fRecurse       = config.m_fRecurse.value();
-    if (config.m_fPerfTimer.has_value())     m_fPerfTimer     = config.m_fPerfTimer.value();
-    if (config.m_fMultiThreaded.has_value()) m_fMultiThreaded = config.m_fMultiThreaded.value();
-    if (config.m_fShowOwner.has_value())     m_fShowOwner     = config.m_fShowOwner.value();
-    if (config.m_fShowStreams.has_value())   m_fShowStreams   = config.m_fShowStreams.value();
-    if (config.m_fIcons.has_value() && !m_fIcons.has_value())  m_fIcons = config.m_fIcons.value();
+    if (config.m_fWideListing.has_value())                     m_fWideListing   = config.m_fWideListing.value();
+    if (config.m_fBareListing.has_value())                     m_fBareListing   = config.m_fBareListing.value();
+    if (config.m_fRecurse.has_value())                         m_fRecurse       = config.m_fRecurse.value();
+    if (config.m_fPerfTimer.has_value())                       m_fPerfTimer     = config.m_fPerfTimer.value();
+    if (config.m_fMultiThreaded.has_value())                   m_fMultiThreaded = config.m_fMultiThreaded.value();
+    if (config.m_fShowOwner.has_value())                       m_fShowOwner     = config.m_fShowOwner.value();
+    if (config.m_fShowStreams.has_value())                     m_fShowStreams   = config.m_fShowStreams.value();
+    if (config.m_fIcons.has_value() && !m_fIcons.has_value())  m_fIcons         = config.m_fIcons.value();
 }
 
 
@@ -188,9 +188,9 @@ HRESULT CCommandLine::HandleSwitch (LPCWSTR pszArg)
 {
     struct SwitchEntry
     {
-        WCHAR              m_chSwitch; 
-        bool CCommandLine::* m_pfValueOfSwitch; 
-        SwitchParserFunc   m_pHandler; 
+        WCHAR                 m_chSwitch; 
+        bool CCommandLine:: * m_pfValueOfSwitch; 
+        SwitchParserFunc      m_pHandler; 
     };                             
 
     static const SwitchEntry s_krgSingleCharSwitches[] =
@@ -278,8 +278,8 @@ HRESULT CCommandLine::HandleLongSwitch (LPCWSTR pszArg)
 {
     struct LongSwitchEntry
     {
-        LPCWSTR                m_pszSwitch;
-        bool CCommandLine::  * m_pfValue;
+        LPCWSTR               m_pszSwitch;
+        bool CCommandLine:: * m_pfValue;
     };
 
     static const LongSwitchEntry s_krgLongSwitches[] =
@@ -370,6 +370,7 @@ HRESULT CCommandLine::OrderByHandler (LPCWSTR pszArg)
     WCHAR   ch = 0; 
 
 
+
     //
     // Make sure the arg isn't empty
     //
@@ -423,7 +424,7 @@ HRESULT CCommandLine::OrderByHandler (LPCWSTR pszArg)
         }
     }
     
-    return hr;
+
 
 Error:
     return hr;
@@ -535,6 +536,7 @@ HRESULT CCommandLine::AttributeHandler (LPCWSTR pszArg)
         ++pszArg;
     }
 
+    
 
 Error:
     return hr;

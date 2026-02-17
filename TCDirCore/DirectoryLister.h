@@ -20,7 +20,7 @@ class CConsole;
 class CDirectoryLister
 {
 public:
-    CDirectoryLister  (shared_ptr<CCommandLine> cmdLinePtr, shared_ptr<CConsole> consolePtr, shared_ptr<CConfig> configPtr, bool fIconsActive = false);
+    CDirectoryLister  (shared_ptr<CCommandLine> cmdLinePtr, shared_ptr<CConsole> consolePtr, shared_ptr<CConfig> configPtr, unique_ptr<IResultsDisplayer> displayer);
     ~CDirectoryLister (void); 
 
     void List         (const MaskGroup & group);
@@ -28,6 +28,8 @@ public:
     static bool IsDots (LPCWSTR pszFileName);
 
 protected:
+    CDirectoryLister  (shared_ptr<CCommandLine> cmdLinePtr, shared_ptr<CConsole> consolePtr, shared_ptr<CConfig> configPtr);
+
     HRESULT ProcessDirectory                   (const CDriveInfo                   & driveInfo, 
                                                 const filesystem::path             & dirPath, 
                                                 const filesystem::path             & fileSpec, 

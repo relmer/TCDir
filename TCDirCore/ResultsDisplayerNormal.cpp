@@ -62,10 +62,12 @@ void CResultsDisplayerNormal::DisplayFileResults (const CDirectoryInfo & di)
 
     for (auto && [idxFile, fileInfo] : views::enumerate (di.m_vMatches))
     {
-        CConfig::SFileDisplayStyle style = m_configPtr->GetDisplayStyleForFile (fileInfo);
-        WORD             textAttr    = style.m_wTextAttr;
-        ECloudStatus     cloudStatus = GetCloudStatus (fileInfo, fInSyncRoot);
-        const FILETIME & ftDisplay   = GetTimeFieldForDisplay (fileInfo);
+        CConfig::SFileDisplayStyle   style       = m_configPtr->GetDisplayStyleForFile (fileInfo);
+        WORD                         textAttr    = style.m_wTextAttr;
+        ECloudStatus                 cloudStatus = GetCloudStatus (fileInfo, fInSyncRoot);
+        const FILETIME             & ftDisplay   = GetTimeFieldForDisplay (fileInfo);
+
+
 
         hr = DisplayResultsNormalDateAndTime (ftDisplay);
         CHR (hr);
@@ -90,7 +92,7 @@ void CResultsDisplayerNormal::DisplayFileResults (const CDirectoryInfo & di)
 
         if (m_fIconsActive && style.m_iconCodePoint != 0 && !style.m_fIconSuppressed)
         {
-            WideCharPair pair = CodePointToWideChars (style.m_iconCodePoint);
+            WideCharPair pair      = CodePointToWideChars (style.m_iconCodePoint);
             wchar_t      szIcon[3] = { pair.chars[0], pair.chars[1], L'\0' };
 
             m_consolePtr->Printf (textAttr, L"%s ", szIcon);
@@ -300,14 +302,18 @@ void CResultsDisplayerNormal::DisplayCloudStatusSymbol (ECloudStatus status)
 
     if (m_fIconsActive)
     {
-        size_t   idx     = static_cast<size_t>(status);
-        char32_t iconCP  = m_configPtr->GetCloudStatusIcon (static_cast<DWORD>(status));
+        size_t   idx    = static_cast<size_t>(status);
+        char32_t iconCP = m_configPtr->GetCloudStatusIcon (static_cast<DWORD>(status));
+
+
 
         if (iconCP != 0)
         {
             WideCharPair pair   = CodePointToWideChars (iconCP);
             wchar_t      szIcon[3] = { pair.chars[0], pair.chars[1], L'\0' };
 
+
+            
             m_consolePtr->ColorPrintf (L"%s%s ", s_krgCloudColorMarkers[idx], szIcon);
         }
         else
@@ -318,6 +324,8 @@ void CResultsDisplayerNormal::DisplayCloudStatusSymbol (ECloudStatus status)
     else
     {
         const SCloudStatusEntry & entry = s_krgCloudStatusMap[static_cast<size_t>(status)];
+
+
 
         m_consolePtr->ColorPrintf (L"%s%c ", entry.pszColorMarker, entry.chSymbol);
     }

@@ -33,7 +33,7 @@ namespace UnitTest
     struct NormalDisplayerProbe : public CResultsDisplayerNormal
     {
         NormalDisplayerProbe (std::shared_ptr<CCommandLine> cmd, std::shared_ptr<CConsole> con, std::shared_ptr<CConfig> cfg)
-            : CResultsDisplayerNormal (cmd, con, cfg) {}
+            : CResultsDisplayerNormal (cmd, con, cfg, false) {}
 
         void DisplayFileResults (const CDirectoryInfo &) override {}
 
@@ -135,7 +135,7 @@ namespace UnitTest
             struct WideProbe : public CResultsDisplayerWide
             {
                 WideProbe(std::shared_ptr<CCommandLine> a, std::shared_ptr<CConsole> b, std::shared_ptr<CConfig> c)
-                    : CResultsDisplayerWide(a, b, c) {}
+                    : CResultsDisplayerWide(a, b, c, false) {}
                 void    DisplayFileResults(const CDirectoryInfo &) override {}
                 wstring Wrap(ULONGLONG n) { return FormatNumberWithSeparators(n); }
             };

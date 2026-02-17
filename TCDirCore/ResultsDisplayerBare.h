@@ -17,7 +17,7 @@ class CConsole;
 class CResultsDisplayerBare : public IResultsDisplayer
 {
 public:
-    CResultsDisplayerBare        (shared_ptr<CCommandLine> cmdLinePtr, shared_ptr<CConsole> consolePtr, shared_ptr<CConfig> configPtr, bool fIconsActive = false);
+    CResultsDisplayerBare        (shared_ptr<CCommandLine> cmdLinePtr, shared_ptr<CConsole> consolePtr, shared_ptr<CConfig> configPtr, bool fIconsActive);
 
     void DisplayResults          (const CDriveInfo & driveInfo, const CDirectoryInfo & di, EDirectoryLevel level) override;
     void DisplayRecursiveSummary (const CDirectoryInfo & diInitial, const SListingTotals & totals) override;

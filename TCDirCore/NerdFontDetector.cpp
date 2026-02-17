@@ -21,11 +21,11 @@
 HRESULT CNerdFontDetector::Detect (
     HANDLE                       hConsole,
     const IEnvironmentProvider & envProvider,
-    EDetectionResult &           result)
+    EDetectionResult           & result)
 {
-    HRESULT hr         = S_OK;
-    bool    fHasGlyph  = false;
-    bool    fFound     = false;
+    HRESULT hr        = S_OK;
+    bool    fHasGlyph = false;
+    bool    fFound    = false;
 
 
 
@@ -63,7 +63,6 @@ HRESULT CNerdFontDetector::Detect (
     //
 
     hr = ProbeConsoleFontForGlyph (hConsole, static_cast<WCHAR>(0xE5FF), fHasGlyph);
-
     if (SUCCEEDED (hr))
     {
         result = fHasGlyph ? EDetectionResult::Detected : EDetectionResult::NotDetected;
@@ -197,14 +196,16 @@ Error:
 ////////////////////////////////////////////////////////////////////////////////
 
 static int CALLBACK EnumFontCallback (
-    const LOGFONTW *    plf,
-    const TEXTMETRICW *,
-    DWORD,
-    LPARAM              lParam)
+    const LOGFONTW                     * plf,
+    [[maybe_unused]] const TEXTMETRICW * pTextMetric,
+    [[maybe_unused]] DWORD               dwFontType,
+    LPARAM                               lParam)
 {
-    auto pfResult = reinterpret_cast<bool *>(lParam);
+    auto    pfResult = reinterpret_cast<bool *>(lParam);
+    wstring fontName   (plf->lfFaceName);
 
-    wstring fontName (plf->lfFaceName);
+
+
     std::ranges::transform (fontName, fontName.begin(), towlower);
 
     if (fontName.find (L"nerd font") != wstring::npos)
@@ -287,6 +288,8 @@ bool CNerdFontDetector::IsWezTerm (const IEnvironmentProvider & envProvider)
 {
     wstring value;
 
+
+
     if (!envProvider.TryGetEnvironmentVariable (L"TERM_PROGRAM", value))
     {
         return false;
@@ -312,42 +315,24 @@ bool CNerdFontDetector::IsWezTerm (const IEnvironmentProvider & envProvider)
 
 bool CNerdFontDetector::IsConPtyTerminal (const IEnvironmentProvider & envProvider)
 {
+    static constexpr LPCWSTR s_rgConPtyEnvVars[] =
+    {
+        L"WT_SESSION",          // Windows Terminal
+        L"TERM_PROGRAM",        // VS Code, Hyper, etc.
+        L"ConEmuPID",           // ConEmu
+        L"ALACRITTY_WINDOW_ID", // Alacritty
+    };
+
     wstring value;
 
-    //
-    // Windows Terminal sets WT_SESSION
-    //
 
-    if (envProvider.TryGetEnvironmentVariable (L"WT_SESSION", value) && !value.empty())
+
+    for (LPCWSTR pszVar : s_rgConPtyEnvVars)
     {
-        return true;
-    }
-
-    //
-    // VS Code terminal, Hyper, etc. set TERM_PROGRAM
-    //
-
-    if (envProvider.TryGetEnvironmentVariable (L"TERM_PROGRAM", value) && !value.empty())
-    {
-        return true;
-    }
-
-    //
-    // ConEmu sets ConEmuPID
-    //
-
-    if (envProvider.TryGetEnvironmentVariable (L"ConEmuPID", value) && !value.empty())
-    {
-        return true;
-    }
-
-    //
-    // Alacritty sets ALACRITTY_WINDOW_ID
-    //
-
-    if (envProvider.TryGetEnvironmentVariable (L"ALACRITTY_WINDOW_ID", value) && !value.empty())
-    {
-        return true;
+        if (envProvider.TryGetEnvironmentVariable (pszVar, value) && !value.empty())
+        {
+            return true;
+        }
     }
 
     return false;

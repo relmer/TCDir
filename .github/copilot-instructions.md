@@ -224,6 +224,19 @@ g_pConsole->Printf (CConfig::Error, L"Error: %s\n", msg);
 
 ---
 
+## Commit Messages
+
+- Use [Conventional Commits](https://www.conventionalcommits.org/) format: `type(scope): description`
+- **Scope is always required** — never omit it
+- Types: `feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `chore`, `ci`, `build`
+- Use bullet list in the body for multiple changes OR additional details about the changes
+- Examples:
+  - `refactor(config): table-driven switches and override pipeline`
+  - `fix(display): correct column alignment for wide filenames`
+  - `docs(readme): update README with new command-line options`
+
+---
+
 ## Remember
 - **Formatting preservation is non-negotiable**
 - **Read-only files must stay read-only**
@@ -232,5 +245,5 @@ g_pConsole->Printf (CConfig::Error, L"Error: %s\n", msg);
 
 ---
 
-*Last Updated: 2025-02-15*
+*Last Updated: 2026-02-16*
 *These rules apply globally to all projects and conversations*
