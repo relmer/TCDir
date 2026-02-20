@@ -117,6 +117,7 @@ static constexpr SSwitchInfo s_kSwitchInfos[] =
     { L"Owner",   L"Display file ownership"         },
     { L"Streams", L"Display alternate data streams" },
     { L"Icons",   L"Enable file-type icons"         },
+    { L"Tree",    L"Display directory tree view"    },
 };
 
 
@@ -220,7 +221,10 @@ void CUsage::DisplayUsage (CConsole & console, wchar_t chPrefix)
         L"[{{InformationHighlight}}{1}Config{{Information}}] "
         L"[{{InformationHighlight}}{1}Owner{{Information}}] "
         L"[{{InformationHighlight}}{1}Streams{{Information}}] "
-        L"[{{InformationHighlight}}{1}Icons{{Information}}]"
+        L"[{{InformationHighlight}}{1}Icons{{Information}}] "
+        L"[{{InformationHighlight}}{1}Tree{{Information}}] "
+        L"[{{InformationHighlight}}{1}Depth{{Information}}={{InformationHighlight}}N{{Information}}] "
+        L"[{{InformationHighlight}}{1}TreeIndent{{Information}}={{InformationHighlight}}N{{Information}}]"
 #ifdef _DEBUG
         L" [{{InformationHighlight}}{1}Debug{{Information}}]"
 #endif
@@ -265,7 +269,11 @@ void CUsage::DisplayUsage (CConsole & console, wchar_t chPrefix)
         L"  {{InformationHighlight}}{1}Config{{Information}}    {6}Displays current color configuration for all items and extensions.\n"
         L"  {{InformationHighlight}}{1}Owner{{Information}}     {6}Displays file owner (DOMAIN\\User) for each file.\n"
         L"  {{InformationHighlight}}{1}Streams{{Information}}   {6}Displays alternate data streams (NTFS only).\n"
-        L"  {{InformationHighlight}}{1}Icons{{Information}}     {6}Enables file-type icons (Nerd Font required). Use {{InformationHighlight}}{1}Icons-{{Information}} to disable."
+        L"  {{InformationHighlight}}{1}Icons{{Information}}     {6}Enables file-type icons (Nerd Font required). Use {{InformationHighlight}}{1}Icons-{{Information}} to disable.\n"
+        L"  {{InformationHighlight}}{1}Tree{{Information}}      {6}Displays a hierarchical directory tree view. Use {{InformationHighlight}}{1}Tree-{{Information}} to disable.\n"
+        L"  {{InformationHighlight}}{1}Depth{{Information}}={{InformationHighlight}}N{{Information}}  {6}Limits tree depth to N levels (requires {{InformationHighlight}}{1}Tree{{Information}}).\n"
+        L"  {{InformationHighlight}}{1}TreeIndent{{Information}}={{InformationHighlight}}N{{Information}}"
+        L"              {6}Sets tree indent width (1-8, default 4; requires {{InformationHighlight}}{1}Tree{{Information}})."
 #ifdef _DEBUG
         L"\n  {{InformationHighlight}}{1}Debug{{Information}}     {6}Displays raw file attributes in hex for diagnosing edge cases."
 #endif
@@ -1183,6 +1191,7 @@ static void DisplayEnvVarSwitchesSection (CConsole & console, const CConfig & co
         &config.m_fShowOwner,
         &config.m_fShowStreams,
         &config.m_fIcons,
+        &config.m_fTree,
     };
 
     static_assert (_countof (switchValues) == _countof (s_kSwitchInfos), "Switch arrays must match");

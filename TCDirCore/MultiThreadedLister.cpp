@@ -734,7 +734,9 @@ HRESULT CMultiThreadedLister::PrintDirectoryTreeMode (
                 bool fDepthLimited = (m_cmdLinePtr->m_cMaxDepth > 0 &&
                                       treeState.Depth() + 1 >= m_cmdLinePtr->m_cMaxDepth);
 
-                if (!fDepthLimited)
+                bool fIsReparse = CFlag::IsSet (entry.dwFileAttributes, FILE_ATTRIBUTE_REPARSE_POINT);
+
+                if (!fDepthLimited && !fIsReparse)
                 {
                     auto it = childMap.find (ToLower (wstring (entry.cFileName)));
 
