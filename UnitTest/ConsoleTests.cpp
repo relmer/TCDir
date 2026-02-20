@@ -391,6 +391,13 @@ namespace UnitTest
 
 
 
+        void SetWidth (UINT cx)
+        {
+            m_cxConsoleWidth = cx;
+        }
+
+
+
         HRESULT Flush (void) override
         {
             m_strCapturedOutput.append (m_strBuffer);
@@ -555,6 +562,78 @@ namespace UnitTest
             constexpr int SUB_COL = 22;
 
             Assert::AreEqual (SUB_COL, FindColumnOfText (plain, L"  attributes",      L"D  Directories"),                   L"attributes sub-description column (-- mode)");
+        }
+
+
+
+
+
+        //
+        //  Verify that the synopsis line wraps at the console width, with
+        //  continuation lines indented to column 6 (under [drive:]).
+        //
+
+        TEST_METHOD(DisplayUsage_WideConsole_SynopsisOnOneLine)
+        {
+            auto con = make_shared<CCapturingConsole>();
+            auto cfg = make_shared<CConfig>();
+            con->Initialize (cfg);
+            con->SetWidth (300);
+
+
+
+            CUsage::DisplayUsage (*con, L'/');
+            con->Flush();
+
+            wstring plain = StripAnsiCodes (con->m_strCapturedOutput);
+
+            // Find the TCDIR line — it should contain all options on one line
+            size_t tcdirPos = plain.find (L"TCDIR [drive:]");
+            Assert::AreNotEqual (wstring::npos, tcdirPos, L"TCDIR synopsis not found");
+
+            // Find the end of the TCDIR line
+            size_t eolPos = plain.find (L'\n', tcdirPos);
+            Assert::AreNotEqual (wstring::npos, eolPos, L"TCDIR line end not found");
+
+            wstring tcdirLine = plain.substr (tcdirPos, eolPos - tcdirPos);
+
+            // All options should be on this single line
+            Assert::IsTrue (tcdirLine.find (L"[/TreeIndent=N]") != wstring::npos, L"/TreeIndent=N should be on the TCDIR line");
+            Assert::IsTrue (tcdirLine.find (L"[/Debug]")        != wstring::npos, L"/Debug should be on the TCDIR line");
+        }
+
+
+
+
+
+        TEST_METHOD(DisplayUsage_NarrowConsole_SynopsisWrapsAtColumn6)
+        {
+            auto con = make_shared<CCapturingConsole>();
+            auto cfg = make_shared<CConfig>();
+            con->Initialize (cfg);
+            con->SetWidth (80);
+
+
+
+            CUsage::DisplayUsage (*con, L'/');
+            con->Flush();
+
+            wstring plain = StripAnsiCodes (con->m_strCapturedOutput);
+
+            // Find the TCDIR line
+            size_t tcdirPos = plain.find (L"TCDIR [drive:]");
+            Assert::AreNotEqual (wstring::npos, tcdirPos, L"TCDIR synopsis not found");
+
+            // The synopsis must wrap — /TreeIndent=N should NOT be on the first line
+            size_t firstEol   = plain.find (L'\n', tcdirPos);
+            wstring firstLine = plain.substr (tcdirPos, firstEol - tcdirPos);
+            Assert::IsTrue (firstLine.find (L"[/TreeIndent=N]") == wstring::npos, L"/TreeIndent=N should NOT be on the first line at 80 cols");
+
+            // Find the continuation line — it should start with 6 spaces
+            size_t contLinePos = firstEol + 1;
+            wstring contLine   = plain.substr (contLinePos, plain.find (L'\n', contLinePos) - contLinePos);
+            Assert::IsTrue (contLine.substr (0, 6) == L"      ", L"Continuation line should start with 6-space indent");
+            Assert::IsTrue (contLine[6] == L'[', L"First option on continuation line should start at column 6");
         }
     };
 }

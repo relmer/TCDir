@@ -178,6 +178,138 @@ bool CUsage::IsTcdirEnvVarSet (void)
 
 ////////////////////////////////////////////////////////////////////////////////
 //
+//  MeasureVisibleWidth
+//
+//  Returns the visible character count of a string that contains color
+//  markers in the form {MarkerName}.  Characters inside braces are skipped.
+//
+////////////////////////////////////////////////////////////////////////////////
+
+static int MeasureVisibleWidth (wstring_view text)
+{
+    int    cch    = 0;
+    bool   fInTag = false;
+
+
+
+    for (wchar_t ch : text)
+    {
+        if (ch == L'{')
+        {
+            fInTag = true;
+            continue;
+        }
+
+        if (ch == L'}')
+        {
+            fInTag = false;
+            continue;
+        }
+
+        if (!fInTag)
+        {
+            ++cch;
+        }
+    }
+
+    return cch;
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CUsage::DisplaySynopsis
+//
+//  Prints the TCDIR synopsis line with dynamic word-wrapping.
+//  Options that would exceed the console width wrap to a new line,
+//  indented to align under [drive:] from the first line.
+//
+////////////////////////////////////////////////////////////////////////////////
+
+void CUsage::DisplaySynopsis (CConsole & console, wchar_t chPrefix)
+{
+    wstring_view szShort = (chPrefix == L'-') ? L"-"  : L"/";
+    wstring_view pszLong = (chPrefix == L'-') ? L"--" : L"/";
+
+    //
+    // "TCDIR " = 6 visible chars.  Continuation lines indent to column 6
+    // to align under [drive:].
+    //
+
+    constexpr int INDENT = 6;
+
+    //
+    // Build the list of option tokens.  Each is a color-marked string
+    // (post-format, ready for ColorPuts) with a trailing space separator.
+    //
+
+    wstring tokens[] =
+    {
+        format (L"[{{InformationHighlight}}drive:{{Information}}]"
+                L"[{{InformationHighlight}}path{{Information}}]"
+                L"[{{InformationHighlight}}filename{{Information}}] "),
+
+        format (L"[{{InformationHighlight}}{0}A{{Information}}[[:]{{InformationHighlight}}attributes{{Information}}]] ",    szShort),
+        format (L"[{{InformationHighlight}}{0}O{{Information}}[[:]{{InformationHighlight}}sortorder{{Information}}]] ",     szShort),
+        format (L"[{{InformationHighlight}}{0}T{{Information}}[[:]{{InformationHighlight}}timefield{{Information}}]] ",     szShort),
+        format (L"[{{InformationHighlight}}{0}S{{Information}}] ",     szShort),
+        format (L"[{{InformationHighlight}}{0}W{{Information}}] ",     szShort),
+        format (L"[{{InformationHighlight}}{0}B{{Information}}] ",     szShort),
+        format (L"[{{InformationHighlight}}{0}P{{Information}}] ",     szShort),
+        format (L"[{{InformationHighlight}}{0}M{{Information}}] ",     szShort),
+        format (L"[{{InformationHighlight}}{0}Env{{Information}}] ",   pszLong),
+        format (L"[{{InformationHighlight}}{0}Config{{Information}}] ", pszLong),
+        format (L"[{{InformationHighlight}}{0}Owner{{Information}}] ", pszLong),
+        format (L"[{{InformationHighlight}}{0}Streams{{Information}}] ", pszLong),
+        format (L"[{{InformationHighlight}}{0}Icons{{Information}}] ", pszLong),
+        format (L"[{{InformationHighlight}}{0}Tree{{Information}}] ",  pszLong),
+        format (L"[{{InformationHighlight}}{0}Depth{{Information}}={{InformationHighlight}}N{{Information}}] ", pszLong),
+        format (L"[{{InformationHighlight}}{0}TreeIndent{{Information}}={{InformationHighlight}}N{{Information}}]", pszLong),
+#ifdef _DEBUG
+        format (L" [{{InformationHighlight}}{0}Debug{{Information}}]", pszLong),
+#endif
+    };
+
+    int     cxConsole = static_cast<int>(console.GetWidth());
+    int     col       = INDENT;
+    wstring line;
+
+    wstring indentStr (INDENT, L' ');
+
+
+
+    // Start with "TCDIR "
+    line.append (L"{InformationHighlight}TCDIR{Information} ");
+
+    // Append each token, inserting line breaks when necessary
+    for (const wstring & token : tokens)
+    {
+        int cchVisible = MeasureVisibleWidth (token);
+
+        if (col + cchVisible > cxConsole && col > INDENT)
+        {
+            // Wrap to next line, indented under [drive:]
+            line.append (L"\n");
+            line.append (indentStr);
+            col = INDENT;
+        }
+
+        line.append (token);
+        col += cchVisible;
+    }
+
+    console.ColorPuts (line.c_str());
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
 //  CUsage::DisplayUsage
 //
 //
@@ -203,32 +335,7 @@ void CUsage::DisplayUsage (CConsole & console, wchar_t chPrefix)
     // Header continuation after "Technicolor" (printed with PrintColorfulString)
     static constexpr wchar_t k_wszUsageHeader[] =
         L"{{Information}} Directory version " VERSION_WSTRING L" {7} ({8})\n"
-        L"Copyright {9} 2004-" VERSION_YEAR_WSTRING L" by Robert Elmer\n"
-        L"\n"
-        L"{{InformationHighlight}}TCDIR{{Information}} "
-        L"[{{InformationHighlight}}drive:{{Information}}]"
-        L"[{{InformationHighlight}}path{{Information}}]"
-        L"[{{InformationHighlight}}filename{{Information}}] "
-        L"[{{InformationHighlight}}{0}A{{Information}}[[:]{{InformationHighlight}}attributes{{Information}}]] "
-        L"[{{InformationHighlight}}{0}O{{Information}}[[:]{{InformationHighlight}}sortorder{{Information}}]] "
-        L"[{{InformationHighlight}}{0}T{{Information}}[[:]{{InformationHighlight}}timefield{{Information}}]] "
-        L"[{{InformationHighlight}}{0}S{{Information}}] "
-        L"[{{InformationHighlight}}{0}W{{Information}}] "
-        L"[{{InformationHighlight}}{0}B{{Information}}] "
-        L"[{{InformationHighlight}}{0}P{{Information}}] "
-        L"[{{InformationHighlight}}{0}M{{Information}}] "
-        L"[{{InformationHighlight}}{1}Env{{Information}}] "
-        L"[{{InformationHighlight}}{1}Config{{Information}}] "
-        L"[{{InformationHighlight}}{1}Owner{{Information}}] "
-        L"[{{InformationHighlight}}{1}Streams{{Information}}] "
-        L"[{{InformationHighlight}}{1}Icons{{Information}}] "
-        L"[{{InformationHighlight}}{1}Tree{{Information}}] "
-        L"[{{InformationHighlight}}{1}Depth{{Information}}={{InformationHighlight}}N{{Information}}] "
-        L"[{{InformationHighlight}}{1}TreeIndent{{Information}}={{InformationHighlight}}N{{Information}}]"
-#ifdef _DEBUG
-        L" [{{InformationHighlight}}{1}Debug{{Information}}]"
-#endif
-        L"\n";
+        L"Copyright {9} 2004-" VERSION_YEAR_WSTRING L" by Robert Elmer\n";
 
     static constexpr wchar_t k_wszUsageBody[] =
         L"{{Information}}\n"
@@ -312,6 +419,9 @@ void CUsage::DisplayUsage (CConsole & console, wchar_t chPrefix)
                                buildTimestamp, 
                                UnicodeSymbols::Copyright
                        ).c_str ());
+
+    // Print the synopsis line with dynamic word-wrapping
+    DisplaySynopsis (console, chPrefix);
 
     console.ColorPuts (format (k_wszUsageBody,
                                szShort, 
