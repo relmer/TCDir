@@ -185,14 +185,42 @@ HRESULT CCommandLine::Parse (int cArg, WCHAR ** ppszArg)
 
     if (m_fTree)
     {
-        CBREx (!(m_fWideListing), E_INVALIDARG);
-        CBREx (!(m_fBareListing), E_INVALIDARG);
-        CBREx (!(m_fRecurse),     E_INVALIDARG);
+        if (m_fWideListing)
+        {
+            m_strValidationError = L"--Tree and -W (wide) cannot be used together.";
+            CBREx (false, E_INVALIDARG);
+        }
+
+        if (m_fBareListing)
+        {
+            m_strValidationError = L"--Tree and -B (bare) cannot be used together.";
+            CBREx (false, E_INVALIDARG);
+        }
+
+        if (m_fRecurse)
+        {
+            m_strValidationError = L"--Tree and -S (recurse) cannot be used together.";
+            CBREx (false, E_INVALIDARG);
+        }
     }
 
-    CBREx (m_cMaxDepth == 0   || m_fTree, E_INVALIDARG);
-    CBREx (m_cTreeIndent == 4 || m_fTree, E_INVALIDARG);
-    CBREx (m_cTreeIndent >= 1 && m_cTreeIndent <= 8, E_INVALIDARG);
+    if (m_cMaxDepth != 0 && !m_fTree)
+    {
+        m_strValidationError = L"--Depth requires --Tree.";
+        CBREx (false, E_INVALIDARG);
+    }
+
+    if (m_cTreeIndent != 4 && !m_fTree)
+    {
+        m_strValidationError = L"--TreeIndent requires --Tree.";
+        CBREx (false, E_INVALIDARG);
+    }
+
+    if (m_cTreeIndent < 1 || m_cTreeIndent > 8)
+    {
+        m_strValidationError = L"--TreeIndent must be between 1 and 8.";
+        CBREx (false, E_INVALIDARG);
+    }
 
 Error:
     return hr;
@@ -421,7 +449,11 @@ HRESULT CCommandLine::HandleLongSwitch (LPCWSTR pszArg, int & cArg, WCHAR ** & p
 
             int n = _wtoi (switchValue.c_str ());
 
-            CBREx (n > 0, E_INVALIDARG);
+            if (n < 1)
+            {
+                m_strValidationError = L"--Depth must be a positive integer.";
+                CBREx (false, E_INVALIDARG);
+            }
 
             m_cMaxDepth = n;
             hr = S_OK;
@@ -432,7 +464,11 @@ HRESULT CCommandLine::HandleLongSwitch (LPCWSTR pszArg, int & cArg, WCHAR ** & p
 
             int n = _wtoi (switchValue.c_str ());
 
-            CBREx (n >= 1 && n <= 8, E_INVALIDARG);
+            if (n < 1 || n > 8)
+            {
+                m_strValidationError = L"--TreeIndent must be between 1 and 8.";
+                CBREx (false, E_INVALIDARG);
+            }
 
             m_cTreeIndent = n;
             hr = S_OK;

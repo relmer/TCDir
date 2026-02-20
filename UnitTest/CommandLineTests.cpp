@@ -1019,6 +1019,8 @@ namespace UnitTest
 
 
             Assert::IsTrue (FAILED(hr));
+            Assert::IsTrue (cl.m_strValidationError.find(L"--Tree") != wstring::npos);
+            Assert::IsTrue (cl.m_strValidationError.find(L"-W") != wstring::npos);
         }
 
 
@@ -1036,6 +1038,8 @@ namespace UnitTest
 
 
             Assert::IsTrue (FAILED(hr));
+            Assert::IsTrue (cl.m_strValidationError.find(L"--Tree") != wstring::npos);
+            Assert::IsTrue (cl.m_strValidationError.find(L"-B") != wstring::npos);
         }
 
 
@@ -1053,6 +1057,8 @@ namespace UnitTest
 
 
             Assert::IsTrue (FAILED(hr));
+            Assert::IsTrue (cl.m_strValidationError.find(L"--Tree") != wstring::npos);
+            Assert::IsTrue (cl.m_strValidationError.find(L"-S") != wstring::npos);
         }
 
 
@@ -1069,6 +1075,8 @@ namespace UnitTest
 
 
             Assert::IsTrue (FAILED(hr));
+            Assert::IsTrue (cl.m_strValidationError.find(L"--Depth") != wstring::npos);
+            Assert::IsTrue (cl.m_strValidationError.find(L"--Tree") != wstring::npos);
         }
 
 
@@ -1085,6 +1093,8 @@ namespace UnitTest
 
 
             Assert::IsTrue (FAILED(hr));
+            Assert::IsTrue (cl.m_strValidationError.find(L"--TreeIndent") != wstring::npos);
+            Assert::IsTrue (cl.m_strValidationError.find(L"--Tree") != wstring::npos);
         }
 
 
@@ -1102,6 +1112,9 @@ namespace UnitTest
 
 
             Assert::IsTrue (FAILED(hr));
+            Assert::IsTrue (cl.m_strValidationError.find(L"--TreeIndent") != wstring::npos);
+            Assert::IsTrue (cl.m_strValidationError.find(L"1") != wstring::npos);
+            Assert::IsTrue (cl.m_strValidationError.find(L"8") != wstring::npos);
         }
 
 
@@ -1136,6 +1149,52 @@ namespace UnitTest
 
 
             Assert::IsTrue (FAILED(hr));
+        }
+
+
+
+        //
+        //  Validation: compatible switch combinations
+        //
+
+        TEST_METHOD(ParseTreeWithOwnerAndIconsSucceeds)
+        {
+            CCommandLine    cl;
+            const wchar_t * a1      = L"--Tree";
+            const wchar_t * a2      = L"--Owner";
+            const wchar_t * a3      = L"--Icons";
+            wchar_t       * argv[]  = { const_cast<wchar_t *>(a1), const_cast<wchar_t *>(a2), const_cast<wchar_t *>(a3) };
+            HRESULT         hr      = cl.Parse(3, argv);
+
+
+
+            Assert::IsTrue (SUCCEEDED(hr));
+            Assert::IsTrue (cl.m_fTree);
+            Assert::IsTrue (cl.m_fShowOwner);
+            Assert::IsTrue (cl.m_fIcons.value_or(false));
+            Assert::IsTrue (cl.m_strValidationError.empty());
+        }
+
+
+
+
+
+        TEST_METHOD(ParseTreeWithDepthAndIndentSucceeds)
+        {
+            CCommandLine    cl;
+            const wchar_t * a1      = L"--Tree";
+            const wchar_t * a2      = L"--Depth=5";
+            const wchar_t * a3      = L"--TreeIndent=2";
+            wchar_t       * argv[]  = { const_cast<wchar_t *>(a1), const_cast<wchar_t *>(a2), const_cast<wchar_t *>(a3) };
+            HRESULT         hr      = cl.Parse(3, argv);
+
+
+
+            Assert::IsTrue (SUCCEEDED(hr));
+            Assert::IsTrue (cl.m_fTree);
+            Assert::AreEqual (5, cl.m_cMaxDepth);
+            Assert::AreEqual (2, cl.m_cTreeIndent);
+            Assert::IsTrue (cl.m_strValidationError.empty());
         }
 
 
