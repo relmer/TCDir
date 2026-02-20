@@ -49,6 +49,7 @@ public:
     void DisplayTreeRootHeader          (const CDriveInfo & driveInfo, const CDirectoryInfo & di);
     void BeginDirectory                 (const CDirectoryInfo & di);
     void DisplaySingleEntry             (const FileInfo & entry, STreeConnectorState & treeState, bool fIsLastEntry, size_t idxFile);
+    void DisplayFileStreamsWithTreePrefix (const FileInfo & entry, const STreeConnectorState & treeState);
     void DisplayTreeRootSummary         (const CDirectoryInfo & di);
     void DisplayTreeEmptyRootMessage    (const CDirectoryInfo & di);
 

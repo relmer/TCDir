@@ -184,10 +184,61 @@ void CResultsDisplayerTree::DisplaySingleEntry (const FileInfo & entry, STreeCon
 
     m_consolePtr->Printf (textAttr, L"%s\n", entry.cFileName);
 
+    //
+    // Alternate data streams (when --Streams is active)
+    //
+
+    if (m_cmdLinePtr->m_fShowStreams && !entry.m_vStreams.empty())
+    {
+        DisplayFileStreamsWithTreePrefix (entry, treeState);
+    }
+
 
 
 Error:
     return;
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CResultsDisplayerTree::DisplayFileStreamsWithTreePrefix
+//
+//  Displays alternate data streams for a file with tree continuation
+//  prefix prepended to each stream line.  Uses the tree state's stream
+//  continuation method (│ + padding) instead of simple space indentation.
+//
+////////////////////////////////////////////////////////////////////////////////
+
+void CResultsDisplayerTree::DisplayFileStreamsWithTreePrefix (const FileInfo & entry, const STreeConnectorState & treeState)
+{
+    wstring continuationPrefix = treeState.GetStreamContinuation();
+    size_t  cchMaxFileSize     = max (m_cchStringLengthOfMaxFileSize, size_t (5));
+    int     cchOwnerPadding    = (m_cchMaxOwnerLength > 0) ? static_cast<int>(m_cchMaxOwnerLength + 1) : 0;
+
+
+
+    for (const SStreamInfo & si : entry.m_vStreams)
+    {
+        wstring pszStreamSize = FormatNumberWithSeparators (si.m_liSize.QuadPart);
+
+        m_consolePtr->ColorPrintf (L"{Default}%*c{Size} %*s {Default}  %*s",
+                                   30, L' ',
+                                   static_cast<int>(cchMaxFileSize), pszStreamSize.c_str(),
+                                   cchOwnerPadding, L"");
+
+        if (!continuationPrefix.empty())
+        {
+            m_consolePtr->Printf (CConfig::EAttribute::TreeConnector, L"%s", continuationPrefix.c_str());
+        }
+
+        m_consolePtr->Printf (CConfig::EAttribute::Stream, L"%s%s\n",
+                              entry.cFileName,
+                              si.m_strName.c_str());
+    }
 }
 
 
