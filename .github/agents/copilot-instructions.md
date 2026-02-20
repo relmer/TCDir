@@ -3,6 +3,8 @@
 Auto-generated from all feature plans. Last updated: 2026-02-14
 
 ## Active Technologies
+- C++ (stdcpplatest / MSVC v145+) + Windows SDK, STL only (no third-party libraries) (004-tree-view)
+- N/A (filesystem enumeration, no persistent storage) (004-tree-view)
 
 - stdcpplatest (MSVC v145+) + Windows SDK (+ `gdi32.lib` for font detection), STL only — no third-party libraries (003-file-icons)
 
@@ -29,6 +31,7 @@ All coding conventions are defined in [/.github/copilot-instructions.md](/.githu
 - Use VS Code build tasks, not direct msbuild
 
 ## Recent Changes
+- 004-tree-view: Added C++ (stdcpplatest / MSVC v145+) + Windows SDK, STL only (no third-party libraries)
 
 - 003-file-icons: Added stdcpplatest (MSVC v145+) + Windows SDK (+ `gdi32.lib` for font detection), STL only — no third-party libraries
 

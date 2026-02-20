@@ -144,7 +144,7 @@ A user can enable tree mode and set a default depth via the `TCDIR` environment 
 ### Edge Cases
 
 - What happens when tree encounters a directory it cannot access (permission denied)? → The inaccessible directory is listed as an entry with its name, but its contents are not expanded. An error message is displayed inline (matching existing `-S` behavior for access-denied directories).
-- What happens when a symlink/junction creates a circular reference? → The existing cycle-detection behavior from recursive mode (`-S`) applies. If a cycle is detected, the directory is listed but not expanded, and a note is shown.
+- What happens when a symlink/junction creates a circular reference? → There is currently no cycle detection. This feature adds reparse-point checking to the shared recursion path, protecting both `--Tree` and `-S` modes. If a reparse point is detected, the directory is listed but not expanded, and a `[→ target]` indicator is shown.
 - What happens with an extremely deep directory tree (hundreds of levels) without `--Depth`? → The system enumerates to the full depth. The indentation grows with each level. No artificial limit is imposed beyond OS path-length limits.
 - What happens when `--Tree` is used with file masks (e.g., `tcdir --Tree *.cpp`)? → Files are filtered by the mask at every level, but all directories are still shown to preserve tree structure. Empty directories (no matching files and no subdirectories with matching files) are pruned from the output.
 - What happens with `--Tree --Depth 1` in an empty directory? → The normal "File Not Found" message is shown, same as today.
