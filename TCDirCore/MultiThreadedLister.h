@@ -1,6 +1,7 @@
 #pragma once
 
 #include "DirectoryLister.h"
+#include "TreeConnectorState.h"
 #include "WorkQueue.h"
 
 
@@ -8,6 +9,7 @@
 
 
 class CDriveInfo;
+class CResultsDisplayerTree;
 
 
 
@@ -76,6 +78,13 @@ private:
                                            const CDriveInfo & driveInfo,
                                            IResultsDisplayer & displayer,
                                            SListingTotals & totals);
+
+    HRESULT PrintDirectoryTreeMode        (shared_ptr<CDirectoryInfo>           pDirInfo,
+                                           const CDriveInfo                   & driveInfo,
+                                           CResultsDisplayerTree              & treeDisplayer,
+                                           IResultsDisplayer::EDirectoryLevel   level,
+                                           SListingTotals                     & totals,
+                                           STreeConnectorState                & treeState);
 
     bool    StopRequested                 () const { return m_stopSource.stop_requested(); }
 

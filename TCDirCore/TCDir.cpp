@@ -12,6 +12,7 @@
 #include "PerfTimer.h"
 #include "ResultsDisplayerBare.h"
 #include "ResultsDisplayerNormal.h"
+#include "ResultsDisplayerTree.h"
 #include "ResultsDisplayerWide.h"
 #include "Usage.h"
 
@@ -126,6 +127,10 @@ static unique_ptr<IResultsDisplayer> CreateDisplayer (
     else if (cmdlinePtr->m_fWideListing)
     {
         return make_unique<CResultsDisplayerWide> (cmdlinePtr, consolePtr, configPtr, fIconsActive);
+    }
+    else if (cmdlinePtr->m_fTree)
+    {
+        return make_unique<CResultsDisplayerTree> (cmdlinePtr, consolePtr, configPtr, fIconsActive);
     }
     else
     {

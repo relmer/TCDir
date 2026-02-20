@@ -224,6 +224,103 @@ namespace UnitTest
             Assert::IsTrue (comp(newer, older));
         }
 
+
+
+
+        TEST_METHOD(InterleavedSort_DirectoriesNotGroupedFirst)
+        {
+            auto cmd = std::make_shared<CCommandLine>();
+
+            cmd->m_rgSortPreference[0] = CCommandLine::ESortOrder::SO_NAME;
+            cmd->m_sortorder           = CCommandLine::ESortOrder::SO_NAME;
+            cmd->m_sortdirection       = CCommandLine::ESortDirection::SD_ASCENDING;
+
+            FileComparator comp(cmd, true /* fInterleavedSort */);
+
+            WIN32_FIND_DATA entryDir  = {};
+            WIN32_FIND_DATA entryFile = {};
+            StringCchCopyW(entryDir.cFileName,  ARRAYSIZE(entryDir.cFileName),   L"zzz");
+            StringCchCopyW(entryFile.cFileName, ARRAYSIZE(entryFile.cFileName),  L"aaa");
+            entryDir.dwFileAttributes  = FILE_ATTRIBUTE_DIRECTORY;
+            entryFile.dwFileAttributes = 0;
+
+            // In interleaved mode, "aaa" (file) sorts before "zzz" (dir) by name
+            Assert::IsFalse (comp(entryDir, entryFile));
+            Assert::IsTrue (comp(entryFile, entryDir));
+        }
+
+
+
+
+        TEST_METHOD(InterleavedSort_SortsByNameNotType)
+        {
+            auto cmd = std::make_shared<CCommandLine>();
+
+            cmd->m_rgSortPreference[0] = CCommandLine::ESortOrder::SO_NAME;
+            cmd->m_sortorder           = CCommandLine::ESortOrder::SO_NAME;
+            cmd->m_sortdirection       = CCommandLine::ESortDirection::SD_ASCENDING;
+
+            FileComparator comp(cmd, true /* fInterleavedSort */);
+
+            WIN32_FIND_DATA dir1  = {};
+            WIN32_FIND_DATA file1 = {};
+            WIN32_FIND_DATA dir2  = {};
+            WIN32_FIND_DATA file2 = {};
+            StringCchCopyW(dir1.cFileName,  ARRAYSIZE(dir1.cFileName),  L"bbb");
+            StringCchCopyW(file1.cFileName, ARRAYSIZE(file1.cFileName), L"aaa");
+            StringCchCopyW(dir2.cFileName,  ARRAYSIZE(dir2.cFileName),  L"ddd");
+            StringCchCopyW(file2.cFileName, ARRAYSIZE(file2.cFileName), L"ccc");
+            dir1.dwFileAttributes  = FILE_ATTRIBUTE_DIRECTORY;
+            dir2.dwFileAttributes  = FILE_ATTRIBUTE_DIRECTORY;
+            file1.dwFileAttributes = 0;
+            file2.dwFileAttributes = 0;
+
+            // Verify full sort produces: aaa(file), bbb(dir), ccc(file), ddd(dir)
+            std::vector<WIN32_FIND_DATA> entries = { dir2, file1, dir1, file2 };
+            std::sort(entries.begin(), entries.end(), comp);
+
+            Assert::AreEqual(std::wstring(L"aaa"), std::wstring(entries[0].cFileName));
+            Assert::AreEqual(std::wstring(L"bbb"), std::wstring(entries[1].cFileName));
+            Assert::AreEqual(std::wstring(L"ccc"), std::wstring(entries[2].cFileName));
+            Assert::AreEqual(std::wstring(L"ddd"), std::wstring(entries[3].cFileName));
+        }
+
+
+
+
+        TEST_METHOD(InterleavedSort_NonInterleavedGroupsDirsFirst)
+        {
+            auto cmd = std::make_shared<CCommandLine>();
+
+            cmd->m_rgSortPreference[0] = CCommandLine::ESortOrder::SO_NAME;
+            cmd->m_sortorder           = CCommandLine::ESortOrder::SO_NAME;
+            cmd->m_sortdirection       = CCommandLine::ESortDirection::SD_ASCENDING;
+
+            FileComparator comp(cmd, false /* fInterleavedSort - default */);
+
+            WIN32_FIND_DATA dir1  = {};
+            WIN32_FIND_DATA file1 = {};
+            WIN32_FIND_DATA dir2  = {};
+            WIN32_FIND_DATA file2 = {};
+            StringCchCopyW(dir1.cFileName,  ARRAYSIZE(dir1.cFileName),  L"bbb");
+            StringCchCopyW(file1.cFileName, ARRAYSIZE(file1.cFileName), L"aaa");
+            StringCchCopyW(dir2.cFileName,  ARRAYSIZE(dir2.cFileName),  L"ddd");
+            StringCchCopyW(file2.cFileName, ARRAYSIZE(file2.cFileName), L"ccc");
+            dir1.dwFileAttributes  = FILE_ATTRIBUTE_DIRECTORY;
+            dir2.dwFileAttributes  = FILE_ATTRIBUTE_DIRECTORY;
+            file1.dwFileAttributes = 0;
+            file2.dwFileAttributes = 0;
+
+            // Non-interleaved: dirs first, then files. bbb(dir), ddd(dir), aaa(file), ccc(file)
+            std::vector<WIN32_FIND_DATA> entries = { dir2, file1, dir1, file2 };
+            std::sort(entries.begin(), entries.end(), comp);
+
+            Assert::AreEqual(std::wstring(L"bbb"), std::wstring(entries[0].cFileName));
+            Assert::AreEqual(std::wstring(L"ddd"), std::wstring(entries[1].cFileName));
+            Assert::AreEqual(std::wstring(L"aaa"), std::wstring(entries[2].cFileName));
+            Assert::AreEqual(std::wstring(L"ccc"), std::wstring(entries[3].cFileName));
+        }
+
     };
 }
 

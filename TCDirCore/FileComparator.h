@@ -9,7 +9,7 @@
 class FileComparator
 {
 public:
-    FileComparator (shared_ptr<const CCommandLine> cmdLinePtr);
+    FileComparator (shared_ptr<const CCommandLine> cmdLinePtr, bool fInterleavedSort = false);
     
     bool operator()(const WIN32_FIND_DATA& lhs, const WIN32_FIND_DATA& rhs) const;
 
@@ -20,4 +20,5 @@ private:
     LONGLONG CompareSize      (const WIN32_FIND_DATA & lhs, const WIN32_FIND_DATA & rhs) const;
 
     shared_ptr<const CCommandLine> m_cmdLinePtr;
+    bool                           m_fInterleavedSort = false;
 };

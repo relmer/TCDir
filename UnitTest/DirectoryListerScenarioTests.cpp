@@ -4,6 +4,7 @@
 
 #include "../TCDirCore/MultiThreadedLister.h"
 #include "../TCDirCore/ResultsDisplayerNormal.h"
+#include "../TCDirCore/ResultsDisplayerTree.h"
 #include "../TCDirCore/DriveInfo.h"
 #include "../TCDirCore/Config.h"
 #include "../TCDirCore/Console.h"
@@ -766,6 +767,293 @@ namespace UnitTest
             Assert::AreEqual (4u, totals.m_cFiles,       L"Should have 4 files (main.cpp, readme.md, build.exe, util.h)");
             Assert::AreEqual (2u, totals.m_cDirectories,  L"Should have 2 directories (.git, src)");
             Assert::AreEqual (10900ull, totals.m_uliFileBytes.QuadPart, L"Total bytes should be 10900");
+        }
+
+
+
+
+        ////////////////////////////////////////////////////////////////////////
+        //
+        //  TreeMode_BasicTwoLevels_CorrectTotals
+        //
+        //  Verifies that tree mode correctly traverses 2 levels and
+        //  accumulates totals for all files.
+        //
+        ////////////////////////////////////////////////////////////////////////
+
+        TEST_METHOD(TreeMode_BasicTwoLevels_CorrectTotals)
+        {
+            //
+            // Setup:
+            //   C:\MockRoot\
+            //     readme.txt (100 bytes)
+            //     src\
+            //       main.cpp (200 bytes)
+            //       app.cpp  (300 bytes)
+            //
+
+            MockFileTree tree;
+            tree.AddFile      (L"C:\\MockRoot\\readme.txt",      100);
+            tree.AddDirectory (L"C:\\MockRoot\\src");
+            tree.AddFile      (L"C:\\MockRoot\\src\\main.cpp",   200);
+            tree.AddFile      (L"C:\\MockRoot\\src\\app.cpp",    300);
+
+            ScopedFileSystemMock mock (tree);
+
+            auto cmdLine = make_shared<CCommandLine> ();
+            cmdLine->m_fTree = true;
+
+            auto console = make_shared<CConsole> ();
+            auto config  = make_shared<CConfig> ();
+            console->Initialize (config);
+
+            CResultsDisplayerTree treeDisplayer (cmdLine, console, config, false);
+            CMultiThreadedLister  lister          (cmdLine, console, config);
+            CDriveInfo            driveInfo        (L"C:\\MockRoot");
+            SListingTotals        totals         = {};
+
+            vector<filesystem::path> fileSpecs = { L"*" };
+
+            HRESULT hr = lister.ProcessDirectoryMultiThreaded (
+                driveInfo,
+                L"C:\\MockRoot",
+                fileSpecs,
+                treeDisplayer,
+                IResultsDisplayer::EDirectoryLevel::Initial,
+                totals);
+
+            Assert::IsTrue (SUCCEEDED (hr), L"Tree mode listing should succeed");
+            Assert::AreEqual (3u, totals.m_cFiles, L"Should have 3 files total across both levels");
+            Assert::AreEqual (1u, totals.m_cDirectories, L"Should have 1 directory (src)");
+            Assert::AreEqual (600ull, totals.m_uliFileBytes.QuadPart, L"Should have 600 bytes total");
+        }
+
+
+
+
+        ////////////////////////////////////////////////////////////////////////
+        //
+        //  TreeMode_ThreeLevels_CorrectTotals
+        //
+        //  Verifies correct totals with 3 nesting levels.
+        //
+        ////////////////////////////////////////////////////////////////////////
+
+        TEST_METHOD(TreeMode_ThreeLevels_CorrectTotals)
+        {
+            //
+            // Setup:
+            //   C:\MockRoot\
+            //     file1.txt (1000 bytes)
+            //     sub1\
+            //       file2.txt (2000 bytes)
+            //       sub2\
+            //         file3.txt (3000 bytes)
+            //
+
+            MockFileTree tree;
+            tree.AddFile      (L"C:\\MockRoot\\file1.txt",               1000);
+            tree.AddDirectory (L"C:\\MockRoot\\sub1");
+            tree.AddFile      (L"C:\\MockRoot\\sub1\\file2.txt",         2000);
+            tree.AddDirectory (L"C:\\MockRoot\\sub1\\sub2");
+            tree.AddFile      (L"C:\\MockRoot\\sub1\\sub2\\file3.txt",   3000);
+
+            ScopedFileSystemMock mock (tree);
+
+            auto cmdLine = make_shared<CCommandLine> ();
+            cmdLine->m_fTree = true;
+
+            auto console = make_shared<CConsole> ();
+            auto config  = make_shared<CConfig> ();
+            console->Initialize (config);
+
+            CResultsDisplayerTree treeDisplayer (cmdLine, console, config, false);
+            CMultiThreadedLister  lister          (cmdLine, console, config);
+            CDriveInfo            driveInfo        (L"C:\\MockRoot");
+            SListingTotals        totals         = {};
+
+            vector<filesystem::path> fileSpecs = { L"*" };
+
+            HRESULT hr = lister.ProcessDirectoryMultiThreaded (
+                driveInfo,
+                L"C:\\MockRoot",
+                fileSpecs,
+                treeDisplayer,
+                IResultsDisplayer::EDirectoryLevel::Initial,
+                totals);
+
+            Assert::IsTrue (SUCCEEDED (hr), L"Tree mode 3-level listing should succeed");
+            Assert::AreEqual (3u, totals.m_cFiles, L"Should have 3 files across all levels");
+            Assert::AreEqual (2u, totals.m_cDirectories, L"Should have 2 directories (sub1, sub2)");
+            Assert::AreEqual (6000ull, totals.m_uliFileBytes.QuadPart, L"Should have 6000 bytes total");
+        }
+
+
+
+
+        ////////////////////////////////////////////////////////////////////////
+        //
+        //  TreeMode_EmptyDirectory_NoError
+        //
+        //  Verifies tree mode handles an empty directory gracefully.
+        //
+        ////////////////////////////////////////////////////////////////////////
+
+        TEST_METHOD(TreeMode_EmptyDirectory_NoError)
+        {
+            MockFileTree tree;
+            // No files — just the root directory exists (mock intercept returns nothing)
+
+            ScopedFileSystemMock mock (tree);
+
+            auto cmdLine = make_shared<CCommandLine> ();
+            cmdLine->m_fTree = true;
+
+            auto console = make_shared<CConsole> ();
+            auto config  = make_shared<CConfig> ();
+            console->Initialize (config);
+
+            CResultsDisplayerTree treeDisplayer (cmdLine, console, config, false);
+            CMultiThreadedLister  lister          (cmdLine, console, config);
+            CDriveInfo            driveInfo        (L"C:\\MockRoot");
+            SListingTotals        totals         = {};
+
+            vector<filesystem::path> fileSpecs = { L"*" };
+
+            HRESULT hr = lister.ProcessDirectoryMultiThreaded (
+                driveInfo,
+                L"C:\\MockRoot",
+                fileSpecs,
+                treeDisplayer,
+                IResultsDisplayer::EDirectoryLevel::Initial,
+                totals);
+
+            Assert::IsTrue (SUCCEEDED (hr), L"Tree mode with empty directory should succeed");
+            Assert::AreEqual (0u, totals.m_cFiles, L"Should have 0 files");
+        }
+
+
+
+
+        ////////////////////////////////////////////////////////////////////////
+        //
+        //  TreeMode_FileMask_OnlyMatchingFilesCounted
+        //
+        //  Verifies that file masks filter results at every level while
+        //  still traversing the full directory tree.
+        //
+        ////////////////////////////////////////////////////////////////////////
+
+        TEST_METHOD(TreeMode_FileMask_OnlyMatchingFilesCounted)
+        {
+            //
+            // Setup:
+            //   C:\MockRoot\
+            //     readme.md  (100 bytes) — not matched
+            //     main.cpp   (200 bytes) — matched
+            //     src\
+            //       app.cpp  (300 bytes) — matched
+            //       app.h    (400 bytes) — not matched
+            //
+
+            MockFileTree tree;
+            tree.AddFile      (L"C:\\MockRoot\\readme.md",       100);
+            tree.AddFile      (L"C:\\MockRoot\\main.cpp",        200);
+            tree.AddDirectory (L"C:\\MockRoot\\src");
+            tree.AddFile      (L"C:\\MockRoot\\src\\app.cpp",    300);
+            tree.AddFile      (L"C:\\MockRoot\\src\\app.h",      400);
+
+            ScopedFileSystemMock mock (tree);
+
+            auto cmdLine = make_shared<CCommandLine> ();
+            cmdLine->m_fTree = true;
+
+            auto console = make_shared<CConsole> ();
+            auto config  = make_shared<CConfig> ();
+            console->Initialize (config);
+
+            CResultsDisplayerTree treeDisplayer (cmdLine, console, config, false);
+            CMultiThreadedLister  lister          (cmdLine, console, config);
+            CDriveInfo            driveInfo        (L"C:\\MockRoot");
+            SListingTotals        totals         = {};
+
+            vector<filesystem::path> fileSpecs = { L"*.cpp" };
+
+            HRESULT hr = lister.ProcessDirectoryMultiThreaded (
+                driveInfo,
+                L"C:\\MockRoot",
+                fileSpecs,
+                treeDisplayer,
+                IResultsDisplayer::EDirectoryLevel::Initial,
+                totals);
+
+            Assert::IsTrue (SUCCEEDED (hr), L"Tree mode with file mask should succeed");
+            Assert::AreEqual (2u, totals.m_cFiles, L"Should have 2 .cpp files across levels");
+            Assert::AreEqual (500ull, totals.m_uliFileBytes.QuadPart, L"Should have 500 bytes from .cpp files");
+        }
+
+
+
+
+        ////////////////////////////////////////////////////////////////////////
+        //
+        //  TreeMode_MultipleSubdirs_AllTraversed
+        //
+        //  Verifies tree mode with multiple sibling subdirectories.
+        //
+        ////////////////////////////////////////////////////////////////////////
+
+        TEST_METHOD(TreeMode_MultipleSubdirs_AllTraversed)
+        {
+            //
+            // Setup:
+            //   C:\MockRoot\
+            //     root.txt (50 bytes)
+            //     alpha\
+            //       a1.txt (100 bytes)
+            //     beta\
+            //       b1.txt (200 bytes)
+            //     gamma\
+            //       g1.txt (300 bytes)
+            //
+
+            MockFileTree tree;
+            tree.AddFile      (L"C:\\MockRoot\\root.txt",         50);
+            tree.AddDirectory (L"C:\\MockRoot\\alpha");
+            tree.AddFile      (L"C:\\MockRoot\\alpha\\a1.txt",   100);
+            tree.AddDirectory (L"C:\\MockRoot\\beta");
+            tree.AddFile      (L"C:\\MockRoot\\beta\\b1.txt",    200);
+            tree.AddDirectory (L"C:\\MockRoot\\gamma");
+            tree.AddFile      (L"C:\\MockRoot\\gamma\\g1.txt",   300);
+
+            ScopedFileSystemMock mock (tree);
+
+            auto cmdLine = make_shared<CCommandLine> ();
+            cmdLine->m_fTree = true;
+
+            auto console = make_shared<CConsole> ();
+            auto config  = make_shared<CConfig> ();
+            console->Initialize (config);
+
+            CResultsDisplayerTree treeDisplayer (cmdLine, console, config, false);
+            CMultiThreadedLister  lister          (cmdLine, console, config);
+            CDriveInfo            driveInfo        (L"C:\\MockRoot");
+            SListingTotals        totals         = {};
+
+            vector<filesystem::path> fileSpecs = { L"*" };
+
+            HRESULT hr = lister.ProcessDirectoryMultiThreaded (
+                driveInfo,
+                L"C:\\MockRoot",
+                fileSpecs,
+                treeDisplayer,
+                IResultsDisplayer::EDirectoryLevel::Initial,
+                totals);
+
+            Assert::IsTrue (SUCCEEDED (hr), L"Tree mode with multiple subdirs should succeed");
+            Assert::AreEqual (4u, totals.m_cFiles, L"Should have 4 files total");
+            Assert::AreEqual (3u, totals.m_cDirectories, L"Should have 3 directories (alpha, beta, gamma)");
+            Assert::AreEqual (650ull, totals.m_uliFileBytes.QuadPart, L"Should have 650 bytes total");
         }
 
     };

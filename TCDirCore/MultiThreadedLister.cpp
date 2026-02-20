@@ -7,6 +7,7 @@
 #include "DriveInfo.h"
 #include "FileComparator.h"
 #include "Flag.h"
+#include "ResultsDisplayerTree.h"
 #include "UniqueFindHandle.h"
 
 
@@ -103,12 +104,28 @@ HRESULT CMultiThreadedLister::ProcessDirectoryMultiThreaded (
     }
 
     // Start consuming immediately (streaming output)
-    hr = PrintDirectoryTree (pRootDirInfo, 
-                             driveInfo, 
-                             displayer, 
-                             level,
-                             totals);
-    CHR (hr);
+    if (m_cmdLinePtr->m_fTree)
+    {
+        CResultsDisplayerTree & treeDisplayer = static_cast<CResultsDisplayerTree &>(displayer);
+        STreeConnectorState     treeState       (m_cmdLinePtr->m_cTreeIndent);
+
+        hr = PrintDirectoryTreeMode (pRootDirInfo,
+                                     driveInfo,
+                                     treeDisplayer,
+                                     level,
+                                     totals,
+                                     treeState);
+        CHR (hr);
+    }
+    else
+    {
+        hr = PrintDirectoryTree (pRootDirInfo, 
+                                 driveInfo, 
+                                 displayer, 
+                                 level,
+                                 totals);
+        CHR (hr);
+    }
 
 
 
@@ -177,7 +194,7 @@ HRESULT CMultiThreadedLister::PerformEnumeration (shared_ptr<CDirectoryInfo> pDi
     hr = EnumerateMatchingFiles (pDirInfo);
     CHR (hr);
 
-    if (m_cmdLinePtr->m_fRecurse)
+    if (m_cmdLinePtr->m_fRecurse || m_cmdLinePtr->m_fTree)
     {
         hr = EnumerateSubdirectories (pDirInfo);
         CHR (hr);
@@ -309,7 +326,28 @@ HRESULT CMultiThreadedLister::EnumerateSubdirectories (shared_ptr<CDirectoryInfo
     WIN32_FIND_DATA  wfd         = { 0 };
     DWORD            dwError     = 0;
 
+    //
+    // In tree mode, directories must also appear in m_vMatches so they are
+    // visible in the interleaved tree display. Build a set of directory names
+    // already present (from EnumerateMatchingFiles) to avoid duplicates.
+    //
 
+    unordered_set<wstring> seenDirs;
+
+
+
+    if (m_cmdLinePtr->m_fTree)
+    {
+        lock_guard<mutex> lock (pDirInfo->m_mutex);
+
+        for (const auto & entry : pDirInfo->m_vMatches)
+        {
+            if (CFlag::IsSet (entry.dwFileAttributes, FILE_ATTRIBUTE_DIRECTORY))
+            {
+                seenDirs.insert (ToLower (entry.cFileName));
+            }
+        }
+    }
 
     // Search using "*" to find all directories
     pathForDirs = pDirInfo->m_dirPath / L"*";
@@ -334,6 +372,24 @@ HRESULT CMultiThreadedLister::EnumerateSubdirectories (shared_ptr<CDirectoryInfo
             lock_guard<mutex> lock (pDirInfo->m_mutex);
 
             EnqueueChildDirectory (wfd, pDirInfo);
+
+            //
+            // In tree mode, add every directory to m_vMatches so the tree
+            // display can show it and recurse into it.  Skip if the directory
+            // was already added by EnumerateMatchingFiles (e.g., a directory
+            // whose name matched the file spec like *.cpp matching "foo.cpp/").
+            //
+
+            if (m_cmdLinePtr->m_fTree)
+            {
+                wstring lowerName = ToLower (wfd.cFileName);
+
+                if (!seenDirs.contains (lowerName))
+                {
+                    seenDirs.insert (lowerName);
+                    AddMatchToList (wfd, *pDirInfo, nullptr);
+                }
+            }
         }
     }
     while (FindNextFile (hFind.get(), &wfd));
@@ -513,7 +569,7 @@ void CMultiThreadedLister::SortResults (shared_ptr<CDirectoryInfo> pDirInfo)
     lock_guard<mutex> lock (pDirInfo->m_mutex);
 
     std::sort (pDirInfo->m_vMatches.begin(), pDirInfo->m_vMatches.end(), 
-               FileComparator (m_cmdLinePtr));
+               FileComparator (m_cmdLinePtr, m_cmdLinePtr->m_fTree));
 }
 
 
@@ -577,6 +633,134 @@ HRESULT CMultiThreadedLister::ProcessChildren (shared_ptr<CDirectoryInfo> pDirIn
                                  totals);
         IGNORE_RETURN_VALUE (hr, S_OK);
     }
+
+Error:
+    return hr;
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CMultiThreadedLister::PrintDirectoryTreeMode
+//
+//  Tree-mode consumer.  Displays entries for one directory node with tree
+//  connector prefixes and immediately recurses into child directories
+//  (interleaved display) so that the output forms a proper DFS tree.
+//
+//  Root level gets drive header, path header, and per-dir summary.
+//  Subdirectories have no headers — tree connectors replace path headers.
+//
+////////////////////////////////////////////////////////////////////////////////
+
+HRESULT CMultiThreadedLister::PrintDirectoryTreeMode (
+    shared_ptr<CDirectoryInfo>           pDirInfo,
+    const CDriveInfo                   & driveInfo,
+    CResultsDisplayerTree              & treeDisplayer,
+    IResultsDisplayer::EDirectoryLevel   level,
+    SListingTotals                     & totals,
+    STreeConnectorState                & treeState)
+{
+    HRESULT hr = S_OK;
+
+
+
+    hr = WaitForNodeCompletion (pDirInfo);
+    CHR (hr);
+
+    SortResults (pDirInfo);
+
+    //
+    // Root directory: show drive header, path header, empty-dir message
+    //
+
+    if (level == IResultsDisplayer::EDirectoryLevel::Initial)
+    {
+        treeDisplayer.DisplayTreeRootHeader (driveInfo, *pDirInfo);
+
+        if (pDirInfo->m_vMatches.empty() && pDirInfo->m_vChildren.empty())
+        {
+            treeDisplayer.DisplayTreeEmptyRootMessage (*pDirInfo);
+            goto Error;
+        }
+    }
+
+    //
+    // Compute per-directory display state (max file size width, owners, etc.)
+    //
+
+    treeDisplayer.BeginDirectory (*pDirInfo);
+
+    {
+        //
+        // Build lookup from lowercase filename → child CDirectoryInfo
+        //
+
+        unordered_map<wstring, shared_ptr<CDirectoryInfo>> childMap;
+
+        for (const auto & pChild : pDirInfo->m_vChildren)
+        {
+            childMap[ToLower (pChild->m_dirPath.filename().wstring())] = pChild;
+        }
+
+        //
+        // Display each entry interleaved with directory recursion
+        //
+
+        size_t cEntries = pDirInfo->m_vMatches.size();
+
+        for (size_t i = 0; i < cEntries; ++i)
+        {
+            if (StopRequested())
+            {
+                CHR (E_ABORT);
+            }
+
+            const FileInfo & entry   = pDirInfo->m_vMatches[i];
+            bool             fIsLast = (i == cEntries - 1);
+            bool             fIsDir  = (entry.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0;
+
+            treeDisplayer.DisplaySingleEntry (entry, treeState, fIsLast, i);
+
+            //
+            // If the entry is a directory, find its child node and recurse
+            //
+
+            if (fIsDir)
+            {
+                auto it = childMap.find (ToLower (wstring (entry.cFileName)));
+
+                if (it != childMap.end())
+                {
+                    treeState.Push (!fIsLast);
+
+                    hr = PrintDirectoryTreeMode (it->second,
+                                                 driveInfo,
+                                                 treeDisplayer,
+                                                 IResultsDisplayer::EDirectoryLevel::Subdirectory,
+                                                 totals,
+                                                 treeState);
+                    treeState.Pop();
+                    IGNORE_RETURN_VALUE (hr, S_OK);
+                }
+            }
+        }
+    }
+
+    AccumulateTotals (pDirInfo, totals);
+
+    //
+    // Root directory: show per-dir summary + separator
+    //
+
+    if (level == IResultsDisplayer::EDirectoryLevel::Initial)
+    {
+        treeDisplayer.DisplayTreeRootSummary (*pDirInfo);
+    }
+
+
 
 Error:
     return hr;

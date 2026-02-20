@@ -13,8 +13,9 @@
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-FileComparator::FileComparator (shared_ptr<const CCommandLine> cmdLinePtr) :
-    m_cmdLinePtr (cmdLinePtr)
+FileComparator::FileComparator (shared_ptr<const CCommandLine> cmdLinePtr, bool fInterleavedSort) :
+    m_cmdLinePtr       (cmdLinePtr),
+    m_fInterleavedSort (fInterleavedSort)
 {
 }
 
@@ -42,13 +43,14 @@ bool FileComparator::operator() (const WIN32_FIND_DATA & lhs, const WIN32_FIND_D
 
 
     //
-    // If only one of the operands is a directory, it should be sorted first
+    // If only one of the operands is a directory, it should be sorted first.
+    // In interleaved sort mode (tree view), directories and files sort together.
     //
 
     isLhsDirectory = lhs.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY;
     isRhsDirectory = rhs.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY;
 
-    if (isLhsDirectory ^ isRhsDirectory)
+    if (!m_fInterleavedSort && (isLhsDirectory ^ isRhsDirectory))
     {
         return isLhsDirectory;
     }
