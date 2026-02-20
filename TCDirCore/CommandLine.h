@@ -78,6 +78,9 @@ public:
     bool               m_fShowStreams                                      = false;    // --streams switch
     bool               m_fDebug                                            = false;    // --debug switch (raw hex attributes)
     optional<bool>     m_fIcons;                                                        // /Icons (true), /Icons- (false), absent (nullopt)
+    bool               m_fTree                                             = false;    // --Tree switch (tree view mode)
+    int                m_cMaxDepth                                         = 0;        // --Depth=N (0 = unlimited)
+    int                m_cTreeIndent                                       = 4;        // --TreeIndent=N (1-8)
 
 
     //
@@ -100,8 +103,8 @@ protected:
     // Protected methods
     //
     
-    HRESULT HandleSwitch     (LPCWSTR pszArg);
-    HRESULT HandleLongSwitch (LPCWSTR pszArg);
+    HRESULT HandleSwitch     (LPCWSTR pszArg, int & cArg, WCHAR ** & ppszArg);
+    HRESULT HandleLongSwitch (LPCWSTR pszArg, int & cArg, WCHAR ** & ppszArg);
     HRESULT OrderByHandler   (LPCWSTR pszArg);
     HRESULT AttributeHandler (LPCWSTR pszArg);
     HRESULT TimeFieldHandler (LPCWSTR pszArg);

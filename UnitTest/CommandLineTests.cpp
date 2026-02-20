@@ -856,5 +856,349 @@ namespace UnitTest
             Assert::IsTrue (FAILED(hr));
         }
 
+
+
+        //
+        //  --Tree switch parsing
+        //
+
+        TEST_METHOD(ParseTreeSwitchDoubleDash)
+        {
+            CCommandLine    cl;
+            const wchar_t * a1      = L"--Tree";
+            wchar_t       * argv1[] = { const_cast<wchar_t *>(a1) };
+            HRESULT         hr      = cl.Parse(1, argv1);
+
+
+
+            Assert::IsTrue (SUCCEEDED(hr));
+            Assert::IsTrue (cl.m_fTree);
+        }
+
+
+
+
+
+        TEST_METHOD(ParseTreeSwitchSlash)
+        {
+            CCommandLine    cl;
+            const wchar_t * a1      = L"/Tree";
+            wchar_t       * argv1[] = { const_cast<wchar_t *>(a1) };
+            HRESULT         hr      = cl.Parse(1, argv1);
+
+
+
+            Assert::IsTrue (SUCCEEDED(hr));
+            Assert::IsTrue (cl.m_fTree);
+        }
+
+
+
+
+
+        TEST_METHOD(ParseTreeDisableSwitchDoubleDash)
+        {
+            CCommandLine    cl;
+            const wchar_t * a1      = L"--Tree-";
+            wchar_t       * argv1[] = { const_cast<wchar_t *>(a1) };
+            HRESULT         hr      = cl.Parse(1, argv1);
+
+
+
+            Assert::IsTrue (SUCCEEDED(hr));
+            Assert::IsFalse (cl.m_fTree);
+        }
+
+
+
+
+
+        TEST_METHOD(ParseTreeSwitchCaseInsensitive)
+        {
+            CCommandLine    cl;
+            const wchar_t * a1      = L"--tree";
+            wchar_t       * argv1[] = { const_cast<wchar_t *>(a1) };
+            HRESULT         hr      = cl.Parse(1, argv1);
+
+
+
+            Assert::IsTrue (SUCCEEDED(hr));
+            Assert::IsTrue (cl.m_fTree);
+        }
+
+
+
+
+
+        TEST_METHOD(ParseTreeSwitchSingleDashFails)
+        {
+            CCommandLine    cl;
+            const wchar_t * a1      = L"-Tree";
+            wchar_t       * argv1[] = { const_cast<wchar_t *>(a1) };
+            HRESULT         hr      = cl.Parse(1, argv1);
+
+
+
+            Assert::IsTrue (FAILED(hr));
+        }
+
+
+
+        //
+        //  --Depth=N and --TreeIndent=N switch parsing
+        //
+
+        TEST_METHOD(ParseDepthWithEquals)
+        {
+            CCommandLine    cl;
+            const wchar_t * a1      = L"--Tree";
+            const wchar_t * a2      = L"--Depth=3";
+            wchar_t       * argv[]  = { const_cast<wchar_t *>(a1), const_cast<wchar_t *>(a2) };
+            HRESULT         hr      = cl.Parse(2, argv);
+
+
+
+            Assert::IsTrue (SUCCEEDED(hr));
+            Assert::IsTrue (cl.m_fTree);
+            Assert::AreEqual (3, cl.m_cMaxDepth);
+        }
+
+
+
+
+
+        TEST_METHOD(ParseDepthWithSpace)
+        {
+            CCommandLine    cl;
+            const wchar_t * a1      = L"--Tree";
+            const wchar_t * a2      = L"--Depth";
+            const wchar_t * a3      = L"3";
+            wchar_t       * argv[]  = { const_cast<wchar_t *>(a1), const_cast<wchar_t *>(a2), const_cast<wchar_t *>(a3) };
+            HRESULT         hr      = cl.Parse(3, argv);
+
+
+
+            Assert::IsTrue (SUCCEEDED(hr));
+            Assert::IsTrue (cl.m_fTree);
+            Assert::AreEqual (3, cl.m_cMaxDepth);
+        }
+
+
+
+
+
+        TEST_METHOD(ParseTreeIndentWithEquals)
+        {
+            CCommandLine    cl;
+            const wchar_t * a1      = L"--Tree";
+            const wchar_t * a2      = L"--TreeIndent=2";
+            wchar_t       * argv[]  = { const_cast<wchar_t *>(a1), const_cast<wchar_t *>(a2) };
+            HRESULT         hr      = cl.Parse(2, argv);
+
+
+
+            Assert::IsTrue (SUCCEEDED(hr));
+            Assert::IsTrue (cl.m_fTree);
+            Assert::AreEqual (2, cl.m_cTreeIndent);
+        }
+
+
+
+        //
+        //  Validation: switch conflicts
+        //
+
+        TEST_METHOD(ParseTreeWithWideFails)
+        {
+            CCommandLine    cl;
+            const wchar_t * a1      = L"--Tree";
+            const wchar_t * a2      = L"/w";
+            wchar_t       * argv[]  = { const_cast<wchar_t *>(a1), const_cast<wchar_t *>(a2) };
+            HRESULT         hr      = cl.Parse(2, argv);
+
+
+
+            Assert::IsTrue (FAILED(hr));
+        }
+
+
+
+
+
+        TEST_METHOD(ParseTreeWithBareFails)
+        {
+            CCommandLine    cl;
+            const wchar_t * a1      = L"--Tree";
+            const wchar_t * a2      = L"/b";
+            wchar_t       * argv[]  = { const_cast<wchar_t *>(a1), const_cast<wchar_t *>(a2) };
+            HRESULT         hr      = cl.Parse(2, argv);
+
+
+
+            Assert::IsTrue (FAILED(hr));
+        }
+
+
+
+
+
+        TEST_METHOD(ParseTreeWithRecurseFails)
+        {
+            CCommandLine    cl;
+            const wchar_t * a1      = L"--Tree";
+            const wchar_t * a2      = L"/s";
+            wchar_t       * argv[]  = { const_cast<wchar_t *>(a1), const_cast<wchar_t *>(a2) };
+            HRESULT         hr      = cl.Parse(2, argv);
+
+
+
+            Assert::IsTrue (FAILED(hr));
+        }
+
+
+
+
+
+        TEST_METHOD(ParseDepthWithoutTreeFails)
+        {
+            CCommandLine    cl;
+            const wchar_t * a1      = L"--Depth=3";
+            wchar_t       * argv[]  = { const_cast<wchar_t *>(a1) };
+            HRESULT         hr      = cl.Parse(1, argv);
+
+
+
+            Assert::IsTrue (FAILED(hr));
+        }
+
+
+
+
+
+        TEST_METHOD(ParseTreeIndentWithoutTreeFails)
+        {
+            CCommandLine    cl;
+            const wchar_t * a1      = L"--TreeIndent=2";
+            wchar_t       * argv[]  = { const_cast<wchar_t *>(a1) };
+            HRESULT         hr      = cl.Parse(1, argv);
+
+
+
+            Assert::IsTrue (FAILED(hr));
+        }
+
+
+
+
+
+        TEST_METHOD(ParseTreeIndentOutOfRangeFails)
+        {
+            CCommandLine    cl;
+            const wchar_t * a1      = L"--Tree";
+            const wchar_t * a2      = L"--TreeIndent=10";
+            wchar_t       * argv[]  = { const_cast<wchar_t *>(a1), const_cast<wchar_t *>(a2) };
+            HRESULT         hr      = cl.Parse(2, argv);
+
+
+
+            Assert::IsTrue (FAILED(hr));
+        }
+
+
+
+
+
+        TEST_METHOD(ParseDepthZeroFails)
+        {
+            CCommandLine    cl;
+            const wchar_t * a1      = L"--Tree";
+            const wchar_t * a2      = L"--Depth=0";
+            wchar_t       * argv[]  = { const_cast<wchar_t *>(a1), const_cast<wchar_t *>(a2) };
+            HRESULT         hr      = cl.Parse(2, argv);
+
+
+
+            Assert::IsTrue (FAILED(hr));
+        }
+
+
+
+
+
+        TEST_METHOD(ParseDepthNegativeFails)
+        {
+            CCommandLine    cl;
+            const wchar_t * a1      = L"--Tree";
+            const wchar_t * a2      = L"--Depth=-1";
+            wchar_t       * argv[]  = { const_cast<wchar_t *>(a1), const_cast<wchar_t *>(a2) };
+            HRESULT         hr      = cl.Parse(2, argv);
+
+
+
+            Assert::IsTrue (FAILED(hr));
+        }
+
+
+
+        //
+        //  ApplyConfigDefaults tests for tree switches
+        //
+
+        TEST_METHOD(ApplyConfigDefaults_Tree_TransfersToCommandLine)
+        {
+            CConfig      config;
+            CCommandLine cl;
+
+            config.Initialize (FC_LightGrey);
+            config.m_fTree = true;
+
+            cl.ApplyConfigDefaults (config);
+
+
+
+            Assert::IsTrue (cl.m_fTree);
+        }
+
+
+
+
+
+        TEST_METHOD(ApplyConfigDefaults_TreeWithDepth_TransfersToCommandLine)
+        {
+            CConfig      config;
+            CCommandLine cl;
+
+            config.Initialize (FC_LightGrey);
+            config.m_fTree     = true;
+            config.m_cMaxDepth = 3;
+
+            cl.ApplyConfigDefaults (config);
+
+
+
+            Assert::IsTrue (cl.m_fTree);
+            Assert::AreEqual (3, cl.m_cMaxDepth);
+        }
+
+
+
+
+
+        TEST_METHOD(ApplyConfigDefaults_DepthWithoutTree_SilentlyIgnored)
+        {
+            CConfig      config;
+            CCommandLine cl;
+
+            config.Initialize (FC_LightGrey);
+            config.m_cMaxDepth = 3;   // Depth without Tree
+
+            cl.ApplyConfigDefaults (config);
+
+
+
+            Assert::IsFalse (cl.m_fTree);
+            Assert::AreEqual (0, cl.m_cMaxDepth);  // Not applied
+        }
+
     };
 }

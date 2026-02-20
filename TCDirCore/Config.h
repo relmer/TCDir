@@ -78,7 +78,8 @@ public:
         MACRO(Stream)                           \
         MACRO(CloudStatusCloudOnly)             \
         MACRO(CloudStatusLocallyAvailable)      \
-        MACRO(CloudStatusAlwaysLocallyAvailable)
+        MACRO(CloudStatusAlwaysLocallyAvailable) \
+        MACRO(TreeConnector)
 
     enum EAttribute
     {
@@ -142,6 +143,9 @@ public:
     optional<bool>                             m_fShowOwner;
     optional<bool>                             m_fShowStreams;
     optional<bool>                             m_fIcons;
+    optional<bool>                             m_fTree;
+    optional<int>                              m_cMaxDepth;
+    optional<int>                              m_cTreeIndent;
 
     // Icon mapping tables (parallel to color tables)
     unordered_map<wstring, char32_t>           m_mapExtensionToIcon;
@@ -175,6 +179,7 @@ protected:
     void         ApplyOverrideByKeyType               (wstring_view entry, wstring_view keyView, const SOverrideValue & ov);
     void         ProcessSwitchOverride                (wstring_view entry);
     bool         IsSwitchName                         (wstring_view entry);
+    bool         TryProcessIntSwitch                  (wstring_view entry);
     void         ProcessFileExtensionOverride         (wstring_view extension, WORD colorAttr);
     void         ProcessDisplayAttributeOverride      (wchar_t attrChar, WORD colorAttr, wstring_view entry);
     void         ProcessFileAttributeOverride         (wstring_view keyView, wstring_view entry, const SOverrideValue & ov);

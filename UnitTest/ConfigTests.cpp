@@ -2015,6 +2015,142 @@ namespace UnitTest
             auto result = config.ValidateEnvironmentVariable();
             Assert::IsFalse (result.hasIssues());
         }
+
+
+
+        //
+        //  Env var: Tree / Tree- / Depth=N / TreeIndent=N
+        //
+
+        TEST_METHOD(EnvVar_Tree_SetsTreeTrue)
+        {
+            ConfigProbe config;
+            config.Initialize (FC_LightGrey);
+
+            config.SetEnvVar (TCDIR_ENV_VAR_NAME, L"Tree");
+            config.ApplyUserColorOverrides();
+
+
+
+            Assert::IsTrue (config.m_fTree.has_value());
+            Assert::IsTrue (config.m_fTree.value());
+        }
+
+
+
+
+
+        TEST_METHOD(EnvVar_TreeDisable_SetsTreeFalse)
+        {
+            ConfigProbe config;
+            config.Initialize (FC_LightGrey);
+
+            config.SetEnvVar (TCDIR_ENV_VAR_NAME, L"Tree-");
+            config.ApplyUserColorOverrides();
+
+
+
+            Assert::IsTrue  (config.m_fTree.has_value());
+            Assert::IsFalse (config.m_fTree.value());
+        }
+
+
+
+
+
+        TEST_METHOD(EnvVar_Depth_SetsMaxDepth)
+        {
+            ConfigProbe config;
+            config.Initialize (FC_LightGrey);
+
+            config.SetEnvVar (TCDIR_ENV_VAR_NAME, L"Depth=3");
+            config.ApplyUserColorOverrides();
+
+
+
+            Assert::IsTrue (config.m_cMaxDepth.has_value());
+            Assert::AreEqual (3, config.m_cMaxDepth.value());
+        }
+
+
+
+
+
+        TEST_METHOD(EnvVar_TreeIndent_SetsTreeIndent)
+        {
+            ConfigProbe config;
+            config.Initialize (FC_LightGrey);
+
+            config.SetEnvVar (TCDIR_ENV_VAR_NAME, L"TreeIndent=2");
+            config.ApplyUserColorOverrides();
+
+
+
+            Assert::IsTrue (config.m_cTreeIndent.has_value());
+            Assert::AreEqual (2, config.m_cTreeIndent.value());
+        }
+
+
+
+
+
+        TEST_METHOD(EnvVar_TreeWithDepthAndIndent_ParsesAll)
+        {
+            ConfigProbe config;
+            config.Initialize (FC_LightGrey);
+
+            config.SetEnvVar (TCDIR_ENV_VAR_NAME, L"Tree;Depth=5;TreeIndent=2");
+            config.ApplyUserColorOverrides();
+
+
+
+            Assert::IsTrue (config.m_fTree.has_value());
+            Assert::IsTrue (config.m_fTree.value());
+            Assert::IsTrue (config.m_cMaxDepth.has_value());
+            Assert::AreEqual (5, config.m_cMaxDepth.value());
+            Assert::IsTrue (config.m_cTreeIndent.has_value());
+            Assert::AreEqual (2, config.m_cTreeIndent.value());
+        }
+
+
+
+
+
+        TEST_METHOD(EnvVar_DepthInvalid_RecordsError)
+        {
+            ConfigProbe config;
+            config.Initialize (FC_LightGrey);
+
+            config.SetEnvVar (TCDIR_ENV_VAR_NAME, L"Depth=0");
+            config.ApplyUserColorOverrides();
+
+
+
+            Assert::IsFalse (config.m_cMaxDepth.has_value());
+
+            auto result = config.ValidateEnvironmentVariable();
+            Assert::IsTrue (result.hasIssues());
+        }
+
+
+
+
+
+        TEST_METHOD(EnvVar_TreeIndentOutOfRange_RecordsError)
+        {
+            ConfigProbe config;
+            config.Initialize (FC_LightGrey);
+
+            config.SetEnvVar (TCDIR_ENV_VAR_NAME, L"TreeIndent=10");
+            config.ApplyUserColorOverrides();
+
+
+
+            Assert::IsFalse (config.m_cTreeIndent.has_value());
+
+            auto result = config.ValidateEnvironmentVariable();
+            Assert::IsTrue (result.hasIssues());
+        }
     };
 
 
