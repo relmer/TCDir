@@ -5,15 +5,33 @@
 **Status**: Draft  
 **Input**: User description: "Add tree view display mode with hierarchical directory listing, depth control, and tree connectors for subdirectory contents"
 
+## Clarifications
+
+### Session 2026-02-19
+
+- Q: What should the footer totals aggregate in tree mode? → A: Both — each directory level shows its own per-directory summary (file/directory counts, bytes used), and a grand total for the entire tree is shown at the end. This matches the existing `-S` recursive mode pattern.
+- Q: Should directories and files be interleaved or grouped within each tree level? → A: Interleaved — directories and files are sorted together as a single list by the chosen sort order. This differs from current non-tree behavior (which groups directories first) but is more natural for tree display.
+- Q: How wide should each tree indentation level be, and is it configurable? → A: Default is 4 characters per level (matching eza/lsd convention). Configurable via `--TreeIndent=N` (1 ≤ N ≤ 8). Long switches that take values use `=` as the separator (e.g., `--Depth=3`, `--TreeIndent=4`), with space-separated form also accepted (`--Depth 3`).
+- Q: What is explicitly out of scope? → A: (1) ASCII fallback for non-Unicode terminals, (2) tree connectors in wide or bare modes, (3) collapsible/interactive tree, (4) JSON/machine-readable tree output. Colorized tree connectors (configurable color) ARE in scope.
+- Q: How should empty directories be pruned when file masks are active? → A: Shallow pruning — only leaf directories with zero matching files are pruned. Intermediate directories are shown even if they have no direct matches, since they may have matching descendants. No two-pass enumeration required.
+
+## Out of Scope
+
+- ASCII fallback for tree connectors on non-Unicode terminals
+- Tree connectors in wide (`-W`) or bare (`-B`) display modes
+- Collapsible or interactive tree (this is a static console output tool)
+- JSON or machine-readable tree output format
+
 ## Assumptions
 
 - Tree connectors will use Unicode box-drawing characters (`├──`, `└──`, `│`) which are available in all modern Windows console fonts. No fallback to ASCII is planned.
 - The `--Tree` switch follows the existing long-switch convention (case-insensitive matching, `--` prefix).
 - The `--Depth` switch accepts a positive integer value. Zero or negative values produce an error.
+- Long switches that take values use `=` as the separator (e.g., `--Depth=3`, `--TreeIndent=4`). A space separator is also accepted (e.g., `--Depth 3`). This is the first use of parameterized long switches in TCDir and establishes the convention for future switches.
 - When `--Depth` is omitted alongside `--Tree`, recursion is unlimited (enumerate the full directory tree).
 - The existing multi-threaded producer/consumer enumeration model (worker threads enumerate directories, main thread walks the tree sequentially for display) is reused without architectural changes.
 - File masks apply at every level of the tree — a mask like `*.cpp` shows only matching files at each directory level, but still shows all directories to preserve tree structure.
-- Sort order applies independently at each directory level (siblings are sorted, but parent-child ordering is always parent-first).
+- Sort order applies independently at each directory level (siblings are sorted, but parent-child ordering is always parent-first). In tree mode, directories and files are interleaved (sorted together as a single list), unlike non-tree mode which groups directories before files.
 - The existing header (volume label, directory path) and footer (file/directory counts, bytes used, free space) apply to the root directory listing. Subdirectories in tree mode do not repeat headers/footers.
 - Performance timing (`-P`) is compatible with tree mode and measures the entire tree enumeration + display.
 
@@ -140,21 +158,26 @@ A user can enable tree mode and set a default depth via the `TCDIR` environment 
 - **FR-002**: System MUST provide a `--Depth N` long switch that limits tree recursion to N levels, where N is a positive integer.
 - **FR-003**: System MUST display the root directory's immediate contents in standard normal-mode format without tree connectors.
 - **FR-004**: System MUST display subdirectory contents with Unicode tree connectors (`├──`, `└──`, `│`) prepended to the filename column to indicate hierarchy.
-- **FR-005**: System MUST indent tree connectors proportionally to nesting depth so that hierarchy is visually apparent.
+- **FR-005**: System MUST indent tree connectors by a configurable number of characters per nesting level, defaulting to 4 characters.
+- **FR-005a**: System MUST provide a `--TreeIndent=N` long switch to override the default indent width, where N is an integer from 1 to 8.
+- **FR-005b**: System MUST report an error when `--TreeIndent` is specified without `--Tree`.
+- **FR-005c**: System MUST report an error when `--TreeIndent` is given a value outside the range 1–8.
 - **FR-006**: System MUST display all standard metadata columns (date, time, attributes, size, cloud status) at every tree level, with consistent column alignment.
 - **FR-007**: System MUST report an error and exit when `--Tree` is combined with `-W` (wide), `-B` (bare), or `-S` (recurse).
 - **FR-008**: System MUST report an error when `--Depth` is specified without `--Tree`.
+- **FR-008a**: Long switches that accept values MUST support both `=` separator (`--Depth=3`) and space separator (`--Depth 3`) forms.
 - **FR-009**: System MUST report an error when `--Depth` is given a non-positive integer value.
 - **FR-010**: System MUST enumerate the full directory tree when `--Tree` is specified without `--Depth`.
 - **FR-011**: System MUST support `--Tree` alongside `--Streams`, displaying stream entries with a `│` vertical continuation line instead of horizontal tree connectors.
 - **FR-012**: System MUST support `--Tree` alongside `--Owner`, `--Icons`, sort-order switches, time-field switches, and attribute filters.
+- **FR-012a**: System MUST support configurable tree connector color via the existing color configuration system (e.g., `TCDIR` environment variable). A default connector color is used when no custom color is configured.
 - **FR-013**: System MUST support multi-threaded enumeration (`-M`) in tree mode using the existing producer/consumer model.
 - **FR-014**: System MUST apply file masks at every level of the tree, showing matching files while preserving directory structure to maintain visual hierarchy.
-- **FR-015**: System MUST prune directories from tree output that contain no matching files and no subdirectories with matching files (when file masks are specified).
-- **FR-016**: System MUST support `Tree` and `Depth=N` configuration via the `TCDIR` environment variable, following the existing convention.
+- **FR-015**: System MUST use shallow pruning when file masks are specified: leaf directories with zero matching files are not expanded in the tree output. Intermediate directories are always shown to preserve tree structure, even if they contain no direct matches (they may have matching descendants).
+- **FR-016**: System MUST support `Tree`, `Depth=N`, and `TreeIndent=N` configuration via the `TCDIR` environment variable, following the existing convention.
 - **FR-017**: CLI switches MUST override environment variable defaults for both `Tree`/`Tree-` and `Depth`.
 - **FR-018**: System MUST handle inaccessible directories gracefully, listing them as entries without expanding their contents and displaying an inline error.
-- **FR-019**: System MUST display the directory header (volume label, path) and footer (counts, sizes, free space) only for the root directory, not for each subdirectory in the tree.
+- **FR-019**: System MUST display a per-directory summary (file/directory counts, bytes used) at each directory level in the tree, plus a grand total summary for the entire tree at the end, matching the existing recursive mode pattern. The volume header (drive label) and volume footer (free space) appear only once for the root directory.
 
 ### Key Entities
 
