@@ -726,24 +726,31 @@ HRESULT CMultiThreadedLister::PrintDirectoryTreeMode (
 
             //
             // If the entry is a directory, find its child node and recurse
+            // (unless depth limit has been reached)
             //
 
             if (fIsDir)
             {
-                auto it = childMap.find (ToLower (wstring (entry.cFileName)));
+                bool fDepthLimited = (m_cmdLinePtr->m_cMaxDepth > 0 &&
+                                      treeState.Depth() + 1 >= m_cmdLinePtr->m_cMaxDepth);
 
-                if (it != childMap.end())
+                if (!fDepthLimited)
                 {
-                    treeState.Push (!fIsLast);
+                    auto it = childMap.find (ToLower (wstring (entry.cFileName)));
 
-                    hr = PrintDirectoryTreeMode (it->second,
-                                                 driveInfo,
-                                                 treeDisplayer,
-                                                 IResultsDisplayer::EDirectoryLevel::Subdirectory,
-                                                 totals,
-                                                 treeState);
-                    treeState.Pop();
-                    IGNORE_RETURN_VALUE (hr, S_OK);
+                    if (it != childMap.end())
+                    {
+                        treeState.Push (!fIsLast);
+
+                        hr = PrintDirectoryTreeMode (it->second,
+                                                     driveInfo,
+                                                     treeDisplayer,
+                                                     IResultsDisplayer::EDirectoryLevel::Subdirectory,
+                                                     totals,
+                                                     treeState);
+                        treeState.Pop();
+                        IGNORE_RETURN_VALUE (hr, S_OK);
+                    }
                 }
             }
         }
