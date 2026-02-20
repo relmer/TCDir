@@ -89,9 +89,10 @@ TCDirCore/
 UnitTest/
 ├── CommandLineTests.cpp   # Test --Tree, --Depth, --TreeIndent parsing and validation
 ├── ConfigTests.cpp        # Test TCDIR env var Tree/Depth/TreeIndent entries
-├── DirectoryListerTests.cpp         # Test tree traversal with depth limiting
+├── TreeConnectorStateTests.cpp  # Test STreeConnectorState prefix generation, Push/Pop, indent widths
+├── DirectoryListerTests.cpp         # Test reparse-point guard and tree traversal
 ├── DirectoryListerScenarioTests.cpp # End-to-end tree output verification
-├── ResultsDisplayerTests.cpp        # Test tree connector prefix generation; tree displayer output
+├── ResultsDisplayerTests.cpp        # Existing displayer tests (no new tree-specific tests here)
 └── FileComparatorTests.cpp          # Test interleaved sort mode
 ```
 

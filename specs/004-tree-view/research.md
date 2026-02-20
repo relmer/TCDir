@@ -88,7 +88,7 @@
 
 **Decision**: Add a new `CConfig::EAttribute` entry for tree connector color, configurable via the `TCDIR` environment variable using the existing color system.
 
-**Rationale**: The existing color system supports per-element color attributes (Date, Time, FileAttributePresent, Size, Directory, etc.). Adding a `TreeConnector` attribute follows the same pattern. The default color can be a subtle terminal color (e.g., DarkGray) to distinguish structural connectors from content.
+**Rationale**: The existing color system supports per-element color attributes (Date, Time, FileAttributePresent, Size, Directory, etc.). Adding a `TreeConnector` attribute follows the same pattern. The default color can be a subtle terminal color (e.g., LightGray) to distinguish structural connectors from content.
 
 **Alternatives considered**:
 - Hardcoded color (not configurable — violates UX consistency principle)

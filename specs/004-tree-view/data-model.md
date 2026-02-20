@@ -22,7 +22,7 @@ Existing class, extended with three new members for tree view switches.
 - `m_cMaxDepth > 0` without `m_fTree` → error
 - `m_cTreeIndent` outside [1, 8] → error
 - `m_cTreeIndent != 4` without `m_fTree` → error
-- `m_cMaxDepth < 0` → error
+- `m_cMaxDepth ≤ 0` when explicitly specified → error (default value of 0 means unlimited; the parser rejects user-supplied values ≤ 0 before storage)
 
 ### 2. CConfig (extended)
 
@@ -44,7 +44,7 @@ Lightweight struct tracking the tree drawing state as the main thread recurses t
 | Field | Type | Description |
 |-------|------|-------------|
 | `m_vAncestorHasSibling` | `vector<bool>` | One entry per nesting depth. `true` = ancestor at that level has more siblings coming (draw `│`); `false` = ancestor was last at that level (draw space) |
-| `m_cIndentWidth` | `int` | Characters per indent level (from `--TreeIndent`, default 4) |
+| `m_cIndentWidth` | `int` | Characters per indent level (initialized from `CCommandLine::m_cTreeIndent`, default 4) |
 
 **Methods**:
 
@@ -75,7 +75,7 @@ New class derived from `CResultsDisplayerNormal`. Overrides the display flow for
 |--------|----------|-------------|
 | `DisplayResults` | Yes (from `WithHeaderAndFooter`) | Tree-walking flow: drive header → recursive tree traversal (no per-subdir path headers); indented per-dir summaries; grand total |
 | `DisplayFileResults` | Yes (from `Normal`) | Same column sequence as Normal but prepends tree connector prefix before icon/filename; modified stream continuation with `│` prefix |
-| `DisplayTreeEntry` | New | Renders one file line: calls inherited column helpers, inserts tree prefix from `STreeConnectorState`, then icon + filename |
+| `DisplayTreeEntry` | New (private helper) | Internal helper called by `DisplayFileResults`: renders one file line — calls inherited column helpers, inserts tree prefix from `STreeConnectorState`, then icon + filename |
 | `DisplayFileStreamsWithTreePrefix` | New | Like inherited `DisplayFileStreams` but prepends tree continuation prefix (`│   `) to each stream line |
 
 ### 5. FileComparator (extended)

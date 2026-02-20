@@ -74,7 +74,7 @@ $env:TCDIR = ""
 ## New Files
 
 | File | Purpose |
-|------|---------||
+|------|---------|
 | `TCDirCore/TreeConnectorState.h` | Encapsulates tree prefix generation logic — `Push`/`Pop` depth levels, generate `├── `/`└── `/`│   ` prefixes |
 | `TCDirCore/ResultsDisplayerTree.h` | Tree displayer class declaration — derives from `CResultsDisplayerNormal` |
 | `TCDirCore/ResultsDisplayerTree.cpp` | Tree displayer implementation — overrides `DisplayResults` for tree-walking flow and `DisplayFileResults` for tree prefix insertion; reuses inherited column helpers |
@@ -88,8 +88,8 @@ $env:TCDIR = ""
 
 ## Implementation Sequence
 
-1. Switch parsing (`CommandLine` + `Config`) + validation
-2. `TreeConnectorState` struct + unit tests for prefix generation
+1. Tree connector constants in `UnicodeSymbols.h` + `STreeConnectorState` struct + unit tests
+2. Switch parsing (`CommandLine` + `Config`) + validation + unit tests
 3. `CResultsDisplayerTree` class (derives from Normal) + basic `DisplayFileResults` override
 4. Wire tree state through `MultiThreadedLister::PrintDirectoryTree`; instantiate tree displayer in `DirectoryLister`
 5. Interleaved sort in `FileComparator`
