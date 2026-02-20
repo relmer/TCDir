@@ -44,7 +44,7 @@ Lightweight struct tracking the tree drawing state as the main thread recurses t
 | Field | Type | Description |
 |-------|------|-------------|
 | `m_vAncestorHasSibling` | `vector<bool>` | One entry per nesting depth. `true` = ancestor at that level has more siblings coming (draw `│`); `false` = ancestor was last at that level (draw space) |
-| `m_cIndentWidth` | `int` | Characters per indent level (initialized from `CCommandLine::m_cTreeIndent`, default 4) |
+| `m_cTreeIndent` | `int` | Characters per indent level (same name as `CCommandLine::m_cTreeIndent`, default 4) |
 
 **Methods**:
 
@@ -77,6 +77,8 @@ New class derived from `CResultsDisplayerNormal`. Overrides the display flow for
 | `DisplayFileResults` | Yes (from `Normal`) | Same column sequence as Normal but prepends tree connector prefix before icon/filename; modified stream continuation with `│` prefix |
 | `DisplayTreeEntry` | New (private helper) | Internal helper called by `DisplayFileResults`: renders one file line — calls inherited column helpers, inserts tree prefix from `STreeConnectorState`, then icon + filename |
 | `DisplayFileStreamsWithTreePrefix` | New | Like inherited `DisplayFileStreams` but prepends tree continuation prefix (`│   `) to each stream line |
+
+**Pruning behavior**: When file masks are active, `DisplayResults` applies shallow pruning during tree traversal — leaf directories with zero matching files and no matching descendants are skipped. Intermediate directories are always rendered to preserve tree structure (FR-015).
 
 ### 5. FileComparator (extended)
 
@@ -116,7 +118,7 @@ CCommandLine ──parses──> m_fTree, m_cMaxDepth, m_cTreeIndent
 
 ## Tree Connector Visual Format
 
-Each indent level occupies `m_cIndentWidth` characters (default 4). The connector characters are:
+Each indent level occupies `m_cTreeIndent` characters (default 4). The connector characters are:
 
 | Position | Characters (width 4) | Description |
 |----------|---------------------|-------------|
@@ -126,7 +128,7 @@ Each indent level occupies `m_cIndentWidth` characters (default 4). The connecto
 | Continuation (no more siblings) | `    ` | Spaces only |
 | Stream line | `│   ` | Always vertical continuation within current level |
 
-For `m_cIndentWidth=N`, the horizontal dashes after `├`/`└` are `N-2` characters, with the final character being a space.
+For `m_cTreeIndent=N`, the horizontal dashes after `├`/`└` are `N-2` characters, with the final character being a space.
 
 ### Example Output (depth 2, indent 4, icons active)
 

@@ -16,7 +16,7 @@
 **Purpose**: Add tree connector constants and the new `STreeConnectorState` struct — shared infrastructure used by all user stories.
 
 - [ ] T001 Add Unicode tree connector constants (`├`, `└`, `│`, `─`) in `TCDirCore/UnicodeSymbols.h`
-- [ ] T002 Create `STreeConnectorState` struct with `m_vAncestorHasSibling`, `m_cIndentWidth`, `GetPrefix()`, `GetStreamContinuation()`, `Push()`, `Pop()`, `Depth()` in `TCDirCore/TreeConnectorState.h`
+- [ ] T002 Create `STreeConnectorState` struct with `m_vAncestorHasSibling`, `m_cTreeIndent`, `GetPrefix()`, `GetStreamContinuation()`, `Push()`, `Pop()`, `Depth()` in `TCDirCore/TreeConnectorState.h`
 - [ ] T003 Add unit tests for `STreeConnectorState`: prefix generation at depths 0–3, `Push`/`Pop` state transitions, last-entry vs middle-entry connectors, custom indent widths 1–8 in `UnitTest/TreeConnectorStateTests.cpp`
 
 **Checkpoint**: Tree connector state is implemented and tested in isolation.

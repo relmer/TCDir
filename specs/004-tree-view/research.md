@@ -67,7 +67,7 @@
 
 **Decision**: There is NO existing cycle detection. Add reparse-point checking to the shared recursion path so both `-S` (recursive) and `--Tree` modes are protected from infinite recursion through junctions/symlinks.
 
-**Rationale**: The current codebase unconditionally recurses into all directories. A junction or symlink creating a cycle causes infinite recursion — this is an existing bug in `-S` mode, not just a tree concern. The fix belongs in the common recursion point (`EnumerateDirectoryNode` in the MT lister): check `FILE_ATTRIBUTE_REPARSE_POINT` before recursing; if set, list the directory but don't expand its children, and optionally show a `[→ target]` indicator. Fixing it once protects both modes.
+**Rationale**: The current codebase unconditionally recurses into all directories. A junction or symlink creating a cycle causes infinite recursion — this is an existing bug in `-S` mode, not just a tree concern. The fix belongs in the common recursion point (`EnumerateDirectoryNode` in the MT lister): check `FILE_ATTRIBUTE_REPARSE_POINT` before recursing; if set, list the directory but don't expand its children, and show a `[→ target]` indicator. Fixing it once protects both modes.
 
 **Alternatives considered**:
 - Canonical path set tracking (more robust but more expensive)
