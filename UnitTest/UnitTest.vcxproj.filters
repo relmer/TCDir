@@ -33,6 +33,9 @@
     <ClCompile Include="ResultsDisplayerTests.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="TreeConnectorStateTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="EhmTestHelper.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
