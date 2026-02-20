@@ -1259,5 +1259,68 @@ namespace UnitTest
             Assert::AreEqual (0, cl.m_cMaxDepth);  // Not applied
         }
 
+
+
+        //
+        //  CLI override of env-var defaults
+        //
+
+        TEST_METHOD(CLITreeDisable_OverridesEnvVarTree)
+        {
+            CConfig      config;
+            CCommandLine cl;
+
+            config.Initialize (FC_LightGrey);
+            config.m_fTree = true;
+
+            cl.ApplyConfigDefaults (config);
+
+
+
+            Assert::IsTrue (cl.m_fTree);
+
+            // Now parse CLI with --Tree- to override
+            const wchar_t * a1      = L"--Tree-";
+            wchar_t       * argv[]  = { const_cast<wchar_t *>(a1) };
+            HRESULT         hr      = cl.Parse (1, argv);
+
+
+
+            Assert::IsTrue (SUCCEEDED(hr));
+            Assert::IsFalse (cl.m_fTree);
+            Assert::AreEqual (0, cl.m_cMaxDepth);   // Reset to default
+        }
+
+
+
+
+
+        TEST_METHOD(CLIDepth_OverridesEnvVarDepth)
+        {
+            CConfig      config;
+            CCommandLine cl;
+
+            config.Initialize (FC_LightGrey);
+            config.m_fTree     = true;
+            config.m_cMaxDepth = 5;
+
+            cl.ApplyConfigDefaults (config);
+
+
+
+            Assert::AreEqual (5, cl.m_cMaxDepth);
+
+            // Now parse CLI with --Depth=2 to override
+            const wchar_t * a1      = L"--Depth=2";
+            wchar_t       * argv[]  = { const_cast<wchar_t *>(a1) };
+            HRESULT         hr      = cl.Parse (1, argv);
+
+
+
+            Assert::IsTrue (SUCCEEDED(hr));
+            Assert::IsTrue (cl.m_fTree);
+            Assert::AreEqual (2, cl.m_cMaxDepth);
+        }
+
     };
 }
