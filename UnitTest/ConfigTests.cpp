@@ -2151,6 +2151,80 @@ namespace UnitTest
             auto result = config.ValidateEnvironmentVariable();
             Assert::IsTrue (result.hasIssues());
         }
+
+
+
+
+
+        TEST_METHOD(EnvVar_SizeAuto_SetsSizeFormat)
+        {
+            ConfigProbe config;
+            config.Initialize (FC_LightGrey);
+
+            config.SetEnvVar (TCDIR_ENV_VAR_NAME, L"Size=Auto");
+            config.ApplyUserColorOverrides();
+
+
+
+            Assert::IsTrue (config.m_eSizeFormat.has_value());
+            Assert::IsTrue (config.m_eSizeFormat.value() == ESizeFormat::Auto);
+        }
+
+
+
+
+
+        TEST_METHOD(EnvVar_SizeBytes_SetsSizeFormat)
+        {
+            ConfigProbe config;
+            config.Initialize (FC_LightGrey);
+
+            config.SetEnvVar (TCDIR_ENV_VAR_NAME, L"Size=Bytes");
+            config.ApplyUserColorOverrides();
+
+
+
+            Assert::IsTrue (config.m_eSizeFormat.has_value());
+            Assert::IsTrue (config.m_eSizeFormat.value() == ESizeFormat::Bytes);
+        }
+
+
+
+
+
+        TEST_METHOD(EnvVar_SizeInvalid_RecordsError)
+        {
+            ConfigProbe config;
+            config.Initialize (FC_LightGrey);
+
+            config.SetEnvVar (TCDIR_ENV_VAR_NAME, L"Size=Big");
+            config.ApplyUserColorOverrides();
+
+
+
+            Assert::IsFalse (config.m_eSizeFormat.has_value());
+
+            auto result = config.ValidateEnvironmentVariable();
+            Assert::IsTrue (result.hasIssues());
+        }
+
+
+
+
+
+        TEST_METHOD(EnvVar_SizeCaseInsensitive)
+        {
+            ConfigProbe config;
+            config.Initialize (FC_LightGrey);
+
+            config.SetEnvVar (TCDIR_ENV_VAR_NAME, L"size=auto");
+            config.ApplyUserColorOverrides();
+
+
+
+            Assert::IsTrue (config.m_eSizeFormat.has_value());
+            Assert::IsTrue (config.m_eSizeFormat.value() == ESizeFormat::Auto);
+        }
     };
 
 

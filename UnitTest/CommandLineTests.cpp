@@ -1322,5 +1322,193 @@ namespace UnitTest
             Assert::AreEqual (2, cl.m_cMaxDepth);
         }
 
+
+
+
+
+        //
+        //  --Size=Auto|Bytes switch parsing
+        //
+
+        TEST_METHOD(ParseSizeAutoWithTree)
+        {
+            CCommandLine    cl;
+            const wchar_t * a1      = L"--Tree";
+            const wchar_t * a2      = L"--Size=Auto";
+            wchar_t       * argv[]  = { const_cast<wchar_t *>(a1), const_cast<wchar_t *>(a2) };
+            HRESULT         hr      = cl.Parse (2, argv);
+
+
+
+            Assert::IsTrue (SUCCEEDED(hr));
+            Assert::IsTrue (cl.m_eSizeFormat == ESizeFormat::Auto);
+        }
+
+
+
+
+
+        TEST_METHOD(ParseSizeBytesWithTree)
+        {
+            CCommandLine    cl;
+            const wchar_t * a1      = L"--Tree";
+            const wchar_t * a2      = L"--Size=Bytes";
+            wchar_t       * argv[]  = { const_cast<wchar_t *>(a1), const_cast<wchar_t *>(a2) };
+            HRESULT         hr      = cl.Parse (2, argv);
+
+
+
+            Assert::IsTrue (SUCCEEDED(hr));
+            Assert::IsTrue (cl.m_eSizeFormat == ESizeFormat::Bytes);
+        }
+
+
+
+
+
+        TEST_METHOD(ParseSizeBytesWithoutTree)
+        {
+            CCommandLine    cl;
+            const wchar_t * a1      = L"--Size=Bytes";
+            wchar_t       * argv[]  = { const_cast<wchar_t *>(a1) };
+            HRESULT         hr      = cl.Parse (1, argv);
+
+
+
+            Assert::IsTrue (SUCCEEDED(hr));
+            Assert::IsTrue (cl.m_eSizeFormat == ESizeFormat::Bytes);
+        }
+
+
+
+
+
+        TEST_METHOD(ParseSizeAutoWithoutTree)
+        {
+            CCommandLine    cl;
+            const wchar_t * a1      = L"--Size=Auto";
+            wchar_t       * argv[]  = { const_cast<wchar_t *>(a1) };
+            HRESULT         hr      = cl.Parse (1, argv);
+
+
+
+            Assert::IsTrue (SUCCEEDED(hr));
+            Assert::IsTrue (cl.m_eSizeFormat == ESizeFormat::Auto);
+        }
+
+
+
+
+
+        TEST_METHOD(ParseSizeInvalidFails)
+        {
+            CCommandLine    cl;
+            const wchar_t * a1      = L"--Size=Large";
+            wchar_t       * argv[]  = { const_cast<wchar_t *>(a1) };
+            HRESULT         hr      = cl.Parse (1, argv);
+
+
+
+            Assert::IsTrue (FAILED(hr));
+            Assert::IsTrue (cl.m_strValidationError.find(L"--Size") != wstring::npos);
+        }
+
+
+
+
+
+        TEST_METHOD(ParseSizeCaseInsensitive)
+        {
+            CCommandLine    cl;
+            const wchar_t * a1      = L"--size=auto";
+            wchar_t       * argv[]  = { const_cast<wchar_t *>(a1) };
+            HRESULT         hr      = cl.Parse (1, argv);
+
+
+
+            Assert::IsTrue (SUCCEEDED(hr));
+            Assert::IsTrue (cl.m_eSizeFormat == ESizeFormat::Auto);
+        }
+
+
+
+
+
+        TEST_METHOD(ParseSizeDefaultResolvesToBytesWithoutTree)
+        {
+            CCommandLine    cl;
+            const wchar_t * a1      = L"*.txt";
+            wchar_t       * argv[]  = { const_cast<wchar_t *>(a1) };
+            HRESULT         hr      = cl.Parse (1, argv);
+
+
+
+            Assert::IsTrue (SUCCEEDED(hr));
+            Assert::IsTrue (cl.m_eSizeFormat == ESizeFormat::Bytes);
+        }
+
+
+
+
+
+        TEST_METHOD(ParseSizeDefaultResolvesToAutoWithTree)
+        {
+            CCommandLine    cl;
+            const wchar_t * a1      = L"--Tree";
+            wchar_t       * argv[]  = { const_cast<wchar_t *>(a1) };
+            HRESULT         hr      = cl.Parse (1, argv);
+
+
+
+            Assert::IsTrue (SUCCEEDED(hr));
+            Assert::IsTrue (cl.m_eSizeFormat == ESizeFormat::Auto);
+        }
+
+
+
+
+
+        TEST_METHOD(ApplyConfigDefaults_SizeAuto_TransfersToCommandLine)
+        {
+            CConfig      config;
+            CCommandLine cl;
+
+            config.Initialize (FC_LightGrey);
+            config.m_eSizeFormat = ESizeFormat::Auto;
+
+            cl.ApplyConfigDefaults (config);
+
+
+
+            Assert::IsTrue (cl.m_eSizeFormat == ESizeFormat::Auto);
+        }
+
+
+
+
+
+        TEST_METHOD(ApplyConfigDefaults_SizeBytes_NotOverriddenByCLI)
+        {
+            CConfig      config;
+            CCommandLine cl;
+
+            config.Initialize (FC_LightGrey);
+            config.m_eSizeFormat = ESizeFormat::Auto;
+
+            cl.ApplyConfigDefaults (config);
+
+
+
+            // Now parse CLI with --Size=Bytes to override
+            const wchar_t * a1      = L"--Size=Bytes";
+            wchar_t       * argv[]  = { const_cast<wchar_t *>(a1) };
+            HRESULT         hr      = cl.Parse (1, argv);
+
+
+
+            Assert::IsTrue (SUCCEEDED(hr));
+            Assert::IsTrue (cl.m_eSizeFormat == ESizeFormat::Bytes);
+        }
+
     };
 }

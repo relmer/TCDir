@@ -588,6 +588,11 @@ HRESULT CConsole::Flush (void)
 
 
 
+    if (cch == 0)
+    {
+        goto Error;
+    }
+
     if (!m_fIsRedirected)
     {
         fSuccess = WriteConsole (m_hStdOut, m_strBuffer.c_str(), cch, &cch, nullptr);

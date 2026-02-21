@@ -247,6 +247,51 @@ void CResultsDisplayerTree::DisplayFileStreamsWithTreePrefix (const FileInfo & e
 
 ////////////////////////////////////////////////////////////////////////////////
 //
+//  CResultsDisplayerTree::SaveDirectoryState
+//
+//  Captures the per-directory display state (field widths, sync root flag,
+//  owner data) so it can be restored after recursing into a child directory.
+//
+////////////////////////////////////////////////////////////////////////////////
+
+CResultsDisplayerTree::SDirectoryDisplayState CResultsDisplayerTree::SaveDirectoryState () const
+{
+    return SDirectoryDisplayState {
+        m_cchStringLengthOfMaxFileSize,
+        m_fInSyncRoot,
+        m_owners,
+        m_cchMaxOwnerLength
+    };
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CResultsDisplayerTree::RestoreDirectoryState
+//
+//  Restores per-directory display state previously saved by
+//  SaveDirectoryState, so that the parent directory's entries continue to
+//  render with consistent column widths after returning from a child.
+//
+////////////////////////////////////////////////////////////////////////////////
+
+void CResultsDisplayerTree::RestoreDirectoryState (SDirectoryDisplayState && state)
+{
+    m_cchStringLengthOfMaxFileSize = state.m_cchStringLengthOfMaxFileSize;
+    m_fInSyncRoot                  = state.m_fInSyncRoot;
+    m_owners                       = move (state.m_owners);
+    m_cchMaxOwnerLength            = state.m_cchMaxOwnerLength;
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
 //  CResultsDisplayerTree::DisplayTreeRootSummary
 //
 //  Displays the per-directory summary for the root, the separator,

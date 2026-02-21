@@ -599,7 +599,9 @@ namespace UnitTest
 
             // All options should be on this single line
             Assert::IsTrue (tcdirLine.find (L"[/TreeIndent=N]") != wstring::npos, L"/TreeIndent=N should be on the TCDIR line");
+#ifdef _DEBUG
             Assert::IsTrue (tcdirLine.find (L"[/Debug]")        != wstring::npos, L"/Debug should be on the TCDIR line");
+#endif
         }
 
 

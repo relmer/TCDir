@@ -53,10 +53,14 @@ struct STreeConnectorState
         }
 
         //
-        // Build continuation columns for all ancestor levels except the last
+        // Build continuation columns for ancestor levels.
+        // Start from i=1: the first element (i=0) is the root level,
+        // which has no visible connector and therefore no continuation
+        // line.  Skipping it avoids the phantom │ that would otherwise
+        // appear to the left of every subtree.
         //
 
-        for (size_t i = 0; i < m_vAncestorHasSibling.size() - 1; ++i)
+        for (size_t i = 1; i < m_vAncestorHasSibling.size(); ++i)
         {
             if (m_vAncestorHasSibling[i])
             {
@@ -112,10 +116,10 @@ struct STreeConnectorState
         }
 
         //
-        // Build continuation columns for all ancestor levels except the last
+        // Build continuation columns for ancestor levels (skip root at i=0)
         //
 
-        for (size_t i = 0; i < m_vAncestorHasSibling.size() - 1; ++i)
+        for (size_t i = 1; i < m_vAncestorHasSibling.size(); ++i)
         {
             if (m_vAncestorHasSibling[i])
             {

@@ -642,6 +642,7 @@ Error:
 
 
 
+
 ////////////////////////////////////////////////////////////////////////////////
 //
 //  CMultiThreadedLister::PrintDirectoryTreeMode
@@ -673,7 +674,7 @@ HRESULT CMultiThreadedLister::PrintDirectoryTreeMode (
     SortResults (pDirInfo);
 
     //
-    // Root directory: show drive header, path header, empty-dir message
+    // Root directory: show drive header, path header, empty-dir message.
     //
 
     if (level == IResultsDisplayer::EDirectoryLevel::Initial)
@@ -742,6 +743,24 @@ HRESULT CMultiThreadedLister::PrintDirectoryTreeMode (
 
                     if (it != childMap.end())
                     {
+                        //
+                        // Flush everything displayed so far (including this
+                        // directory entry) before recursing so the user sees
+                        // output immediately rather than waiting for the
+                        // entire subtree to finish.
+                        //
+                        // Save the parent's per-directory display state
+                        // because BeginDirectory in the child will overwrite
+                        // the displayer's member variables (field widths,
+                        // sync root flag, owners).  Restore after returning
+                        // so that remaining entries in this directory render
+                        // with the correct column widths.
+                        //
+
+                        m_consolePtr->Flush();
+
+                        auto savedState = treeDisplayer.SaveDirectoryState();
+
                         treeState.Push (!fIsLast);
 
                         hr = PrintDirectoryTreeMode (it->second,
@@ -752,11 +771,20 @@ HRESULT CMultiThreadedLister::PrintDirectoryTreeMode (
                                                      treeState);
                         treeState.Pop();
                         IGNORE_RETURN_VALUE (hr, S_OK);
+
+                        treeDisplayer.RestoreDirectoryState (move (savedState));
                     }
                 }
             }
         }
     }
+
+    //
+    // Flush any trailing file entries that followed the last subdirectory
+    // (or all entries if this directory had no child directories).
+    //
+
+    m_consolePtr->Flush();
 
     AccumulateTotals (pDirInfo, totals);
 

@@ -3,6 +3,7 @@
 #include "EnvironmentProviderBase.h"
 #include "EnvironmentProvider.h"
 #include "IconMapping.h"
+#include "SizeFormat.h"
 
 #define TCDIR_ENV_VAR_NAME L"TCDIR"
 
@@ -146,6 +147,7 @@ public:
     optional<bool>                             m_fTree;
     optional<int>                              m_cMaxDepth;
     optional<int>                              m_cTreeIndent;
+    optional<ESizeFormat>                      m_eSizeFormat;
 
     // Icon mapping tables (parallel to color tables)
     unordered_map<wstring, char32_t>           m_mapExtensionToIcon;

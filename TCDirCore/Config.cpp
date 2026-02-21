@@ -543,7 +543,7 @@ void CConfig::ProcessColorOverrideEntry (wstring_view entry)
     }
 
     //
-    // Check for integer-valued config entries (Depth=N, TreeIndent=N)
+    // Check for parameterized config entries (Depth=N, TreeIndent=N, Size=Auto|Bytes)
     //
 
     if (TryProcessIntSwitch (entry))
@@ -1044,8 +1044,8 @@ bool CConfig::IsSwitchName (wstring_view entry)
 //
 //  CConfig::TryProcessIntSwitch
 //
-//  Check if entry matches an integer-valued config key (Depth=N, TreeIndent=N).
-//  Returns true if the entry was consumed (even on error).
+//  Check if entry matches a parameterized config key (Depth=N, TreeIndent=N,
+//  Size=Auto|Bytes).  Returns true if the entry was consumed (even on error).
 //
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -1095,6 +1095,35 @@ bool CConfig::TryProcessIntSwitch (wstring_view entry)
                 wstring (entry),
                 wstring (entry.substr (11)),
                 11
+            });
+        }
+
+        return true;
+    }
+
+    //
+    // Size=Auto|Bytes
+    //
+
+    if (entry.length() > 5 && _wcsnicmp (entry.data(), L"Size=", 5) == 0)
+    {
+        wstring_view valueView = entry.substr (5);
+
+        if (_wcsnicmp (valueView.data(), L"Auto", valueView.length()) == 0 && valueView.length() == 4)
+        {
+            m_eSizeFormat = ESizeFormat::Auto;
+        }
+        else if (_wcsnicmp (valueView.data(), L"Bytes", valueView.length()) == 0 && valueView.length() == 5)
+        {
+            m_eSizeFormat = ESizeFormat::Bytes;
+        }
+        else
+        {
+            m_lastParseResult.errors.push_back ({
+                L"Size value must be Auto or Bytes",
+                wstring (entry),
+                wstring (valueView),
+                5
             });
         }
 

@@ -104,3 +104,44 @@
 - Modifying `CResultsDisplayerNormal` in-place (tangles tree and normal flow logic)
 - Refactoring column helpers into intermediate base class (unnecessary churn — protected methods already inheritable)
 - Deriving from `CResultsDisplayerWithHeaderAndFooter` (would duplicate column logic from Normal)
+## R11: Streaming Output — Flush Before Child Recursion
+
+**Decision**: Flush the console buffer before recursing into each child directory in `PrintDirectoryTreeMode`, and again after the entry loop completes (for trailing file entries).
+
+**Rationale**: Without explicit flushes, all output is buffered until the entire tree traversal completes — the user sees zero output for potentially minutes on large trees, making it appear hung. The tree display must feel live. Flushing before each child directory guarantees the parent's entry line (and any preceding siblings) are visible before the (potentially slow) child subtree begins. A second flush after the entry loop ensures trailing file entries (those after the last subdirectory in sort order) are also visible promptly. Both flushes exist only in `PrintDirectoryTreeMode` — the `-S` recursive path (`PrintDirectoryTree`/`ProcessChildren`) is untouched since it already flushes per-directory via `DisplayResults`.
+
+**Alternatives considered**:
+- Flushing only at the end of `PrintDirectoryTreeMode` (user sees nothing until the entire subtree is done — defeats streaming)
+- Flushing after every entry (excessive system calls, measurable perf impact)
+- Reducing the CConsole buffer size (would affect all modes, not just tree)
+
+## R12: Per-Directory Display State Preservation Across Recursion
+
+**Decision**: Save and restore the per-directory display state (`m_cchStringLengthOfMaxFileSize`, `m_fInSyncRoot`, `m_owners`, `m_cchMaxOwnerLength`) around each recursive child call in `PrintDirectoryTreeMode`, via `SaveDirectoryState()` / `RestoreDirectoryState()` on `CResultsDisplayerTree`.
+
+**Rationale**: `BeginDirectory()` stores per-directory computed state (field widths, sync root flag, owner vector) in member variables on the displayer. When tree mode recurses into a child directory, the child's `BeginDirectory()` call overwrites the parent's state. After returning from the child, the parent's remaining entries would render with the wrong column widths, causing misaligned output. Saving and restoring the state around each recursive descent preserves the parent's column layout. The state struct is small (a size_t, a bool, a vector, another size_t) and the copy/move is negligible relative to I/O.
+
+**Alternatives considered**:
+- Making `BeginDirectory` stack-based (would require refactoring all state management)
+- Pre-computing a global max across the entire tree before display (eliminates streaming benefit, terrible latency on large trees — this was implemented and rejected)
+- Passing state as a parameter instead of member variables (large refactor of the Normal base class)
+
+## R13: Fixed-Width Abbreviated File Sizes for Tree Alignment
+
+**Decision**: Add a `--Size=Auto` mode that formats file sizes using Explorer-style abbreviated format (1024-based, 3 significant digits) in a fixed 7-character column. Tree mode defaults to `--Size=Auto`; non-tree mode defaults to `--Size=Bytes` (existing exact-byte format).
+
+**Rationale**: In tree mode, entries from different directories are interleaved in a single output stream. Each directory may have a different largest file, producing different `cchStringLengthOfMaxFileSize` values. Variable-width size columns cause tree connectors (│, ├──, └──) to misalign between directories at different levels. A global pre-scan to compute a uniform max was implemented but rejected because it requires traversing the entire tree before displaying any output — defeating the streaming flush strategy (R11). A fixed-width abbreviated format solves alignment permanently with zero pre-scan cost. The Explorer-style format is familiar to Windows users.
+
+**Format**: 1024-based division with 3 significant digits:
+- `0 B` to `999 B` (exact bytes with `B` suffix)
+- `1 KB` to `9.99 KB` (2 decimal places)
+- `10.0 KB` to `99.9 KB` (1 decimal place)
+- `100 KB` to `999 KB` (integer)
+- Same pattern for MB, GB, TB
+- `<DIR>` centered in the same 7-char field
+- Right-justified, max 7 characters
+
+**Alternatives considered**:
+- Global max file size pre-scan before display (implemented in an earlier iteration; works but eliminates streaming — terrible latency on large trees)
+- Variable-width columns with per-directory max (the original approach — causes tree connector misalignment)
+- Separate size and connector columns with fixed position (would break compatibility with the Normal displayer's column order)

@@ -83,6 +83,9 @@ void CCommandLine::ApplyConfigDefaults (const CConfig & config)
         if (config.m_cMaxDepth.has_value())                    m_cMaxDepth      = config.m_cMaxDepth.value();
         if (config.m_cTreeIndent.has_value())                  m_cTreeIndent    = config.m_cTreeIndent.value();
     }
+
+    if (config.m_eSizeFormat.has_value() &&
+        m_eSizeFormat == ESizeFormat::Default)                  m_eSizeFormat    = config.m_eSizeFormat.value();
 }
 
 
@@ -220,6 +223,15 @@ HRESULT CCommandLine::Parse (int cArg, WCHAR ** ppszArg)
     {
         m_strValidationError = L"--TreeIndent must be between 1 and 8.";
         CBREx (false, E_INVALIDARG);
+    }
+
+    //
+    // Resolve Default size format: Auto in tree mode, Bytes in non-tree
+    //
+
+    if (m_eSizeFormat == ESizeFormat::Default)
+    {
+        m_eSizeFormat = m_fTree ? ESizeFormat::Auto : ESizeFormat::Bytes;
     }
 
 Error:
@@ -471,6 +483,26 @@ HRESULT CCommandLine::HandleLongSwitch (LPCWSTR pszArg, int & cArg, WCHAR ** & p
             }
 
             m_cTreeIndent = n;
+            hr = S_OK;
+        }
+        else if (_wcsicmp (switchName.c_str (), L"size") == 0)
+        {
+            CBREx (fHasValue, E_INVALIDARG);
+
+            if (_wcsicmp (switchValue.c_str (), L"auto") == 0)
+            {
+                m_eSizeFormat = ESizeFormat::Auto;
+            }
+            else if (_wcsicmp (switchValue.c_str (), L"bytes") == 0)
+            {
+                m_eSizeFormat = ESizeFormat::Bytes;
+            }
+            else
+            {
+                m_strValidationError = L"--Size must be Auto or Bytes.";
+                CBREx (false, E_INVALIDARG);
+            }
+
             hr = S_OK;
         }
     }

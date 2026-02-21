@@ -96,7 +96,8 @@ namespace UnitTest
 
 
 
-            // Should be: ├── (tee + 2 horizontal dashes + space) for indent=4
+            // Root ancestor at i=0 is skipped (root entries have no connector).
+            // Just the connector for this entry: ├── 
             wstring expected;
             expected += UnicodeSymbols::TreeTee;
             expected += UnicodeSymbols::TreeHorizontal;
@@ -120,7 +121,7 @@ namespace UnitTest
 
 
 
-            // Should be: └── (corner + 2 horizontal dashes + space)
+            // Root ancestor skipped.  Just the corner connector: └── 
             wstring expected;
             expected += UnicodeSymbols::TreeCorner;
             expected += UnicodeSymbols::TreeHorizontal;
@@ -138,15 +139,14 @@ namespace UnitTest
         {
             STreeConnectorState state;
 
-            state.Push (true);   // depth 1: ancestor has more siblings (draw │)
-            state.Push (true);   // depth 2: current level
+            state.Push (true);   // depth 1: root ancestor (skipped in rendering)
+            state.Push (true);   // depth 2: current level has more siblings (draw │)
 
             wstring prefix = state.GetPrefix (false);
 
 
 
-            // Should be: │   ├── 
-            // (vertical + 3 spaces) + (tee + 2 horizontal + space)
+            // Skip i=0 (root).  Loop i=1 (true): │ + 3 spaces.  Connector: ├── 
             wstring expected;
             expected += UnicodeSymbols::TreeVertical;
             expected += L"   ";
@@ -166,17 +166,17 @@ namespace UnitTest
         {
             STreeConnectorState state;
 
-            state.Push (false);  // depth 1: ancestor was last (draw spaces)
-            state.Push (true);   // depth 2: current level
+            state.Push (false);  // depth 1: root ancestor (skipped)
+            state.Push (true);   // depth 2: current level has siblings (draw │)
 
             wstring prefix = state.GetPrefix (true);
 
 
 
-            // Should be: "    └── "
-            // (4 spaces) + (corner + 2 horizontal + space)
+            // Skip i=0 (root).  Loop i=1 (true): │ + 3 spaces.  Connector: └── 
             wstring expected;
-            expected += L"    ";
+            expected += UnicodeSymbols::TreeVertical;
+            expected += L"   ";
             expected += UnicodeSymbols::TreeCorner;
             expected += UnicodeSymbols::TreeHorizontal;
             expected += UnicodeSymbols::TreeHorizontal;
@@ -193,19 +193,19 @@ namespace UnitTest
         {
             STreeConnectorState state;
 
-            state.Push (true);   // depth 1: has sibling (│)
+            state.Push (true);   // depth 1: root ancestor (skipped)
             state.Push (false);  // depth 2: no sibling (space)
-            state.Push (true);   // depth 3: current level
+            state.Push (true);   // depth 3: current level has siblings (│)
 
             wstring prefix = state.GetPrefix (false);
 
 
 
-            // Should be: "│   " + "    " + "├── "
+            // Skip i=0 (root).  Loop i=1 (false): 4 spaces.  i=2 (true): │ + 3 spaces.  Connector: ├── 
             wstring expected;
+            expected += L"    ";
             expected += UnicodeSymbols::TreeVertical;
             expected += L"   ";
-            expected += L"    ";
             expected += UnicodeSymbols::TreeTee;
             expected += UnicodeSymbols::TreeHorizontal;
             expected += UnicodeSymbols::TreeHorizontal;
@@ -283,7 +283,7 @@ namespace UnitTest
 
 
 
-            // Should be: │ + 3 spaces (vertical + indent-1 spaces)
+            // Root ancestor skipped.  Just stream vertical: │   
             wstring expected;
             expected += UnicodeSymbols::TreeVertical;
             expected += L"   ";
@@ -306,7 +306,7 @@ namespace UnitTest
 
 
 
-            // Should be: "│   " + "│   "
+            // Skip i=0 (root).  Loop i=1 (true): │ + 3 spaces.  Stream vertical: │ + 3 spaces.
             wstring expected;
             expected += UnicodeSymbols::TreeVertical;
             expected += L"   ";
@@ -330,11 +330,8 @@ namespace UnitTest
 
 
 
-            // indent=1: connector is tee + 0 horizontal dashes + space = tee + space
-            // But cHorizontalDashes = max(0, 1-2) = 0, so: tee + space
-            // Wait, that's wrong. Let me re-check: cHorizontalDashes = max(0, 1-2) = 0
-            // prefix = "├ " (tee + space)
-            // Actually prefix gets 0 dashes + space = "├ "
+            // indent=1, root ancestor skipped.
+            // Just the connector: ├ + 0 horizontal + space = "├ "
             wstring expected;
             expected += UnicodeSymbols::TreeTee;
             expected += L' ';
@@ -350,17 +347,16 @@ namespace UnitTest
         {
             STreeConnectorState state (2);
 
-            state.Push (true);   // depth 1: has sibling
-            state.Push (true);   // depth 2: current level
+            state.Push (true);   // depth 1: root ancestor (skipped)
+            state.Push (true);   // depth 2: has sibling (│)
 
             wstring prefix = state.GetPrefix (true);
 
 
 
-            // For indent=2, continuation is: │ + 1 space
-            // Connector is: └ + 0 horizontal = "└ "
-            // Wait: cHorizontalDashes = max(0, 2-2) = 0
-            // Actually no: connector is corner + 0 dashes + space
+            // Skip i=0 (root).  Loop i=1 (true): │ + 1 space.
+            // Connector: └ + 0 dashes + space
+            // Total: "│ └ "
             wstring expected;
             expected += UnicodeSymbols::TreeVertical;
             expected += L" ";
@@ -384,7 +380,8 @@ namespace UnitTest
 
 
 
-            // indent=8: tee + 6 horizontal dashes + space
+            // indent=8, root ancestor skipped.
+            // Just the connector: tee + 6 horizontal dashes + space (8 chars)
             wstring expected;
             expected += UnicodeSymbols::TreeTee;
             expected += wstring (6, UnicodeSymbols::TreeHorizontal);

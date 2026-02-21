@@ -1,6 +1,7 @@
 #include "pch.h"
 #include "EhmTestHelper.h"
 #include "Mocks/FileSystemMock.h"
+#include "Mocks/TestConsole.h"
 
 #include "../TCDirCore/MultiThreadedLister.h"
 #include "../TCDirCore/ResultsDisplayerNormal.h"
@@ -257,7 +258,7 @@ namespace UnitTest
             auto cmdLine = make_shared<CCommandLine> ();
             cmdLine->m_fRecurse = true;
 
-            auto console = make_shared<CConsole> ();
+            auto console = make_shared<CTestConsole> ();
             auto config  = make_shared<CConfig> ();
             console->Initialize (config);
 
@@ -331,7 +332,7 @@ namespace UnitTest
             auto cmdLine = make_shared<CCommandLine> ();
             cmdLine->m_fRecurse = true;
 
-            auto console = make_shared<CConsole> ();
+            auto console = make_shared<CTestConsole> ();
             auto config  = make_shared<CConfig> ();
             console->Initialize (config);
 
@@ -380,7 +381,7 @@ namespace UnitTest
             auto cmdLine = make_shared<CCommandLine> ();
             cmdLine->m_fRecurse = false;  // No recursion
 
-            auto console = make_shared<CConsole> ();
+            auto console = make_shared<CTestConsole> ();
             auto config  = make_shared<CConfig> ();
             console->Initialize (config);
 
@@ -443,7 +444,7 @@ namespace UnitTest
             auto cmdLine = make_shared<CCommandLine> ();
             cmdLine->m_fRecurse = false;
 
-            auto console = make_shared<CConsole> ();
+            auto console = make_shared<CTestConsole> ();
             auto config  = make_shared<CConfig> ();
             console->Initialize (config);
 
@@ -505,7 +506,7 @@ namespace UnitTest
             auto cmdLine = make_shared<CCommandLine> ();
             cmdLine->m_fRecurse = false;
 
-            auto console = make_shared<CConsole> ();
+            auto console = make_shared<CTestConsole> ();
             auto config  = make_shared<CConfig> ();
             console->Initialize (config);
 
@@ -569,7 +570,7 @@ namespace UnitTest
             auto cmdLine = make_shared<CCommandLine> ();
             cmdLine->m_fRecurse = true;
 
-            auto console = make_shared<CConsole> ();
+            auto console = make_shared<CTestConsole> ();
             auto config  = make_shared<CConfig> ();
             console->Initialize (config);
 
@@ -629,7 +630,7 @@ namespace UnitTest
             auto cmdLine = make_shared<CCommandLine> ();
             cmdLine->m_fRecurse = true;
 
-            auto console = make_shared<CConsole> ();
+            auto console = make_shared<CTestConsole> ();
             auto config  = make_shared<CConfig> ();
             console->Initialize (config);
 
@@ -688,7 +689,7 @@ namespace UnitTest
             auto cmdLine = make_shared<CCommandLine> ();
             cmdLine->m_fRecurse = true;
 
-            auto console = make_shared<CConsole> ();
+            auto console = make_shared<CTestConsole> ();
             auto config  = make_shared<CConfig> ();
             console->Initialize (config);
 
@@ -746,7 +747,7 @@ namespace UnitTest
             auto cmdLine = make_shared<CCommandLine> ();
             cmdLine->m_fRecurse = true;
 
-            auto console = make_shared<CConsole> ();
+            auto console = make_shared<CTestConsole> ();
             auto config  = make_shared<CConfig> ();
             console->Initialize (config);
 
@@ -803,7 +804,7 @@ namespace UnitTest
             auto cmdLine = make_shared<CCommandLine> ();
             cmdLine->m_fTree = true;
 
-            auto console = make_shared<CConsole> ();
+            auto console = make_shared<CTestConsole> ();
             auto config  = make_shared<CConfig> ();
             console->Initialize (config);
 
@@ -863,7 +864,7 @@ namespace UnitTest
             auto cmdLine = make_shared<CCommandLine> ();
             cmdLine->m_fTree = true;
 
-            auto console = make_shared<CConsole> ();
+            auto console = make_shared<CTestConsole> ();
             auto config  = make_shared<CConfig> ();
             console->Initialize (config);
 
@@ -909,7 +910,7 @@ namespace UnitTest
             auto cmdLine = make_shared<CCommandLine> ();
             cmdLine->m_fTree = true;
 
-            auto console = make_shared<CConsole> ();
+            auto console = make_shared<CTestConsole> ();
             auto config  = make_shared<CConfig> ();
             console->Initialize (config);
 
@@ -968,7 +969,7 @@ namespace UnitTest
             auto cmdLine = make_shared<CCommandLine> ();
             cmdLine->m_fTree = true;
 
-            auto console = make_shared<CConsole> ();
+            auto console = make_shared<CTestConsole> ();
             auto config  = make_shared<CConfig> ();
             console->Initialize (config);
 
@@ -1031,7 +1032,7 @@ namespace UnitTest
             auto cmdLine = make_shared<CCommandLine> ();
             cmdLine->m_fTree = true;
 
-            auto console = make_shared<CConsole> ();
+            auto console = make_shared<CTestConsole> ();
             auto config  = make_shared<CConfig> ();
             console->Initialize (config);
 
@@ -1093,7 +1094,7 @@ namespace UnitTest
             cmdLine->m_fTree     = true;
             cmdLine->m_cMaxDepth = 1;
 
-            auto console = make_shared<CConsole> ();
+            auto console = make_shared<CTestConsole> ();
             auto config  = make_shared<CConfig> ();
             console->Initialize (config);
 
@@ -1164,7 +1165,7 @@ namespace UnitTest
             cmdLine->m_fTree     = true;
             cmdLine->m_cMaxDepth = 3;
 
-            auto console = make_shared<CConsole> ();
+            auto console = make_shared<CTestConsole> ();
             auto config  = make_shared<CConfig> ();
             console->Initialize (config);
 
@@ -1229,7 +1230,7 @@ namespace UnitTest
             cmdLine->m_fTree     = true;
             cmdLine->m_cMaxDepth = 0;  // unlimited
 
-            auto console = make_shared<CConsole> ();
+            auto console = make_shared<CTestConsole> ();
             auto config  = make_shared<CConfig> ();
             console->Initialize (config);
 
@@ -1279,7 +1280,7 @@ namespace UnitTest
             auto cmdLine = make_shared<CCommandLine> ();
             cmdLine->m_fTree = true;
 
-            auto console = make_shared<CConsole> ();
+            auto console = make_shared<CTestConsole> ();
             auto config  = make_shared<CConfig> ();
             console->Initialize (config);
 
@@ -1337,7 +1338,7 @@ namespace UnitTest
             auto cmdLine = make_shared<CCommandLine> ();
             cmdLine->m_fTree = true;
 
-            auto console = make_shared<CConsole> ();
+            auto console = make_shared<CTestConsole> ();
             auto config  = make_shared<CConfig> ();
             console->Initialize (config);
 
@@ -1359,6 +1360,190 @@ namespace UnitTest
             Assert::IsTrue (SUCCEEDED (hr), L"Tree mode with icons should succeed");
             Assert::AreEqual (2u, totals.m_cFiles, L"Should have 2 files");
             Assert::AreEqual (1u, totals.m_cDirectories, L"Should have 1 directory");
+        }
+
+
+
+
+        ////////////////////////////////////////////////////////////////////////
+        //
+        //  StripAnsiCodes
+        //
+        //  Removes ANSI/VT escape sequences from a wide string so that
+        //  column-position assertions work on printable text only.
+        //
+        ////////////////////////////////////////////////////////////////////////
+
+        static wstring StripAnsiCodes (const wstring & src)
+        {
+            wstring result;
+            result.reserve (src.size());
+
+            size_t i = 0;
+
+
+
+            while (i < src.size())
+            {
+                if (src[i] == L'\x1B' && i + 1 < src.size() && src[i + 1] == L'[')
+                {
+                    // Skip ESC [ ... <final byte>
+                    i += 2;
+                    while (i < src.size() && src[i] < L'@')
+                    {
+                        i++;
+                    }
+                    if (i < src.size())
+                    {
+                        i++;  // skip final byte (e.g. 'm')
+                    }
+                }
+                else
+                {
+                    result.push_back (src[i]);
+                    i++;
+                }
+            }
+
+            return result;
+        }
+
+
+
+
+        ////////////////////////////////////////////////////////////////////////
+        //
+        //  TreeMode_AutoSize_FixedWidthAligned
+        //
+        //  Verifies that tree mode with --Size=Auto produces a fixed
+        //  7-character-wide size column for every file entry, and that
+        //  the size column starts at the same column offset on each line.
+        //
+        ////////////////////////////////////////////////////////////////////////
+
+        TEST_METHOD(TreeMode_AutoSize_FixedWidthAligned)
+        {
+            //
+            // Setup:
+            //   C:\MockRoot\
+            //     tiny.txt        (42 bytes)         ->  "  42 B "
+            //     medium.txt      (500000 bytes)     ->  " 488 KB"
+            //     big.txt         (1048576 bytes)    ->  "1.00 MB"
+            //     sub\                               ->  "<DIR>"
+            //       deep.txt      (2500000 bytes)    ->  "2.38 MB"
+            //
+
+            MockFileTree tree;
+            tree.AddFile      (L"C:\\MockRoot\\tiny.txt",          42);
+            tree.AddFile      (L"C:\\MockRoot\\medium.txt",        500000);
+            tree.AddFile      (L"C:\\MockRoot\\big.txt",           1048576);
+            tree.AddDirectory (L"C:\\MockRoot\\sub");
+            tree.AddFile      (L"C:\\MockRoot\\sub\\deep.txt",     2500000);
+
+            ScopedFileSystemMock mock (tree);
+
+            auto cmdLine = make_shared<CCommandLine> ();
+            cmdLine->m_fTree       = true;
+            cmdLine->m_eSizeFormat = ESizeFormat::Auto;
+
+            auto console = make_shared<CCapturingConsole> ();
+            auto config  = make_shared<CConfig> ();
+            console->Initialize (config);
+
+            CResultsDisplayerTree treeDisplayer (cmdLine, console, config, false);
+            CMultiThreadedLister  lister        (cmdLine, console, config);
+            CDriveInfo            driveInfo      (L"C:\\MockRoot");
+            SListingTotals        totals       = {};
+
+            vector<filesystem::path> fileSpecs = { L"*" };
+
+            HRESULT hr = lister.ProcessDirectoryMultiThreaded (
+                driveInfo,
+                L"C:\\MockRoot",
+                fileSpecs,
+                treeDisplayer,
+                IResultsDisplayer::EDirectoryLevel::Initial,
+                totals);
+
+            Assert::IsTrue (SUCCEEDED (hr), L"Tree mode listing should succeed");
+
+            //
+            // Strip ANSI escape codes so we can inspect printable columns
+            //
+
+            wstring stripped = StripAnsiCodes (console->m_strCaptured);
+
+            //
+            // Split output into lines
+            //
+
+            vector<wstring> lines;
+            wistringstream  stream (stripped);
+            wstring         line;
+
+            while (getline (stream, line))
+            {
+                if (!line.empty() && line.back() == L'\r')
+                {
+                    line.pop_back();
+                }
+                lines.push_back (line);
+            }
+
+            //
+            // Verify that the expected abbreviated size strings appear
+            //
+
+            auto containsText = [&lines] (const wstring & text) -> bool
+            {
+                for (const auto & ln : lines)
+                {
+                    if (ln.find (text) != wstring::npos)
+                        return true;
+                }
+                return false;
+            };
+
+            Assert::IsTrue (containsText (L"  42 B "),    L"Should contain '  42 B ' for 42-byte file");
+            Assert::IsTrue (containsText (L"488 KB"),     L"Should contain '488 KB' for 500000-byte file");
+            Assert::IsTrue (containsText (L"1.00 MB"),    L"Should contain '1.00 MB' for 1 MB file");
+            Assert::IsTrue (containsText (L"2.38 MB"),    L"Should contain '2.38 MB' for 2500000-byte file");
+            Assert::IsTrue (containsText (L"<DIR>"),      L"Should contain '<DIR>' for subdirectory");
+
+            //
+            // Verify alignment: every file/directory line has its size
+            // column at the same character position.
+            //
+            // The size field is " XXXXXXX " (space + 7 chars + space)
+            // or "  <DIR>  " (2+5+2 = 9).  Either way it's a 9-char
+            // block that immediately follows the attribute column.
+            // We locate the 7-char size by searching for known formatted
+            // strings and recording the column offset.
+            //
+            // Collect unique column positions where size strings start.
+            //
+
+            vector<wstring>          sizeStrings = { L"  42 B ", L" 488 KB", L"1.00 MB", L"2.38 MB", L" <DIR> " };
+            unordered_set<size_t>    sizeColumns;
+
+            for (const auto & ln : lines)
+            {
+                for (const auto & sz : sizeStrings)
+                {
+                    size_t pos = ln.find (sz);
+                    if (pos != wstring::npos)
+                    {
+                        sizeColumns.insert (pos);
+                        break;
+                    }
+                }
+            }
+
+            //
+            // All size strings should start at the same column
+            //
+
+            Assert::IsTrue (sizeColumns.size() == 1, L"All size fields must be at the same column offset (fixed-width alignment)");
         }
 
     };

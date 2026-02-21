@@ -38,16 +38,29 @@ tcdir --Tree --TreeIndent=2
 # Tree with metadata options
 tcdir --Tree --Owner --Icons --Streams
 
+# Abbreviated sizes (Explorer-style, default in tree mode)
+tcdir --Tree                # Auto mode — sizes as KB/MB/GB/TB, 7-char fixed width
+tcdir --Tree --Size=Bytes   # Exact byte counts with commas in tree mode
+tcdir --Size=Auto           # Abbreviated sizes in non-tree mode
+tcdir --Size=Bytes          # Explicit exact bytes (default in non-tree)
+
+# Verify size alignment in tree mode
+tcdir --Tree .              # All size columns should be uniformly 7 chars wide
+tcdir --Tree --Depth=3      # Alignment preserved across depth levels
+
 # Error cases (should all produce clear error messages)
 tcdir --Tree -W       # Error: incompatible with wide
 tcdir --Tree -B       # Error: incompatible with bare
 tcdir --Tree -S       # Error: incompatible with recurse
 tcdir --Depth=3       # Error: requires --Tree
 tcdir --TreeIndent=10 # Error: value out of range
+tcdir --Size=Invalid  # Error: invalid value
 
 # Environment variable configuration
 $env:TCDIR = "Tree Depth=2"
 tcdir                 # Should show tree with depth 2
+$env:TCDIR = "Size=Auto"
+tcdir                 # Should show abbreviated sizes
 $env:TCDIR = ""
 ```
 
@@ -55,10 +68,10 @@ $env:TCDIR = ""
 
 | File | What to change |
 |------|---------------|
-| `TCDirCore/CommandLine.h` | Add `m_fTree`, `m_cMaxDepth`, `m_cTreeIndent` members |
-| `TCDirCore/CommandLine.cpp` | Parse new switches; add `ValidateSwitchCombinations()` |
-| `TCDirCore/Config.h` | Add `m_fTree`, `m_cMaxDepth`, `m_cTreeIndent` optionals; `EAttribute::TreeConnector` |
-| `TCDirCore/Config.cpp` | Parse `Tree`/`Depth=N`/`TreeIndent=N` from TCDIR env var |
+| `TCDirCore/CommandLine.h` | Add `m_fTree`, `m_cMaxDepth`, `m_cTreeIndent`, `m_eSizeFormat` members |
+| `TCDirCore/CommandLine.cpp` | Parse new switches (`--Tree`, `--Depth=N`, `--TreeIndent=N`, `--Size=Auto\|Bytes`); add `ValidateSwitchCombinations()` |
+| `TCDirCore/Config.h` | Add `m_fTree`, `m_cMaxDepth`, `m_cTreeIndent`, `m_eSizeFormat` optionals; `EAttribute::TreeConnector` |
+| `TCDirCore/Config.cpp` | Parse `Tree`/`Depth=N`/`TreeIndent=N`/`Size=Auto\|Bytes` from TCDIR env var |
 | `TCDirCore/TreeConnectorState.h` | **NEW** — `STreeConnectorState` struct with `GetPrefix()`, `Push()`, `Pop()` |
 | `TCDirCore/ResultsDisplayerTree.h` | **NEW** — `CResultsDisplayerTree` derived from `CResultsDisplayerNormal` |
 | `TCDirCore/ResultsDisplayerTree.cpp` | **NEW** — Tree display flow (`DisplayResults` override) + tree-prefixed file rendering (`DisplayFileResults` override) |
@@ -67,9 +80,10 @@ $env:TCDIR = ""
 | `TCDirCore/MultiThreadedLister.h` | Add tree state parameter to `PrintDirectoryTree`/`ProcessChildren` |
 | `TCDirCore/MultiThreadedLister.cpp` | Thread connector state through recursion; depth checks |
 | `TCDirCore/ResultsDisplayerNormal.h` | Make `DisplayFileStreams` virtual (for tree override) |
+| `TCDirCore/ResultsDisplayerNormal.cpp` | Add `FormatAbbreviatedSize` (Explorer-style 3-sig-digit, 1024-based, 7-char fixed width); wire into `DisplayResultsNormalFileSize` for `Auto` mode |
 | `TCDirCore/IResultsDisplayer.h` | No signature changes needed |
 | `TCDirCore/FileComparator.cpp` | Add interleaved sort mode for tree |
-| `TCDirCore/Usage.cpp` | Document new switches in help |
+| `TCDirCore/Usage.cpp` | Document new switches (`--Tree`, `--Depth`, `--TreeIndent`, `--Size`) in help |
 
 ## New Files
 

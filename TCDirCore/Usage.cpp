@@ -267,7 +267,8 @@ void CUsage::DisplaySynopsis (CConsole & console, wchar_t chPrefix)
         format (L"[{{InformationHighlight}}{0}Icons{{Information}}] ", pszLong),
         format (L"[{{InformationHighlight}}{0}Tree{{Information}}] ",  pszLong),
         format (L"[{{InformationHighlight}}{0}Depth{{Information}}={{InformationHighlight}}N{{Information}}] ", pszLong),
-        format (L"[{{InformationHighlight}}{0}TreeIndent{{Information}}={{InformationHighlight}}N{{Information}}]", pszLong),
+        format (L"[{{InformationHighlight}}{0}TreeIndent{{Information}}={{InformationHighlight}}N{{Information}}] ", pszLong),
+        format (L"[{{InformationHighlight}}{0}Size{{Information}}={{InformationHighlight}}Auto{{Information}}|{{InformationHighlight}}Bytes{{Information}}]", pszLong),
 #ifdef _DEBUG
         format (L" [{{InformationHighlight}}{0}Debug{{Information}}]", pszLong),
 #endif
@@ -379,7 +380,9 @@ void CUsage::DisplayUsage (CConsole & console, wchar_t chPrefix)
         L"  {{InformationHighlight}}{1}Icons{{Information}}           {6}Enables file-type icons (Nerd Font required). Use {{InformationHighlight}}{1}Icons-{{Information}} to disable.\n"
         L"  {{InformationHighlight}}{1}Tree{{Information}}            {6}Displays a hierarchical directory tree view. Use {{InformationHighlight}}{1}Tree-{{Information}} to disable.\n"
         L"  {{InformationHighlight}}{1}Depth{{Information}}={{InformationHighlight}}N{{Information}}         {6}Limits tree depth to N levels (requires {{InformationHighlight}}{1}Tree{{Information}}).\n"
-        L"  {{InformationHighlight}}{1}TreeIndent{{Information}}={{InformationHighlight}}N{{Information}}    {6}Sets tree indent width (1-8, default 4; requires {{InformationHighlight}}{1}Tree{{Information}})."
+        L"  {{InformationHighlight}}{1}TreeIndent{{Information}}={{InformationHighlight}}N{{Information}}    {6}Sets tree indent width (1-8, default 4; requires {{InformationHighlight}}{1}Tree{{Information}}).\n"
+        L"  {{InformationHighlight}}{1}Size{{Information}}={{InformationHighlight}}Auto{{Information}}|{{InformationHighlight}}Bytes{{Information}}{6}File size format: {{InformationHighlight}}Auto{{Information}} = abbreviated (KB/MB/GB), {{InformationHighlight}}Bytes{{Information}} = exact with commas.\n"
+        L"  {6}                  Default: {{InformationHighlight}}Auto{{Information}} in tree mode, {{InformationHighlight}}Bytes{{Information}} otherwise."
 #ifdef _DEBUG
         L"\n  {{InformationHighlight}}{1}Debug{{Information}}           {6}Displays raw file attributes in hex for diagnosing edge cases."
 #endif

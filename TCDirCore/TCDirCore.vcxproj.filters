@@ -99,6 +99,9 @@
     <ClInclude Include="TreeConnectorState.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="SizeFormat.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="WorkQueue.h">
       <Filter>Header Files</Filter>
     </ClInclude>

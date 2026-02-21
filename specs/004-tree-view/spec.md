@@ -163,6 +163,11 @@ A user can enable tree mode and set a default depth via the `TCDIR` environment 
 - **FR-005b**: System MUST report an error when `--TreeIndent` is specified without `--Tree`.
 - **FR-005c**: System MUST report an error when `--TreeIndent` is given a value outside the range 1–8.
 - **FR-006**: System MUST display all standard metadata columns (date, time, attributes, size, cloud status) at every tree level, with consistent column alignment.
+- **FR-006a**: In tree mode, the system MUST default to abbreviated file sizes (`--Size=Auto`) so that the size column has a fixed width, ensuring tree connector alignment across directories with different file size ranges.
+- **FR-006b**: System MUST provide a `--Size=Auto` long switch that displays file sizes in Explorer-style abbreviated format (1024-based, 3 significant digits: e.g., `73 B`, `5 KB`, `16.7 MB`, `1.39 GB`). The column width is fixed at 7 characters. The numeric portion is right-justified and the unit label (B, KB, MB, etc.) is left-justified, so numbers and suffixes each align in their own sub-column.
+- **FR-006c**: System MUST provide a `--Size=Bytes` long switch that displays exact file sizes with comma separators (the existing default behavior).
+- **FR-006d**: In non-tree mode, the system MUST default to `--Size=Bytes` (exact sizes with comma separators, matching CMD DIR behavior).
+- **FR-006e**: `--Size=Bytes` in tree mode MUST still function correctly but may produce variable-width size columns, causing tree connectors to misalign between directories with different maximum file sizes.
 - **FR-007**: System MUST report an error and exit when `--Tree` is combined with `-W` (wide), `-B` (bare), or `-S` (recurse).
 - **FR-008**: System MUST report an error when `--Depth` is specified without `--Tree`.
 - **FR-008a**: Long switches that accept values MUST support both `=` separator (`--Depth=3`) and space separator (`--Depth 3`) forms.
@@ -174,10 +179,12 @@ A user can enable tree mode and set a default depth via the `TCDIR` environment 
 - **FR-013**: System MUST support multi-threaded enumeration (`-M`) in tree mode using the existing producer/consumer model.
 - **FR-014**: System MUST apply file masks at every level of the tree, showing matching files while preserving directory structure to maintain visual hierarchy.
 - **FR-015**: System MUST use shallow pruning when file masks are specified: leaf directories with zero matching files and no subdirectories with matching files are pruned from the tree output. Intermediate directories are always shown to preserve tree structure, even if they contain no direct matches (they may have matching descendants).
-- **FR-016**: System MUST support `Tree`, `Depth=N`, and `TreeIndent=N` configuration via the `TCDIR` environment variable, following the existing convention.
-- **FR-017**: CLI switches MUST override environment variable defaults for both `Tree`/`Tree-` and `Depth`.
+- **FR-016**: System MUST support `Tree`, `Depth=N`, `TreeIndent=N`, and `Size=Auto|Bytes` configuration via the `TCDIR` environment variable, following the existing convention.
+- **FR-017**: CLI switches MUST override environment variable defaults for both `Tree`/`Tree-`, `Depth`, and `Size`.
 - **FR-018**: System MUST handle inaccessible directories gracefully, listing them as entries without expanding their contents and displaying an inline error.
 - **FR-019**: System MUST display a per-directory summary (file/directory counts, bytes used) at each directory level in the tree, plus a grand total summary for the entire tree at the end, matching the existing recursive mode pattern. The volume header (drive label) and volume footer (free space) appear only once for the root directory.
+- **FR-020**: System MUST flush output to the console before recursing into each child directory in tree mode, so the user sees streaming output progressively rather than waiting for the entire subtree to complete.
+- **FR-021**: System MUST preserve the parent directory's per-entry display state (field widths, sync root flag, owner data) when recursing into child directories, and restore it after returning, so that remaining parent entries render with correct column alignment.
 
 ### Key Entities
 
@@ -191,6 +198,8 @@ A user can enable tree mode and set a default depth via the `TCDIR` environment 
 - **SC-001**: Users can view a hierarchical directory listing with a single command (`tcdir --Tree`) and visually identify parent-child relationships without external tools.
 - **SC-002**: Users can limit tree output to a specific depth (`--Depth N`) and receive results limited to exactly N levels of subdirectory contents.
 - **SC-003**: Output at every tree level includes complete file metadata (date, time, attributes, size) matching the normal listing format.
+- **SC-003a**: In tree mode with `--Size=Auto` (the default), size columns and tree connectors are aligned consistently across all directory levels regardless of the file size ranges in each directory.
+- **SC-003b**: Tree output streams progressively — the user sees output for each directory before its children are expanded, not buffered until the entire tree completes.
 - **SC-004**: All incompatible switch combinations (`--Tree` + `-W`/`-B`/`-S`) produce clear error messages within the first line of output without performing any enumeration work.
 - **SC-005**: Tree view with multi-threaded enumeration on a directory with 1000+ files across 50+ subdirectories produces correct, deterministic output (same result on every invocation with the same sort order).
 - **SC-006**: Alternate data streams in tree mode display with vertical continuation lines, maintaining visual clarity about which file owns the streams.

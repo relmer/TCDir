@@ -5,7 +5,7 @@
 
 ## Summary
 
-Add a `--Tree` display mode that renders directory contents hierarchically with Unicode box-drawing connectors, configurable depth (`--Depth=N`), configurable indent width (`--TreeIndent=N`), and configurable connector color. The implementation reuses the existing multi-threaded producer/consumer enumeration model and introduces a new `CResultsDisplayerTree` class (derived from `CResultsDisplayerNormal`) that overrides the display flow for tree-walking while reusing all inherited column rendering helpers.
+Add a `--Tree` display mode that renders directory contents hierarchically with Unicode box-drawing connectors, configurable depth (`--Depth=N`), configurable indent width (`--TreeIndent=N`), and configurable connector color. Add a `--Size=Auto|Bytes` switch for fixed-width abbreviated file sizes (Explorer-style 3-significant-digit format, 1024-based) that defaults to `Auto` in tree mode and `Bytes` in non-tree mode, ensuring column alignment without pre-scanning the directory tree. The implementation reuses the existing multi-threaded producer/consumer enumeration model and introduces a new `CResultsDisplayerTree` class (derived from `CResultsDisplayerNormal`) that overrides the display flow for tree-walking while reusing all inherited column rendering helpers.
 
 ## Technical Context
 
@@ -18,6 +18,7 @@ Add a `--Tree` display mode that renders directory contents hierarchically with 
 **Performance Goals**: Tree view must not regress performance of existing modes; measurable via `-P` flag  
 **Constraints**: No external dependencies; all console output through `CConsole`; EHM patterns for HRESULT functions  
 **Scale/Scope**: Targets directories with 1000+ files across 50+ subdirectories; deterministic output with same sort order
+**Size Display**: Explorer-style abbreviated sizes (1024-based, 3 significant digits, B/KB/MB/GB/TB, 7-char fixed width); `--Size=Auto` default in tree mode, `--Size=Bytes` (comma-separated exact) default in non-tree mode
 
 ## Constitution Check
 
@@ -65,10 +66,10 @@ specs/004-tree-view/
 
 ```text
 TCDirCore/
-├── CommandLine.h          # Add m_fTree, m_cMaxDepth, m_cTreeIndent members
-├── CommandLine.cpp        # Parse --Tree, --Depth=N, --TreeIndent=N; validate conflicts
-├── Config.h               # Add m_fTree, m_cMaxDepth, m_cTreeIndent optionals; EAttribute::TreeConnector
-├── Config.cpp             # Parse Tree/Depth/TreeIndent from TCDIR env var
+├── CommandLine.h          # Add m_fTree, m_cMaxDepth, m_cTreeIndent, m_eSizeFormat members
+├── CommandLine.cpp        # Parse --Tree, --Depth=N, --TreeIndent=N, --Size=Auto|Bytes; validate conflicts
+├── Config.h               # Add m_fTree, m_cMaxDepth, m_cTreeIndent, m_eSizeFormat optionals; EAttribute::TreeConnector
+├── Config.cpp             # Parse Tree/Depth/TreeIndent/Size from TCDIR env var
 ├── TreeConnectorState.h   # NEW: Tree connector state tracker (vector<bool> + prefix generation)
 ├── ResultsDisplayerTree.h      # NEW: Tree displayer (derives from CResultsDisplayerNormal)
 ├── ResultsDisplayerTree.cpp    # NEW: Tree display flow + tree-prefixed file rendering
@@ -76,23 +77,23 @@ TCDirCore/
 ├── MultiThreadedLister.h  # Add depth parameter to PrintDirectoryTree/ProcessChildren
 ├── MultiThreadedLister.cpp# Thread tree state through PrintDirectoryTree recursion; depth checks
 ├── ResultsDisplayerNormal.h    # Make DisplayFileStreams virtual (for tree override)
-├── ResultsDisplayerNormal.cpp  # No changes (tree logic lives in derived class)
+├── ResultsDisplayerNormal.cpp  # Add FormatAbbreviatedSize; wire into DisplayResultsNormalFileSize for Auto mode
 ├── ResultsDisplayerWithHeaderAndFooter.h   # No signature changes needed
 ├── ResultsDisplayerWithHeaderAndFooter.cpp # No changes (tree flow is in CResultsDisplayerTree)
 ├── IResultsDisplayer.h    # No signature changes needed
 ├── FileComparator.h       # Add interleaved sort mode (no dir-first grouping)
 ├── FileComparator.cpp     # Conditional sort behavior for tree mode
-├── Usage.cpp              # Document --Tree, --Depth, --TreeIndent in help output
+├── Usage.cpp              # Document --Tree, --Depth, --TreeIndent, --Size in help output
 ├── UnicodeSymbols.h       # Add tree connector constants (├── └── │)
 └── pch.h                  # No changes expected
 
 UnitTest/
-├── CommandLineTests.cpp   # Test --Tree, --Depth, --TreeIndent parsing and validation
-├── ConfigTests.cpp        # Test TCDIR env var Tree/Depth/TreeIndent entries
+├── CommandLineTests.cpp   # Test --Tree, --Depth, --TreeIndent, --Size parsing and validation
+├── ConfigTests.cpp        # Test TCDIR env var Tree/Depth/TreeIndent/Size entries
 ├── TreeConnectorStateTests.cpp  # Test STreeConnectorState prefix generation, Push/Pop, indent widths
 ├── DirectoryListerTests.cpp         # Test reparse-point guard and tree traversal
 ├── DirectoryListerScenarioTests.cpp # End-to-end tree output verification
-├── ResultsDisplayerTests.cpp        # Existing displayer tests (no new tree-specific tests here)
+├── ResultsDisplayerTests.cpp        # Existing displayer tests + FormatAbbreviatedSize unit tests
 └── FileComparatorTests.cpp          # Test interleaved sort mode
 ```
 

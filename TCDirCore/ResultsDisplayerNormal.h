@@ -14,6 +14,8 @@ public:
 
     void DisplayFileResults (const CDirectoryInfo & di) override;
 
+    static wstring   FormatAbbreviatedSize           (ULONGLONG cbSize);
+
 protected:
     const FILETIME & GetTimeFieldForDisplay          (const WIN32_FIND_DATA & wfd) const;
     HRESULT          DisplayResultsNormalDateAndTime (const FILETIME & ftLastWriteTime);

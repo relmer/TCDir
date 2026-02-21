@@ -55,6 +55,24 @@ public:
 
 
 
+    //
+    // Per-directory state snapshot used to save/restore across recursive
+    // child directory calls that overwrite the member variables.
+    //
+
+    struct SDirectoryDisplayState
+    {
+        size_t          m_cchStringLengthOfMaxFileSize = 0;
+        bool            m_fInSyncRoot                  = false;
+        vector<wstring> m_owners;
+        size_t          m_cchMaxOwnerLength            = 0;
+    };
+
+    SDirectoryDisplayState SaveDirectoryState    () const;
+    void                   RestoreDirectoryState (SDirectoryDisplayState && state);
+
+
+
 private:
     //
     // Per-directory state set by BeginDirectory()

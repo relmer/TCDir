@@ -1,5 +1,7 @@
 #pragma once
 
+#include "SizeFormat.h"
+
 
 
 
@@ -81,6 +83,7 @@ public:
     bool               m_fTree                                             = false;    // --Tree switch (tree view mode)
     int                m_cMaxDepth                                         = 0;        // --Depth=N (0 = unlimited)
     int                m_cTreeIndent                                       = 4;        // --TreeIndent=N (1-8)
+    ESizeFormat        m_eSizeFormat                                       = ESizeFormat::Default;  // --Size=Auto|Bytes
     wstring            m_strValidationError;                                            // Validation error message (empty if no error)
 
 

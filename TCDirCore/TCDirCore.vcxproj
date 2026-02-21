@@ -242,6 +242,7 @@
     <ClInclude Include="ResultsDisplayerTree.h" />
     <ClInclude Include="ResultsDisplayerWide.h" />
     <ClInclude Include="ResultsDisplayerWithHeaderAndFooter.h" />
+    <ClInclude Include="SizeFormat.h" />
     <ClInclude Include="UniqueFindHandle.h" />
     <ClInclude Include="Usage.h" />
     <ClInclude Include="Version.h" />
