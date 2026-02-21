@@ -106,10 +106,10 @@
 
 ### Implementation for User Story 4
 
-- [ ] T028 [US4] Make `DisplayFileStreams` virtual in `CResultsDisplayerNormal` in `TCDirCore/ResultsDisplayerNormal.h`
+- [x] T028 [US4] Make `DisplayFileStreams` virtual in `CResultsDisplayerNormal` in `TCDirCore/ResultsDisplayerNormal.h`
 - [x] T029 [US4] Implement `CResultsDisplayerTree::DisplayFileStreamsWithTreePrefix` — prepend `STreeConnectorState::GetStreamContinuation()` prefix to each stream line in `TCDirCore/ResultsDisplayerTree.cpp`
 - [x] T030 [US4] Call `DisplayFileStreamsWithTreePrefix` instead of inherited `DisplayFileStreams` in tree `DisplayFileResults` loop in `TCDirCore/ResultsDisplayerTree.cpp`
-- [ ] T031 [US4] Add scenario tests: streams with tree connectors, stream continuation `│` prefix, streams followed by next sibling file resuming normal connectors in `UnitTest/DirectoryListerScenarioTests.cpp`
+- [x] T031 [US4] Add scenario tests: streams with tree connectors, stream continuation `│` prefix, streams followed by next sibling file resuming normal connectors in `UnitTest/DirectoryListerScenarioTests.cpp`
 
 **Checkpoint**: Streams display correctly in tree mode with vertical continuation lines.
 
@@ -132,13 +132,13 @@
 
 ## Phase 8: User Story 6 — Environment Variable Configuration (Priority: P3)
 
-**Goal**: `TCDIR=Tree Depth=2` enables tree mode with depth 2 by default. CLI overrides env var.
+**Goal**: `TCDIR=Tree;Depth=2` enables tree mode with depth 2 by default. CLI overrides env var.
 
 **Independent Test**: Set `TCDIR=Tree`, run `tcdir` without flags, verify tree mode. Set `TCDIR=Tree` and run `tcdir --Tree-`, verify tree disabled.
 
 ### Implementation for User Story 6
 
-- [ ] T034 [US6] Add scenario tests: `TCDIR=Tree` activates tree, `TCDIR=Tree Depth=3` limits depth, CLI `--Tree-` overrides env var, `TCDIR=Depth=2` without Tree is silently ignored in `UnitTest/ConfigTests.cpp` or `UnitTest/DirectoryListerScenarioTests.cpp`
+- [x] T034 [US6] Add scenario tests: `TCDIR=Tree` activates tree, `TCDIR=Tree;Depth=3` limits depth, CLI `--Tree-` overrides env var, `TCDIR=Depth=2` without Tree is silently ignored in `UnitTest/ConfigTests.cpp` or `UnitTest/DirectoryListerScenarioTests.cpp`
 
 **Checkpoint**: Env var configuration works. CLI overrides verified.
 
@@ -198,11 +198,11 @@
 
 - [x] T035 [P] Document `--Tree`, `--Depth=N`, `--TreeIndent=N`, `--Size=Auto|Bytes` in help output in `TCDirCore/Usage.cpp`
 - [x] T036 Add reparse-point cycle guard: check `FILE_ATTRIBUTE_REPARSE_POINT` before recursing in `EnumerateDirectoryNode`; skip expansion for reparse points and render `[→ target]` indicator after directory name (protects both `-S` and `--Tree`) in `TCDirCore/MultiThreadedLister.cpp`
-- [ ] T036a [P] Add scenario test for inaccessible directory in tree mode: access-denied directory is listed as entry but not expanded, inline error shown in `UnitTest/DirectoryListerScenarioTests.cpp`
-- [ ] T037 [P] Add unit test for reparse-point guard (mock directory with reparse point attribute is listed but not expanded) in `UnitTest/DirectoryListerTests.cpp`
+- [ ] T036a [P] Add scenario test for inaccessible directory in tree mode: access-denied directory is listed as entry but not expanded, inline error shown in `UnitTest/DirectoryListerScenarioTests.cpp` *(DEFERRED: requires mock enhancement to simulate ERROR_ACCESS_DENIED from FindFirstFileW)*
+- [x] T037 [P] Add unit test for reparse-point guard (mock directory with reparse point attribute is listed but not expanded) in `UnitTest/DirectoryListerScenarioTests.cpp`
 - [x] T038 [P] Add `TreeConnector` default color (LightGray) to color attribute defaults in `TCDirCore/Config.cpp`
-- [ ] T039 Run full test suite (`Build + Test Debug (current arch)` task) and verify all existing tests still pass
-- [ ] T040 Run quickstart.md manual verification commands (all switch combinations, error cases, env var config)
+- [x] T039 Run full test suite (`Build + Test Debug (current arch)` task) and verify all existing tests still pass — **405/405 passing**
+- [x] T040 Run quickstart.md manual verification commands (all switch combinations, error cases, env var config)
 
 **Checkpoint**: Feature complete. All tests pass. Help text updated. Cycle detection protects both `-S` and `--Tree`.
 

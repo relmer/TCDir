@@ -57,7 +57,7 @@ tcdir --TreeIndent=10 # Error: value out of range
 tcdir --Size=Invalid  # Error: invalid value
 
 # Environment variable configuration
-$env:TCDIR = "Tree Depth=2"
+$env:TCDIR = "Tree;Depth=2"
 tcdir                 # Should show tree with depth 2
 $env:TCDIR = "Size=Auto"
 tcdir                 # Should show abbreviated sizes

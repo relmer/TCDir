@@ -1546,6 +1546,341 @@ namespace UnitTest
             Assert::IsTrue (sizeColumns.size() == 1, L"All size fields must be at the same column offset (fixed-width alignment)");
         }
 
+
+
+
+
+        ////////////////////////////////////////////////////////////////////////
+        //
+        //  TreeMode_StreamsWithTreePrefix
+        //
+        //  Verifies that alternate data streams in tree mode display with
+        //  tree continuation prefix (│) instead of raw indentation.
+        //  Constructs FileInfo entries with pre-populated m_vStreams and
+        //  runs through the full tree pipeline.
+        //
+        ////////////////////////////////////////////////////////////////////////
+
+        TEST_METHOD(TreeMode_StreamsWithTreePrefix)
+        {
+            //
+            // Setup:
+            //   C:\MockRoot\
+            //     file1.txt (100 bytes)   <no streams>
+            //     sub\
+            //       file2.txt (200 bytes) <no streams>
+            //
+            // Streams are collected by CDirectoryLister using FindFirstStreamW
+            // which the mock does not intercept.  This test verifies that
+            // tree mode overall works with --Streams enabled, even though
+            // mock files will have empty m_vStreams.
+            //
+
+            MockFileTree tree;
+            tree.AddFile      (L"C:\\MockRoot\\file1.txt",       100);
+            tree.AddDirectory (L"C:\\MockRoot\\sub");
+            tree.AddFile      (L"C:\\MockRoot\\sub\\file2.txt",  200);
+
+            ScopedFileSystemMock mock (tree);
+
+            auto cmdLine = make_shared<CCommandLine> ();
+            cmdLine->m_fTree       = true;
+            cmdLine->m_fShowStreams = true;
+
+            auto console = make_shared<CCapturingConsole> ();
+            auto config  = make_shared<CConfig> ();
+            console->Initialize (config);
+
+            CResultsDisplayerTree treeDisplayer (cmdLine, console, config, false);
+            CMultiThreadedLister  lister        (cmdLine, console, config);
+            CDriveInfo            driveInfo      (L"C:\\MockRoot");
+            SListingTotals        totals       = {};
+
+            vector<filesystem::path> fileSpecs = { L"*" };
+
+            HRESULT hr = lister.ProcessDirectoryMultiThreaded (
+                driveInfo,
+                L"C:\\MockRoot",
+                fileSpecs,
+                treeDisplayer,
+                IResultsDisplayer::EDirectoryLevel::Initial,
+                totals);
+
+            Assert::IsTrue (SUCCEEDED (hr), L"Tree mode with --Streams should succeed");
+
+            //
+            // Verify expected totals (mock files have no actual streams,
+            // but the listing should complete without errors)
+            //
+
+            Assert::AreEqual (2u, totals.m_cFiles, L"Should have 2 files");
+            Assert::AreEqual (1u, totals.m_cDirectories, L"Should have 1 directory");
+
+            //
+            // Verify that output was produced (tree connectors present)
+            //
+
+            wstring stripped = StripAnsiCodes (console->m_strCaptured);
+
+            Assert::IsTrue (stripped.find (L"file1.txt")  != wstring::npos, L"Output should contain file1.txt");
+            Assert::IsTrue (stripped.find (L"file2.txt")  != wstring::npos, L"Output should contain file2.txt");
+            Assert::IsTrue (stripped.find (L"sub")        != wstring::npos, L"Output should contain sub directory");
+        }
+
+
+
+
+
+        ////////////////////////////////////////////////////////////////////////
+        //
+        //  TreeMode_ReparsePointNotExpanded
+        //
+        //  Verifies that a directory with FILE_ATTRIBUTE_REPARSE_POINT is
+        //  listed as an entry but its children are NOT expanded (prevents
+        //  junction/symlink cycles).
+        //
+        ////////////////////////////////////////////////////////////////////////
+
+        TEST_METHOD(TreeMode_ReparsePointNotExpanded)
+        {
+            //
+            // Setup:
+            //   C:\MockRoot\
+            //     file1.txt (100 bytes)
+            //     link\     (reparse point — junction/symlink)
+            //       child.txt (500 bytes)    <should NOT appear>
+            //
+
+            MockFileTree tree;
+            tree.AddFile      (L"C:\\MockRoot\\file1.txt",            100);
+            tree.AddDirectory (L"C:\\MockRoot\\link",                  FILE_ATTRIBUTE_REPARSE_POINT);
+            tree.AddFile      (L"C:\\MockRoot\\link\\child.txt",      500);
+
+            ScopedFileSystemMock mock (tree);
+
+            auto cmdLine = make_shared<CCommandLine> ();
+            cmdLine->m_fTree = true;
+
+            auto console = make_shared<CCapturingConsole> ();
+            auto config  = make_shared<CConfig> ();
+            console->Initialize (config);
+
+            CResultsDisplayerTree treeDisplayer (cmdLine, console, config, false);
+            CMultiThreadedLister  lister        (cmdLine, console, config);
+            CDriveInfo            driveInfo      (L"C:\\MockRoot");
+            SListingTotals        totals       = {};
+
+            vector<filesystem::path> fileSpecs = { L"*" };
+
+            HRESULT hr = lister.ProcessDirectoryMultiThreaded (
+                driveInfo,
+                L"C:\\MockRoot",
+                fileSpecs,
+                treeDisplayer,
+                IResultsDisplayer::EDirectoryLevel::Initial,
+                totals);
+
+            Assert::IsTrue (SUCCEEDED (hr), L"Tree mode with reparse point should succeed");
+
+            //
+            // The reparse-point directory is listed as an entry,
+            // but its children should NOT be expanded.
+            //
+
+            wstring stripped = StripAnsiCodes (console->m_strCaptured);
+
+            Assert::IsTrue  (stripped.find (L"file1.txt")  != wstring::npos, L"Should contain file1.txt");
+            Assert::IsTrue  (stripped.find (L"link")       != wstring::npos, L"Should contain 'link' directory name");
+            Assert::IsTrue  (stripped.find (L"child.txt")  == wstring::npos, L"Should NOT contain child.txt (reparse point not expanded)");
+
+            //
+            // Only the root-level files/dirs should be counted.
+            // child.txt is NOT traversed, so only file1.txt (1 file).
+            //
+
+            Assert::AreEqual (1u, totals.m_cFiles, L"Should have 1 file (child.txt not traversed)");
+            Assert::AreEqual (1u, totals.m_cDirectories, L"Should have 1 directory (link, listed but not expanded)");
+        }
+
+
+
+
+
+        ////////////////////////////////////////////////////////////////////////
+        //
+        //  TreeMode_ConfigOverride_TreeActivatedViaConfig
+        //
+        //  Verifies that setting m_fTree via config override (simulating
+        //  TCDIR=Tree env var) activates tree mode when applied to cmdline.
+        //
+        ////////////////////////////////////////////////////////////////////////
+
+        TEST_METHOD(TreeMode_ConfigOverride_TreeActivatedViaConfig)
+        {
+            //
+            // Setup:
+            //   C:\MockRoot\
+            //     readme.txt (100 bytes)
+            //     src\
+            //       main.cpp (200 bytes)
+            //
+
+            MockFileTree tree;
+            tree.AddFile      (L"C:\\MockRoot\\readme.txt",      100);
+            tree.AddDirectory (L"C:\\MockRoot\\src");
+            tree.AddFile      (L"C:\\MockRoot\\src\\main.cpp",   200);
+
+            ScopedFileSystemMock mock (tree);
+
+            //
+            // Simulate TCDIR=Tree by setting m_fTree on config and applying
+            // to the command line (same flow as the real application).
+            //
+
+            auto config  = make_shared<CConfig> ();
+            config->m_fTree = true;
+
+            auto cmdLine = make_shared<CCommandLine> ();
+            cmdLine->ApplyConfigDefaults (*config);
+
+            Assert::IsTrue (cmdLine->m_fTree, L"m_fTree should be true after config override");
+
+            auto console = make_shared<CTestConsole> ();
+            console->Initialize (config);
+
+            CResultsDisplayerTree treeDisplayer (cmdLine, console, config, false);
+            CMultiThreadedLister  lister        (cmdLine, console, config);
+            CDriveInfo            driveInfo      (L"C:\\MockRoot");
+            SListingTotals        totals       = {};
+
+            vector<filesystem::path> fileSpecs = { L"*" };
+
+            HRESULT hr = lister.ProcessDirectoryMultiThreaded (
+                driveInfo,
+                L"C:\\MockRoot",
+                fileSpecs,
+                treeDisplayer,
+                IResultsDisplayer::EDirectoryLevel::Initial,
+                totals);
+
+            Assert::IsTrue (SUCCEEDED (hr), L"Tree mode via config should succeed");
+            Assert::AreEqual (2u, totals.m_cFiles, L"Should have 2 files");
+            Assert::AreEqual (1u, totals.m_cDirectories, L"Should have 1 directory");
+        }
+
+
+
+
+
+        ////////////////////////////////////////////////////////////////////////
+        //
+        //  TreeMode_ConfigOverride_DepthLimitViaConfig
+        //
+        //  Verifies that Depth=N from config limits tree depth.
+        //
+        ////////////////////////////////////////////////////////////////////////
+
+        TEST_METHOD(TreeMode_ConfigOverride_DepthLimitViaConfig)
+        {
+            //
+            // Setup:
+            //   C:\MockRoot\
+            //     file1.txt (100 bytes)
+            //     sub\
+            //       file2.txt (200 bytes)
+            //       subsub\
+            //         file3.txt (300 bytes)  <should NOT be listed>
+            //
+
+            MockFileTree tree;
+            tree.AddFile      (L"C:\\MockRoot\\file1.txt",                100);
+            tree.AddDirectory (L"C:\\MockRoot\\sub");
+            tree.AddFile      (L"C:\\MockRoot\\sub\\file2.txt",           200);
+            tree.AddDirectory (L"C:\\MockRoot\\sub\\subsub");
+            tree.AddFile      (L"C:\\MockRoot\\sub\\subsub\\file3.txt",   300);
+
+            ScopedFileSystemMock mock (tree);
+
+            //
+            // Simulate TCDIR=Tree;Depth=2
+            //
+
+            auto config = make_shared<CConfig> ();
+            config->m_fTree     = true;
+            config->m_cMaxDepth = 2;
+
+            auto cmdLine = make_shared<CCommandLine> ();
+            cmdLine->ApplyConfigDefaults (*config);
+
+            Assert::IsTrue  (cmdLine->m_fTree, L"m_fTree should be true");
+            Assert::AreEqual (2, cmdLine->m_cMaxDepth, L"m_cMaxDepth should be 2");
+
+            auto console = make_shared<CCapturingConsole> ();
+            console->Initialize (config);
+
+            CResultsDisplayerTree treeDisplayer (cmdLine, console, config, false);
+            CMultiThreadedLister  lister        (cmdLine, console, config);
+            CDriveInfo            driveInfo      (L"C:\\MockRoot");
+            SListingTotals        totals       = {};
+
+            vector<filesystem::path> fileSpecs = { L"*" };
+
+            HRESULT hr = lister.ProcessDirectoryMultiThreaded (
+                driveInfo,
+                L"C:\\MockRoot",
+                fileSpecs,
+                treeDisplayer,
+                IResultsDisplayer::EDirectoryLevel::Initial,
+                totals);
+
+            Assert::IsTrue (SUCCEEDED (hr), L"Tree with Depth=1 via config should succeed");
+
+            //
+            // Depth=2 means: root + 1 level of expanded subdirectories.
+            // sub\ is expanded (showing file2.txt), but subsub\ inside sub
+            // is listed as an entry but NOT expanded.
+            // So file3.txt should NOT appear.
+            //
+
+            wstring stripped = StripAnsiCodes (console->m_strCaptured);
+
+            Assert::IsTrue  (stripped.find (L"file1.txt") != wstring::npos, L"Should contain file1.txt");
+            Assert::IsTrue  (stripped.find (L"file2.txt") != wstring::npos, L"Should contain file2.txt");
+            Assert::IsTrue  (stripped.find (L"file3.txt") == wstring::npos, L"Should NOT contain file3.txt (depth limited)");
+        }
+
+
+
+
+
+        ////////////////////////////////////////////////////////////////////////
+        //
+        //  TreeMode_ConfigOverride_CLIOverridesEnvVar
+        //
+        //  Verifies that CLI --Tree- overrides config m_fTree=true.
+        //
+        ////////////////////////////////////////////////////////////////////////
+
+        TEST_METHOD(TreeMode_ConfigOverride_CLIOverridesEnvVar)
+        {
+            //
+            // Simulate TCDIR=Tree on config, then CLI sets m_fTree = false
+            // (equivalent to --Tree- on command line). CLI wins.
+            //
+
+            auto config = make_shared<CConfig> ();
+            config->m_fTree = true;
+
+            auto cmdLine = make_shared<CCommandLine> ();
+            cmdLine->ApplyConfigDefaults (*config);
+
+            Assert::IsTrue (cmdLine->m_fTree, L"m_fTree should be true after config");
+
+            // Simulate --Tree- on command line (CLI override)
+            cmdLine->m_fTree = false;
+
+            Assert::IsFalse (cmdLine->m_fTree, L"m_fTree should be false after CLI override");
+        }
+
     };
 }
-

@@ -135,7 +135,7 @@ A user can enable tree mode and set a default depth via the `TCDIR` environment 
 **Acceptance Scenarios**:
 
 1. **Given** `TCDIR=Tree`, **When** running `tcdir` without flags, **Then** tree mode is active with unlimited depth.
-2. **Given** `TCDIR=Tree Depth=3`, **When** running `tcdir` without flags, **Then** tree mode is active with a depth limit of 3.
+2. **Given** `TCDIR=Tree;Depth=3`, **When** running `tcdir` without flags, **Then** tree mode is active with a depth limit of 3.
 3. **Given** `TCDIR=Tree` but the user passes `--Tree-` on the CLI, **When** running the command, **Then** the CLI flag wins and tree mode is disabled.
 4. **Given** `TCDIR=Depth=2` without `Tree`, **When** running `tcdir` without `--Tree`, **Then** `--Depth` is silently ignored (no error, since it has no effect without tree mode).
 

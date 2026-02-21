@@ -227,14 +227,16 @@ HRESULT CCommandLine::Parse (int cArg, WCHAR ** ppszArg)
 
     //
     // Resolve Default size format: Auto in tree mode, Bytes in non-tree
+    // (must be after Error: label so it runs even when cArg == 0 and
+    // tree mode was activated via TCDIR env var only)
     //
 
+Error:
     if (m_eSizeFormat == ESizeFormat::Default)
     {
         m_eSizeFormat = m_fTree ? ESizeFormat::Auto : ESizeFormat::Bytes;
     }
 
-Error:
     return hr;
 }
 
