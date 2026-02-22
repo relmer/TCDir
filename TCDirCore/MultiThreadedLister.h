@@ -79,12 +79,29 @@ private:
                                            IResultsDisplayer & displayer,
                                            SListingTotals & totals);
 
+    using ChildMap = unordered_map<wstring, shared_ptr<CDirectoryInfo>>;
+
     HRESULT PrintDirectoryTreeMode        (shared_ptr<CDirectoryInfo>           pDirInfo,
                                            const CDriveInfo                   & driveInfo,
                                            CResultsDisplayerTree              & treeDisplayer,
                                            IResultsDisplayer::EDirectoryLevel   level,
                                            SListingTotals                     & totals,
                                            STreeConnectorState                & treeState);
+    HRESULT DisplayTreeEntries            (shared_ptr<CDirectoryInfo> pDirInfo,
+                                           const CDriveInfo & driveInfo,
+                                           CResultsDisplayerTree & treeDisplayer,
+                                           SListingTotals & totals,
+                                           STreeConnectorState & treeState);
+    bool    IsLastVisibleEntry            (const vector<FileInfo> & vMatches,
+                                           size_t iCurrent,
+                                           const ChildMap & childMap);
+    HRESULT RecurseIntoChildDirectory     (shared_ptr<CDirectoryInfo> pChild,
+                                           const FileInfo & parentEntry,
+                                           bool fIsLast,
+                                           const CDriveInfo & driveInfo,
+                                           CResultsDisplayerTree & treeDisplayer,
+                                           SListingTotals & totals,
+                                           STreeConnectorState & treeState);
 
     void    PropagateDescendantMatch      (shared_ptr<CDirectoryInfo> pDirInfo);
     void    TrySignalParentSubtreeComplete (shared_ptr<CDirectoryInfo> pParent);

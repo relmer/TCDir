@@ -1990,6 +1990,91 @@ namespace UnitTest
             Assert::IsTrue  (stripped.find (L"readme.md")  == wstring::npos,  L"Should NOT contain readme.md");
         }
 
+
+
+
+
+        ////////////////////////////////////////////////////////////////////////
+        //
+        //  TreeMode_MixedCaseDirs_RecursionSucceeds
+        //
+        //  Verifies that tree-mode directory recursion works when directory
+        //  names use mixed case.  The childMap lookup uses m_strLowerName
+        //  (pre-computed lowercase filename) to match entries from m_vMatches
+        //  against m_vChildren.  If the lowercasing were broken, the lookup
+        //  would fail and the tree would not recurse into subdirectories.
+        //
+        ////////////////////////////////////////////////////////////////////////
+
+        TEST_METHOD(TreeMode_MixedCaseDirs_RecursionSucceeds)
+        {
+            //
+            // Setup:
+            //   C:\MockRoot\
+            //     MyProject\
+            //       Build\
+            //         output.exe  (1000 bytes)
+            //       SrcFiles\
+            //         Main.CPP    (200 bytes)
+            //         Helper.CPP  (300 bytes)
+            //
+
+            MockFileTree tree;
+            tree.AddDirectory (L"C:\\MockRoot\\MyProject");
+            tree.AddDirectory (L"C:\\MockRoot\\MyProject\\Build");
+            tree.AddFile      (L"C:\\MockRoot\\MyProject\\Build\\output.exe",      1000);
+            tree.AddDirectory (L"C:\\MockRoot\\MyProject\\SrcFiles");
+            tree.AddFile      (L"C:\\MockRoot\\MyProject\\SrcFiles\\Main.CPP",     200);
+            tree.AddFile      (L"C:\\MockRoot\\MyProject\\SrcFiles\\Helper.CPP",   300);
+
+            ScopedFileSystemMock mock (tree);
+
+            auto cmdLine = make_shared<CCommandLine> ();
+            cmdLine->m_fTree = true;
+
+            auto console = make_shared<CCapturingConsole> ();
+            auto config  = make_shared<CConfig> ();
+            console->Initialize (config);
+
+            CResultsDisplayerTree treeDisplayer (cmdLine, console, config, false);
+            CMultiThreadedLister  lister        (cmdLine, console, config);
+            CDriveInfo            driveInfo      (L"C:\\MockRoot");
+            SListingTotals        totals       = {};
+
+            vector<filesystem::path> fileSpecs = { L"*" };
+
+            HRESULT hr = lister.ProcessDirectoryMultiThreaded (
+                driveInfo,
+                L"C:\\MockRoot",
+                fileSpecs,
+                treeDisplayer,
+                IResultsDisplayer::EDirectoryLevel::Initial,
+                totals);
+
+            Assert::IsTrue (SUCCEEDED (hr), L"Tree mode with mixed-case dirs should succeed");
+
+            //
+            // Verify all files were found across all levels
+            //
+
+            Assert::AreEqual (3u, totals.m_cFiles, L"Should have 3 files total");
+            Assert::AreEqual (1500ull, totals.m_uliFileBytes.QuadPart, L"Should have 1500 bytes total");
+
+            //
+            // Verify output contains the mixed-case directory and file names,
+            // confirming the tree recursed into all subdirectories
+            //
+
+            wstring stripped = StripAnsiCodes (console->m_strCaptured);
+
+            Assert::IsTrue (stripped.find (L"MyProject")  != wstring::npos,  L"Should contain MyProject");
+            Assert::IsTrue (stripped.find (L"Build")      != wstring::npos,  L"Should contain Build");
+            Assert::IsTrue (stripped.find (L"SrcFiles")   != wstring::npos,  L"Should contain SrcFiles");
+            Assert::IsTrue (stripped.find (L"output.exe") != wstring::npos,  L"Should contain output.exe");
+            Assert::IsTrue (stripped.find (L"Main.CPP")   != wstring::npos,  L"Should contain Main.CPP");
+            Assert::IsTrue (stripped.find (L"Helper.CPP") != wstring::npos,  L"Should contain Helper.CPP");
+        }
+
     };
 }
 

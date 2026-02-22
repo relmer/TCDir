@@ -401,7 +401,7 @@ HRESULT CMultiThreadedLister::EnumerateSubdirectories (shared_ptr<CDirectoryInfo
         {
             if (CFlag::IsSet (entry.dwFileAttributes, FILE_ATTRIBUTE_DIRECTORY))
             {
-                seenDirs.insert (ToLower (entry.cFileName));
+                seenDirs.insert (entry.m_strLowerName);
             }
         }
     }
@@ -895,159 +895,8 @@ HRESULT CMultiThreadedLister::PrintDirectoryTreeMode (
 
     treeDisplayer.BeginDirectory (*pDirInfo);
 
-    {
-        //
-        // Build lookup from lowercase filename → child CDirectoryInfo
-        //
-
-        unordered_map<wstring, shared_ptr<CDirectoryInfo>> childMap;
-
-        for (const auto & pChild : pDirInfo->m_vChildren)
-        {
-            childMap[ToLower (pChild->m_dirPath.filename().wstring())] = pChild;
-        }
-
-        //
-        // When a file mask is active, directories with no matching files
-        // anywhere in their subtree are pruned from the display.  Use
-        // a look-ahead pattern: for each entry, determine its visibility;
-        // then peek forward to find the next visible entry to decide
-        // whether this entry is last (└──) or middle (├──).
-        //
-        // When m_fTreePruningActive is false (no file mask, or all specs
-        // are "*"), every directory is visible — no waiting needed.
-        //
-
-        size_t cEntries = pDirInfo->m_vMatches.size();
-
-        //
-        // Display each visible entry interleaved with directory recursion
-        //
-
-        for (size_t i = 0; i < cEntries; ++i)
-        {
-            if (StopRequested())
-            {
-                CHR (E_ABORT);
-            }
-
-            const FileInfo & entry  = pDirInfo->m_vMatches[i];
-            bool             fIsDir = (entry.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0;
-
-            //
-            // Determine visibility of this entry.
-            // Files are always visible.  Directories are visible only if
-            // they (or a descendant) have matching files, or if pruning
-            // is not active.
-            //
-
-            if (fIsDir && m_fTreePruningActive)
-            {
-                auto it = childMap.find (ToLower (wstring (entry.cFileName)));
-
-                if (it != childMap.end() && !WaitForTreeVisibility (it->second))
-                {
-                    continue;   // Prune: no matching descendants
-                }
-            }
-
-            //
-            // Look ahead to find the next visible entry to determine
-            // whether the current entry is last.
-            //
-
-            bool fIsLast = true;
-
-            for (size_t j = i + 1; j < cEntries; ++j)
-            {
-                const FileInfo & nextEntry  = pDirInfo->m_vMatches[j];
-                bool             fNextIsDir = (nextEntry.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0;
-
-                if (!fNextIsDir)
-                {
-                    fIsLast = false;   // A file follows — always visible
-                    break;
-                }
-
-                //
-                // Next entry is a directory.  If pruning is not active,
-                // it's visible.  Otherwise wait for its visibility.
-                //
-
-                if (!m_fTreePruningActive)
-                {
-                    fIsLast = false;
-                    break;
-                }
-
-                auto itNext = childMap.find (ToLower (wstring (nextEntry.cFileName)));
-
-                if (itNext != childMap.end() && WaitForTreeVisibility (itNext->second))
-                {
-                    fIsLast = false;
-                    break;
-                }
-
-                //
-                // That directory was pruned — keep looking.
-                //
-            }
-
-            treeDisplayer.DisplaySingleEntry (entry, treeState, fIsLast, i);
-
-            //
-            // If the entry is a directory, find its child node and recurse
-            // (unless depth limit has been reached)
-            //
-
-            if (fIsDir)
-            {
-                bool fDepthLimited = (m_cmdLinePtr->m_cMaxDepth > 0 &&
-                                      treeState.Depth() + 1 >= m_cmdLinePtr->m_cMaxDepth);
-
-                bool fIsReparse = CFlag::IsSet (entry.dwFileAttributes, FILE_ATTRIBUTE_REPARSE_POINT);
-
-                if (!fDepthLimited && !fIsReparse)
-                {
-                    auto it = childMap.find (ToLower (wstring (entry.cFileName)));
-
-                    if (it != childMap.end())
-                    {
-                        //
-                        // Flush everything displayed so far (including this
-                        // directory entry) before recursing so the user sees
-                        // output immediately rather than waiting for the
-                        // entire subtree to finish.
-                        //
-                        // Save the parent's per-directory display state
-                        // because BeginDirectory in the child will overwrite
-                        // the displayer's member variables (field widths,
-                        // sync root flag, owners).  Restore after returning
-                        // so that remaining entries in this directory render
-                        // with the correct column widths.
-                        //
-
-                        m_consolePtr->Flush();
-
-                        auto savedState = treeDisplayer.SaveDirectoryState();
-
-                        treeState.Push (!fIsLast);
-
-                        hr = PrintDirectoryTreeMode (it->second,
-                                                     driveInfo,
-                                                     treeDisplayer,
-                                                     IResultsDisplayer::EDirectoryLevel::Subdirectory,
-                                                     totals,
-                                                     treeState);
-                        treeState.Pop();
-                        IGNORE_RETURN_VALUE (hr, S_OK);
-
-                        treeDisplayer.RestoreDirectoryState (move (savedState));
-                    }
-                }
-            }
-        }
-    }
+    hr = DisplayTreeEntries (pDirInfo, driveInfo, treeDisplayer, totals, treeState);
+    CHR (hr);
 
     //
     // Flush any trailing file entries that followed the last subdirectory
@@ -1068,6 +917,238 @@ HRESULT CMultiThreadedLister::PrintDirectoryTreeMode (
     }
 
 
+
+Error:
+    return hr;
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CMultiThreadedLister::DisplayTreeEntries
+//
+//  Iterates through a directory node's sorted entries, displaying each
+//  visible item (pruning invisible directories when a file mask is active)
+//  and recursing into child directories for interleaved DFS output.
+//
+////////////////////////////////////////////////////////////////////////////////
+
+HRESULT CMultiThreadedLister::DisplayTreeEntries (
+    shared_ptr<CDirectoryInfo>   pDirInfo,
+    const CDriveInfo           & driveInfo,
+    CResultsDisplayerTree      & treeDisplayer,
+    SListingTotals             & totals,
+    STreeConnectorState        & treeState)
+{
+    HRESULT hr = S_OK;
+
+
+
+    //
+    // Build lookup from lowercase filename → child CDirectoryInfo
+    //
+
+    ChildMap childMap;
+
+    for (const auto & pChild : pDirInfo->m_vChildren)
+    {
+        childMap[ToLower (pChild->m_dirPath.filename().wstring())] = pChild;
+    }
+
+    size_t cEntries = pDirInfo->m_vMatches.size();
+
+
+
+    //
+    // Display each visible entry interleaved with directory recursion.
+    //
+    // When a file mask is active, directories with no matching files
+    // anywhere in their subtree are pruned from the display.  Use
+    // a look-ahead pattern: for each entry, determine its visibility;
+    // then peek forward to find the next visible entry to decide
+    // whether this entry is last (└──) or middle (├──).
+    //
+    // When m_fTreePruningActive is false (no file mask, or all specs
+    // are "*"), every directory is visible — no waiting needed.
+    //
+
+    for (size_t i = 0; i < cEntries; ++i)
+    {
+        if (StopRequested())
+        {
+            CHR (E_ABORT);
+        }
+
+        const FileInfo & entry  = pDirInfo->m_vMatches[i];
+        bool             fIsDir = (entry.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0;
+
+        //
+        // Determine visibility of this entry.
+        // Files are always visible.  Directories are visible only if
+        // they (or a descendant) have matching files, or if pruning
+        // is not active.
+        //
+
+        if (fIsDir && m_fTreePruningActive)
+        {
+            auto it = childMap.find (entry.m_strLowerName);
+
+            if (it != childMap.end() && !WaitForTreeVisibility (it->second))
+            {
+                continue;   // Prune: no matching descendants
+            }
+        }
+
+        bool fIsLast = IsLastVisibleEntry (pDirInfo->m_vMatches, i, childMap);
+
+        treeDisplayer.DisplaySingleEntry (entry, treeState, fIsLast, i);
+
+        //
+        // If the entry is a directory, find its child node and recurse.
+        //
+
+        if (fIsDir)
+        {
+            auto it = childMap.find (entry.m_strLowerName);
+
+            if (it != childMap.end())
+            {
+                hr = RecurseIntoChildDirectory (it->second, entry, fIsLast, driveInfo, treeDisplayer, totals, treeState);
+                IGNORE_RETURN_VALUE (hr, S_OK);
+            }
+        }
+    }
+
+Error:
+    return hr;
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CMultiThreadedLister::IsLastVisibleEntry
+//
+//  Looks ahead from the current index to determine whether the entry is
+//  the last visible one in the list.  Files are always visible; directories
+//  are visible only when pruning is inactive or the directory has matching
+//  descendants.
+//
+////////////////////////////////////////////////////////////////////////////////
+
+bool CMultiThreadedLister::IsLastVisibleEntry (
+    const vector<FileInfo> & vMatches,
+    size_t                   iCurrent,
+    const ChildMap         & childMap)
+{
+    size_t cEntries = vMatches.size();
+
+
+
+    for (size_t j = iCurrent + 1; j < cEntries; ++j)
+    {
+        const FileInfo & nextEntry  = vMatches[j];
+        bool             fNextIsDir = (nextEntry.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0;
+
+        if (!fNextIsDir)
+        {
+            return false;   // A file follows — always visible
+        }
+
+        //
+        // Next entry is a directory.  If pruning is not active,
+        // it's visible.  Otherwise wait for its visibility.
+        //
+
+        if (!m_fTreePruningActive)
+        {
+            return false;
+        }
+
+        auto itNext = childMap.find (nextEntry.m_strLowerName);
+
+        if (itNext != childMap.end() && WaitForTreeVisibility (itNext->second))
+        {
+            return false;
+        }
+
+        //
+        // That directory was pruned — keep looking.
+        //
+    }
+
+    return true;
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CMultiThreadedLister::RecurseIntoChildDirectory
+//
+//  Recurses into a child directory during tree-mode display.  Checks
+//  depth limit and reparse-point status before recursing.  Flushes the
+//  console and saves/restores the displayer's per-directory state so that
+//  column widths are correct across nesting levels.
+//
+////////////////////////////////////////////////////////////////////////////////
+
+HRESULT CMultiThreadedLister::RecurseIntoChildDirectory (
+    shared_ptr<CDirectoryInfo>   pChild,
+    const FileInfo             & parentEntry,
+    bool                         fIsLast,
+    const CDriveInfo           & driveInfo,
+    CResultsDisplayerTree      & treeDisplayer,
+    SListingTotals             & totals,
+    STreeConnectorState        & treeState)
+{
+    HRESULT                hr             = S_OK;
+
+    bool                   fDepthLimited  = (m_cmdLinePtr->m_cMaxDepth > 0 &&
+                                             treeState.Depth() + 1 >= m_cmdLinePtr->m_cMaxDepth);
+    bool                   fIsReparse     = CFlag::IsSet (parentEntry.dwFileAttributes, FILE_ATTRIBUTE_REPARSE_POINT);
+
+    CResultsDisplayerTree::SDirectoryDisplayState savedState;
+
+
+
+    BAIL_OUT_IF (fDepthLimited || fIsReparse, S_OK);
+
+    //
+    // Flush everything displayed so far (including this directory entry)
+    // before recursing so the user sees output immediately rather than
+    // waiting for the entire subtree to finish.
+    //
+    // Save the parent's per-directory display state because
+    // BeginDirectory in the child will overwrite the displayer's member
+    // variables (field widths, sync root flag, owners).  Restore after
+    // returning so that remaining entries in this directory render with
+    // the correct column widths.
+    //
+
+    m_consolePtr->Flush();
+
+    savedState = treeDisplayer.SaveDirectoryState();
+
+    treeState.Push (!fIsLast);
+
+    hr = PrintDirectoryTreeMode (pChild,
+                                 driveInfo,
+                                 treeDisplayer,
+                                 IResultsDisplayer::EDirectoryLevel::Subdirectory,
+                                 totals,
+                                 treeState);
+    treeState.Pop();
+    IGNORE_RETURN_VALUE (hr, S_OK);
+
+    treeDisplayer.RestoreDirectoryState (move (savedState));
 
 Error:
     return hr;
