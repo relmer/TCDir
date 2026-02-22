@@ -107,11 +107,15 @@ protected:
     // Protected methods
     //
     
-    HRESULT HandleSwitch     (LPCWSTR pszArg, int & cArg, WCHAR ** & ppszArg);
-    HRESULT HandleLongSwitch (LPCWSTR pszArg, int & cArg, WCHAR ** & ppszArg);
-    HRESULT OrderByHandler   (LPCWSTR pszArg);
-    HRESULT AttributeHandler (LPCWSTR pszArg);
-    HRESULT TimeFieldHandler (LPCWSTR pszArg);
+    HRESULT HandleSwitch                  (LPCWSTR pszArg, int & cArg, WCHAR ** & ppszArg);
+    HRESULT HandleLongSwitch              (LPCWSTR pszArg, int & cArg, WCHAR ** & ppszArg);
+    static bool IsRecognizedLongSwitch    (const wstring & strSwitch);
+    HRESULT ParseSwitch                   (LPCWSTR pszArg, int & cArg, WCHAR ** & ppszArg);
+    HRESULT RejectSingleDashLongSwitch    (LPCWSTR pszSwitchArg);
+    HRESULT ValidateSwitchCombinations    (void);
+    HRESULT OrderByHandler                (LPCWSTR pszArg);
+    HRESULT AttributeHandler              (LPCWSTR pszArg);
+    HRESULT TimeFieldHandler              (LPCWSTR pszArg);
 
     
 };

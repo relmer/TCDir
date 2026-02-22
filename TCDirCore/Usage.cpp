@@ -316,15 +316,15 @@ void CUsage::DisplaySynopsis (CConsole & console, wchar_t chPrefix)
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-void CUsage::DisplayUsage (CConsole & console, wchar_t chPrefix)
+void CUsage::DisplayUsage (CConsole & console, wchar_t chPrefix, optional<bool> fIconsCli)
 {
     // Format strings with indexed placeholders:
     // {0} = szShort (single-char switch prefix: "-" or "/")
     // {1} = pszLong (long switch prefix: "--" or "/")
     // {2} = pszMDisable (" -M-" or " /M-")
-    // {3} = CircleHollow (with color marker)
-    // {4} = CircleHalfFilled (with color marker)
-    // {5} = CircleFilled (with color marker)
+    // {3} = Cloud-only symbol (Unicode circle or Nerd Font icon)
+    // {4} = Locally available symbol
+    // {5} = Always local symbol
     // {6} = pszLongPad (extra padding for "/" mode to align descriptions)
     // {7} = GetArchitecture()
     // {8} = buildTimestamp
@@ -395,10 +395,40 @@ void CUsage::DisplayUsage (CConsole & console, wchar_t chPrefix)
     wstring_view pszLongPad     = (chPrefix == L'-') ? L""     : L" ";
     wstring      buildTimestamp = VERSION_BUILD_TIMESTAMP;
 
-    // Cloud status symbols (color markers are in the format string itself)
-    wchar_t szCloudOnly    = UnicodeSymbols::CircleHollow;
-    wchar_t szLocallyAvail = UnicodeSymbols::CircleHalfFilled;
-    wchar_t szAlwaysLocal  = UnicodeSymbols::CircleFilled;
+    // Resolve icon state: CLI flag > env var > auto-detection
+    const CConfig & config   = *console.m_configPtr;
+    bool            fIcons   = false;
+
+    if (fIconsCli.has_value())
+    {
+        fIcons = fIconsCli.value();
+    }
+    else if (config.m_fIcons.has_value())
+    {
+        fIcons = config.m_fIcons.value();
+    }
+    else
+    {
+        CNerdFontDetector  detector;
+        EDetectionResult   result = EDetectionResult::NotDetected;
+        HANDLE             hOut   = GetStdHandle (STD_OUTPUT_HANDLE);
+
+        if (SUCCEEDED (detector.Detect (hOut, *config.m_pEnvironmentProvider, result)))
+        {
+            fIcons = (result == EDetectionResult::Detected);
+        }
+    }
+
+    // Cloud status symbols: use Nerd Font icons when active, Unicode circles otherwise
+    auto ToWString = [] (char32_t cp) -> wstring
+    {
+        WideCharPair pair = CodePointToWideChars (cp);
+        return wstring (pair.chars, pair.count);
+    };
+
+    wstring szCloudOnly    = fIcons ? ToWString (config.m_iconCloudOnly)        : wstring (1, UnicodeSymbols::CircleHollow);
+    wstring szLocallyAvail = fIcons ? ToWString (config.m_iconLocallyAvailable) : wstring (1, UnicodeSymbols::CircleHalfFilled);
+    wstring szAlwaysLocal  = fIcons ? ToWString (config.m_iconAlwaysLocal)      : wstring (1, UnicodeSymbols::CircleFilled);
 
 
 

@@ -430,11 +430,11 @@ void CResultsDisplayerNormal::DisplayCloudStatusSymbol (ECloudStatus status)
 
 
             
-            m_consolePtr->ColorPrintf (L"%s%s ", s_krgCloudColorMarkers[idx], szIcon);
+            m_consolePtr->ColorPrintf (L" %s%s ", s_krgCloudColorMarkers[idx], szIcon);
         }
         else
         {
-            m_consolePtr->ColorPrintf (L"{Default}  ");
+            m_consolePtr->ColorPrintf (L"{Default}    ");
         }
     }
     else
@@ -443,7 +443,7 @@ void CResultsDisplayerNormal::DisplayCloudStatusSymbol (ECloudStatus status)
 
 
 
-        m_consolePtr->ColorPrintf (L"%s%c ", entry.pszColorMarker, entry.chSymbol);
+        m_consolePtr->ColorPrintf (L" %s%c ", entry.pszColorMarker, entry.chSymbol);
     }
 }
 
@@ -604,21 +604,25 @@ void CResultsDisplayerNormal::DisplayFileStreams (const FileInfo & fileEntry, si
     //   Date/time: 21 chars (10 date + 2 spaces + 8 time + 1 space)
     //   Attributes: 9 chars
     //   Size: "  %*s" (2 leading spaces + width, no trailing space)
-    //   Cloud status: 2 chars (symbol + space)
+    //   Cloud status: leading space + symbol/icon + trailing space
+    //     Non-icon mode: 3 chars (space + symbol + space)
+    //     Icon mode:     4 visual cols (space + 2-col icon + space)
     //   Owner: cchOwnerWidth + 1 for trailing space (if showing owner)
     // Use same width calculation as DisplayResultsNormalFileSize (max of file size or 5 for "<DIR>")
     //
 
-    size_t cchMaxFileSize = max (cchStringLengthOfMaxFileSize, size_t (5));
+    size_t  cchMaxFileSize   = max (cchStringLengthOfMaxFileSize, size_t (5));
+    LPCWSTR pszCloudStatusGap = m_fIconsActive ? L"    " : L"   ";
 
     for (const SStreamInfo & si : fileEntry.m_vStreams)
     {
         wstring pszStreamSize   = FormatNumberWithSeparators (si.m_liSize.QuadPart);
         int     cchOwnerPadding = (cchOwnerWidth > 0) ? static_cast<int>(cchOwnerWidth + 1) : 0;
 
-        m_consolePtr->ColorPrintf (L"{Default}%*c{Size}  %*s{Default}  %*s{Stream}%s%s\n",
+        m_consolePtr->ColorPrintf (L"{Default}%*c{Size}  %*s{Default}%s%*s{Stream}%s%s\n",
                                    30, L' ',
                                    static_cast<int>(cchMaxFileSize), pszStreamSize.c_str(),
+                                   pszCloudStatusGap,
                                    cchOwnerPadding, L"",
                                    fileEntry.cFileName, 
                                    si.m_strName.c_str());

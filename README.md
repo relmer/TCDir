@@ -1,11 +1,75 @@
 # TCDir
 
+[![CI](https://github.com/relmer/TCDir/actions/workflows/ci.yml/badge.svg)](https://github.com/relmer/TCDir/actions/workflows/ci.yml)
+[![Latest Release](https://img.shields.io/github/v/release/relmer/TCDir)](https://github.com/relmer/TCDir/releases/latest)
+[![License: MIT](https://img.shields.io/github/license/relmer/TCDir)](LICENSE)
+<!--
+[![Downloads](https://img.shields.io/github/downloads/relmer/TCDir/total)](https://github.com/relmer/TCDir/releases)
+-->
 TCDir ("Technicolor Directory") is a fast, colorized directory listing tool for Windows consoles.
 It's designed as a practical `dir`-style command with useful defaults (color by extension/attributes, Nerd Font file/folder icons, sorting, recursion, wide output, and a multi-threaded enumerator).
 
 ![TCDir basic listing](Assets/TCDir.png)
 
+## What's New
+
+| Version | Highlights |
+|---|---|
+| **5.1** | `--Tree` hierarchical directory view with depth control |
+| **5.0** | Nerd Font file/folder icons (~200 extensions, ~65 directories) |
+| **4.2** | Cloud sync status badges (OneDrive, iCloud), file owner, NTFS alternate data streams |
+| **4.1** | `-` and `--` style switch prefixes |
+| **4.0** | Multi-threaded enumeration (2–4× faster recursive listings), ARM64 native binary |
+
+See [CHANGELOG.md](CHANGELOG.md) for full release history.
+
 Hat tip to [Chris Kirmse](https://github.com/ckirmse) whose excellent [ZDir](https://github.com/ckirmse/ZDir) from the '90s was the original inspiration for TCDir.
+
+## Why TCDir?
+
+| Feature | `dir` | TCDir | [eza](https://github.com/eza-community/eza) | [lsd](https://github.com/lsd-rs/lsd) |
+|---|:---:|:---:|:---:|:---:|
+| Color-coded by extension & attribute | — | ✅ | ✅ | ✅ |
+| Cloud sync status (OneDrive, iCloud) | — | ✅ | — | — |
+| Nerd Font file/folder icons | — | ✅ | ✅ | ✅ |
+| Tree view with full metadata | — | ✅ | ✅ | ✅ |
+| Multi-threaded enumeration | — | ✅ | — | — |
+| Native Windows (no WSL/MSYS) | ✅ | ✅ | ⚠️ | ⚠️ |
+| Familiar `dir` switch syntax | ✅ | ✅ | — | — |
+| ARM64 native binary | ✅ | ✅ | — | — |
+| NTFS alternate data streams | ✅ | ✅ | — | — |
+| Configurable via environment variable | — | ✅ | — | — |
+
+## Installation
+
+### Download
+
+Grab the latest binary for your architecture:
+
+- [**TCDir.exe**](https://github.com/relmer/TCDir/releases/latest/download/TCDir.exe) — x64 (Intel/AMD 64-bit)
+- [**TCDir-ARM64.exe**](https://github.com/relmer/TCDir/releases/latest/download/TCDir-ARM64.exe) — ARM64 (Snapdragon, etc.)
+
+Place the `.exe` somewhere on your `PATH`, or add its directory to your `PATH`.
+
+See all releases on the [Releases page](https://github.com/relmer/TCDir/releases).
+
+<!--
+### Package managers (coming soon)
+
+```powershell
+winget install relmer.TCDir
+scoop install tcdir
+```
+-->
+
+### Shell integration
+
+Make TCDir your default directory listing command:
+
+```powershell
+# Add to your PowerShell profile ($PROFILE):
+Set-Alias dir tcdir -Option AllScope
+```
 
 ## Requirements
 

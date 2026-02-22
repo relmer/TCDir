@@ -940,6 +940,43 @@ namespace UnitTest
 
 
             Assert::IsTrue (FAILED(hr));
+            Assert::IsTrue (cl.m_strValidationError.find(L"-Tree") != wstring::npos);
+            Assert::IsTrue (cl.m_strValidationError.find(L"--Tree") != wstring::npos);
+        }
+
+
+
+
+        TEST_METHOD(ParseDepthSingleDashFails)
+        {
+            CCommandLine    cl;
+            const wchar_t * a1      = L"--Tree";
+            const wchar_t * a2      = L"-depth=2";
+            wchar_t       * argv[]  = { const_cast<wchar_t *>(a1), const_cast<wchar_t *>(a2) };
+            HRESULT         hr      = cl.Parse(2, argv);
+
+
+
+            Assert::IsTrue (FAILED(hr));
+            Assert::IsTrue (cl.m_strValidationError.find(L"-depth") != wstring::npos);
+            Assert::IsTrue (cl.m_strValidationError.find(L"--depth") != wstring::npos);
+        }
+
+
+
+
+        TEST_METHOD(ParseUnrecognizedSingleDashNoSuggestion)
+        {
+            CCommandLine    cl;
+            const wchar_t * a1      = L"-banana";
+            wchar_t       * argv1[] = { const_cast<wchar_t *>(a1) };
+            HRESULT         hr      = cl.Parse(1, argv1);
+
+
+
+            Assert::IsTrue (FAILED(hr));
+            Assert::IsTrue (cl.m_strValidationError.find(L"-banana") != wstring::npos);
+            Assert::IsTrue (cl.m_strValidationError.find(L"--banana") == wstring::npos);  // No "Did you mean" for unrecognized switches
         }
 
 

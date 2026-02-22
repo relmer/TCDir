@@ -43,7 +43,7 @@ static HRESULT ProcessCommandLine (
     hr = cmdline.Parse (argc - 1, argv + 1);
     if (cmdline.m_fHelp || FAILED (hr))
     {
-        CUsage::DisplayUsage (console, cmdline.GetSwitchPrefix());
+        CUsage::DisplayUsage (console, cmdline.GetSwitchPrefix(), cmdline.m_fIcons);
 
         if (!cmdline.m_strValidationError.empty())
         {

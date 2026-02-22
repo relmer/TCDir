@@ -124,58 +124,18 @@ HRESULT CCommandLine::Parse (int cArg, WCHAR ** ppszArg)
     {
         LPCWSTR pszArg = *ppszArg;
 
-        switch (*pszArg)
+
+
+        if (*pszArg == L'-' || *pszArg == L'/')
         {
-            //
-            // Switches start with a '-' or a '/'
-            // Long switches use '--' prefix (e.g., --env, --config)
-            //
-            
-            case L'-':
-            case L'/':
-            {
-                m_chSwitchPrefix = *pszArg;
-
-                LPCWSTR pszSwitchArg  = pszArg + 1;
-                bool    fLongOption   = false;
-
-                // Check for '--' prefix (long option style)
-                if (*pszArg == L'-' && *(pszArg + 1) == L'-')
-                {
-                    pszSwitchArg = pszArg + 2;
-                    fLongOption  = true;
-                }
-
-                //
-                // Detect long switch: 3+ chars without ':' or '-' at position 1
-                // Reject single-dash long switches (e.g., -env) - must use --env
-                //
-
-                size_t cchArg = wcslen (pszSwitchArg);
-                bool   fLooksLikeLongSwitch = (cchArg >= 3 && pszSwitchArg[1] != L':' && pszSwitchArg[1] != L'-');
-
-                if (fLooksLikeLongSwitch && !fLongOption && m_chSwitchPrefix == L'-')
-                {
-                    hr = E_INVALIDARG;
-                }
-                else
-                {
-                    hr = HandleSwitch (pszSwitchArg, cArg, ppszArg);
-                }
-
-                CHR (hr);
-                
-                break;
-            }
-
-
-            //
-            // If it's not a switch, it must be a file mask
-            //
-
-            default:                
-                m_listMask.emplace_back (pszArg);
-                break;
+            hr = ParseSwitch (pszArg, cArg, ppszArg);
+            CHR (hr);
+        }
+        else
+        { 
+            // If it's not a switch, it's a file mask.  
+            // Add it to the list of masks to apply (e.g., "dir *.txt *.docx")
+            m_listMask.emplace_back (pszArg);
         }
 
         --cArg;
@@ -185,6 +145,147 @@ HRESULT CCommandLine::Parse (int cArg, WCHAR ** ppszArg)
     //
     // Post-parse validation: check switch conflicts
     //
+
+    hr = ValidateSwitchCombinations ();
+    CHR (hr);
+
+
+
+Error:
+    //
+    // Resolve Default size format: Auto in tree mode, Bytes in non-tree
+    // (must be after Error: label so it runs even when cArg == 0 and
+    // tree mode was activated via TCDIR env var only)
+    //
+
+    if (m_eSizeFormat == ESizeFormat::Default)
+    {
+        m_eSizeFormat = m_fTree ? ESizeFormat::Auto : ESizeFormat::Bytes;
+    }
+
+    return hr;
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CCommandLine::ParseSwitch
+//
+//  Handles a single switch argument.  Detects '--' vs '-' vs '/' prefix,
+//  rejects single-dash long switches with a helpful error, and dispatches
+//  to HandleSwitch for actual processing.
+//
+////////////////////////////////////////////////////////////////////////////////
+
+HRESULT CCommandLine::ParseSwitch (LPCWSTR pszArg, int & cArg, WCHAR ** & ppszArg)
+{
+    HRESULT hr          = S_OK;
+    LPCWSTR pszSwitchArg = pszArg + 1;
+    bool    fLongOption  = false;
+
+
+
+    m_chSwitchPrefix = *pszArg;
+
+    //
+    // Check for '--' prefix (long option style)
+    //
+
+    if (*pszArg == L'-' && *(pszArg + 1) == L'-')
+    {
+        pszSwitchArg = pszArg + 2;
+        fLongOption  = true;
+    }
+
+    //
+    // Detect long switch: 3+ chars without ':' or '-' at position 1
+    // Reject single-dash long switches (e.g., -env) - must use --env
+    //
+
+    size_t cchArg = wcslen (pszSwitchArg);
+    bool   fLooksLikeLongSwitch = (cchArg >= 3 && pszSwitchArg[1] != L':' && pszSwitchArg[1] != L'-');
+
+    CBREx (!(fLooksLikeLongSwitch && !fLongOption && m_chSwitchPrefix == L'-'),
+           RejectSingleDashLongSwitch (pszSwitchArg));
+
+    hr = HandleSwitch (pszSwitchArg, cArg, ppszArg);
+
+Error:
+    return hr;
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CCommandLine::RejectSingleDashLongSwitch
+//
+//  Sets m_strValidationError for a mis-prefixed long switch.
+//  If the switch name matches a known long switch, includes a
+//  "Did you mean --<name>?" hint.  Always returns E_INVALIDARG.
+//
+////////////////////////////////////////////////////////////////////////////////
+
+HRESULT CCommandLine::RejectSingleDashLongSwitch (LPCWSTR pszSwitchArg)
+{
+    //
+    // Extract just the switch name (before any '=' separator)
+    //
+
+    wstring strSwitchName (pszSwitchArg);
+    size_t  posEquals = strSwitchName.find (L'=');
+
+    if (posEquals != wstring::npos)
+    {
+        strSwitchName.resize (posEquals);
+    }
+
+    //
+    // Strip trailing '-' (negation suffix) for lookup
+    //
+
+    wstring strLookup = strSwitchName;
+
+    if (!strLookup.empty () && strLookup.back () == L'-')
+    {
+        strLookup.pop_back ();
+    }
+
+    if (IsRecognizedLongSwitch (strLookup))
+    {
+        m_strValidationError = L"Unknown switch: -" + strSwitchName + L".  Did you mean --" + strSwitchName + L"?";
+    }
+    else
+    {
+        m_strValidationError = L"Unknown switch: -" + strSwitchName + L".";
+    }
+
+    return E_INVALIDARG;
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CCommandLine::ValidateSwitchCombinations
+//
+//  Post-parse validation: checks for conflicting switch combinations
+//  and sets m_strValidationError with a descriptive message.
+//
+////////////////////////////////////////////////////////////////////////////////
+
+HRESULT CCommandLine::ValidateSwitchCombinations (void)
+{
+    HRESULT hr = S_OK;
+
+
 
     if (m_fTree)
     {
@@ -237,18 +338,7 @@ HRESULT CCommandLine::Parse (int cArg, WCHAR ** ppszArg)
         CBREx (false, E_INVALIDARG);
     }
 
-    //
-    // Resolve Default size format: Auto in tree mode, Bytes in non-tree
-    // (must be after Error: label so it runs even when cArg == 0 and
-    // tree mode was activated via TCDIR env var only)
-    //
-
 Error:
-    if (m_eSizeFormat == ESizeFormat::Default)
-    {
-        m_eSizeFormat = m_fTree ? ESizeFormat::Auto : ESizeFormat::Bytes;
-    }
-
     return hr;
 }
 
@@ -523,6 +613,48 @@ HRESULT CCommandLine::HandleLongSwitch (LPCWSTR pszArg, int & cArg, WCHAR ** & p
 
 Error:
     return hr;
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CCommandLine::IsRecognizedLongSwitch
+//
+//  Returns true if the given name (case-insensitive, without prefix or '=')
+//  matches any known long switch.
+//
+////////////////////////////////////////////////////////////////////////////////
+
+bool CCommandLine::IsRecognizedLongSwitch (const wstring & strSwitch)
+{
+    static constexpr LPCWSTR s_krgRecognizedNames[] =
+    {
+        L"env",
+        L"config",
+        L"owner",
+        L"streams",
+        L"debug",
+        L"icons",
+        L"tree",
+        L"depth",
+        L"treeindent",
+        L"size",
+    };
+
+
+
+    for (LPCWSTR pszName : s_krgRecognizedNames)
+    {
+        if (_wcsicmp (strSwitch.c_str (), pszName) == 0)
+        {
+            return true;
+        }
+    }
+
+    return false;
 }
 
 
