@@ -250,11 +250,11 @@ void CResultsDisplayerNormal::DisplayResultsNormalFileSize (const WIN32_FIND_DAT
     {
         if ((fileInfo.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) == 0)
         {
-            m_consolePtr->Printf (CConfig::EAttribute::Size, L" %7s ", FormatAbbreviatedSize (uliFileSize.QuadPart).c_str());
+            m_consolePtr->Printf (CConfig::EAttribute::Size, L"  %7s", FormatAbbreviatedSize (uliFileSize.QuadPart).c_str());
         }
         else
         {
-            m_consolePtr->Printf (CConfig::EAttribute::Directory, L"  <DIR>  ");
+            m_consolePtr->Printf (CConfig::EAttribute::Directory, L" <DIR>   ");
         }
 
         return;
@@ -269,7 +269,7 @@ void CResultsDisplayerNormal::DisplayResultsNormalFileSize (const WIN32_FIND_DAT
     if ((fileInfo.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) == 0)
     {
         m_consolePtr->Printf (CConfig::EAttribute::Size, 
-                              L" %*s ", 
+                              L"  %*s", 
                               cchMaxFileSize, 
                               FormatNumberWithSeparators (uliFileSize.QuadPart).c_str());
     }
@@ -277,7 +277,7 @@ void CResultsDisplayerNormal::DisplayResultsNormalFileSize (const WIN32_FIND_DAT
     {
         size_t cchLeftSidePadding = (cchMaxFileSize - kcchDirSize) / 2;            
         m_consolePtr->Printf (CConfig::EAttribute::Directory, 
-                              L" %*s%-*s ", 
+                              L"  %*s%-*s", 
                               cchLeftSidePadding, 
                               L"", 
                               cchMaxFileSize - cchLeftSidePadding, 
@@ -603,7 +603,7 @@ void CResultsDisplayerNormal::DisplayFileStreams (const FileInfo & fileEntry, si
     // Match normal file output format:
     //   Date/time: 21 chars (10 date + 2 spaces + 8 time + 1 space)
     //   Attributes: 9 chars
-    //   Size: " %*s " (1 leading space + width + 1 trailing space)
+    //   Size: "  %*s" (2 leading spaces + width, no trailing space)
     //   Cloud status: 2 chars (symbol + space)
     //   Owner: cchOwnerWidth + 1 for trailing space (if showing owner)
     // Use same width calculation as DisplayResultsNormalFileSize (max of file size or 5 for "<DIR>")
@@ -616,7 +616,7 @@ void CResultsDisplayerNormal::DisplayFileStreams (const FileInfo & fileEntry, si
         wstring pszStreamSize   = FormatNumberWithSeparators (si.m_liSize.QuadPart);
         int     cchOwnerPadding = (cchOwnerWidth > 0) ? static_cast<int>(cchOwnerWidth + 1) : 0;
 
-        m_consolePtr->ColorPrintf (L"{Default}%*c{Size} %*s {Default}  %*s{Stream}%s%s\n",
+        m_consolePtr->ColorPrintf (L"{Default}%*c{Size}  %*s{Default}  %*s{Stream}%s%s\n",
                                    30, L' ',
                                    static_cast<int>(cchMaxFileSize), pszStreamSize.c_str(),
                                    cchOwnerPadding, L"",

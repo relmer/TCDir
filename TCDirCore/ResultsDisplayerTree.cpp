@@ -225,7 +225,7 @@ void CResultsDisplayerTree::DisplayFileStreamsWithTreePrefix (const FileInfo & e
     {
         wstring pszStreamSize = FormatNumberWithSeparators (si.m_liSize.QuadPart);
 
-        m_consolePtr->ColorPrintf (L"{Default}%*c{Size} %*s {Default}  %*s",
+        m_consolePtr->ColorPrintf (L"{Default}%*c{Size}  %*s{Default}  %*s",
                                    30, L' ',
                                    static_cast<int>(cchMaxFileSize), pszStreamSize.c_str(),
                                    cchOwnerPadding, L"");

@@ -1514,16 +1514,16 @@ namespace UnitTest
             // Verify alignment: every file/directory line has its size
             // column at the same character position.
             //
-            // The size field is " XXXXXXX " (space + 7 chars + space)
-            // or "  <DIR>  " (2+5+2 = 9).  Either way it's a 9-char
+            // The size field is "  XXXXXXX" (2 spaces + 7 chars)
+            // or " <DIR>   " (1+5+3 = 9).  Either way it's a 9-char
             // block that immediately follows the attribute column.
-            // We locate the 7-char size by searching for known formatted
-            // strings and recording the column offset.
+            // We search for the complete 9-char field so that file
+            // sizes and <DIR> all match at the same column offset.
             //
             // Collect unique column positions where size strings start.
             //
 
-            vector<wstring>          sizeStrings = { L"  42 B ", L" 488 KB", L"1.00 MB", L"2.38 MB", L" <DIR> " };
+            vector<wstring>          sizeStrings = { L"    42 B ", L"   488 KB", L"  1.00 MB", L"  2.38 MB", L" <DIR>   " };
             unordered_set<size_t>    sizeColumns;
 
             for (const auto & ln : lines)
