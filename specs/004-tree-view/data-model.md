@@ -76,7 +76,7 @@ New class derived from `CResultsDisplayerNormal`. Overrides the display flow for
 
 **Inherits from `CResultsDisplayerNormal`**:
 - `GetTimeFieldForDisplay`, `DisplayResultsNormalDateAndTime`, `DisplayResultsNormalAttributes`, `DisplayResultsNormalFileSize`
-- `DisplayCloudStatusSymbol`, `DisplayRawAttributes`, `DisplayFileOwner`, `GetFileOwner`, `GetFileOwners`
+- `DisplayCloudStatusSymbol`, `DisplayRawAttributes` (note: `DisplayFileOwner`, `GetFileOwner`, `GetFileOwners` are inherited but unused since `--Owner` is incompatible with `--Tree`)
 - All `CResultsDisplayerWithHeaderAndFooter` base helpers (`DisplayDriveHeader`, `DisplayDirectorySummary`, `DisplayListingSummary`, `FormatNumberWithSeparators`, etc.)
 
 | Method | Override | Description |
@@ -85,7 +85,7 @@ New class derived from `CResultsDisplayerNormal`. Overrides the display flow for
 | `DisplayFileResults` | Yes (from `Normal`) | Same column sequence as Normal but prepends tree connector prefix before icon/filename; modified stream continuation with `│` prefix |
 | `DisplayTreeEntry` | New (private helper) | Internal helper called by `DisplayFileResults`: renders one file line — calls inherited column helpers, inserts tree prefix from `STreeConnectorState`, then icon + filename |
 | `DisplayFileStreamsWithTreePrefix` | New | Like inherited `DisplayFileStreams` but prepends tree continuation prefix (`│   `) to each stream line |
-| `SaveDirectoryState` | New | Captures per-directory display state (field widths, sync root flag, owner data) into an `SDirectoryDisplayState` struct so it can be restored after recursing into a child |
+| `SaveDirectoryState` | New | Captures per-directory display state (field widths, sync root flag) into an `SDirectoryDisplayState` struct so it can be restored after recursing into a child |
 | `RestoreDirectoryState` | New | Restores previously saved per-directory display state after returning from a child directory recursion |
 
 **`SDirectoryDisplayState` struct** (used by `SaveDirectoryState`/`RestoreDirectoryState`):
@@ -97,11 +97,47 @@ New class derived from `CResultsDisplayerNormal`. Overrides the display flow for
 | `m_owners` | `vector<wstring>` | Pre-computed owner strings for all files in the directory |
 | `m_cchMaxOwnerLength` | `size_t` | Max length of owner strings for column sizing |
 
-**Why save/restore is needed**: `BeginDirectory()` stores per-directory computed state in member variables. When tree mode recurses into a child, the child's `BeginDirectory()` overwrites the parent's state. Without save/restore, the parent's remaining entries after returning from the child render with incorrect column widths, causing misaligned output.
+**Why save/restore is needed**: `BeginDirectory()` stores per-directory computed state in member variables. When tree mode recurses into a child, the child's `BeginDirectory()` overwrites the parent's state. Without save/restore, the parent's remaining entries after returning from the child render with incorrect column widths, causing misaligned output. Note: owner fields (`m_owners`, `m_cchMaxOwnerLength`) are retained in the struct but unused since `--Owner` is incompatible with `--Tree`.
 
-**Pruning behavior**: When file masks are active, `DisplayResults` applies shallow pruning during tree traversal — leaf directories with zero matching files and no matching descendants are skipped. Intermediate directories are always rendered to preserve tree structure (FR-015).
+**Pruning behavior**: When file masks are active (`m_fTreePruningActive` on `CMultiThreadedLister`), empty subdirectories are pruned using a thread-safe event-based approach. Each `CDirectoryInfo` node carries `m_fDescendantMatchFound` and `m_fSubtreeComplete` atomics (set by producer threads) that the display thread waits on to determine visibility. See R14 in research.md for the full design. Leaf directories with zero matching files and no matching descendants are skipped. Intermediate directories are rendered to preserve tree structure (FR-015).
 
-### 5. FileComparator (extended)
+### 5. CDirectoryInfo (extended for tree pruning)
+
+Existing struct, extended with three new members for thread-safe empty-subdirectory pruning in tree mode with file masks. These members are only active when `m_fTreePruningActive` is true on the lister.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `m_wpParent` | `weak_ptr<CDirectoryInfo>` | empty | Back-pointer to parent node for upward propagation; avoids reference cycles. Only set when `m_fTreePruningActive`. |
+| `m_fDescendantMatchFound` | `atomic<bool>` | `false` | Set `true` by producer when this node or any descendant has `m_cFiles > 0`. Propagated upward through `m_wpParent` chain. |
+| `m_fSubtreeComplete` | `atomic<bool>` | `false` | Set `true` by producer when this node AND all descendants have finished enumeration. |
+
+**Thread safety**: `m_fDescendantMatchFound` and `m_fSubtreeComplete` are atomics — lock-free writes by producers, lock-free reads by the display thread. After setting either atomic, the producer notifies the existing `m_cvStatusChanged` condition variable to wake the display thread. The `m_wpParent` is set once during `EnqueueChildDirectory` (before the child is enqueued) and read-only thereafter — no synchronization needed.
+
+**Invariants**:
+- Once `m_fDescendantMatchFound` is `true`, it never reverts to `false`.
+- Once `m_fSubtreeComplete` is `true`, it never reverts to `false`.
+- A node with `m_fSubtreeComplete == true && m_fDescendantMatchFound == false` is definitively invisible (no matching descendants).
+- A node with `m_fDescendantMatchFound == true` is definitively visible (regardless of `m_fSubtreeComplete`).
+
+### 6. CMultiThreadedLister (extended for tree pruning)
+
+Existing class, extended with one new member and several new helper methods.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `m_fTreePruningActive` | `bool` | `false` | Set `true` when `m_fTree && !fAllStar` (tree mode with a non-`*` file mask). Gates all pruning logic. |
+
+**New methods**:
+
+| Method | Scope | Description |
+|--------|-------|-------------|
+| `PropagateDescendantMatch` | private | Walks up from a node through `m_wpParent`, setting `m_fDescendantMatchFound = true` and notifying `m_cvStatusChanged` on each ancestor. Stops when parent is null or already flagged. |
+| `TrySignalParentSubtreeComplete` | private | Checks if all of a parent's children have `m_fSubtreeComplete == true`. If so, sets the parent's `m_fSubtreeComplete`, notifies, and recurses to grandparent. |
+| `WaitForTreeVisibility` | private | Given a child `CDirectoryInfo`, waits on `m_cvStatusChanged` until `m_fDescendantMatchFound` or `m_fSubtreeComplete` is true. Returns `true` if visible. |
+
+**Removed**: `HasDescendantFiles` static method (replaced by the above).
+
+### 7. FileComparator (extended)
 
 The existing comparator is extended to support an interleaved sort mode where directories and files are sorted together without grouping.
 
@@ -109,7 +145,7 @@ The existing comparator is extended to support an interleaved sort mode where di
 |-------|------|-------------|
 | `m_fInterleavedSort` | `bool` | When true, directories and files sort together instead of directories first |
 
-### 6. Abbreviated Size Formatter (new helper)
+### 8. Abbreviated Size Formatter (new helper)
 
 A new formatting function (or method on the displayer base class) that converts a byte count to Explorer-style abbreviated format with a fixed 7-character width. The numeric portion is right-justified in a 4-character field, followed by a space, followed by the unit label left-justified in a 2-character field.
 
@@ -156,7 +192,13 @@ CCommandLine ──parses──> m_fTree, m_cMaxDepth, m_cTreeIndent
                        │                        ├─ Prepends tree prefix before icon/filename
                        │                        └─ Uses DisplayFileStreamsWithTreePrefix() for streams
                        │
-                       └─checks──> m_cMaxDepth vs STreeConnectorState::Depth()
+                       ├─checks──> m_cMaxDepth vs STreeConnectorState::Depth()
+                       │
+                       └─prunes──> m_fTreePruningActive (tree + file mask)
+                                       │
+                                       ├─ Producer: PropagateDescendantMatch (upward via m_wpParent)
+                                       ├─ Producer: TrySignalParentSubtreeComplete (upward via m_wpParent)
+                                       └─ Display:  WaitForTreeVisibility (blocks on m_cvStatusChanged)
 ```
 
 ## Tree Connector Visual Format

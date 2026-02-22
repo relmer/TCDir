@@ -1882,5 +1882,114 @@ namespace UnitTest
             Assert::IsFalse (cmdLine->m_fTree, L"m_fTree should be false after CLI override");
         }
 
+
+
+
+
+
+
+
+
+
+
+        ////////////////////////////////////////////////////////////////////////
+        //
+        //  TreeMode_FileMask_EmptySubdirsNotShown
+        //
+        //  Verifies that in tree mode with a file mask, subdirectories with
+        //  no matching files (and no descendants with matches) are not
+        //  displayed.  Only directories that contain matching files or have
+        //  descendants with matches should appear in the output.
+        //
+        ////////////////////////////////////////////////////////////////////////
+
+        TEST_METHOD(TreeMode_FileMask_EmptySubdirsNotShown)
+        {
+            //
+            // Setup:
+            //   C:\MockRoot\
+            //     target.exe   (1000 bytes) — matched
+            //     src\
+            //       main.cpp   (200 bytes)  — NOT matched
+            //       app.h      (300 bytes)  — NOT matched
+            //     docs\
+            //       readme.md  (400 bytes)  — NOT matched
+            //     bin\
+            //       target.exe (500 bytes)  — matched
+            //
+            // File mask: "target.exe"
+            //
+            // Expected: Only root and bin\ directories appear.
+            //           src\ and docs\ should NOT appear (no matches).
+            //
+
+            MockFileTree tree;
+            tree.AddFile      (L"C:\\MockRoot\\target.exe",          1000);
+            tree.AddDirectory (L"C:\\MockRoot\\src");
+            tree.AddFile      (L"C:\\MockRoot\\src\\main.cpp",       200);
+            tree.AddFile      (L"C:\\MockRoot\\src\\app.h",          300);
+            tree.AddDirectory (L"C:\\MockRoot\\docs");
+            tree.AddFile      (L"C:\\MockRoot\\docs\\readme.md",     400);
+            tree.AddDirectory (L"C:\\MockRoot\\bin");
+            tree.AddFile      (L"C:\\MockRoot\\bin\\target.exe",     500);
+
+            ScopedFileSystemMock mock (tree);
+
+            auto cmdLine = make_shared<CCommandLine> ();
+            cmdLine->m_fTree = true;
+
+            auto console = make_shared<CCapturingConsole> ();
+            auto config  = make_shared<CConfig> ();
+            console->Initialize (config);
+
+            CResultsDisplayerTree treeDisplayer (cmdLine, console, config, false);
+            CMultiThreadedLister  lister        (cmdLine, console, config);
+            CDriveInfo            driveInfo      (L"C:\\MockRoot");
+            SListingTotals        totals       = {};
+
+            vector<filesystem::path> fileSpecs = { L"target.exe" };
+
+            HRESULT hr = lister.ProcessDirectoryMultiThreaded (
+                driveInfo,
+                L"C:\\MockRoot",
+                fileSpecs,
+                treeDisplayer,
+                IResultsDisplayer::EDirectoryLevel::Initial,
+                totals);
+
+            Assert::IsTrue (SUCCEEDED (hr), L"Tree mode with file mask should succeed");
+
+            //
+            // Verify correct totals — only 2 target.exe files
+            //
+
+            Assert::AreEqual (2u, totals.m_cFiles, L"Should have 2 matching files");
+
+            //
+            // Verify output content
+            //
+
+            wstring stripped = StripAnsiCodes (console->m_strCaptured);
+
+            Assert::IsTrue  (stripped.find (L"target.exe") != wstring::npos,  L"Should contain target.exe");
+            Assert::IsTrue  (stripped.find (L"bin")        != wstring::npos,  L"Should contain bin (has match)");
+
+            //
+            // Empty directories should NOT appear
+            //
+
+            Assert::IsTrue  (stripped.find (L"src")        == wstring::npos,  L"Should NOT contain src (no matches)");
+            Assert::IsTrue  (stripped.find (L"docs")       == wstring::npos,  L"Should NOT contain docs (no matches)");
+
+            //
+            // Non-matching files should NOT appear
+            //
+
+            Assert::IsTrue  (stripped.find (L"main.cpp")   == wstring::npos,  L"Should NOT contain main.cpp");
+            Assert::IsTrue  (stripped.find (L"app.h")      == wstring::npos,  L"Should NOT contain app.h");
+            Assert::IsTrue  (stripped.find (L"readme.md")  == wstring::npos,  L"Should NOT contain readme.md");
+        }
+
     };
 }
+

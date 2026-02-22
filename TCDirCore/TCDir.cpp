@@ -43,12 +43,13 @@ static HRESULT ProcessCommandLine (
     hr = cmdline.Parse (argc - 1, argv + 1);
     if (cmdline.m_fHelp || FAILED (hr))
     {
+        CUsage::DisplayUsage (console, cmdline.GetSwitchPrefix());
+
         if (!cmdline.m_strValidationError.empty())
         {
             console.Printf (CConfig::Error, L"\n  %s\n", cmdline.m_strValidationError.c_str());
         }
 
-        CUsage::DisplayUsage (console, cmdline.GetSwitchPrefix());
         BAIL_OUT_IF (cmdline.m_fHelp, S_FALSE);
         CHR (hr);
     }

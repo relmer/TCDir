@@ -92,6 +92,21 @@ HRESULT CMultiThreadedLister::ProcessDirectoryMultiThreaded (
     // Create root directory info node with multiple file specs
     auto pRootDirInfo = make_shared<CDirectoryInfo> (dirPath, fileSpecs);
 
+    //
+    // Determine whether tree-pruning is active.  This is true only in tree
+    // mode with a non-"*" file mask — i.e., when empty subdirectories should
+    // be hidden.  When all specs are "*", every directory is visible and no
+    // pruning logic runs.  The /S recursive path is never affected.
+    //
+
+    if (m_cmdLinePtr->m_fTree)
+    {
+        bool fAllStar = all_of (fileSpecs.begin(), fileSpecs.end(),
+                                [](const auto & spec) { return spec == L"*"; });
+
+        m_fTreePruningActive = !fAllStar;
+    }
+
     // Initialize work queue with root
     m_workQueue.Push (WorkItem { pRootDirInfo });
 
@@ -171,6 +186,48 @@ void CMultiThreadedLister::EnumerateDirectoryNode (shared_ptr<CDirectoryInfo> pD
     }
     
     pDirInfo->m_cvStatusChanged.notify_one();
+
+    //
+    // Tree-pruning propagation (only when m_fTreePruningActive).
+    //
+    // 1. If this node has matching files, propagate the "descendant match"
+    //    signal upward through all ancestors so the display thread knows
+    //    they are visible.
+    //
+    // 2. If this node is a leaf (no children), mark its subtree as complete
+    //    and try to propagate subtree-completion upward.
+    //
+
+    if (m_fTreePruningActive)
+    {
+        if (pDirInfo->m_cFiles > 0)
+        {
+            pDirInfo->m_fDescendantMatchFound.store (true, memory_order_release);
+            pDirInfo->m_cvStatusChanged.notify_all();
+
+            PropagateDescendantMatch (pDirInfo);
+        }
+
+        bool fIsLeaf;
+
+        {
+            lock_guard<mutex> lock (pDirInfo->m_mutex);
+            fIsLeaf = pDirInfo->m_vChildren.empty();
+        }
+
+        if (fIsLeaf)
+        {
+            pDirInfo->m_fSubtreeComplete.store (true, memory_order_release);
+            pDirInfo->m_cvStatusChanged.notify_all();
+
+            auto pParent = pDirInfo->m_wpParent.lock();
+
+            if (pParent)
+            {
+                TrySignalParentSubtreeComplete (pParent);
+            }
+        }
+    }
 }
 
 
@@ -423,6 +480,17 @@ void CMultiThreadedLister::EnqueueChildDirectory (const WIN32_FIND_DATA & wfd, s
     filesystem::path subdirPath = pDirInfo->m_dirPath / wfd.cFileName;
     auto             pChild     = make_shared<CDirectoryInfo> (subdirPath, pDirInfo->m_vFileSpecs);
 
+    //
+    // Set parent back-pointer for tree-pruning propagation.  Only set when
+    // pruning is active so the /S path and tree-without-mask path are
+    // completely unaffected.
+    //
+
+    if (m_fTreePruningActive)
+    {
+        pChild->m_wpParent = pDirInfo;
+    }
+
     pDirInfo->m_vChildren.push_back (pChild);
 
     //
@@ -642,6 +710,139 @@ Error:
 
 
 
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CMultiThreadedLister::PropagateDescendantMatch
+//
+//  Walks up the parent chain via m_wpParent, setting
+//  m_fDescendantMatchFound = true and notifying m_cvStatusChanged on each
+//  ancestor.  Stops when the parent is null (root reached) or the flag is
+//  already set (an earlier producer already propagated through this path).
+//
+////////////////////////////////////////////////////////////////////////////////
+
+void CMultiThreadedLister::PropagateDescendantMatch (shared_ptr<CDirectoryInfo> pDirInfo)
+{
+    auto pParent = pDirInfo->m_wpParent.lock();
+
+
+
+    while (pParent)
+    {
+        //
+        // If already flagged, every ancestor above is also flagged (or will
+        // be by the thread that set this one).  Stop to avoid redundant work.
+        //
+
+        if (pParent->m_fDescendantMatchFound.exchange (true, memory_order_acq_rel))
+        {
+            break;
+        }
+
+        pParent->m_cvStatusChanged.notify_all();
+
+        pParent = pParent->m_wpParent.lock();
+    }
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CMultiThreadedLister::TrySignalParentSubtreeComplete
+//
+//  Checks whether ALL of pParent's children have m_fSubtreeComplete == true.
+//  If so, sets pParent->m_fSubtreeComplete, notifies, and recurses upward
+//  to the grandparent.
+//
+////////////////////////////////////////////////////////////////////////////////
+
+void CMultiThreadedLister::TrySignalParentSubtreeComplete (shared_ptr<CDirectoryInfo> pParent)
+{
+    {
+        lock_guard<mutex> lock (pParent->m_mutex);
+
+        for (const auto & pSibling : pParent->m_vChildren)
+        {
+            if (!pSibling->m_fSubtreeComplete.load (memory_order_acquire))
+            {
+                return;   // At least one sibling subtree is still in progress
+            }
+        }
+    }
+
+
+
+    //
+    // All children are subtree-complete.  Mark this parent as well.
+    //
+
+    pParent->m_fSubtreeComplete.store (true, memory_order_release);
+    pParent->m_cvStatusChanged.notify_all();
+
+    auto pGrandparent = pParent->m_wpParent.lock();
+
+    if (pGrandparent)
+    {
+        TrySignalParentSubtreeComplete (pGrandparent);
+    }
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CMultiThreadedLister::WaitForTreeVisibility
+//
+//  Blocks until the visibility of the given directory node is determined.
+//  Returns true if the directory should be displayed (it or a descendant
+//  has matching files), false if it should be pruned.
+//
+//  Waits on m_cvStatusChanged until either m_fDescendantMatchFound or
+//  m_fSubtreeComplete becomes true.  Also wakes on stop-requested.
+//
+////////////////////////////////////////////////////////////////////////////////
+
+bool CMultiThreadedLister::WaitForTreeVisibility (shared_ptr<CDirectoryInfo> pDirInfo)
+{
+    //
+    // Fast path: check atomics before taking the lock.
+    //
+
+    if (pDirInfo->m_fDescendantMatchFound.load (memory_order_acquire))
+    {
+        return true;
+    }
+
+    if (pDirInfo->m_fSubtreeComplete.load (memory_order_acquire))
+    {
+        return false;
+    }
+
+
+
+    //
+    // Slow path: wait for a signal.
+    //
+
+    unique_lock<mutex> lock (pDirInfo->m_mutex);
+
+    pDirInfo->m_cvStatusChanged.wait (lock, [&]() {
+        return pDirInfo->m_fDescendantMatchFound.load (memory_order_acquire) ||
+               pDirInfo->m_fSubtreeComplete.load (memory_order_acquire)     ||
+               StopRequested();
+    });
+
+    return pDirInfo->m_fDescendantMatchFound.load (memory_order_acquire);
+}
+
+
+
+
 
 ////////////////////////////////////////////////////////////////////////////////
 //
@@ -707,10 +908,21 @@ HRESULT CMultiThreadedLister::PrintDirectoryTreeMode (
         }
 
         //
-        // Display each entry interleaved with directory recursion
+        // When a file mask is active, directories with no matching files
+        // anywhere in their subtree are pruned from the display.  Use
+        // a look-ahead pattern: for each entry, determine its visibility;
+        // then peek forward to find the next visible entry to decide
+        // whether this entry is last (└──) or middle (├──).
+        //
+        // When m_fTreePruningActive is false (no file mask, or all specs
+        // are "*"), every directory is visible — no waiting needed.
         //
 
         size_t cEntries = pDirInfo->m_vMatches.size();
+
+        //
+        // Display each visible entry interleaved with directory recursion
+        //
 
         for (size_t i = 0; i < cEntries; ++i)
         {
@@ -719,9 +931,67 @@ HRESULT CMultiThreadedLister::PrintDirectoryTreeMode (
                 CHR (E_ABORT);
             }
 
-            const FileInfo & entry   = pDirInfo->m_vMatches[i];
-            bool             fIsLast = (i == cEntries - 1);
-            bool             fIsDir  = (entry.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0;
+            const FileInfo & entry  = pDirInfo->m_vMatches[i];
+            bool             fIsDir = (entry.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0;
+
+            //
+            // Determine visibility of this entry.
+            // Files are always visible.  Directories are visible only if
+            // they (or a descendant) have matching files, or if pruning
+            // is not active.
+            //
+
+            if (fIsDir && m_fTreePruningActive)
+            {
+                auto it = childMap.find (ToLower (wstring (entry.cFileName)));
+
+                if (it != childMap.end() && !WaitForTreeVisibility (it->second))
+                {
+                    continue;   // Prune: no matching descendants
+                }
+            }
+
+            //
+            // Look ahead to find the next visible entry to determine
+            // whether the current entry is last.
+            //
+
+            bool fIsLast = true;
+
+            for (size_t j = i + 1; j < cEntries; ++j)
+            {
+                const FileInfo & nextEntry  = pDirInfo->m_vMatches[j];
+                bool             fNextIsDir = (nextEntry.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0;
+
+                if (!fNextIsDir)
+                {
+                    fIsLast = false;   // A file follows — always visible
+                    break;
+                }
+
+                //
+                // Next entry is a directory.  If pruning is not active,
+                // it's visible.  Otherwise wait for its visibility.
+                //
+
+                if (!m_fTreePruningActive)
+                {
+                    fIsLast = false;
+                    break;
+                }
+
+                auto itNext = childMap.find (ToLower (wstring (nextEntry.cFileName)));
+
+                if (itNext != childMap.end() && WaitForTreeVisibility (itNext->second))
+                {
+                    fIsLast = false;
+                    break;
+                }
+
+                //
+                // That directory was pruned — keep looking.
+                //
+            }
 
             treeDisplayer.DisplaySingleEntry (entry, treeState, fIsLast, i);
 

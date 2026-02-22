@@ -36,7 +36,10 @@ tcdir --Tree --Depth=2
 tcdir --Tree --TreeIndent=2
 
 # Tree with metadata options
-tcdir --Tree --Owner --Icons --Streams
+tcdir --Tree --Icons --Streams
+
+# Note: --Owner is incompatible with --Tree (owner column widths vary
+# per-directory, breaking tree connector alignment)
 
 # Abbreviated sizes (Explorer-style, default in tree mode)
 tcdir --Tree                # Auto mode — sizes as KB/MB/GB/TB, 7-char fixed width

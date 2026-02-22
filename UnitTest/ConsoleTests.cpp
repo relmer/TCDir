@@ -519,7 +519,7 @@ namespace UnitTest
             Assert::AreEqual (DESC_COL, FindColumnOfText (plain, L"/M ",             L"Enables multi-threaded"),           L"/M description column");
             Assert::AreEqual (DESC_COL, FindColumnOfText (plain, L"/Env ",           L"Displays TCDIR"),                   L"/Env description column");
             Assert::AreEqual (DESC_COL, FindColumnOfText (plain, L"/Config ",        L"Displays current color"),           L"/Config description column");
-            Assert::AreEqual (DESC_COL, FindColumnOfText (plain, L"/Owner ",         L"Displays file owner"),              L"/Owner description column");
+            Assert::AreEqual (DESC_COL, FindColumnOfText (plain, L"/Owner ",         L"Displays the owner"),             L"/Owner description column");
             Assert::AreEqual (DESC_COL, FindColumnOfText (plain, L"/Streams ",       L"Displays alternate data"),          L"/Streams description column");
             Assert::AreEqual (DESC_COL, FindColumnOfText (plain, L"/Icons ",         L"Enables file-type icons"),          L"/Icons description column");
             Assert::AreEqual (DESC_COL, FindColumnOfText (plain, L"/Tree ",          L"Displays a hierarchical"),          L"/Tree description column");
@@ -555,7 +555,7 @@ namespace UnitTest
             constexpr int DESC_COL = 20;
 
             Assert::AreEqual (DESC_COL, FindColumnOfText (plain, L"-A ",              L"Displays files with specified"),    L"-A description column");
-            Assert::AreEqual (DESC_COL, FindColumnOfText (plain, L"--Owner ",         L"Displays file owner"),              L"--Owner description column");
+            Assert::AreEqual (DESC_COL, FindColumnOfText (plain, L"--Owner ",         L"Displays the owner"),              L"--Owner description column");
             Assert::AreEqual (DESC_COL, FindColumnOfText (plain, L"  --TreeIndent=N", L"Sets tree indent"),                 L"--TreeIndent=N description column");
 
             // Sub-descriptions at column 22

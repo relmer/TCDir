@@ -5,7 +5,7 @@
 
 ## Summary
 
-Add a `--Tree` display mode that renders directory contents hierarchically with Unicode box-drawing connectors, configurable depth (`--Depth=N`), configurable indent width (`--TreeIndent=N`), and configurable connector color. Add a `--Size=Auto|Bytes` switch for fixed-width abbreviated file sizes (Explorer-style 3-significant-digit format, 1024-based) that defaults to `Auto` in tree mode and `Bytes` in non-tree mode, ensuring column alignment without pre-scanning the directory tree. The implementation reuses the existing multi-threaded producer/consumer enumeration model and introduces a new `CResultsDisplayerTree` class (derived from `CResultsDisplayerNormal`) that overrides the display flow for tree-walking while reusing all inherited column rendering helpers.
+Add a `--Tree` display mode that renders directory contents hierarchically with Unicode box-drawing connectors, configurable depth (`--Depth=N`), configurable indent width (`--TreeIndent=N`), and configurable connector color. Add a `--Size=Auto|Bytes` switch for fixed-width abbreviated file sizes (Explorer-style 3-significant-digit format, 1024-based) that defaults to `Auto` in tree mode and `Bytes` in non-tree mode, ensuring column alignment without pre-scanning the directory tree. The implementation reuses the existing multi-threaded producer/consumer enumeration model and introduces a new `CResultsDisplayerTree` class (derived from `CResultsDisplayerNormal`) that overrides the display flow for tree-walking while reusing all inherited column rendering helpers. When tree mode is used with file masks, empty subdirectories are pruned using a thread-safe upward-propagation design (see research.md R14) that avoids walking in-progress subtrees.
 
 ## Technical Context
 
@@ -70,12 +70,13 @@ TCDirCore/
 ├── CommandLine.cpp        # Parse --Tree, --Depth=N, --TreeIndent=N, --Size=Auto|Bytes; validate conflicts
 ├── Config.h               # Add m_fTree, m_cMaxDepth, m_cTreeIndent, m_eSizeFormat optionals; EAttribute::TreeConnector
 ├── Config.cpp             # Parse Tree/Depth/TreeIndent/Size from TCDIR env var
+├── DirectoryInfo.h        # Add m_wpParent, m_fDescendantMatchFound, m_fSubtreeComplete for tree pruning
 ├── TreeConnectorState.h   # NEW: Tree connector state tracker (vector<bool> + prefix generation)
 ├── ResultsDisplayerTree.h      # NEW: Tree displayer (derives from CResultsDisplayerNormal)
 ├── ResultsDisplayerTree.cpp    # NEW: Tree display flow + tree-prefixed file rendering
 ├── DirectoryLister.cpp    # Route --Tree to MT lister path; instantiate CResultsDisplayerTree
-├── MultiThreadedLister.h  # Add depth parameter to PrintDirectoryTree/ProcessChildren
-├── MultiThreadedLister.cpp# Thread tree state through PrintDirectoryTree recursion; depth checks
+├── MultiThreadedLister.h  # Add depth parameter, tree-pruning helpers, m_fTreePruningActive
+├── MultiThreadedLister.cpp# Thread tree state through recursion; depth checks; producer-side propagation; display-side look-ahead
 ├── ResultsDisplayerNormal.h    # Make DisplayFileStreams virtual (for tree override)
 ├── ResultsDisplayerNormal.cpp  # Add FormatAbbreviatedSize; wire into DisplayResultsNormalFileSize for Auto mode
 ├── ResultsDisplayerWithHeaderAndFooter.h   # No signature changes needed

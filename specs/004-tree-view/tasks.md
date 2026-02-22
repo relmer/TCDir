@@ -53,7 +53,7 @@
 ### Implementation for User Story 1
 
 - [x] T014 [US1] Create `CResultsDisplayerTree` class declaration (derives from `CResultsDisplayerNormal`) in `TCDirCore/ResultsDisplayerTree.h`
-- [x] T015 [US1] Implement `CResultsDisplayerTree::DisplayFileResults` override — iterate `m_vMatches`, call inherited column helpers (date/time, attrs, size, cloud, debug, owner), prepend tree prefix from `STreeConnectorState` before icon/filename in `TCDirCore/ResultsDisplayerTree.cpp`
+- [x] T015 [US1] Implement `CResultsDisplayerTree::DisplayFileResults` override — iterate `m_vMatches`, call inherited column helpers (date/time, attrs, size, cloud, debug), prepend tree prefix from `STreeConnectorState` before icon/filename in `TCDirCore/ResultsDisplayerTree.cpp`
 - [x] T016 [US1] Implement `CResultsDisplayerTree::DisplayResults` override — tree-walking flow: drive header for root, recursive traversal of `m_vChildren` calling `DisplayFileResults` at each level, per-dir summaries indented within tree, grand total at end in `TCDirCore/ResultsDisplayerTree.cpp`
 - [x] T017 [US1] Add `m_fInterleavedSort` to `CFileComparator` and implement conditional sort (dirs+files together when true) in `TCDirCore/FileComparator.h` and `TCDirCore/FileComparator.cpp`
 - [x] T018 [US1] Set `m_fInterleavedSort = true` when tree mode is active in sort setup path in `TCDirCore/MultiThreadedLister.cpp`
@@ -61,7 +61,7 @@
 - [x] T020 [US1] Thread `STreeConnectorState` through `PrintDirectoryTree` → `ProcessChildren` recursion in `TCDirCore/MultiThreadedLister.h` and `TCDirCore/MultiThreadedLister.cpp`
 - [x] T021 [P] [US1] Add unit tests for `CFileComparator` interleaved sort mode (dirs and files sorted together, not grouped) in `UnitTest/FileComparatorTests.cpp`
 - [x] T022 [US1] Add scenario tests: basic tree output with 2–3 levels, last-entry `└──` vs middle `├──`, `│` continuation lines, per-dir summary placement in `UnitTest/DirectoryListerScenarioTests.cpp`
-- [x] T022a [US1] Add scenario tests for file masks in tree mode: `tcdir --Tree *.cpp` shows only matching files while preserving directory structure; leaf directories with zero matching files and no matching descendants are pruned; intermediate directories are preserved in `UnitTest/DirectoryListerScenarioTests.cpp`
+- [x] T022a [US1] Add scenario tests for file masks in tree mode: `tcdir --Tree *.cpp` shows only matching files while preserving directory structure; leaf directories with zero matching files and no matching descendants are pruned; intermediate directories are preserved in `UnitTest/DirectoryListerScenarioTests.cpp` *(initial implementation uses `HasDescendantFiles` — racy in real MT usage, replaced by thread-safe design in Phase 11)*
 
 **Checkpoint**: `tcdir --Tree` produces correct hierarchical output with connectors and metadata. Per-dir summaries + grand total shown.
 
@@ -84,17 +84,17 @@
 
 ## Phase 5: User Story 3 — Tree View with Metadata Columns (Priority: P1)
 
-**Goal**: Verify all optional metadata columns (`--Icons`, `--Owner`, `--Streams` display baseline) render correctly in tree mode alongside tree connectors.
+**Goal**: Verify optional metadata columns (`--Icons`, `--Streams` display baseline) render correctly in tree mode alongside tree connectors. `--Owner` is incompatible with `--Tree` (different directories produce different owner column widths, breaking tree connector alignment).
 
-**Independent Test**: Run `tcdir --Tree --Owner --Icons` and verify all columns present and aligned.
+**Independent Test**: Run `tcdir --Tree --Icons` and verify all columns present and aligned.
 
 ### Implementation for User Story 3
 
 - [x] T025 [US3] Ensure icon rendering in `CResultsDisplayerTree::DisplayFileResults` places tree connector before icon glyph, with connector vertical lines aligning below parent folder icons in `TCDirCore/ResultsDisplayerTree.cpp`
-- [x] T026 [US3] Ensure owner column renders via inherited `DisplayFileOwner` in tree mode in `TCDirCore/ResultsDisplayerTree.cpp`
-- [x] T027 [US3] Add scenario tests: tree + icons (connector alignment below folder icons), tree + owner (owner column present at all depths) in `UnitTest/DirectoryListerScenarioTests.cpp`
+- [x] T026 [US3] ~~Ensure owner column renders via inherited `DisplayFileOwner` in tree mode~~ → `--Owner` is now incompatible with `--Tree`; validation added in `CommandLine.cpp`
+- [x] T027 [US3] Add scenario tests: tree + icons (connector alignment below folder icons), tree + owner incompatibility (error produced) in `UnitTest/CommandLineTests.cpp` and `UnitTest/DirectoryListerScenarioTests.cpp`
 
-**Checkpoint**: All metadata columns work in tree mode. Icon/connector alignment verified.
+**Checkpoint**: Icons work in tree mode. Owner correctly rejected as incompatible.
 
 ---
 
@@ -124,7 +124,7 @@
 ### Implementation for User Story 5
 
 - [x] T032 [US5] Verify error messages from T007 validation name both conflicting switches (e.g., "`--Tree` and `-W` cannot be used together") in `TCDirCore/CommandLine.cpp`
-- [x] T033 [US5] Add scenario tests: each incompatible combination produces correct error, compatible combinations (`--Tree --Owner --Icons`) produce no error in `UnitTest/CommandLineTests.cpp`
+- [x] T033 [US5] Add scenario tests: each incompatible combination (including `--Tree --Owner`) produces correct error, compatible combinations (`--Tree --Icons`) produce no error in `UnitTest/CommandLineTests.cpp`
 
 **Checkpoint**: All incompatible switch pairs detected with clear errors. Compatible combos work.
 
@@ -208,6 +208,55 @@
 
 ---
 
+## Phase 11: Thread-Safe Empty Subdirectory Pruning (Bug Fix)
+
+**Purpose**: Replace the racy `HasDescendantFiles` tree-walk with a producer-side upward-propagation design that is safe for the multi-threaded producer/consumer architecture. See research.md R14 for the full design.
+
+**Problem**: The initial `HasDescendantFiles` implementation walks the in-memory tree to check `m_cFiles > 0` on descendants. Producer threads may not have finished building descendants when the display thread walks the tree, reading incomplete data.
+
+### Infrastructure
+
+- [x] T057 Add `m_wpParent` (`weak_ptr<CDirectoryInfo>`), `m_fDescendantMatchFound` (`atomic<bool>`), `m_fSubtreeComplete` (`atomic<bool>`) members to `CDirectoryInfo` in `TCDirCore/DirectoryInfo.h`
+- [x] T058 Add `m_fTreePruningActive` (`bool`) member to `CMultiThreadedLister` in `TCDirCore/MultiThreadedLister.h`; compute in `ProcessDirectoryMultiThreaded` as `m_fTree && !fAllStar`
+
+### Producer-side propagation
+
+- [x] T059 Set `pChild->m_wpParent = pDirInfo` in `EnqueueChildDirectory` when `m_fTreePruningActive` in `TCDirCore/MultiThreadedLister.cpp`
+- [x] T060 Implement `PropagateDescendantMatch`: walk up parent chain via `m_wpParent`, set `m_fDescendantMatchFound = true`, notify `m_cvStatusChanged` on each ancestor; stop when parent is null or already flagged. Call from `EnumerateDirectoryNode` when `m_cFiles > 0` and `m_fTreePruningActive` in `TCDirCore/MultiThreadedLister.cpp`
+- [x] T061 Implement `TrySignalParentSubtreeComplete`: check if ALL of parent's children have `m_fSubtreeComplete == true`; if so, set parent's `m_fSubtreeComplete`, notify, recurse to grandparent. In `EnumerateDirectoryNode`, after enumeration completes: if node has zero children → set `m_fSubtreeComplete = true`, notify, call `TrySignalParentSubtreeComplete(parent)` in `TCDirCore/MultiThreadedLister.cpp`
+
+### Display-side look-ahead
+
+- [x] T062 Implement `WaitForTreeVisibility(shared_ptr<CDirectoryInfo>)`: wait on `m_cvStatusChanged` until `m_fDescendantMatchFound` or `m_fSubtreeComplete` is true; return `true` if visible in `TCDirCore/MultiThreadedLister.cpp`
+- [x] T063 Replace `HasDescendantFiles` + `vector<bool> rgfVisible` pre-computation in `PrintDirectoryTreeMode` with look-ahead pattern: for each entry, use `WaitForTreeVisibility` to determine visibility; peek forward to find next visible entry for `fIsLast` determination. Skip pruning entirely when `!m_fTreePruningActive` in `TCDirCore/MultiThreadedLister.cpp`
+- [x] T064 Remove `HasDescendantFiles` static method declaration from `TCDirCore/MultiThreadedLister.h` and implementation from `TCDirCore/MultiThreadedLister.cpp`
+
+### Declarations
+
+- [x] T065 Add declarations for `PropagateDescendantMatch`, `TrySignalParentSubtreeComplete`, `WaitForTreeVisibility` to `CMultiThreadedLister` in `TCDirCore/MultiThreadedLister.h`
+
+### Tests
+
+- [x] T066 Verify existing `TreeMode_FileMask_EmptySubdirsNotShown` test still passes (synchronous mock makes atomics resolve immediately) in `UnitTest/DirectoryListerScenarioTests.cpp`
+- [x] T067 Build and run full test suite (`Build + Test Debug (current arch)` and `Build + Test Release (current arch)` tasks) — **407/407 Debug, 405/405 Release**
+
+**Checkpoint**: Empty subdirectory pruning is thread-safe. All existing tests pass. No behavioral change for `/s` recursive mode.
+
+---
+
+## Phase 12: Disallow `--Size=Bytes` in Tree Mode
+
+**Purpose**: Tree mode requires fixed-width size columns (`--Size=Auto`) to maintain tree connector alignment. `--Size=Bytes` produces variable-width columns that break alignment across directories.
+
+- [x] T068 Add `--Tree` + `--Size=Bytes` incompatibility check to validation block in `TCDirCore/CommandLine.cpp`
+- [x] T069 Update `ParseSizeBytesWithTree` test to `ParseSizeBytesWithTreeFails` — expect `FAILED(hr)` and error message containing `--Size=Bytes` in `UnitTest/CommandLineTests.cpp`
+- [x] T070 Update FR-006e and FR-007 in spec.md to reflect `--Size=Bytes` rejected in tree mode
+- [x] T071 Build and run full test suite — **407/407 Debug, 405/405 Release**
+
+**Checkpoint**: `--Size=Bytes` correctly rejected in tree mode. All tests pass.
+
+---
+
 ## Dependencies & Execution Order
 
 ### Phase Dependencies
@@ -221,6 +270,8 @@
 - **Phase 7 (US5)**: Depends on Phase 2 only (validation is in command-line parsing, not display)
 - **Phase 8 (US6)**: Depends on Phase 2 (env var parsing) + Phase 3 (needs tree display to verify)
 - **Phase 9 (Polish)**: Depends on all desired user stories being complete
+- **Phase 11 (Thread-Safe Pruning)**: Depends on Phase 3 (replaces the initial racy `HasDescendantFiles` implementation from T022a)
+- **Phase 12 (Size=Bytes Restriction)**: Depends on Phase 9 (adds constraint on existing `--Size` switch in tree mode)
 
 ### User Story Independence
 

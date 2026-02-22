@@ -1065,6 +1065,25 @@ namespace UnitTest
 
 
 
+        TEST_METHOD(ParseTreeWithOwnerFails)
+        {
+            CCommandLine    cl;
+            const wchar_t * a1      = L"--Tree";
+            const wchar_t * a2      = L"--Owner";
+            wchar_t       * argv[]  = { const_cast<wchar_t *>(a1), const_cast<wchar_t *>(a2) };
+            HRESULT         hr      = cl.Parse(2, argv);
+
+
+
+            Assert::IsTrue (FAILED(hr));
+            Assert::IsTrue (cl.m_strValidationError.find(L"--Tree") != wstring::npos);
+            Assert::IsTrue (cl.m_strValidationError.find(L"--Owner") != wstring::npos);
+        }
+
+
+
+
+
         TEST_METHOD(ParseDepthWithoutTreeFails)
         {
             CCommandLine    cl;
@@ -1157,7 +1176,7 @@ namespace UnitTest
         //  Validation: compatible switch combinations
         //
 
-        TEST_METHOD(ParseTreeWithOwnerAndIconsSucceeds)
+        TEST_METHOD(ParseTreeWithOwnerAndIconsFails)
         {
             CCommandLine    cl;
             const wchar_t * a1      = L"--Tree";
@@ -1168,11 +1187,9 @@ namespace UnitTest
 
 
 
-            Assert::IsTrue (SUCCEEDED(hr));
-            Assert::IsTrue (cl.m_fTree);
-            Assert::IsTrue (cl.m_fShowOwner);
-            Assert::IsTrue (cl.m_fIcons.value_or(false));
-            Assert::IsTrue (cl.m_strValidationError.empty());
+            Assert::IsTrue (FAILED(hr));
+            Assert::IsTrue (cl.m_strValidationError.find(L"--Tree") != wstring::npos);
+            Assert::IsTrue (cl.m_strValidationError.find(L"--Owner") != wstring::npos);
         }
 
 
@@ -1348,7 +1365,7 @@ namespace UnitTest
 
 
 
-        TEST_METHOD(ParseSizeBytesWithTree)
+        TEST_METHOD(ParseSizeBytesWithTreeFails)
         {
             CCommandLine    cl;
             const wchar_t * a1      = L"--Tree";
@@ -1358,8 +1375,8 @@ namespace UnitTest
 
 
 
-            Assert::IsTrue (SUCCEEDED(hr));
-            Assert::IsTrue (cl.m_eSizeFormat == ESizeFormat::Bytes);
+            Assert::IsTrue (FAILED(hr));
+            Assert::IsTrue (cl.m_strValidationError.find(L"--Size=Bytes") != wstring::npos);
         }
 
 

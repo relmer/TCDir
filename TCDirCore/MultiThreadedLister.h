@@ -86,9 +86,14 @@ private:
                                            SListingTotals                     & totals,
                                            STreeConnectorState                & treeState);
 
+    void    PropagateDescendantMatch      (shared_ptr<CDirectoryInfo> pDirInfo);
+    void    TrySignalParentSubtreeComplete (shared_ptr<CDirectoryInfo> pParent);
+    bool    WaitForTreeVisibility         (shared_ptr<CDirectoryInfo> pDirInfo);
+
     bool    StopRequested                 () const { return m_stopSource.stop_requested(); }
 
     stop_source               m_stopSource;
     CWorkQueue<WorkItem>      m_workQueue;
     vector<jthread>           m_workers;
+    bool                      m_fTreePruningActive = false;
 };

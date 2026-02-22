@@ -205,6 +205,18 @@ HRESULT CCommandLine::Parse (int cArg, WCHAR ** ppszArg)
             m_strValidationError = L"--Tree and -S (recurse) cannot be used together.";
             CBREx (false, E_INVALIDARG);
         }
+
+        if (m_fShowOwner)
+        {
+            m_strValidationError = L"--Tree and --Owner cannot be used together.";
+            CBREx (false, E_INVALIDARG);
+        }
+
+        if (m_eSizeFormat == ESizeFormat::Bytes)
+        {
+            m_strValidationError = L"--Tree and --Size=Bytes cannot be used together.";
+            CBREx (false, E_INVALIDARG);
+        }
     }
 
     if (m_cMaxDepth != 0 && !m_fTree)

@@ -106,4 +106,15 @@ public:
     vector<shared_ptr<CDirectoryInfo>>      m_vChildren;
     mutex                                   m_mutex;
     condition_variable                      m_cvStatusChanged;
+
+    //
+    // Tree-pruning support (used only when tree mode + file mask is active).
+    // Producer threads propagate match/completion signals upward through the
+    // parent chain; the display thread waits on m_cvStatusChanged until
+    // visibility is determined.  See research.md R14.
+    //
+
+    weak_ptr<CDirectoryInfo>                m_wpParent;
+    atomic<bool>                            m_fDescendantMatchFound { false };
+    atomic<bool>                            m_fSubtreeComplete      { false };
 };

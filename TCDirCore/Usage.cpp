@@ -375,14 +375,14 @@ void CUsage::DisplayUsage (CConsole & console, wchar_t chPrefix)
         L"  {{InformationHighlight}}{0}M{{Information}}                Enables multi-threaded enumeration (default). Use{{InformationHighlight}}{2}{{Information}} to disable.\n"
         L"  {{InformationHighlight}}{1}Env{{Information}}             {6}Displays " TCDIR_ENV_VAR_NAME L" help, syntax, and current value.\n"
         L"  {{InformationHighlight}}{1}Config{{Information}}          {6}Displays current color configuration for all items and extensions.\n"
-        L"  {{InformationHighlight}}{1}Owner{{Information}}           {6}Displays file owner (DOMAIN\\User) for each file.\n"
+        L"  {{InformationHighlight}}{1}Owner{{Information}}           {6}Displays the owner of each file and directory. Not allowed with {{InformationHighlight}}{1}Tree{{Information}}.\n"
         L"  {{InformationHighlight}}{1}Streams{{Information}}         {6}Displays alternate data streams (NTFS only).\n"
         L"  {{InformationHighlight}}{1}Icons{{Information}}           {6}Enables file-type icons (Nerd Font required). Use {{InformationHighlight}}{1}Icons-{{Information}} to disable.\n"
         L"  {{InformationHighlight}}{1}Tree{{Information}}            {6}Displays a hierarchical directory tree view. Use {{InformationHighlight}}{1}Tree-{{Information}} to disable.\n"
         L"  {{InformationHighlight}}{1}Depth{{Information}}={{InformationHighlight}}N{{Information}}         {6}Limits tree depth to N levels (requires {{InformationHighlight}}{1}Tree{{Information}}).\n"
         L"  {{InformationHighlight}}{1}TreeIndent{{Information}}={{InformationHighlight}}N{{Information}}    {6}Sets tree indent width (1-8, default 4; requires {{InformationHighlight}}{1}Tree{{Information}}).\n"
-        L"  {{InformationHighlight}}{1}Size{{Information}}={{InformationHighlight}}Auto{{Information}}|{{InformationHighlight}}Bytes{{Information}}{6}File size format: {{InformationHighlight}}Auto{{Information}} = abbreviated (KB/MB/GB), {{InformationHighlight}}Bytes{{Information}} = exact with commas.\n"
-        L"  {6}                  Default: {{InformationHighlight}}Auto{{Information}} in tree mode, {{InformationHighlight}}Bytes{{Information}} otherwise."
+        L"  {{InformationHighlight}}{1}Size{{Information}}={{InformationHighlight}}Auto{{Information}}|{{InformationHighlight}}Bytes{{Information}} {6}File size format: {{InformationHighlight}}Auto{{Information}} = abbreviated (KB/MB/GB), {{InformationHighlight}}Bytes{{Information}} = exact with commas.\n"
+        L"  {6}                   Default: {{InformationHighlight}}Auto{{Information}} in tree mode, {{InformationHighlight}}Bytes{{Information}} otherwise."
 #ifdef _DEBUG
         L"\n  {{InformationHighlight}}{1}Debug{{Information}}           {6}Displays raw file attributes in hex for diagnosing edge cases."
 #endif
