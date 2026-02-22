@@ -12,6 +12,7 @@
 #include "PerfTimer.h"
 #include "ResultsDisplayerBare.h"
 #include "ResultsDisplayerNormal.h"
+#include "ResultsDisplayerTree.h"
 #include "ResultsDisplayerWide.h"
 #include "Usage.h"
 
@@ -43,6 +44,12 @@ static HRESULT ProcessCommandLine (
     if (cmdline.m_fHelp || FAILED (hr))
     {
         CUsage::DisplayUsage (console, cmdline.GetSwitchPrefix());
+
+        if (!cmdline.m_strValidationError.empty())
+        {
+            console.Printf (CConfig::Error, L"\n  %s\n", cmdline.m_strValidationError.c_str());
+        }
+
         BAIL_OUT_IF (cmdline.m_fHelp, S_FALSE);
         CHR (hr);
     }
@@ -126,6 +133,10 @@ static unique_ptr<IResultsDisplayer> CreateDisplayer (
     else if (cmdlinePtr->m_fWideListing)
     {
         return make_unique<CResultsDisplayerWide> (cmdlinePtr, consolePtr, configPtr, fIconsActive);
+    }
+    else if (cmdlinePtr->m_fTree)
+    {
+        return make_unique<CResultsDisplayerTree> (cmdlinePtr, consolePtr, configPtr, fIconsActive);
     }
     else
     {

@@ -239,11 +239,14 @@
     <ClInclude Include="IResultsDisplayer.h" />
     <ClInclude Include="ResultsDisplayerBare.h" />
     <ClInclude Include="ResultsDisplayerNormal.h" />
+    <ClInclude Include="ResultsDisplayerTree.h" />
     <ClInclude Include="ResultsDisplayerWide.h" />
     <ClInclude Include="ResultsDisplayerWithHeaderAndFooter.h" />
+    <ClInclude Include="SizeFormat.h" />
     <ClInclude Include="UniqueFindHandle.h" />
     <ClInclude Include="Usage.h" />
     <ClInclude Include="Version.h" />
+    <ClInclude Include="TreeConnectorState.h" />
     <ClInclude Include="WorkQueue.h" />
   </ItemGroup>
   <ItemGroup>
@@ -270,6 +273,7 @@
     <ClCompile Include="PerfTimer.cpp" />
     <ClCompile Include="ResultsDisplayerBare.cpp" />
     <ClCompile Include="ResultsDisplayerNormal.cpp" />
+    <ClCompile Include="ResultsDisplayerTree.cpp" />
     <ClCompile Include="ResultsDisplayerWide.cpp" />
     <ClCompile Include="ResultsDisplayerWithHeaderAndFooter.cpp" />
     <ClCompile Include="TCDir.cpp" />

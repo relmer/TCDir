@@ -14,6 +14,8 @@ public:
 
     void DisplayFileResults (const CDirectoryInfo & di) override;
 
+    static wstring   FormatAbbreviatedSize           (ULONGLONG cbSize);
+
 protected:
     const FILETIME & GetTimeFieldForDisplay          (const WIN32_FIND_DATA & wfd) const;
     HRESULT          DisplayResultsNormalDateAndTime (const FILETIME & ftLastWriteTime);
@@ -24,5 +26,5 @@ protected:
     void             DisplayFileOwner                (const wstring & owner, size_t cchColumnWidth);
     static wstring   GetFileOwner                    (LPCWSTR pszFilePath);
     void             GetFileOwners                   (const CDirectoryInfo & di, vector<wstring> & owners, size_t & cchMaxOwnerLength);
-    void             DisplayFileStreams              (const FileInfo & fileEntry, size_t cchStringLengthOfMaxFileSize, size_t cchOwnerWidth);
+    virtual void     DisplayFileStreams              (const FileInfo & fileEntry, size_t cchStringLengthOfMaxFileSize, size_t cchOwnerWidth);
 };

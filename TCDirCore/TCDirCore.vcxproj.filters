@@ -78,6 +78,9 @@
     <ClInclude Include="ResultsDisplayerNormal.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="ResultsDisplayerTree.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="ResultsDisplayerWide.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -91,6 +94,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="MultiThreadedLister.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="TreeConnectorState.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="SizeFormat.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="WorkQueue.h">
@@ -144,6 +153,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="ResultsDisplayerNormal.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ResultsDisplayerTree.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="ResultsDisplayerWide.cpp">

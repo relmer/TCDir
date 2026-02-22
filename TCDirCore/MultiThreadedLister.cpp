@@ -7,6 +7,7 @@
 #include "DriveInfo.h"
 #include "FileComparator.h"
 #include "Flag.h"
+#include "ResultsDisplayerTree.h"
 #include "UniqueFindHandle.h"
 
 
@@ -91,6 +92,21 @@ HRESULT CMultiThreadedLister::ProcessDirectoryMultiThreaded (
     // Create root directory info node with multiple file specs
     auto pRootDirInfo = make_shared<CDirectoryInfo> (dirPath, fileSpecs);
 
+    //
+    // Determine whether tree-pruning is active.  This is true only in tree
+    // mode with a non-"*" file mask — i.e., when empty subdirectories should
+    // be hidden.  When all specs are "*", every directory is visible and no
+    // pruning logic runs.  The /S recursive path is never affected.
+    //
+
+    if (m_cmdLinePtr->m_fTree)
+    {
+        bool fAllStar = all_of (fileSpecs.begin(), fileSpecs.end(),
+                                [](const auto & spec) { return spec == L"*"; });
+
+        m_fTreePruningActive = !fAllStar;
+    }
+
     // Initialize work queue with root
     m_workQueue.Push (WorkItem { pRootDirInfo });
 
@@ -103,12 +119,28 @@ HRESULT CMultiThreadedLister::ProcessDirectoryMultiThreaded (
     }
 
     // Start consuming immediately (streaming output)
-    hr = PrintDirectoryTree (pRootDirInfo, 
-                             driveInfo, 
-                             displayer, 
-                             level,
-                             totals);
-    CHR (hr);
+    if (m_cmdLinePtr->m_fTree)
+    {
+        CResultsDisplayerTree & treeDisplayer = static_cast<CResultsDisplayerTree &>(displayer);
+        STreeConnectorState     treeState       (m_cmdLinePtr->m_cTreeIndent);
+
+        hr = PrintDirectoryTreeMode (pRootDirInfo,
+                                     driveInfo,
+                                     treeDisplayer,
+                                     level,
+                                     totals,
+                                     treeState);
+        CHR (hr);
+    }
+    else
+    {
+        hr = PrintDirectoryTree (pRootDirInfo, 
+                                 driveInfo, 
+                                 displayer, 
+                                 level,
+                                 totals);
+        CHR (hr);
+    }
 
 
 
@@ -154,6 +186,48 @@ void CMultiThreadedLister::EnumerateDirectoryNode (shared_ptr<CDirectoryInfo> pD
     }
     
     pDirInfo->m_cvStatusChanged.notify_one();
+
+    //
+    // Tree-pruning propagation (only when m_fTreePruningActive).
+    //
+    // 1. If this node has matching files, propagate the "descendant match"
+    //    signal upward through all ancestors so the display thread knows
+    //    they are visible.
+    //
+    // 2. If this node is a leaf (no children), mark its subtree as complete
+    //    and try to propagate subtree-completion upward.
+    //
+
+    if (m_fTreePruningActive)
+    {
+        if (pDirInfo->m_cFiles > 0)
+        {
+            pDirInfo->m_fDescendantMatchFound.store (true, memory_order_release);
+            pDirInfo->m_cvStatusChanged.notify_all();
+
+            PropagateDescendantMatch (pDirInfo);
+        }
+
+        bool fIsLeaf;
+
+        {
+            lock_guard<mutex> lock (pDirInfo->m_mutex);
+            fIsLeaf = pDirInfo->m_vChildren.empty();
+        }
+
+        if (fIsLeaf)
+        {
+            pDirInfo->m_fSubtreeComplete.store (true, memory_order_release);
+            pDirInfo->m_cvStatusChanged.notify_all();
+
+            auto pParent = pDirInfo->m_wpParent.lock();
+
+            if (pParent)
+            {
+                TrySignalParentSubtreeComplete (pParent);
+            }
+        }
+    }
 }
 
 
@@ -177,7 +251,7 @@ HRESULT CMultiThreadedLister::PerformEnumeration (shared_ptr<CDirectoryInfo> pDi
     hr = EnumerateMatchingFiles (pDirInfo);
     CHR (hr);
 
-    if (m_cmdLinePtr->m_fRecurse)
+    if (m_cmdLinePtr->m_fRecurse || m_cmdLinePtr->m_fTree)
     {
         hr = EnumerateSubdirectories (pDirInfo);
         CHR (hr);
@@ -309,7 +383,28 @@ HRESULT CMultiThreadedLister::EnumerateSubdirectories (shared_ptr<CDirectoryInfo
     WIN32_FIND_DATA  wfd         = { 0 };
     DWORD            dwError     = 0;
 
+    //
+    // In tree mode, directories must also appear in m_vMatches so they are
+    // visible in the interleaved tree display. Build a set of directory names
+    // already present (from EnumerateMatchingFiles) to avoid duplicates.
+    //
 
+    unordered_set<wstring> seenDirs;
+
+
+
+    if (m_cmdLinePtr->m_fTree)
+    {
+        lock_guard<mutex> lock (pDirInfo->m_mutex);
+
+        for (const auto & entry : pDirInfo->m_vMatches)
+        {
+            if (CFlag::IsSet (entry.dwFileAttributes, FILE_ATTRIBUTE_DIRECTORY))
+            {
+                seenDirs.insert (entry.m_strLowerName);
+            }
+        }
+    }
 
     // Search using "*" to find all directories
     pathForDirs = pDirInfo->m_dirPath / L"*";
@@ -334,6 +429,24 @@ HRESULT CMultiThreadedLister::EnumerateSubdirectories (shared_ptr<CDirectoryInfo
             lock_guard<mutex> lock (pDirInfo->m_mutex);
 
             EnqueueChildDirectory (wfd, pDirInfo);
+
+            //
+            // In tree mode, add every directory to m_vMatches so the tree
+            // display can show it and recurse into it.  Skip if the directory
+            // was already added by EnumerateMatchingFiles (e.g., a directory
+            // whose name matched the file spec like *.cpp matching "foo.cpp/").
+            //
+
+            if (m_cmdLinePtr->m_fTree)
+            {
+                wstring lowerName = ToLower (wfd.cFileName);
+
+                if (!seenDirs.contains (lowerName))
+                {
+                    seenDirs.insert (lowerName);
+                    AddMatchToList (wfd, *pDirInfo, nullptr);
+                }
+            }
         }
     }
     while (FindNextFile (hFind.get(), &wfd));
@@ -366,6 +479,17 @@ void CMultiThreadedLister::EnqueueChildDirectory (const WIN32_FIND_DATA & wfd, s
 {
     filesystem::path subdirPath = pDirInfo->m_dirPath / wfd.cFileName;
     auto             pChild     = make_shared<CDirectoryInfo> (subdirPath, pDirInfo->m_vFileSpecs);
+
+    //
+    // Set parent back-pointer for tree-pruning propagation.  Only set when
+    // pruning is active so the /S path and tree-without-mask path are
+    // completely unaffected.
+    //
+
+    if (m_fTreePruningActive)
+    {
+        pChild->m_wpParent = pDirInfo;
+    }
 
     pDirInfo->m_vChildren.push_back (pChild);
 
@@ -513,7 +637,7 @@ void CMultiThreadedLister::SortResults (shared_ptr<CDirectoryInfo> pDirInfo)
     lock_guard<mutex> lock (pDirInfo->m_mutex);
 
     std::sort (pDirInfo->m_vMatches.begin(), pDirInfo->m_vMatches.end(), 
-               FileComparator (m_cmdLinePtr));
+               FileComparator (m_cmdLinePtr, m_cmdLinePtr->m_fTree));
 }
 
 
@@ -577,6 +701,454 @@ HRESULT CMultiThreadedLister::ProcessChildren (shared_ptr<CDirectoryInfo> pDirIn
                                  totals);
         IGNORE_RETURN_VALUE (hr, S_OK);
     }
+
+Error:
+    return hr;
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CMultiThreadedLister::PropagateDescendantMatch
+//
+//  Walks up the parent chain via m_wpParent, setting
+//  m_fDescendantMatchFound = true and notifying m_cvStatusChanged on each
+//  ancestor.  Stops when the parent is null (root reached) or the flag is
+//  already set (an earlier producer already propagated through this path).
+//
+////////////////////////////////////////////////////////////////////////////////
+
+void CMultiThreadedLister::PropagateDescendantMatch (shared_ptr<CDirectoryInfo> pDirInfo)
+{
+    auto pParent = pDirInfo->m_wpParent.lock();
+
+
+
+    while (pParent)
+    {
+        //
+        // If already flagged, every ancestor above is also flagged (or will
+        // be by the thread that set this one).  Stop to avoid redundant work.
+        //
+
+        if (pParent->m_fDescendantMatchFound.exchange (true, memory_order_acq_rel))
+        {
+            break;
+        }
+
+        pParent->m_cvStatusChanged.notify_all();
+
+        pParent = pParent->m_wpParent.lock();
+    }
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CMultiThreadedLister::TrySignalParentSubtreeComplete
+//
+//  Checks whether ALL of pParent's children have m_fSubtreeComplete == true.
+//  If so, sets pParent->m_fSubtreeComplete, notifies, and recurses upward
+//  to the grandparent.
+//
+////////////////////////////////////////////////////////////////////////////////
+
+void CMultiThreadedLister::TrySignalParentSubtreeComplete (shared_ptr<CDirectoryInfo> pParent)
+{
+    {
+        lock_guard<mutex> lock (pParent->m_mutex);
+
+        for (const auto & pSibling : pParent->m_vChildren)
+        {
+            if (!pSibling->m_fSubtreeComplete.load (memory_order_acquire))
+            {
+                return;   // At least one sibling subtree is still in progress
+            }
+        }
+    }
+
+
+
+    //
+    // All children are subtree-complete.  Mark this parent as well.
+    //
+
+    pParent->m_fSubtreeComplete.store (true, memory_order_release);
+    pParent->m_cvStatusChanged.notify_all();
+
+    auto pGrandparent = pParent->m_wpParent.lock();
+
+    if (pGrandparent)
+    {
+        TrySignalParentSubtreeComplete (pGrandparent);
+    }
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CMultiThreadedLister::WaitForTreeVisibility
+//
+//  Blocks until the visibility of the given directory node is determined.
+//  Returns true if the directory should be displayed (it or a descendant
+//  has matching files), false if it should be pruned.
+//
+//  Waits on m_cvStatusChanged until either m_fDescendantMatchFound or
+//  m_fSubtreeComplete becomes true.  Also wakes on stop-requested.
+//
+////////////////////////////////////////////////////////////////////////////////
+
+bool CMultiThreadedLister::WaitForTreeVisibility (shared_ptr<CDirectoryInfo> pDirInfo)
+{
+    //
+    // Fast path: check atomics before taking the lock.
+    //
+
+    if (pDirInfo->m_fDescendantMatchFound.load (memory_order_acquire))
+    {
+        return true;
+    }
+
+    if (pDirInfo->m_fSubtreeComplete.load (memory_order_acquire))
+    {
+        return false;
+    }
+
+
+
+    //
+    // Slow path: wait for a signal.
+    //
+
+    unique_lock<mutex> lock (pDirInfo->m_mutex);
+
+    pDirInfo->m_cvStatusChanged.wait (lock, [&]() {
+        return pDirInfo->m_fDescendantMatchFound.load (memory_order_acquire) ||
+               pDirInfo->m_fSubtreeComplete.load (memory_order_acquire)     ||
+               StopRequested();
+    });
+
+    return pDirInfo->m_fDescendantMatchFound.load (memory_order_acquire);
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CMultiThreadedLister::PrintDirectoryTreeMode
+//
+//  Tree-mode consumer.  Displays entries for one directory node with tree
+//  connector prefixes and immediately recurses into child directories
+//  (interleaved display) so that the output forms a proper DFS tree.
+//
+//  Root level gets drive header, path header, and per-dir summary.
+//  Subdirectories have no headers — tree connectors replace path headers.
+//
+////////////////////////////////////////////////////////////////////////////////
+
+HRESULT CMultiThreadedLister::PrintDirectoryTreeMode (
+    shared_ptr<CDirectoryInfo>           pDirInfo,
+    const CDriveInfo                   & driveInfo,
+    CResultsDisplayerTree              & treeDisplayer,
+    IResultsDisplayer::EDirectoryLevel   level,
+    SListingTotals                     & totals,
+    STreeConnectorState                & treeState)
+{
+    HRESULT hr = S_OK;
+
+
+
+    hr = WaitForNodeCompletion (pDirInfo);
+    CHR (hr);
+
+    SortResults (pDirInfo);
+
+    //
+    // Root directory: show drive header, path header, empty-dir message.
+    //
+
+    if (level == IResultsDisplayer::EDirectoryLevel::Initial)
+    {
+        treeDisplayer.DisplayTreeRootHeader (driveInfo, *pDirInfo);
+
+        if (pDirInfo->m_vMatches.empty() && pDirInfo->m_vChildren.empty())
+        {
+            treeDisplayer.DisplayTreeEmptyRootMessage (*pDirInfo);
+            goto Error;
+        }
+    }
+
+    //
+    // Compute per-directory display state (max file size width, owners, etc.)
+    //
+
+    treeDisplayer.BeginDirectory (*pDirInfo);
+
+    hr = DisplayTreeEntries (pDirInfo, driveInfo, treeDisplayer, totals, treeState);
+    CHR (hr);
+
+    //
+    // Flush any trailing file entries that followed the last subdirectory
+    // (or all entries if this directory had no child directories).
+    //
+
+    m_consolePtr->Flush();
+
+    AccumulateTotals (pDirInfo, totals);
+
+    //
+    // Root directory: show per-dir summary + separator
+    //
+
+    if (level == IResultsDisplayer::EDirectoryLevel::Initial)
+    {
+        treeDisplayer.DisplayTreeRootSummary (*pDirInfo);
+    }
+
+
+
+Error:
+    return hr;
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CMultiThreadedLister::DisplayTreeEntries
+//
+//  Iterates through a directory node's sorted entries, displaying each
+//  visible item (pruning invisible directories when a file mask is active)
+//  and recursing into child directories for interleaved DFS output.
+//
+////////////////////////////////////////////////////////////////////////////////
+
+HRESULT CMultiThreadedLister::DisplayTreeEntries (
+    shared_ptr<CDirectoryInfo>   pDirInfo,
+    const CDriveInfo           & driveInfo,
+    CResultsDisplayerTree      & treeDisplayer,
+    SListingTotals             & totals,
+    STreeConnectorState        & treeState)
+{
+    HRESULT hr = S_OK;
+
+
+
+    //
+    // Build lookup from lowercase filename → child CDirectoryInfo
+    //
+
+    ChildMap childMap;
+
+    for (const auto & pChild : pDirInfo->m_vChildren)
+    {
+        childMap[ToLower (pChild->m_dirPath.filename().wstring())] = pChild;
+    }
+
+    size_t cEntries = pDirInfo->m_vMatches.size();
+
+
+
+    //
+    // Display each visible entry interleaved with directory recursion.
+    //
+    // When a file mask is active, directories with no matching files
+    // anywhere in their subtree are pruned from the display.  Use
+    // a look-ahead pattern: for each entry, determine its visibility;
+    // then peek forward to find the next visible entry to decide
+    // whether this entry is last (└──) or middle (├──).
+    //
+    // When m_fTreePruningActive is false (no file mask, or all specs
+    // are "*"), every directory is visible — no waiting needed.
+    //
+
+    for (size_t i = 0; i < cEntries; ++i)
+    {
+        if (StopRequested())
+        {
+            CHR (E_ABORT);
+        }
+
+        const FileInfo & entry  = pDirInfo->m_vMatches[i];
+        bool             fIsDir = (entry.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0;
+
+        //
+        // Determine visibility of this entry.
+        // Files are always visible.  Directories are visible only if
+        // they (or a descendant) have matching files, or if pruning
+        // is not active.
+        //
+
+        if (fIsDir && m_fTreePruningActive)
+        {
+            auto it = childMap.find (entry.m_strLowerName);
+
+            if (it != childMap.end() && !WaitForTreeVisibility (it->second))
+            {
+                continue;   // Prune: no matching descendants
+            }
+        }
+
+        bool fIsLast = IsLastVisibleEntry (pDirInfo->m_vMatches, i, childMap);
+
+        treeDisplayer.DisplaySingleEntry (entry, treeState, fIsLast, i);
+
+        //
+        // If the entry is a directory, find its child node and recurse.
+        //
+
+        if (fIsDir)
+        {
+            auto it = childMap.find (entry.m_strLowerName);
+
+            if (it != childMap.end())
+            {
+                hr = RecurseIntoChildDirectory (it->second, entry, fIsLast, driveInfo, treeDisplayer, totals, treeState);
+                IGNORE_RETURN_VALUE (hr, S_OK);
+            }
+        }
+    }
+
+Error:
+    return hr;
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CMultiThreadedLister::IsLastVisibleEntry
+//
+//  Looks ahead from the current index to determine whether the entry is
+//  the last visible one in the list.  Files are always visible; directories
+//  are visible only when pruning is inactive or the directory has matching
+//  descendants.
+//
+////////////////////////////////////////////////////////////////////////////////
+
+bool CMultiThreadedLister::IsLastVisibleEntry (
+    const vector<FileInfo> & vMatches,
+    size_t                   iCurrent,
+    const ChildMap         & childMap)
+{
+    size_t cEntries = vMatches.size();
+
+
+
+    for (size_t j = iCurrent + 1; j < cEntries; ++j)
+    {
+        const FileInfo & nextEntry  = vMatches[j];
+        bool             fNextIsDir = (nextEntry.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0;
+
+        if (!fNextIsDir)
+        {
+            return false;   // A file follows — always visible
+        }
+
+        //
+        // Next entry is a directory.  If pruning is not active,
+        // it's visible.  Otherwise wait for its visibility.
+        //
+
+        if (!m_fTreePruningActive)
+        {
+            return false;
+        }
+
+        auto itNext = childMap.find (nextEntry.m_strLowerName);
+
+        if (itNext != childMap.end() && WaitForTreeVisibility (itNext->second))
+        {
+            return false;
+        }
+
+        //
+        // That directory was pruned — keep looking.
+        //
+    }
+
+    return true;
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CMultiThreadedLister::RecurseIntoChildDirectory
+//
+//  Recurses into a child directory during tree-mode display.  Checks
+//  depth limit and reparse-point status before recursing.  Flushes the
+//  console and saves/restores the displayer's per-directory state so that
+//  column widths are correct across nesting levels.
+//
+////////////////////////////////////////////////////////////////////////////////
+
+HRESULT CMultiThreadedLister::RecurseIntoChildDirectory (
+    shared_ptr<CDirectoryInfo>   pChild,
+    const FileInfo             & parentEntry,
+    bool                         fIsLast,
+    const CDriveInfo           & driveInfo,
+    CResultsDisplayerTree      & treeDisplayer,
+    SListingTotals             & totals,
+    STreeConnectorState        & treeState)
+{
+    HRESULT                hr             = S_OK;
+
+    bool                   fDepthLimited  = (m_cmdLinePtr->m_cMaxDepth > 0 &&
+                                             treeState.Depth() + 1 >= m_cmdLinePtr->m_cMaxDepth);
+    bool                   fIsReparse     = CFlag::IsSet (parentEntry.dwFileAttributes, FILE_ATTRIBUTE_REPARSE_POINT);
+
+    CResultsDisplayerTree::SDirectoryDisplayState savedState;
+
+
+
+    BAIL_OUT_IF (fDepthLimited || fIsReparse, S_OK);
+
+    //
+    // Flush everything displayed so far (including this directory entry)
+    // before recursing so the user sees output immediately rather than
+    // waiting for the entire subtree to finish.
+    //
+    // Save the parent's per-directory display state because
+    // BeginDirectory in the child will overwrite the displayer's member
+    // variables (field widths, sync root flag, owners).  Restore after
+    // returning so that remaining entries in this directory render with
+    // the correct column widths.
+    //
+
+    m_consolePtr->Flush();
+
+    savedState = treeDisplayer.SaveDirectoryState();
+
+    treeState.Push (!fIsLast);
+
+    hr = PrintDirectoryTreeMode (pChild,
+                                 driveInfo,
+                                 treeDisplayer,
+                                 IResultsDisplayer::EDirectoryLevel::Subdirectory,
+                                 totals,
+                                 treeState);
+    treeState.Pop();
+    IGNORE_RETURN_VALUE (hr, S_OK);
+
+    treeDisplayer.RestoreDirectoryState (move (savedState));
 
 Error:
     return hr;

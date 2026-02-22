@@ -117,6 +117,7 @@ static constexpr SSwitchInfo s_kSwitchInfos[] =
     { L"Owner",   L"Display file ownership"         },
     { L"Streams", L"Display alternate data streams" },
     { L"Icons",   L"Enable file-type icons"         },
+    { L"Tree",    L"Display directory tree view"    },
 };
 
 
@@ -177,6 +178,139 @@ bool CUsage::IsTcdirEnvVarSet (void)
 
 ////////////////////////////////////////////////////////////////////////////////
 //
+//  MeasureVisibleWidth
+//
+//  Returns the visible character count of a string that contains color
+//  markers in the form {MarkerName}.  Characters inside braces are skipped.
+//
+////////////////////////////////////////////////////////////////////////////////
+
+static int MeasureVisibleWidth (wstring_view text)
+{
+    int    cch    = 0;
+    bool   fInTag = false;
+
+
+
+    for (wchar_t ch : text)
+    {
+        if (ch == L'{')
+        {
+            fInTag = true;
+            continue;
+        }
+
+        if (ch == L'}')
+        {
+            fInTag = false;
+            continue;
+        }
+
+        if (!fInTag)
+        {
+            ++cch;
+        }
+    }
+
+    return cch;
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CUsage::DisplaySynopsis
+//
+//  Prints the TCDIR synopsis line with dynamic word-wrapping.
+//  Options that would exceed the console width wrap to a new line,
+//  indented to align under [drive:] from the first line.
+//
+////////////////////////////////////////////////////////////////////////////////
+
+void CUsage::DisplaySynopsis (CConsole & console, wchar_t chPrefix)
+{
+    wstring_view szShort = (chPrefix == L'-') ? L"-"  : L"/";
+    wstring_view pszLong = (chPrefix == L'-') ? L"--" : L"/";
+
+    //
+    // "TCDIR " = 6 visible chars.  Continuation lines indent to column 6
+    // to align under [drive:].
+    //
+
+    constexpr int INDENT = 6;
+
+    //
+    // Build the list of option tokens.  Each is a color-marked string
+    // (post-format, ready for ColorPuts) with a trailing space separator.
+    //
+
+    wstring tokens[] =
+    {
+        format (L"[{{InformationHighlight}}drive:{{Information}}]"
+                L"[{{InformationHighlight}}path{{Information}}]"
+                L"[{{InformationHighlight}}filename{{Information}}] "),
+
+        format (L"[{{InformationHighlight}}{0}A{{Information}}[[:]{{InformationHighlight}}attributes{{Information}}]] ",    szShort),
+        format (L"[{{InformationHighlight}}{0}O{{Information}}[[:]{{InformationHighlight}}sortorder{{Information}}]] ",     szShort),
+        format (L"[{{InformationHighlight}}{0}T{{Information}}[[:]{{InformationHighlight}}timefield{{Information}}]] ",     szShort),
+        format (L"[{{InformationHighlight}}{0}S{{Information}}] ",     szShort),
+        format (L"[{{InformationHighlight}}{0}W{{Information}}] ",     szShort),
+        format (L"[{{InformationHighlight}}{0}B{{Information}}] ",     szShort),
+        format (L"[{{InformationHighlight}}{0}P{{Information}}] ",     szShort),
+        format (L"[{{InformationHighlight}}{0}M{{Information}}] ",     szShort),
+        format (L"[{{InformationHighlight}}{0}Env{{Information}}] ",   pszLong),
+        format (L"[{{InformationHighlight}}{0}Config{{Information}}] ", pszLong),
+        format (L"[{{InformationHighlight}}{0}Owner{{Information}}] ", pszLong),
+        format (L"[{{InformationHighlight}}{0}Streams{{Information}}] ", pszLong),
+        format (L"[{{InformationHighlight}}{0}Icons{{Information}}] ", pszLong),
+        format (L"[{{InformationHighlight}}{0}Tree{{Information}}] ",  pszLong),
+        format (L"[{{InformationHighlight}}{0}Depth{{Information}}={{InformationHighlight}}N{{Information}}] ", pszLong),
+        format (L"[{{InformationHighlight}}{0}TreeIndent{{Information}}={{InformationHighlight}}N{{Information}}] ", pszLong),
+        format (L"[{{InformationHighlight}}{0}Size{{Information}}={{InformationHighlight}}Auto{{Information}}|{{InformationHighlight}}Bytes{{Information}}]", pszLong),
+#ifdef _DEBUG
+        format (L" [{{InformationHighlight}}{0}Debug{{Information}}]", pszLong),
+#endif
+    };
+
+    int     cxConsole = static_cast<int>(console.GetWidth());
+    int     col       = INDENT;
+    wstring line;
+
+    wstring indentStr (INDENT, L' ');
+
+
+
+    // Start with "TCDIR "
+    line.append (L"{InformationHighlight}TCDIR{Information} ");
+
+    // Append each token, inserting line breaks when necessary
+    for (const wstring & token : tokens)
+    {
+        int cchVisible = MeasureVisibleWidth (token);
+
+        if (col + cchVisible > cxConsole && col > INDENT)
+        {
+            // Wrap to next line, indented under [drive:]
+            line.append (L"\n");
+            line.append (indentStr);
+            col = INDENT;
+        }
+
+        line.append (token);
+        col += cchVisible;
+    }
+
+    console.ColorPuts (line.c_str());
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
 //  CUsage::DisplayUsage
 //
 //
@@ -202,72 +336,55 @@ void CUsage::DisplayUsage (CConsole & console, wchar_t chPrefix)
     // Header continuation after "Technicolor" (printed with PrintColorfulString)
     static constexpr wchar_t k_wszUsageHeader[] =
         L"{{Information}} Directory version " VERSION_WSTRING L" {7} ({8})\n"
-        L"Copyright {9} 2004-" VERSION_YEAR_WSTRING L" by Robert Elmer\n"
-        L"\n"
-        L"{{InformationHighlight}}TCDIR{{Information}} "
-        L"[{{InformationHighlight}}drive:{{Information}}]"
-        L"[{{InformationHighlight}}path{{Information}}]"
-        L"[{{InformationHighlight}}filename{{Information}}] "
-        L"[{{InformationHighlight}}{0}A{{Information}}[[:]{{InformationHighlight}}attributes{{Information}}]] "
-        L"[{{InformationHighlight}}{0}O{{Information}}[[:]{{InformationHighlight}}sortorder{{Information}}]] "
-        L"[{{InformationHighlight}}{0}T{{Information}}[[:]{{InformationHighlight}}timefield{{Information}}]] "
-        L"[{{InformationHighlight}}{0}S{{Information}}] "
-        L"[{{InformationHighlight}}{0}W{{Information}}] "
-        L"[{{InformationHighlight}}{0}B{{Information}}] "
-        L"[{{InformationHighlight}}{0}P{{Information}}] "
-        L"[{{InformationHighlight}}{0}M{{Information}}] "
-        L"[{{InformationHighlight}}{1}Env{{Information}}] "
-        L"[{{InformationHighlight}}{1}Config{{Information}}] "
-        L"[{{InformationHighlight}}{1}Owner{{Information}}] "
-        L"[{{InformationHighlight}}{1}Streams{{Information}}] "
-        L"[{{InformationHighlight}}{1}Icons{{Information}}]"
-#ifdef _DEBUG
-        L" [{{InformationHighlight}}{1}Debug{{Information}}]"
-#endif
-        L"\n";
+        L"Copyright {9} 2004-" VERSION_YEAR_WSTRING L" by Robert Elmer\n";
 
     static constexpr wchar_t k_wszUsageBody[] =
         L"{{Information}}\n"
         L"  [drive:][path][filename]\n"
-        L"              Specifies drive, directory, and/or files to list.\n"
+        L"                    Specifies drive, directory, and/or files to list.\n"
         L"\n"
-        L"  {{InformationHighlight}}{0}A{{Information}}          Displays files with specified attributes.\n"
-        L"  attributes   {{InformationHighlight}}D{{Information}}  Directories                {{InformationHighlight}}R{{Information}}  Read-only files\n"
-        L"               {{InformationHighlight}}H{{Information}}  Hidden files               {{InformationHighlight}}A{{Information}}  Files ready for archiving\n"
-        L"               {{InformationHighlight}}S{{Information}}  System files               {{InformationHighlight}}T{{Information}}  Temporary files\n"
-        L"               {{InformationHighlight}}E{{Information}}  Encrypted files            {{InformationHighlight}}C{{Information}}  Compressed files\n"
-        L"               {{InformationHighlight}}P{{Information}}  Reparse points             {{InformationHighlight}}0{{Information}}  Sparse files\n"
-        L"               {{InformationHighlight}}X{{Information}}  Not content indexed        {{InformationHighlight}}I{{Information}}  Integrity stream (ReFS)\n"
-        L"               {{InformationHighlight}}B{{Information}}  No scrub data (ReFS)       {{InformationHighlight}}O{{Information}}  Cloud-only (not local)\n"
-        L"               {{InformationHighlight}}L{{Information}}  Locally available          {{InformationHighlight}}V{{Information}}  Always locally available\n"
-        L"               {{InformationHighlight}}-{{Information}}  Prefix meaning not\n"
+        L"  {{InformationHighlight}}{0}A{{Information}}                Displays files with specified attributes.\n"
+        L"  attributes          {{InformationHighlight}}D{{Information}}  Directories                {{InformationHighlight}}R{{Information}}  Read-only files\n"
+        L"                      {{InformationHighlight}}H{{Information}}  Hidden files               {{InformationHighlight}}A{{Information}}  Files ready for archiving\n"
+        L"                      {{InformationHighlight}}S{{Information}}  System files               {{InformationHighlight}}T{{Information}}  Temporary files\n"
+        L"                      {{InformationHighlight}}E{{Information}}  Encrypted files            {{InformationHighlight}}C{{Information}}  Compressed files\n"
+        L"                      {{InformationHighlight}}P{{Information}}  Reparse points             {{InformationHighlight}}0{{Information}}  Sparse files\n"
+        L"                      {{InformationHighlight}}X{{Information}}  Not content indexed        {{InformationHighlight}}I{{Information}}  Integrity stream (ReFS)\n"
+        L"                      {{InformationHighlight}}B{{Information}}  No scrub data (ReFS)       {{InformationHighlight}}O{{Information}}  Cloud-only (not local)\n"
+        L"                      {{InformationHighlight}}L{{Information}}  Locally available          {{InformationHighlight}}V{{Information}}  Always locally available\n"
+        L"                      {{InformationHighlight}}-{{Information}}  Prefix meaning not\n"
         L"\n"
         L"  Cloud status symbols shown between file size and name:\n"
-        L"               {{CloudStatusCloudOnly}}{3}{{Information}}  Cloud-only (not locally available)\n"
-        L"               {{CloudStatusLocallyAvailable}}{4}{{Information}}  Locally available (can be freed)\n"
-        L"               {{CloudStatusAlwaysLocallyAvailable}}{5}{{Information}}  Always locally available (pinned)\n"
+        L"                      {{CloudStatusCloudOnly}}{3}{{Information}}  Cloud-only (not locally available)\n"
+        L"                      {{CloudStatusLocallyAvailable}}{4}{{Information}}  Locally available (can be freed)\n"
+        L"                      {{CloudStatusAlwaysLocallyAvailable}}{5}{{Information}}  Always locally available (pinned)\n"
         L"\n"
-        L"  {{InformationHighlight}}{0}O{{Information}}          List by files in sorted order.\n"
-        L"  sortorder    {{InformationHighlight}}N{{Information}}  By name (alphabetic)       {{InformationHighlight}}S{{Information}}  By size (smallest first)\n"
-        L"               {{InformationHighlight}}E{{Information}}  By extension (alphabetic)  {{InformationHighlight}}D{{Information}}  By date/time (oldest first)\n"
-        L"               {{InformationHighlight}}-{{Information}}  Prefix to reverse order\n"
+        L"  {{InformationHighlight}}{0}O{{Information}}                List by files in sorted order.\n"
+        L"  sortorder           {{InformationHighlight}}N{{Information}}  By name (alphabetic)       {{InformationHighlight}}S{{Information}}  By size (smallest first)\n"
+        L"                      {{InformationHighlight}}E{{Information}}  By extension (alphabetic)  {{InformationHighlight}}D{{Information}}  By date/time (oldest first)\n"
+        L"                      {{InformationHighlight}}-{{Information}}  Prefix to reverse order\n"
         L"\n"
-        L"  {{InformationHighlight}}{0}T{{Information}}          Selects the time field for display and sorting.\n"
-        L"  timefield    {{InformationHighlight}}C{{Information}}  Creation time              {{InformationHighlight}}A{{Information}}  Last access time\n"
-        L"               {{InformationHighlight}}W{{Information}}  Last write time (default)\n"
+        L"  {{InformationHighlight}}{0}T{{Information}}                Selects the time field for display and sorting.\n"
+        L"  timefield           {{InformationHighlight}}C{{Information}}  Creation time              {{InformationHighlight}}A{{Information}}  Last access time\n"
+        L"                      {{InformationHighlight}}W{{Information}}  Last write time (default)\n"
         L"\n"
-        L"  {{InformationHighlight}}{0}S{{Information}}          Displays files in specified directory and all subdirectories.\n"
-        L"  {{InformationHighlight}}{0}W{{Information}}          Displays results in a wide listing format.\n"
-        L"  {{InformationHighlight}}{0}B{{Information}}          Displays bare file names only (no headers, footers, or details).\n"
-        L"  {{InformationHighlight}}{0}P{{Information}}          Displays performance timing information.\n"
-        L"  {{InformationHighlight}}{0}M{{Information}}          Enables multi-threaded enumeration (default). Use{{InformationHighlight}}{2}{{Information}} to disable.\n"
-        L"  {{InformationHighlight}}{1}Env{{Information}}       {6}Displays " TCDIR_ENV_VAR_NAME L" help, syntax, and current value.\n"
-        L"  {{InformationHighlight}}{1}Config{{Information}}    {6}Displays current color configuration for all items and extensions.\n"
-        L"  {{InformationHighlight}}{1}Owner{{Information}}     {6}Displays file owner (DOMAIN\\User) for each file.\n"
-        L"  {{InformationHighlight}}{1}Streams{{Information}}   {6}Displays alternate data streams (NTFS only).\n"
-        L"  {{InformationHighlight}}{1}Icons{{Information}}     {6}Enables file-type icons (Nerd Font required). Use {{InformationHighlight}}{1}Icons-{{Information}} to disable."
+        L"  {{InformationHighlight}}{0}S{{Information}}                Displays files in specified directory and all subdirectories.\n"
+        L"  {{InformationHighlight}}{0}W{{Information}}                Displays results in a wide listing format.\n"
+        L"  {{InformationHighlight}}{0}B{{Information}}                Displays bare file names only (no headers, footers, or details).\n"
+        L"  {{InformationHighlight}}{0}P{{Information}}                Displays performance timing information.\n"
+        L"  {{InformationHighlight}}{0}M{{Information}}                Enables multi-threaded enumeration (default). Use{{InformationHighlight}}{2}{{Information}} to disable.\n"
+        L"  {{InformationHighlight}}{1}Env{{Information}}             {6}Displays " TCDIR_ENV_VAR_NAME L" help, syntax, and current value.\n"
+        L"  {{InformationHighlight}}{1}Config{{Information}}          {6}Displays current color configuration for all items and extensions.\n"
+        L"  {{InformationHighlight}}{1}Owner{{Information}}           {6}Displays the owner of each file and directory. Not allowed with {{InformationHighlight}}{1}Tree{{Information}}.\n"
+        L"  {{InformationHighlight}}{1}Streams{{Information}}         {6}Displays alternate data streams (NTFS only).\n"
+        L"  {{InformationHighlight}}{1}Icons{{Information}}           {6}Enables file-type icons (Nerd Font required). Use {{InformationHighlight}}{1}Icons-{{Information}} to disable.\n"
+        L"  {{InformationHighlight}}{1}Tree{{Information}}            {6}Displays a hierarchical directory tree view. Use {{InformationHighlight}}{1}Tree-{{Information}} to disable.\n"
+        L"  {{InformationHighlight}}{1}Depth{{Information}}={{InformationHighlight}}N{{Information}}         {6}Limits tree depth to N levels (requires {{InformationHighlight}}{1}Tree{{Information}}).\n"
+        L"  {{InformationHighlight}}{1}TreeIndent{{Information}}={{InformationHighlight}}N{{Information}}    {6}Sets tree indent width (1-8, default 4; requires {{InformationHighlight}}{1}Tree{{Information}}).\n"
+        L"  {{InformationHighlight}}{1}Size{{Information}}={{InformationHighlight}}Auto{{Information}}|{{InformationHighlight}}Bytes{{Information}} {6}File size format: {{InformationHighlight}}Auto{{Information}} = abbreviated (KB/MB/GB), {{InformationHighlight}}Bytes{{Information}} = exact with commas.\n"
+        L"  {6}                   Default: {{InformationHighlight}}Auto{{Information}} in tree mode, {{InformationHighlight}}Bytes{{Information}} otherwise."
 #ifdef _DEBUG
-        L"\n  {{InformationHighlight}}{1}Debug{{Information}}     {6}Displays raw file attributes in hex for diagnosing edge cases."
+        L"\n  {{InformationHighlight}}{1}Debug{{Information}}           {6}Displays raw file attributes in hex for diagnosing edge cases."
 #endif
     ;
 
@@ -305,6 +422,9 @@ void CUsage::DisplayUsage (CConsole & console, wchar_t chPrefix)
                                buildTimestamp, 
                                UnicodeSymbols::Copyright
                        ).c_str ());
+
+    // Print the synopsis line with dynamic word-wrapping
+    DisplaySynopsis (console, chPrefix);
 
     console.ColorPuts (format (k_wszUsageBody,
                                szShort, 
@@ -1183,6 +1303,7 @@ static void DisplayEnvVarSwitchesSection (CConsole & console, const CConfig & co
         &config.m_fShowOwner,
         &config.m_fShowStreams,
         &config.m_fIcons,
+        &config.m_fTree,
     };
 
     static_assert (_countof (switchValues) == _countof (s_kSwitchInfos), "Switch arrays must match");

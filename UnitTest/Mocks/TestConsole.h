@@ -34,3 +34,41 @@ public:
         return S_OK;
     }
 };
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CCapturingConsole
+//
+//  A test-only subclass of CConsole that captures all output into
+//  m_strCaptured instead of writing to stdout.  Each Flush() appends
+//  the current buffer to m_strCaptured, then clears the buffer.
+//
+////////////////////////////////////////////////////////////////////////////////
+
+class CCapturingConsole : public CConsole
+{
+public:
+
+    ~CCapturingConsole()
+    {
+        Flush();
+    }
+
+
+
+
+    HRESULT Flush (void) override
+    {
+        m_strCaptured += m_strBuffer;
+        m_strBuffer.clear();
+        return S_OK;
+    }
+
+
+
+    wstring m_strCaptured;
+};

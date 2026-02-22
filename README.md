@@ -44,7 +44,7 @@ Show help:
 
 Basic syntax:
 
-- `TCDIR [drive:][path][filename] [-A[[:]attributes]] [-O[[:]sortorder]] [-S] [-W] [-B] [-P] [-M] [--Env] [--Config] [--Icons]`
+- `TCDIR [drive:][path][filename] [-A[[:]attributes]] [-O[[:]sortorder]] [-T[[:]timefield]] [-S] [-W] [-B] [-P] [-M] [--Env] [--Config] [--Owner] [--Streams] [--Icons] [--Tree] [--Depth=N] [--TreeIndent=N] [--Size=Auto|Bytes]`
 
 Common switches:
 
@@ -60,7 +60,11 @@ Common switches:
 - `-B`: bare listing format
 - `-P`: show performance timing information
 - `-M`: enable multi-threaded enumeration (default); use `-M-` to disable
-- `--Owner`: display file owner (DOMAIN\User format)
+- `--Tree`: hierarchical directory tree view; use `--Tree-` to disable
+- `--Depth=N`: limit tree depth to N levels (requires `--Tree`)
+- `--TreeIndent=N`: tree indent width per level, 1–8, default 4 (requires `--Tree`)
+- `--Size=Auto|Bytes`: `Auto` shows abbreviated sizes (e.g., `8.90 KB`); `Bytes` shows exact comma-separated sizes. Tree mode defaults to `Auto`, non-tree defaults to `Bytes`
+- `--Owner`: display file owner (DOMAIN\User format); not allowed with `--Tree`
 - `--Streams`: display NTFS alternate data streams
 - `--Env`: show `TCDIR` environment variable help/syntax/current value
 - `--Config`: show current color configuration
@@ -107,6 +111,22 @@ Icon mappings (~200 extensions, ~65 well-known directories) are aligned with the
 
 Use `--Icons` to force icons on, or `--Icons-` to force them off, regardless of detection.
 
+### Tree view (`--Tree`)
+
+Tree mode displays the directory hierarchy with Unicode box-drawing connectors (`├──`, `└──`, `│`). All metadata columns (date, time, attributes, size, cloud status) appear at every level. Directories and files are sorted together (interleaved) rather than grouped.
+
+- `tcdir --Tree` — show full tree from the current directory
+- `tcdir --Tree --Depth=2` — show only 2 levels deep
+- `tcdir --Tree --TreeIndent=2` — narrower indentation (default is 4)
+- `tcdir --Tree *.cpp` — show only `.cpp` files; empty subdirectories are pruned
+
+Tree mode uses abbreviated file sizes (`--Size=Auto`) by default for consistent column alignment across directories. Junction points and symlinks are listed but not expanded, preventing infinite cycles.
+
+Incompatible with `-W` (wide), `-B` (bare), `-S` (recurse), `--Owner`, and `--Size=Bytes`.
+
+- Tree listing: `TCDir.exe --Tree`
+![TCDir tree listing](Assets/TCDir%20Tree.png)
+
 Examples:
 - Recurse through subdirectories: `TCDir.exe -s`
 ![TCDir recursive listing](Assets/TCDir%20Subdirectories.png)
@@ -137,6 +157,10 @@ Enable default switches by including the switch name:
 - `Owner` - display file ownership by default
 - `Streams` - display NTFS alternate data streams by default
 - `Icons` - enable Nerd Font icons by default; `Icons-` to force off
+- `Tree` - enable tree view by default; `Tree-` to force off
+- `Depth=N` - set default tree depth limit
+- `TreeIndent=N` - set default tree indent width (1–8)
+- `Size=Auto` / `Size=Bytes` - set default size display format
 
 ### Color customization
 

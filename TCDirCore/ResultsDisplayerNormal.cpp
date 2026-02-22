@@ -231,21 +231,45 @@ void CResultsDisplayerNormal::DisplayResultsNormalAttributes  (DWORD dwFileAttri
 
 void CResultsDisplayerNormal::DisplayResultsNormalFileSize (const WIN32_FIND_DATA & fileInfo, size_t cchStringLengthOfMaxFileSize)
 {
-    static constexpr WCHAR  kszDirSize[] = L"<DIR>";
-    static constexpr size_t kcchDirSize  = ARRAYSIZE (kszDirSize) - 1;
+    static constexpr WCHAR  kszDirSize[]    = L"<DIR>";
+    static constexpr size_t kcchDirSize     = ARRAYSIZE (kszDirSize) - 1;
+    static constexpr size_t kcchAbbreviated = 7;
 
-    size_t         cchMaxFileSize = max (cchStringLengthOfMaxFileSize, kcchDirSize);
     ULARGE_INTEGER uliFileSize;
-    
+
 
 
     uliFileSize.LowPart  = fileInfo.nFileSizeLow;
     uliFileSize.HighPart = fileInfo.nFileSizeHigh;
 
+    //
+    // Abbreviated size mode (Auto): fixed 7-character field, Explorer-style
+    //
+
+    if (m_cmdLinePtr->m_eSizeFormat == ESizeFormat::Auto)
+    {
+        if ((fileInfo.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) == 0)
+        {
+            m_consolePtr->Printf (CConfig::EAttribute::Size, L"  %7s", FormatAbbreviatedSize (uliFileSize.QuadPart).c_str());
+        }
+        else
+        {
+            m_consolePtr->Printf (CConfig::EAttribute::Directory, L" <DIR>   ");
+        }
+
+        return;
+    }
+
+    //
+    // Bytes mode (comma-separated exact size): variable-width column
+    //
+
+    size_t cchMaxFileSize = max (cchStringLengthOfMaxFileSize, kcchDirSize);
+
     if ((fileInfo.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) == 0)
     {
         m_consolePtr->Printf (CConfig::EAttribute::Size, 
-                              L" %*s ", 
+                              L"  %*s", 
                               cchMaxFileSize, 
                               FormatNumberWithSeparators (uliFileSize.QuadPart).c_str());
     }
@@ -253,7 +277,7 @@ void CResultsDisplayerNormal::DisplayResultsNormalFileSize (const WIN32_FIND_DAT
     {
         size_t cchLeftSidePadding = (cchMaxFileSize - kcchDirSize) / 2;            
         m_consolePtr->Printf (CConfig::EAttribute::Directory, 
-                              L" %*s%-*s ", 
+                              L"  %*s%-*s", 
                               cchLeftSidePadding, 
                               L"", 
                               cchMaxFileSize - cchLeftSidePadding, 
@@ -261,6 +285,98 @@ void CResultsDisplayerNormal::DisplayResultsNormalFileSize (const WIN32_FIND_DAT
     }        
 }
 
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CResultsDisplayerNormal::FormatAbbreviatedSize
+//
+//  Explorer-style abbreviated file size: 1024-based division with 3
+//  significant digits and a fixed 7-character width.  The numeric
+//  portion is right-justified in a 4-character field, followed by a
+//  space separator, followed by the unit label left-justified in a
+//  2-character field.  This ensures numbers and suffixes each align
+//  in their own sub-column.
+//
+//  Range                 Format       Example
+//  0                     0 B          "   0 B "
+//  1-999                 ### B        " 426 B "
+//  1000-1023             1 KB         "   1 KB"      (matches Explorer rounding)
+//  1024-10239            X.XX KB      "4.61 KB"
+//  10240-102399          XX.X KB      "17.1 KB"
+//  102400-1048575        ### KB       " 976 KB"
+//  1 MB+                 same 3-sig   "16.7 MB"
+//  1 GB+                 same         "1.39 GB"
+//  1 TB+                 same         "1.00 TB"
+//
+////////////////////////////////////////////////////////////////////////////////
+
+wstring CResultsDisplayerNormal::FormatAbbreviatedSize (ULONGLONG cbSize)
+{
+    static constexpr LPCWSTR s_krgSuffixes[] = { L"B", L"KB", L"MB", L"GB", L"TB", L"PB", L"EB" };
+    static constexpr size_t  s_kcSuffixes    = ARRAYSIZE (s_krgSuffixes);
+
+    WCHAR szBuf[16] = {};
+
+
+
+    //
+    // Bytes range: 0-999 displayed as integer bytes
+    //
+
+    if (cbSize < 1000)
+    {
+        swprintf_s (szBuf, L"%4llu %-2s", cbSize, L"B");
+        return szBuf;
+    }
+
+    //
+    // 1000-1023 bytes: Explorer shows "1 KB" (rounds up)
+    //
+
+    if (cbSize < 1024)
+    {
+        return L"   1 KB";
+    }
+
+    //
+    // Divide by 1024 repeatedly until value fits in 3 significant digits.
+    // Use double for fractional display.
+    //
+
+    double   dValue      = static_cast<double>(cbSize);
+    size_t   idxSuffix   = 0;
+
+    while (dValue >= 1024.0 && idxSuffix + 1 < s_kcSuffixes)
+    {
+        dValue /= 1024.0;
+        ++idxSuffix;
+    }
+
+    //
+    // Three-significant-digit formatting:
+    //   <10    → X.XX  (e.g., "4.61 KB")
+    //   <100   → XX.X  (e.g., "17.1 KB")
+    //   >=100  → ###   (e.g., " 976 KB")
+    //
+
+    if (dValue < 10.0)
+    {
+        swprintf_s (szBuf, L"%4.2f %-2s", dValue, s_krgSuffixes[idxSuffix]);
+    }
+    else if (dValue < 100.0)
+    {
+        swprintf_s (szBuf, L"%4.1f %-2s", dValue, s_krgSuffixes[idxSuffix]);
+    }
+    else
+    {
+        swprintf_s (szBuf, L"%4.0f %-2s", dValue, s_krgSuffixes[idxSuffix]);
+    }
+
+    return szBuf;
+}
 
 
 
@@ -487,7 +603,7 @@ void CResultsDisplayerNormal::DisplayFileStreams (const FileInfo & fileEntry, si
     // Match normal file output format:
     //   Date/time: 21 chars (10 date + 2 spaces + 8 time + 1 space)
     //   Attributes: 9 chars
-    //   Size: " %*s " (1 leading space + width + 1 trailing space)
+    //   Size: "  %*s" (2 leading spaces + width, no trailing space)
     //   Cloud status: 2 chars (symbol + space)
     //   Owner: cchOwnerWidth + 1 for trailing space (if showing owner)
     // Use same width calculation as DisplayResultsNormalFileSize (max of file size or 5 for "<DIR>")
@@ -500,7 +616,7 @@ void CResultsDisplayerNormal::DisplayFileStreams (const FileInfo & fileEntry, si
         wstring pszStreamSize   = FormatNumberWithSeparators (si.m_liSize.QuadPart);
         int     cchOwnerPadding = (cchOwnerWidth > 0) ? static_cast<int>(cchOwnerWidth + 1) : 0;
 
-        m_consolePtr->ColorPrintf (L"{Default}%*c{Size} %*s {Default}  %*s{Stream}%s%s\n",
+        m_consolePtr->ColorPrintf (L"{Default}%*c{Size}  %*s{Default}  %*s{Stream}%s%s\n",
                                    30, L' ',
                                    static_cast<int>(cchMaxFileSize), pszStreamSize.c_str(),
                                    cchOwnerPadding, L"",

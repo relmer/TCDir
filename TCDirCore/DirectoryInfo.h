@@ -41,11 +41,14 @@ struct FileInfo : public WIN32_FIND_DATA
     
     // Construct from WIN32_FIND_DATA
     FileInfo (const WIN32_FIND_DATA & wfd) : 
-        WIN32_FIND_DATA (wfd) 
+        WIN32_FIND_DATA (wfd),
+        m_strLowerName  (wfd.cFileName)
     {
+        transform (m_strLowerName.begin(), m_strLowerName.end(), m_strLowerName.begin(), towlower);
     }
 
-    vector<SStreamInfo> m_vStreams;   // Alternate data streams (empty if none or not collected)
+    vector<SStreamInfo> m_vStreams;        // Alternate data streams (empty if none or not collected)
+    wstring             m_strLowerName;   // Pre-computed lowercase filename for fast lookups
 };
 
 typedef vector<FileInfo>         FileInfoVector;
@@ -106,4 +109,15 @@ public:
     vector<shared_ptr<CDirectoryInfo>>      m_vChildren;
     mutex                                   m_mutex;
     condition_variable                      m_cvStatusChanged;
+
+    //
+    // Tree-pruning support (used only when tree mode + file mask is active).
+    // Producer threads propagate match/completion signals upward through the
+    // parent chain; the display thread waits on m_cvStatusChanged until
+    // visibility is determined.  See research.md R14.
+    //
+
+    weak_ptr<CDirectoryInfo>                m_wpParent;
+    atomic<bool>                            m_fDescendantMatchFound { false };
+    atomic<bool>                            m_fSubtreeComplete      { false };
 };

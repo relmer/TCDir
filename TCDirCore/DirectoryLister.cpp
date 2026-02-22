@@ -107,7 +107,7 @@ void CDirectoryLister::List (const MaskGroup & group)
     {
         CDriveInfo driveInfo (dirPath);
 
-        if (m_cmdLinePtr->m_fMultiThreaded && m_cmdLinePtr->m_fRecurse)
+        if ((m_cmdLinePtr->m_fMultiThreaded && m_cmdLinePtr->m_fRecurse) || m_cmdLinePtr->m_fTree)
         {
             hr = ProcessDirectoryMultiThreaded (driveInfo, dirPath, fileSpecs, IResultsDisplayer::EDirectoryLevel::Initial);
             CHR (hr);

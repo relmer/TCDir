@@ -1,5 +1,6 @@
 #include "pch.h"
 #include "EhmTestHelper.h"
+#include "Mocks/TestConsole.h"
 #include "../TCDirCore/Ehm.h"
 #include "../TCDirCore/Config.h"
 #include "../TCDirCore/Console.h"
@@ -63,7 +64,7 @@ namespace UnitTest
             // This test validates that CConsole::Initialize works in the unit test environment
             
             auto cfg = std::make_shared<CConfig>();
-            auto con = std::make_shared<CConsole>();
+            auto con = std::make_shared<CTestConsole> ();
             
             HRESULT hr = con->Initialize(cfg);
             Assert::IsTrue (SUCCEEDED(hr), L"CConsole::Initialize should succeed");

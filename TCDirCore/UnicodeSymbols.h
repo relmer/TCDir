@@ -26,6 +26,15 @@ namespace UnicodeSymbols
     static constexpr WCHAR LineHorizontal   = L'\u2500';  // ─ - Horizontal line for separators
 
     //
+    // Tree drawing characters
+    //
+
+    static constexpr WCHAR TreeVertical     = L'\u2502';  // │ - Vertical line for tree continuation
+    static constexpr WCHAR TreeTee          = L'\u251C';  // ├ - Vertical-and-right (middle entry)
+    static constexpr WCHAR TreeCorner       = L'\u2514';  // └ - Up-and-right (last entry)
+    static constexpr WCHAR TreeHorizontal   = L'\u2500';  // ─ - Horizontal line for tree connectors
+
+    //
     // Typographic symbols
     //
 

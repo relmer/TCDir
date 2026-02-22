@@ -2,6 +2,7 @@
 #include "EhmTestHelper.h"
 #include "../TCDirCore/Console.h"
 #include "../TCDirCore/Config.h"
+#include "../TCDirCore/Usage.h"
 #include "Mocks/TestConsole.h"
 
 
@@ -364,6 +365,277 @@ namespace UnitTest
             Assert::IsFalse (s_fAssertFired, L"ASSERT should NOT fire for valid color markers");
         }
     };
+
+
+
+
+
+    //
+    //  CCapturingConsole
+    //
+    //  Captures buffer content on Flush instead of discarding it.
+    //
+
+    class CCapturingConsole : public CConsole
+    {
+    public:
+
+        wstring m_strCapturedOutput;
+
+
+
+        ~CCapturingConsole()
+        {
+            Flush();
+        }
+
+
+
+        void SetWidth (UINT cx)
+        {
+            m_cxConsoleWidth = cx;
+        }
+
+
+
+        HRESULT Flush (void) override
+        {
+            m_strCapturedOutput.append (m_strBuffer);
+            m_strBuffer.clear();
+            return S_OK;
+        }
+    };
+
+
+
+
+
+    //
+    //  StripAnsiCodes
+    //
+    //  Removes ANSI SGR escape sequences (\x1b[...m) from a string,
+    //  leaving only visible text.
+    //
+
+    static wstring StripAnsiCodes (const wstring & input)
+    {
+        wstring result;
+        result.reserve (input.size());
+
+
+
+        for (size_t i = 0; i < input.size(); ++i)
+        {
+            if (input[i] == L'\x1b' && i + 1 < input.size() && input[i + 1] == L'[')
+            {
+                // Skip ESC [ ... m sequence
+                i += 2;
+                while (i < input.size() && input[i] != L'm')
+                    ++i;
+                continue;
+            }
+
+            result.push_back (input[i]);
+        }
+
+        return result;
+    }
+
+
+
+
+
+    //
+    //  FindColumnOfText
+    //
+    //  In a multi-line string, finds the line containing 'lineMarker' and
+    //  returns the column (0-based) where 'targetText' starts on that line.
+    //  Returns -1 if not found.
+    //
+
+    static int FindColumnOfText (const wstring & text, const wstring & lineMarker, const wstring & targetText)
+    {
+        size_t markerPos = text.find (lineMarker);
+
+        if (markerPos == wstring::npos)
+            return -1;
+
+        // Find beginning of this line
+        size_t lineBegin = text.rfind (L'\n', markerPos);
+        lineBegin = (lineBegin == wstring::npos) ? 0 : lineBegin + 1;
+
+        // Find the target text after the marker
+        size_t targetPos = text.find (targetText, markerPos);
+
+        if (targetPos == wstring::npos)
+            return -1;
+
+        return static_cast<int>(targetPos - lineBegin);
+    }
+
+
+
+
+
+    TEST_CLASS(UsageAlignmentTests)
+    {
+    public:
+
+        TEST_CLASS_INITIALIZE(ClassInitialize)
+        {
+            SetupEhmForUnitTests();
+        }
+
+
+
+
+        //
+        //  Verify that all /? descriptions and sub-descriptions are properly
+        //  column-aligned for both "/" and "--" prefix modes.
+        //
+
+        TEST_METHOD(DisplayUsage_SlashPrefix_DescriptionsAlignedAtColumn20)
+        {
+            auto con = make_shared<CCapturingConsole>();
+            auto cfg = make_shared<CConfig>();
+            con->Initialize (cfg);
+
+
+
+            CUsage::DisplayUsage (*con, L'/');
+            con->Flush();
+
+            wstring plain = StripAnsiCodes (con->m_strCapturedOutput);
+
+            // All option descriptions must start at column 20
+            constexpr int DESC_COL = 20;
+
+            Assert::AreEqual (DESC_COL, FindColumnOfText (plain, L"/A ",             L"Displays files with specified"),    L"/A description column");
+            Assert::AreEqual (DESC_COL, FindColumnOfText (plain, L"/O ",             L"List by files in sorted"),          L"/O description column");
+            Assert::AreEqual (DESC_COL, FindColumnOfText (plain, L"/T ",             L"Selects the time field"),           L"/T description column");
+            Assert::AreEqual (DESC_COL, FindColumnOfText (plain, L"/S ",             L"Displays files in specified dir"),  L"/S description column");
+            Assert::AreEqual (DESC_COL, FindColumnOfText (plain, L"/W ",             L"Displays results in a wide"),       L"/W description column");
+            Assert::AreEqual (DESC_COL, FindColumnOfText (plain, L"/B ",             L"Displays bare file"),               L"/B description column");
+            Assert::AreEqual (DESC_COL, FindColumnOfText (plain, L"/M ",             L"Enables multi-threaded"),           L"/M description column");
+            Assert::AreEqual (DESC_COL, FindColumnOfText (plain, L"/Env ",           L"Displays TCDIR"),                   L"/Env description column");
+            Assert::AreEqual (DESC_COL, FindColumnOfText (plain, L"/Config ",        L"Displays current color"),           L"/Config description column");
+            Assert::AreEqual (DESC_COL, FindColumnOfText (plain, L"/Owner ",         L"Displays the owner"),             L"/Owner description column");
+            Assert::AreEqual (DESC_COL, FindColumnOfText (plain, L"/Streams ",       L"Displays alternate data"),          L"/Streams description column");
+            Assert::AreEqual (DESC_COL, FindColumnOfText (plain, L"/Icons ",         L"Enables file-type icons"),          L"/Icons description column");
+            Assert::AreEqual (DESC_COL, FindColumnOfText (plain, L"/Tree ",          L"Displays a hierarchical"),          L"/Tree description column");
+            Assert::AreEqual (DESC_COL, FindColumnOfText (plain, L"  /Depth=N",      L"Limits tree depth"),                L"/Depth=N description column");
+            Assert::AreEqual (DESC_COL, FindColumnOfText (plain, L"  /TreeIndent=N", L"Sets tree indent"),                 L"/TreeIndent=N description column");
+
+            // Sub-descriptions must start at column 22 (DESC_COL + 2)
+            constexpr int SUB_COL = 22;
+
+            Assert::AreEqual (SUB_COL, FindColumnOfText (plain, L"  attributes",     L"D  Directories"),                   L"attributes sub-description column");
+            Assert::AreEqual (SUB_COL, FindColumnOfText (plain, L"  sortorder",      L"N  By name"),                       L"sortorder sub-description column");
+            Assert::AreEqual (SUB_COL, FindColumnOfText (plain, L"  timefield",      L"C  Creation time"),                 L"timefield sub-description column");
+        }
+
+
+
+
+
+        TEST_METHOD(DisplayUsage_DashPrefix_DescriptionsAlignedAtColumn20)
+        {
+            auto con = make_shared<CCapturingConsole>();
+            auto cfg = make_shared<CConfig>();
+            con->Initialize (cfg);
+
+
+
+            CUsage::DisplayUsage (*con, L'-');
+            con->Flush();
+
+            wstring plain = StripAnsiCodes (con->m_strCapturedOutput);
+
+            // All option descriptions must start at column 20 in -- mode too
+            constexpr int DESC_COL = 20;
+
+            Assert::AreEqual (DESC_COL, FindColumnOfText (plain, L"-A ",              L"Displays files with specified"),    L"-A description column");
+            Assert::AreEqual (DESC_COL, FindColumnOfText (plain, L"--Owner ",         L"Displays the owner"),              L"--Owner description column");
+            Assert::AreEqual (DESC_COL, FindColumnOfText (plain, L"  --TreeIndent=N", L"Sets tree indent"),                 L"--TreeIndent=N description column");
+
+            // Sub-descriptions at column 22
+            constexpr int SUB_COL = 22;
+
+            Assert::AreEqual (SUB_COL, FindColumnOfText (plain, L"  attributes",      L"D  Directories"),                   L"attributes sub-description column (-- mode)");
+        }
+
+
+
+
+
+        //
+        //  Verify that the synopsis line wraps at the console width, with
+        //  continuation lines indented to column 6 (under [drive:]).
+        //
+
+        TEST_METHOD(DisplayUsage_WideConsole_SynopsisOnOneLine)
+        {
+            auto con = make_shared<CCapturingConsole>();
+            auto cfg = make_shared<CConfig>();
+            con->Initialize (cfg);
+            con->SetWidth (300);
+
+
+
+            CUsage::DisplayUsage (*con, L'/');
+            con->Flush();
+
+            wstring plain = StripAnsiCodes (con->m_strCapturedOutput);
+
+            // Find the TCDIR line — it should contain all options on one line
+            size_t tcdirPos = plain.find (L"TCDIR [drive:]");
+            Assert::AreNotEqual (wstring::npos, tcdirPos, L"TCDIR synopsis not found");
+
+            // Find the end of the TCDIR line
+            size_t eolPos = plain.find (L'\n', tcdirPos);
+            Assert::AreNotEqual (wstring::npos, eolPos, L"TCDIR line end not found");
+
+            wstring tcdirLine = plain.substr (tcdirPos, eolPos - tcdirPos);
+
+            // All options should be on this single line
+            Assert::IsTrue (tcdirLine.find (L"[/TreeIndent=N]") != wstring::npos, L"/TreeIndent=N should be on the TCDIR line");
+#ifdef _DEBUG
+            Assert::IsTrue (tcdirLine.find (L"[/Debug]")        != wstring::npos, L"/Debug should be on the TCDIR line");
+#endif
+        }
+
+
+
+
+
+        TEST_METHOD(DisplayUsage_NarrowConsole_SynopsisWrapsAtColumn6)
+        {
+            auto con = make_shared<CCapturingConsole>();
+            auto cfg = make_shared<CConfig>();
+            con->Initialize (cfg);
+            con->SetWidth (80);
+
+
+
+            CUsage::DisplayUsage (*con, L'/');
+            con->Flush();
+
+            wstring plain = StripAnsiCodes (con->m_strCapturedOutput);
+
+            // Find the TCDIR line
+            size_t tcdirPos = plain.find (L"TCDIR [drive:]");
+            Assert::AreNotEqual (wstring::npos, tcdirPos, L"TCDIR synopsis not found");
+
+            // The synopsis must wrap — /TreeIndent=N should NOT be on the first line
+            size_t firstEol   = plain.find (L'\n', tcdirPos);
+            wstring firstLine = plain.substr (tcdirPos, firstEol - tcdirPos);
+            Assert::IsTrue (firstLine.find (L"[/TreeIndent=N]") == wstring::npos, L"/TreeIndent=N should NOT be on the first line at 80 cols");
+
+            // Find the continuation line — it should start with 6 spaces
+            size_t contLinePos = firstEol + 1;
+            wstring contLine   = plain.substr (contLinePos, plain.find (L'\n', contLinePos) - contLinePos);
+            Assert::IsTrue (contLine.substr (0, 6) == L"      ", L"Continuation line should start with 6-space indent");
+            Assert::IsTrue (contLine[6] == L'[', L"First option on continuation line should start at column 6");
+        }
+    };
 }
-
-

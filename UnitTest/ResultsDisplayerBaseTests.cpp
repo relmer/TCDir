@@ -1,5 +1,6 @@
 #include "pch.h"
 #include "EhmTestHelper.h"
+#include "Mocks/TestConsole.h"
 #include "../TCDirCore/ResultsDisplayerWithHeaderAndFooter.h"
 #include "../TCDirCore/Config.h"
 #include "../TCDirCore/Console.h"
@@ -38,7 +39,7 @@ namespace UnitTest
             };
 
             auto cmd = std::make_shared<CCommandLine> ();
-            auto con = std::make_shared<CConsole> ();
+            auto con = std::make_shared<CTestConsole> ();
             auto cfg = std::make_shared<CConfig> ();
             con->Initialize (cfg);
             DisplayerProbe dp (cmd, con, cfg);
@@ -65,7 +66,7 @@ namespace UnitTest
             };
 
             auto cmd = std::make_shared<CCommandLine> ();
-            auto con = std::make_shared<CConsole> ();
+            auto con = std::make_shared<CTestConsole> ();
             auto cfg = std::make_shared<CConfig> ();
             con->Initialize (cfg);
             DisplayerProbe dp (cmd, con, cfg);
@@ -100,7 +101,7 @@ namespace UnitTest
             };
 
             auto cmd = std::make_shared<CCommandLine> ();
-            auto con = std::make_shared<CConsole> ();
+            auto con = std::make_shared<CTestConsole> ();
             auto cfg = std::make_shared<CConfig> ();
             con->Initialize (cfg);
             DisplayerProbe dp (cmd, con, cfg);

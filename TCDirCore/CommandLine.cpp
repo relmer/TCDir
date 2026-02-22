@@ -71,6 +71,21 @@ void CCommandLine::ApplyConfigDefaults (const CConfig & config)
     if (config.m_fShowOwner.has_value())                       m_fShowOwner     = config.m_fShowOwner.value();
     if (config.m_fShowStreams.has_value())                     m_fShowStreams   = config.m_fShowStreams.value();
     if (config.m_fIcons.has_value() && !m_fIcons.has_value())  m_fIcons         = config.m_fIcons.value();
+    if (config.m_fTree.has_value())                            m_fTree          = config.m_fTree.value();
+
+    //
+    // Only apply tree-specific config when tree mode is active.
+    // "TCDIR=Depth=2" without "Tree" is silently ignored.
+    //
+
+    if (m_fTree)
+    {
+        if (config.m_cMaxDepth.has_value())                    m_cMaxDepth      = config.m_cMaxDepth.value();
+        if (config.m_cTreeIndent.has_value())                  m_cTreeIndent    = config.m_cTreeIndent.value();
+    }
+
+    if (config.m_eSizeFormat.has_value() &&
+        m_eSizeFormat == ESizeFormat::Default)                  m_eSizeFormat    = config.m_eSizeFormat.value();
 }
 
 
@@ -145,7 +160,7 @@ HRESULT CCommandLine::Parse (int cArg, WCHAR ** ppszArg)
                 }
                 else
                 {
-                    hr = HandleSwitch (pszSwitchArg);
+                    hr = HandleSwitch (pszSwitchArg, cArg, ppszArg);
                 }
 
                 CHR (hr);
@@ -167,7 +182,73 @@ HRESULT CCommandLine::Parse (int cArg, WCHAR ** ppszArg)
         ++ppszArg;       
     }
 
+    //
+    // Post-parse validation: check switch conflicts
+    //
+
+    if (m_fTree)
+    {
+        if (m_fWideListing)
+        {
+            m_strValidationError = L"--Tree and -W (wide) cannot be used together.";
+            CBREx (false, E_INVALIDARG);
+        }
+
+        if (m_fBareListing)
+        {
+            m_strValidationError = L"--Tree and -B (bare) cannot be used together.";
+            CBREx (false, E_INVALIDARG);
+        }
+
+        if (m_fRecurse)
+        {
+            m_strValidationError = L"--Tree and -S (recurse) cannot be used together.";
+            CBREx (false, E_INVALIDARG);
+        }
+
+        if (m_fShowOwner)
+        {
+            m_strValidationError = L"--Tree and --Owner cannot be used together.";
+            CBREx (false, E_INVALIDARG);
+        }
+
+        if (m_eSizeFormat == ESizeFormat::Bytes)
+        {
+            m_strValidationError = L"--Tree and --Size=Bytes cannot be used together.";
+            CBREx (false, E_INVALIDARG);
+        }
+    }
+
+    if (m_cMaxDepth != 0 && !m_fTree)
+    {
+        m_strValidationError = L"--Depth requires --Tree.";
+        CBREx (false, E_INVALIDARG);
+    }
+
+    if (m_cTreeIndent != 4 && !m_fTree)
+    {
+        m_strValidationError = L"--TreeIndent requires --Tree.";
+        CBREx (false, E_INVALIDARG);
+    }
+
+    if (m_cTreeIndent < 1 || m_cTreeIndent > 8)
+    {
+        m_strValidationError = L"--TreeIndent must be between 1 and 8.";
+        CBREx (false, E_INVALIDARG);
+    }
+
+    //
+    // Resolve Default size format: Auto in tree mode, Bytes in non-tree
+    // (must be after Error: label so it runs even when cArg == 0 and
+    // tree mode was activated via TCDIR env var only)
+    //
+
 Error:
+    if (m_eSizeFormat == ESizeFormat::Default)
+    {
+        m_eSizeFormat = m_fTree ? ESizeFormat::Auto : ESizeFormat::Bytes;
+    }
+
     return hr;
 }
 
@@ -184,7 +265,7 @@ Error:
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-HRESULT CCommandLine::HandleSwitch (LPCWSTR pszArg)
+HRESULT CCommandLine::HandleSwitch (LPCWSTR pszArg, int & cArg, WCHAR ** & ppszArg)
 {
     struct SwitchEntry
     {
@@ -219,7 +300,7 @@ HRESULT CCommandLine::HandleSwitch (LPCWSTR pszArg)
 
     if (wcslen (pszArg) >= 3 && pszArg[1] != L':' && pszArg[1] != L'-')
     {
-        return HandleLongSwitch (pszArg);
+        return HandleLongSwitch (pszArg, cArg, ppszArg);
     }
 
     //
@@ -274,7 +355,7 @@ HRESULT CCommandLine::HandleSwitch (LPCWSTR pszArg)
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-HRESULT CCommandLine::HandleLongSwitch (LPCWSTR pszArg)
+HRESULT CCommandLine::HandleLongSwitch (LPCWSTR pszArg, int & cArg, WCHAR ** & ppszArg)
 {
     struct LongSwitchEntry
     {
@@ -333,6 +414,114 @@ HRESULT CCommandLine::HandleLongSwitch (LPCWSTR pszArg)
         }
     }
 
+    //
+    //  Tree switch — supports negation via --Tree-
+    //  Negation resets Depth and TreeIndent to defaults (protects env var override)
+    //
+
+    if (hr != S_OK)
+    {
+        if (_wcsicmp (strSwitch.c_str (), L"tree") == 0)
+        {
+            m_fTree = !fNegated;
+
+            if (fNegated)
+            {
+                m_cMaxDepth   = 0;
+                m_cTreeIndent = 4;
+            }
+
+            hr = S_OK;
+        }
+    }
+
+    //
+    //  Parameterized switches: --Depth=N, --TreeIndent=N
+    //  Support both '=' separator and space separator
+    //
+
+    if (hr != S_OK)
+    {
+        size_t  eqPos       = strSwitch.find (L'=');
+        wstring switchName  = (eqPos != wstring::npos) ? strSwitch.substr (0, eqPos) : strSwitch;
+        wstring switchValue;
+        bool    fHasValue   = false;
+
+        if (eqPos != wstring::npos)
+        {
+            switchValue = strSwitch.substr (eqPos + 1);
+            fHasValue   = true;
+        }
+        else if (cArg > 1)
+        {
+            //
+            // Space separator: consume next arg if it looks numeric
+            //
+
+            LPCWSTR pszNext = *(ppszArg + 1);
+
+            if (iswdigit (pszNext[0]) || (pszNext[0] == L'-' && iswdigit (pszNext[1])))
+            {
+                switchValue = pszNext;
+                fHasValue   = true;
+                --cArg;
+                ++ppszArg;
+            }
+        }
+
+        if (_wcsicmp (switchName.c_str (), L"depth") == 0)
+        {
+            CBREx (fHasValue, E_INVALIDARG);
+
+            int n = _wtoi (switchValue.c_str ());
+
+            if (n < 1)
+            {
+                m_strValidationError = L"--Depth must be a positive integer.";
+                CBREx (false, E_INVALIDARG);
+            }
+
+            m_cMaxDepth = n;
+            hr = S_OK;
+        }
+        else if (_wcsicmp (switchName.c_str (), L"treeindent") == 0)
+        {
+            CBREx (fHasValue, E_INVALIDARG);
+
+            int n = _wtoi (switchValue.c_str ());
+
+            if (n < 1 || n > 8)
+            {
+                m_strValidationError = L"--TreeIndent must be between 1 and 8.";
+                CBREx (false, E_INVALIDARG);
+            }
+
+            m_cTreeIndent = n;
+            hr = S_OK;
+        }
+        else if (_wcsicmp (switchName.c_str (), L"size") == 0)
+        {
+            CBREx (fHasValue, E_INVALIDARG);
+
+            if (_wcsicmp (switchValue.c_str (), L"auto") == 0)
+            {
+                m_eSizeFormat = ESizeFormat::Auto;
+            }
+            else if (_wcsicmp (switchValue.c_str (), L"bytes") == 0)
+            {
+                m_eSizeFormat = ESizeFormat::Bytes;
+            }
+            else
+            {
+                m_strValidationError = L"--Size must be Auto or Bytes.";
+                CBREx (false, E_INVALIDARG);
+            }
+
+            hr = S_OK;
+        }
+    }
+
+Error:
     return hr;
 }
 

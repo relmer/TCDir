@@ -1,5 +1,6 @@
 #include "pch.h"
 #include "EhmTestHelper.h"
+#include "Mocks/TestConsole.h"
 #include "../TCDirCore/ResultsDisplayerNormal.h"
 #include "../TCDirCore/ResultsDisplayerWide.h"
 #include "../TCDirCore/ResultsDisplayerBare.h"
@@ -111,7 +112,7 @@ namespace UnitTest
         TEST_METHOD(Normal_FormatNumber_Samples)
         {
             auto cmd = std::make_shared<CCommandLine>();
-            auto con = std::make_shared<CConsole>();
+            auto con = std::make_shared<CTestConsole> ();
             auto cfg = std::make_shared<CConfig>();
             con->Initialize(cfg);
             NormalDisplayerProbe probe(cmd, con, cfg);
@@ -141,7 +142,7 @@ namespace UnitTest
             };
 
             auto cmd = std::make_shared<CCommandLine>();
-            auto con = std::make_shared<CConsole>();
+            auto con = std::make_shared<CTestConsole> ();
             auto cfg = std::make_shared<CConfig>();
             con->Initialize(cfg);
             WideProbe wp(cmd, con, cfg);
@@ -165,7 +166,7 @@ namespace UnitTest
         TEST_METHOD(GetCloudStatus_None_RegularFile)
         {
             auto cmd = std::make_shared<CCommandLine>();
-            auto con = std::make_shared<CConsole>();
+            auto con = std::make_shared<CTestConsole> ();
             auto cfg = std::make_shared<CConfig>();
             con->Initialize(cfg);
             NormalDisplayerProbe probe(cmd, con, cfg);
@@ -187,7 +188,7 @@ namespace UnitTest
             // Cloud attributes should be ignored if file is not in a sync root
             // (e.g., stale attributes from files copied from cloud locations)
             auto cmd = std::make_shared<CCommandLine>();
-            auto con = std::make_shared<CConsole>();
+            auto con = std::make_shared<CTestConsole> ();
             auto cfg = std::make_shared<CConfig>();
             con->Initialize(cfg);
             NormalDisplayerProbe probe(cmd, con, cfg);
@@ -209,7 +210,7 @@ namespace UnitTest
         TEST_METHOD(GetCloudStatus_CloudOnly_Offline)
         {
             auto cmd = std::make_shared<CCommandLine>();
-            auto con = std::make_shared<CConsole>();
+            auto con = std::make_shared<CTestConsole> ();
             auto cfg = std::make_shared<CConfig>();
             con->Initialize(cfg);
             NormalDisplayerProbe probe(cmd, con, cfg);
@@ -229,7 +230,7 @@ namespace UnitTest
         TEST_METHOD(GetCloudStatus_CloudOnly_RecallOnDataAccess)
         {
             auto cmd = std::make_shared<CCommandLine>();
-            auto con = std::make_shared<CConsole>();
+            auto con = std::make_shared<CTestConsole> ();
             auto cfg = std::make_shared<CConfig>();
             con->Initialize(cfg);
             NormalDisplayerProbe probe(cmd, con, cfg);
@@ -249,7 +250,7 @@ namespace UnitTest
         TEST_METHOD(GetCloudStatus_CloudOnly_RecallOnOpen)
         {
             auto cmd = std::make_shared<CCommandLine>();
-            auto con = std::make_shared<CConsole>();
+            auto con = std::make_shared<CTestConsole> ();
             auto cfg = std::make_shared<CConfig>();
             con->Initialize(cfg);
             NormalDisplayerProbe probe(cmd, con, cfg);
@@ -269,7 +270,7 @@ namespace UnitTest
         TEST_METHOD(GetCloudStatus_Local_Unpinned)
         {
             auto cmd = std::make_shared<CCommandLine>();
-            auto con = std::make_shared<CConsole>();
+            auto con = std::make_shared<CTestConsole> ();
             auto cfg = std::make_shared<CConfig>();
             con->Initialize(cfg);
             NormalDisplayerProbe probe(cmd, con, cfg);
@@ -289,7 +290,7 @@ namespace UnitTest
         TEST_METHOD(GetCloudStatus_Pinned)
         {
             auto cmd = std::make_shared<CCommandLine>();
-            auto con = std::make_shared<CConsole>();
+            auto con = std::make_shared<CTestConsole> ();
             auto cfg = std::make_shared<CConfig>();
             con->Initialize(cfg);
             NormalDisplayerProbe probe(cmd, con, cfg);
@@ -309,7 +310,7 @@ namespace UnitTest
         TEST_METHOD(GetCloudStatus_PinnedTakesPriority)
         {
             auto cmd = std::make_shared<CCommandLine>();
-            auto con = std::make_shared<CConsole>();
+            auto con = std::make_shared<CTestConsole> ();
             auto cfg = std::make_shared<CConfig>();
             con->Initialize(cfg);
             NormalDisplayerProbe probe(cmd, con, cfg);
@@ -446,7 +447,7 @@ namespace UnitTest
         {
             // OneDrive system files can have both PINNED and UNPINNED bits set
             auto cmd = std::make_shared<CCommandLine>();
-            auto con = std::make_shared<CConsole>();
+            auto con = std::make_shared<CTestConsole> ();
             auto cfg = std::make_shared<CConfig>();
             con->Initialize(cfg);
             NormalDisplayerProbe probe(cmd, con, cfg);
@@ -502,7 +503,7 @@ namespace UnitTest
         TEST_METHOD(GetWideFormattedName_Directory_ClassicMode_HasBrackets)
         {
             auto cmd = std::make_shared<CCommandLine>();
-            auto con = std::make_shared<CConsole>();
+            auto con = std::make_shared<CTestConsole> ();
             auto cfg = std::make_shared<CConfig>();
             con->Initialize(cfg);
 
@@ -522,7 +523,7 @@ namespace UnitTest
         TEST_METHOD(GetWideFormattedName_Directory_IconsActive_NoBrackets)
         {
             auto cmd = std::make_shared<CCommandLine>();
-            auto con = std::make_shared<CConsole>();
+            auto con = std::make_shared<CTestConsole> ();
             auto cfg = std::make_shared<CConfig>();
             con->Initialize(cfg);
 
@@ -542,7 +543,7 @@ namespace UnitTest
         TEST_METHOD(GetWideFormattedName_File_ClassicMode_JustName)
         {
             auto cmd = std::make_shared<CCommandLine>();
-            auto con = std::make_shared<CConsole>();
+            auto con = std::make_shared<CTestConsole> ();
             auto cfg = std::make_shared<CConfig>();
             con->Initialize(cfg);
 
@@ -562,7 +563,7 @@ namespace UnitTest
         TEST_METHOD(GetWideFormattedName_File_IconsActive_JustName)
         {
             auto cmd = std::make_shared<CCommandLine>();
-            auto con = std::make_shared<CConsole>();
+            auto con = std::make_shared<CTestConsole> ();
             auto cfg = std::make_shared<CConfig>();
             con->Initialize(cfg);
 
@@ -586,7 +587,7 @@ namespace UnitTest
         TEST_METHOD(GetColumnInfo_IconsActive_WidthIncreasedByTwo)
         {
             auto cmd = std::make_shared<CCommandLine>();
-            auto con = std::make_shared<CConsole>();
+            auto con = std::make_shared<CTestConsole> ();
             auto cfg = std::make_shared<CConfig>();
             con->Initialize(cfg);
 
@@ -618,7 +619,7 @@ namespace UnitTest
         TEST_METHOD(GetColumnInfo_SyncRootWithIcons_WidthAccountsForBoth)
         {
             auto cmd = std::make_shared<CCommandLine>();
-            auto con = std::make_shared<CConsole>();
+            auto con = std::make_shared<CTestConsole> ();
             auto cfg = std::make_shared<CConfig>();
             con->Initialize(cfg);
 
@@ -653,7 +654,7 @@ namespace UnitTest
         TEST_METHOD(GetDisplayStyle_NormalMode_CppFileReturnsIcon)
         {
             auto cmd = std::make_shared<CCommandLine>();
-            auto con = std::make_shared<CConsole>();
+            auto con = std::make_shared<CTestConsole> ();
             auto cfg = std::make_shared<CConfig>();
             con->Initialize(cfg);
 
@@ -672,7 +673,7 @@ namespace UnitTest
         TEST_METHOD(GetDisplayStyle_DirectoryReturnsDirectoryIcon)
         {
             auto cmd = std::make_shared<CCommandLine>();
-            auto con = std::make_shared<CConsole>();
+            auto con = std::make_shared<CTestConsole> ();
             auto cfg = std::make_shared<CConfig>();
             con->Initialize(cfg);
 
@@ -689,7 +690,7 @@ namespace UnitTest
         TEST_METHOD(GetDisplayStyle_UnknownExtension_FallsBackToFileIcon)
         {
             auto cmd = std::make_shared<CCommandLine>();
-            auto con = std::make_shared<CConsole>();
+            auto con = std::make_shared<CTestConsole> ();
             auto cfg = std::make_shared<CConfig>();
             con->Initialize(cfg);
 
@@ -711,6 +712,141 @@ namespace UnitTest
 
             Assert::AreEqual (1u, wcp.count, L"BMP icon should be single wchar_t");
             Assert::AreNotEqual (static_cast<wchar_t>(0), wcp.chars[0], L"Should have non-null glyph");
+        }
+
+
+
+
+
+        //
+        //  FormatAbbreviatedSize tests — Explorer-style 3 significant digits, 7-char fixed width
+        //  Number right-justified in 4 chars, space, unit left-justified in 2 chars
+        //
+
+        TEST_METHOD(FormatAbbreviatedSize_Zero)
+        {
+            wstring s = CResultsDisplayerNormal::FormatAbbreviatedSize (0);
+            Assert::AreEqual (L"   0 B ", s.c_str());
+        }
+
+
+
+
+
+        TEST_METHOD(FormatAbbreviatedSize_SmallBytes)
+        {
+            Assert::AreEqual (L"   1 B ", CResultsDisplayerNormal::FormatAbbreviatedSize (1).c_str());
+            Assert::AreEqual (L" 426 B ", CResultsDisplayerNormal::FormatAbbreviatedSize (426).c_str());
+            Assert::AreEqual (L" 999 B ", CResultsDisplayerNormal::FormatAbbreviatedSize (999).c_str());
+        }
+
+
+
+
+
+        TEST_METHOD(FormatAbbreviatedSize_1000BytesRoundsToKB)
+        {
+            Assert::AreEqual (L"   1 KB", CResultsDisplayerNormal::FormatAbbreviatedSize (1000).c_str());
+            Assert::AreEqual (L"   1 KB", CResultsDisplayerNormal::FormatAbbreviatedSize (1023).c_str());
+        }
+
+
+
+
+
+        TEST_METHOD(FormatAbbreviatedSize_ExactlyOneKB)
+        {
+            // 1024 bytes = 1.00 KB
+            wstring s = CResultsDisplayerNormal::FormatAbbreviatedSize (1024);
+            Assert::AreEqual (L"1.00 KB", s.c_str());
+        }
+
+
+
+
+
+        TEST_METHOD(FormatAbbreviatedSize_FractionalKB)
+        {
+            // 4720 bytes = 4.609375 KB ≈ 4.61 KB
+            wstring s = CResultsDisplayerNormal::FormatAbbreviatedSize (4720);
+            Assert::AreEqual (L"4.61 KB", s.c_str());
+        }
+
+
+
+
+
+        TEST_METHOD(FormatAbbreviatedSize_TensKB)
+        {
+            // 17510 bytes = 17.099609375 KB ≈ 17.1 KB
+            wstring s = CResultsDisplayerNormal::FormatAbbreviatedSize (17510);
+            Assert::AreEqual (L"17.1 KB", s.c_str());
+        }
+
+
+
+
+
+        TEST_METHOD(FormatAbbreviatedSize_HundredsKB)
+        {
+            // 999424 bytes = 976 KB
+            wstring s = CResultsDisplayerNormal::FormatAbbreviatedSize (999424);
+            Assert::AreEqual (L" 976 KB", s.c_str());
+        }
+
+
+
+
+
+        TEST_METHOD(FormatAbbreviatedSize_OneMB)
+        {
+            // 1 MB = 1048576 bytes
+            wstring s = CResultsDisplayerNormal::FormatAbbreviatedSize (1048576);
+            Assert::AreEqual (L"1.00 MB", s.c_str());
+        }
+
+
+
+
+
+        TEST_METHOD(FormatAbbreviatedSize_TensMB)
+        {
+            // 17_563_648 bytes = 16.75 MB ≈ 16.8 MB
+            wstring s = CResultsDisplayerNormal::FormatAbbreviatedSize (17563648);
+            Assert::AreEqual (L"16.8 MB", s.c_str());
+        }
+
+
+
+
+
+        TEST_METHOD(FormatAbbreviatedSize_OneGB)
+        {
+            // 1 GB = 1073741824 bytes
+            wstring s = CResultsDisplayerNormal::FormatAbbreviatedSize (1073741824ULL);
+            Assert::AreEqual (L"1.00 GB", s.c_str());
+        }
+
+
+
+
+
+        TEST_METHOD(FormatAbbreviatedSize_FractionalGB)
+        {
+            // 1_493_172_224 bytes = 1.39075... GB ≈ 1.39 GB
+            wstring s = CResultsDisplayerNormal::FormatAbbreviatedSize (1493172224ULL);
+            Assert::AreEqual (L"1.39 GB", s.c_str());
+        }
+
+
+
+
+
+        TEST_METHOD(FormatAbbreviatedSize_OneTB)
+        {
+            // 1 TB = 1099511627776 bytes
+            wstring s = CResultsDisplayerNormal::FormatAbbreviatedSize (1099511627776ULL);
+            Assert::AreEqual (L"1.00 TB", s.c_str());
         }
 
     };

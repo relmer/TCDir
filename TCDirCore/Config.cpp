@@ -284,6 +284,8 @@ constexpr CConfig::SSwitchMapping CConfig::s_switchMappings[] =
     { L"streams"sv, true,  &CConfig::m_fShowStreams   },
     { L"icons"sv,   true,  &CConfig::m_fIcons         },
     { L"icons-"sv,  false, &CConfig::m_fIcons         },
+    { L"tree"sv,    true,  &CConfig::m_fTree          },
+    { L"tree-"sv,   false, &CConfig::m_fTree          },
 };
 
 
@@ -331,6 +333,7 @@ void CConfig::Initialize (WORD wDefaultAttr)
     m_rgAttributes[EAttribute::CloudStatusCloudOnly]              = FC_LightBlue;
     m_rgAttributes[EAttribute::CloudStatusLocallyAvailable]       = FC_LightGreen;
     m_rgAttributes[EAttribute::CloudStatusAlwaysLocallyAvailable] = FC_LightGreen;
+    m_rgAttributes[EAttribute::TreeConnector]                     = FC_DarkGrey;
   
     InitializeExtensionToTextAttrMap();
     InitializeFileAttributeToTextAttrMap();
@@ -536,6 +539,15 @@ void CConfig::ProcessColorOverrideEntry (wstring_view entry)
     if (IsSwitchName (entry))
     {
         ProcessSwitchOverride (entry);
+        BAIL_OUT_IF (TRUE, S_OK);
+    }
+
+    //
+    // Check for parameterized config entries (Depth=N, TreeIndent=N, Size=Auto|Bytes)
+    //
+
+    if (TryProcessIntSwitch (entry))
+    {
         BAIL_OUT_IF (TRUE, S_OK);
     }
         
@@ -1019,6 +1031,103 @@ bool CConfig::IsSwitchName (wstring_view entry)
         {
             return true;
         }
+    }
+
+    return false;
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CConfig::TryProcessIntSwitch
+//
+//  Check if entry matches a parameterized config key (Depth=N, TreeIndent=N,
+//  Size=Auto|Bytes).  Returns true if the entry was consumed (even on error).
+//
+////////////////////////////////////////////////////////////////////////////////
+
+bool CConfig::TryProcessIntSwitch (wstring_view entry)
+{
+    //
+    // Depth=N
+    //
+
+    if (entry.length() > 6 && _wcsnicmp (entry.data(), L"Depth=", 6) == 0)
+    {
+        int value = _wtoi (wstring (entry.substr (6)).c_str ());
+
+        if (value > 0)
+        {
+            m_cMaxDepth = value;
+        }
+        else
+        {
+            m_lastParseResult.errors.push_back ({
+                L"Depth value must be a positive integer",
+                wstring (entry),
+                wstring (entry.substr (6)),
+                6
+            });
+        }
+
+        return true;
+    }
+
+    //
+    // TreeIndent=N
+    //
+
+    if (entry.length() > 11 && _wcsnicmp (entry.data(), L"TreeIndent=", 11) == 0)
+    {
+        int value = _wtoi (wstring (entry.substr (11)).c_str ());
+
+        if (value >= 1 && value <= 8)
+        {
+            m_cTreeIndent = value;
+        }
+        else
+        {
+            m_lastParseResult.errors.push_back ({
+                L"TreeIndent value must be between 1 and 8",
+                wstring (entry),
+                wstring (entry.substr (11)),
+                11
+            });
+        }
+
+        return true;
+    }
+
+    //
+    // Size=Auto|Bytes
+    //
+
+    if (entry.length() > 5 && _wcsnicmp (entry.data(), L"Size=", 5) == 0)
+    {
+        wstring_view valueView = entry.substr (5);
+
+        if (_wcsnicmp (valueView.data(), L"Auto", valueView.length()) == 0 && valueView.length() == 4)
+        {
+            m_eSizeFormat = ESizeFormat::Auto;
+        }
+        else if (_wcsnicmp (valueView.data(), L"Bytes", valueView.length()) == 0 && valueView.length() == 5)
+        {
+            m_eSizeFormat = ESizeFormat::Bytes;
+        }
+        else
+        {
+            m_lastParseResult.errors.push_back ({
+                L"Size value must be Auto or Bytes",
+                wstring (entry),
+                wstring (valueView),
+                5
+            });
+        }
+
+        return true;
     }
 
     return false;
