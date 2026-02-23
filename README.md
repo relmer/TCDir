@@ -25,6 +25,8 @@ See [CHANGELOG.md](CHANGELOG.md) for full release history.
 
 Hat tip to [Chris Kirmse](https://github.com/ckirmse) whose excellent [ZDir](https://github.com/ckirmse/ZDir) from the '90s was the original inspiration for TCDir.
 
+> **Also available in Rust:** [RCDir](https://github.com/relmer/RCDir) is a parallel Rust implementation of TCDir with feature parity.
+
 ## Why TCDir?
 
 | Feature | `dir` | TCDir | [eza](https://github.com/eza-community/eza) | [lsd](https://github.com/lsd-rs/lsd) |
