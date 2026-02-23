@@ -76,13 +76,13 @@
 
 ## R8: Per-Directory Summary in Tree Mode
 
-**Decision**: Each directory in the tree shows its own summary line (file/dir counts, bytes used), plus a grand total at the end.
+**Decision**: Tree mode suppresses per-directory summaries entirely and shows only the grand total (full traversal summary) at the end.
 
-**Rationale**: The existing `DisplayResults` already calls `DisplayDirectorySummary` for every directory. In recursive mode, `DisplayRecursiveSummary` shows aggregate totals at the end. Tree mode should preserve per-directory summaries (each directory's summary appears after its contents, within the tree indentation) and show a grand total after the entire tree.
+**Rationale**: In tree mode, all subdirectory contents are expanded inline — the user already sees every file at every level. Showing per-directory summaries (e.g., "4 dirs, 27 files using 284,475 bytes" for just the root) is redundant and confusing because it counts only the root's immediate contents, not the full tree. The grand total at the end provides the only meaningful aggregate.
 
 **Alternatives considered**:
-- Root summary only (loses per-directory detail)
-- Grand total only (less useful)
+- Per-directory summaries at each level (redundant with visible tree contents; clutters output)
+- Both per-directory and grand total (original design — rejected because per-directory counts confused users into thinking they were the full tree total)
 
 ## R9: Tree Connector Color
 
@@ -169,7 +169,7 @@
 *Display side* (`PrintDirectoryTreeMode`):
 1. When `m_fTreePruningActive` is `false`, every directory is visible — current behavior, no waiting.
 2. When `m_fTreePruningActive` is `true`, for each directory entry in `m_vMatches`, call `WaitForTreeVisibility(pChild)` which blocks on `m_cvStatusChanged` until either `m_fDescendantMatchFound` or `m_fSubtreeComplete` becomes `true`.
-3. If `m_fDescendantMatchFound` → visible. If `m_fSubtreeComplete && !m_fDescendantMatchFound` → invisible (skip).
+3. If `m_fDescendantMatchFound` → visible. If `m_fSubtreeComplete && !m_fDescendantMatchFound` → invisible (skip). When skipping, decrement the parent's `m_cSubDirectories` so that `AccumulateTotals` only counts directories actually shown in the output.
 4. Uses look-ahead to determine `fIsLast`: after the current entry, peek forward through subsequent entries to find the next visible one. For the next directory entry, call `WaitForTreeVisibility` to resolve it. Files are always visible.
 5. If no next visible entry exists, the current entry is last (`└──`); otherwise it's middle (`├──`).
 

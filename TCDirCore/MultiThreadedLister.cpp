@@ -913,7 +913,7 @@ HRESULT CMultiThreadedLister::PrintDirectoryTreeMode (
 
     if (level == IResultsDisplayer::EDirectoryLevel::Initial)
     {
-        treeDisplayer.DisplayTreeRootSummary (*pDirInfo);
+        treeDisplayer.DisplayTreeRootSummary();
     }
 
 
@@ -998,7 +998,14 @@ HRESULT CMultiThreadedLister::DisplayTreeEntries (
 
             if (it != childMap.end() && !WaitForTreeVisibility (it->second))
             {
-                continue;   // Prune: no matching descendants
+                //
+                // This directory was pruned (no matching descendants).
+                // Adjust the parent's subdirectory count so that
+                // AccumulateTotals only counts directories we actually show.
+                //
+
+                --pDirInfo->m_cSubDirectories;
+                continue;
             }
         }
 

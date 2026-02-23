@@ -81,7 +81,7 @@ New class derived from `CResultsDisplayerNormal`. Overrides the display flow for
 
 | Method | Override | Description |
 |--------|----------|-------------|
-| `DisplayResults` | Yes (from `WithHeaderAndFooter`) | Tree-walking flow: drive header → recursive tree traversal (no per-subdir path headers); indented per-dir summaries; grand total |
+| `DisplayResults` | Yes (from `WithHeaderAndFooter`) | Tree-walking flow: drive header → recursive tree traversal (no per-subdir path headers, no per-dir summaries); grand total only |
 | `DisplayFileResults` | Yes (from `Normal`) | Same column sequence as Normal but prepends tree connector prefix before icon/filename; modified stream continuation with `│` prefix |
 | `DisplayTreeEntry` | New (private helper) | Internal helper called by `DisplayFileResults`: renders one file line — calls inherited column helpers, inserts tree prefix from `STreeConnectorState`, then icon + filename |
 | `DisplayFileStreamsWithTreePrefix` | New | Like inherited `DisplayFileStreams` but prepends tree continuation prefix (`│   `) to each stream line |
@@ -99,7 +99,7 @@ New class derived from `CResultsDisplayerNormal`. Overrides the display flow for
 
 **Why save/restore is needed**: `BeginDirectory()` stores per-directory computed state in member variables. When tree mode recurses into a child, the child's `BeginDirectory()` overwrites the parent's state. Without save/restore, the parent's remaining entries after returning from the child render with incorrect column widths, causing misaligned output. Note: owner fields (`m_owners`, `m_cchMaxOwnerLength`) are retained in the struct but unused since `--Owner` is incompatible with `--Tree`.
 
-**Pruning behavior**: When file masks are active (`m_fTreePruningActive` on `CMultiThreadedLister`), empty subdirectories are pruned using a thread-safe event-based approach. Each `CDirectoryInfo` node carries `m_fDescendantMatchFound` and `m_fSubtreeComplete` atomics (set by producer threads) that the display thread waits on to determine visibility. See R14 in research.md for the full design. Leaf directories with zero matching files and no matching descendants are skipped. Intermediate directories are rendered to preserve tree structure (FR-015).
+**Pruning behavior**: When file masks are active (`m_fTreePruningActive` on `CMultiThreadedLister`), empty subdirectories are pruned using a thread-safe event-based approach. Each `CDirectoryInfo` node carries `m_fDescendantMatchFound` and `m_fSubtreeComplete` atomics (set by producer threads) that the display thread waits on to determine visibility. See R14 in research.md for the full design. Leaf directories with zero matching files and no matching descendants are skipped. Intermediate directories are rendered to preserve tree structure (FR-015). When a directory is pruned, the parent's `m_cSubDirectories` count is decremented so that `AccumulateTotals` only accumulates counts for directories actually shown in the output.
 
 ### 5. CDirectoryInfo (extended for tree pruning)
 

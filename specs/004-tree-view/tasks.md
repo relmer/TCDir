@@ -60,10 +60,10 @@
 - [x] T019 [US1] Route `--Tree` to MT lister path (force MT even if `-M-`); instantiate `CResultsDisplayerTree` instead of `CResultsDisplayerNormal` when tree mode is active in `TCDirCore/DirectoryLister.cpp`
 - [x] T020 [US1] Thread `STreeConnectorState` through `PrintDirectoryTree` → `ProcessChildren` recursion in `TCDirCore/MultiThreadedLister.h` and `TCDirCore/MultiThreadedLister.cpp`
 - [x] T021 [P] [US1] Add unit tests for `CFileComparator` interleaved sort mode (dirs and files sorted together, not grouped) in `UnitTest/FileComparatorTests.cpp`
-- [x] T022 [US1] Add scenario tests: basic tree output with 2–3 levels, last-entry `└──` vs middle `├──`, `│` continuation lines, per-dir summary placement in `UnitTest/DirectoryListerScenarioTests.cpp`
+- [x] T022 [US1] Add scenario tests: basic tree output with 2–3 levels, last-entry `└──` vs middle `├──`, `│` continuation lines in `UnitTest/DirectoryListerScenarioTests.cpp`
 - [x] T022a [US1] Add scenario tests for file masks in tree mode: `tcdir --Tree *.cpp` shows only matching files while preserving directory structure; leaf directories with zero matching files and no matching descendants are pruned; intermediate directories are preserved in `UnitTest/DirectoryListerScenarioTests.cpp` *(initial implementation uses `HasDescendantFiles` — racy in real MT usage, replaced by thread-safe design in Phase 11)*
 
-**Checkpoint**: `tcdir --Tree` produces correct hierarchical output with connectors and metadata. Per-dir summaries + grand total shown.
+**Checkpoint**: `tcdir --Tree` produces correct hierarchical output with connectors and metadata. Grand total shown at end (per-directory summaries suppressed).
 
 ---
 
@@ -151,8 +151,9 @@
 - [x] T034a **Streaming Output Fix**: Add `CConsole::Flush()` call before recursing into child directories in `PrintDirectoryTreeMode` in `TCDirCore/MultiThreadedLister.cpp` — ensures parent entries are visible before child enumeration begins (see research.md R11)
 - [x] T034b **Flush After Entry Loop**: Add `CConsole::Flush()` call after the entry display loop in `TCDirCore/MultiThreadedLister.cpp` — ensures all entries for current directory are flushed before proceeding
 - [x] T034c **Display State Preservation**: Add `SaveDirectoryState()`/`RestoreDirectoryState()` around child directory recursion in `TCDirCore/MultiThreadedLister.cpp` — preserves parent's `m_cchStringLengthOfMaxFileSize`, `m_fDisplayedFirstEntry`, `m_cVisibleEntries`, `m_uliCurrentDirectoryTotalSize` across recursion (see research.md R12)
+- [x] T034d **Pruned Subdirectory Count Fix**: Decrement `pDirInfo->m_cSubDirectories` when a directory is pruned in `DisplayTreeEntries` in `TCDirCore/MultiThreadedLister.cpp` — ensures `AccumulateTotals` only counts directories that are actually shown in the tree output, not pruned invisibles
 
-**Checkpoint**: Tree output streams progressively and column alignment is preserved across recursive directory transitions.
+**Checkpoint**: Tree output streams progressively, column alignment is preserved across recursive directory transitions, and summary totals reflect only visible entries.
 
 ---
 

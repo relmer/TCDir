@@ -294,14 +294,20 @@ void CResultsDisplayerTree::RestoreDirectoryState (SDirectoryDisplayState && sta
 //
 //  CResultsDisplayerTree::DisplayTreeRootSummary
 //
-//  Displays the per-directory summary for the root, the separator,
-//  and flushes.
+//  Closes the tree output with a separator and flush.  The per-directory
+//  summary is intentionally suppressed in tree mode — only the full
+//  traversal summary (DisplayRecursiveSummary) is shown at the end.
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-void CResultsDisplayerTree::DisplayTreeRootSummary (const CDirectoryInfo & di)
+void CResultsDisplayerTree::DisplayTreeRootSummary ()
 {
-    DisplayDirectorySummary (di);
+    //
+    // In tree mode we suppress the per-directory summary for the root
+    // directory.  Only the full traversal summary (DisplayRecursiveSummary)
+    // is shown at the end — the per-directory counts would be redundant
+    // and confusing since the tree already expands all subdirectories.
+    //
 
     m_consolePtr->Puts               (CConfig::EAttribute::Default, L"");
     m_consolePtr->WriteSeparatorLine (m_configPtr->m_rgAttributes[CConfig::EAttribute::SeparatorLine]);

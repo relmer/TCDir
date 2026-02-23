@@ -9,7 +9,7 @@
 
 ### Session 2026-02-19
 
-- Q: What should the footer totals aggregate in tree mode? → A: Both — each directory level shows its own per-directory summary (file/directory counts, bytes used), and a grand total for the entire tree is shown at the end. This matches the existing `-S` recursive mode pattern.
+- Q: What should the footer totals aggregate in tree mode? → A: Only the full traversal summary (grand total of all files, directories, and bytes across the entire tree) is shown at the end. Per-directory summaries are suppressed because the tree already expands all subdirectories, making per-directory counts redundant and confusing.
 - Q: Should directories and files be interleaved or grouped within each tree level? → A: Interleaved — directories and files are sorted together as a single list by the chosen sort order. This differs from current non-tree behavior (which groups directories first) but is more natural for tree display.
 - Q: How wide should each tree indentation level be, and is it configurable? → A: Default is 4 characters per level (matching eza/lsd convention). Configurable via `--TreeIndent=N` (1 ≤ N ≤ 8). Long switches that take values use `=` as the separator (e.g., `--Depth=3`, `--TreeIndent=4`), with space-separated form also accepted (`--Depth 3`).
 - Q: What is explicitly out of scope? → A: (1) ASCII fallback for non-Unicode terminals, (2) tree connectors in wide or bare modes, (3) collapsible/interactive tree, (4) JSON/machine-readable tree output. Colorized tree connectors (configurable color) ARE in scope.
@@ -183,7 +183,7 @@ A user can enable tree mode and set a default depth via the `TCDIR` environment 
 - **FR-016**: System MUST support `Tree`, `Depth=N`, `TreeIndent=N`, and `Size=Auto|Bytes` configuration via the `TCDIR` environment variable, following the existing convention.
 - **FR-017**: CLI switches MUST override environment variable defaults for both `Tree`/`Tree-`, `Depth`, and `Size`.
 - **FR-018**: System MUST handle inaccessible directories gracefully, listing them as entries without expanding their contents and displaying an inline error.
-- **FR-019**: System MUST display a per-directory summary (file/directory counts, bytes used) at each directory level in the tree, plus a grand total summary for the entire tree at the end, matching the existing recursive mode pattern. The volume header (drive label) and volume footer (free space) appear only once for the root directory.
+- **FR-019**: System MUST suppress per-directory summaries (file/directory counts, bytes used) in tree mode, displaying only the full traversal summary (grand total of all files, directories, and bytes) at the end of the tree output. Per-directory counts are redundant because the tree already expands all subdirectory contents inline. The volume header (drive label) and volume footer (free space) appear only once for the root directory.
 - **FR-020**: System MUST flush output to the console before recursing into each child directory in tree mode, so the user sees streaming output progressively rather than waiting for the entire subtree to complete.
 - **FR-021**: System MUST preserve the parent directory's per-entry display state (field widths, sync root flag) when recursing into child directories, and restore it after returning, so that remaining parent entries render with correct column alignment.
 

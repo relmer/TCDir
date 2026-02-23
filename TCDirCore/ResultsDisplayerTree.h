@@ -50,7 +50,7 @@ public:
     void BeginDirectory                 (const CDirectoryInfo & di);
     void DisplaySingleEntry             (const FileInfo & entry, STreeConnectorState & treeState, bool fIsLastEntry, size_t idxFile);
     void DisplayFileStreamsWithTreePrefix (const FileInfo & entry, const STreeConnectorState & treeState);
-    void DisplayTreeRootSummary         (const CDirectoryInfo & di);
+    void DisplayTreeRootSummary         ();
     void DisplayTreeEmptyRootMessage    (const CDirectoryInfo & di);
 
 
