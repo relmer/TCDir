@@ -20,6 +20,7 @@ env:
 jobs:
   build-and-release:
     runs-on: windows-latest
+    environment: release
 
     steps:
       - name: Determine tag
