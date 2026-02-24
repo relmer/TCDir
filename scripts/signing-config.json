@@ -1,0 +1,5 @@
+{
+  "Endpoint": "https://wcus.codesigning.azure.net/",
+  "CodeSigningAccountName": "relmer-signing",
+  "CertificateProfileName": "relmer-public"
+}
