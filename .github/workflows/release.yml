@@ -217,3 +217,18 @@ jobs:
             release/SHA256SUMS.txt
           draft: false
           prerelease: false
+
+      # --- Publish to WinGet ---
+
+      - name: Publish to WinGet
+        if: secrets.WINGET_PAT != ''
+        shell: pwsh
+        run: |
+          $tag = "${{ steps.tag.outputs.tag }}"
+          $version = "${{ steps.tag.outputs.version }}"
+          $baseUrl = "https://github.com/relmer/TCDir/releases/download/$tag"
+
+          wingetcreate update relmer.TCDir `
+            --version $version `
+            --urls "$baseUrl/TCDir.exe" "$baseUrl/TCDir-ARM64.exe" `
+            --submit --token "${{ secrets.WINGET_PAT }}"
