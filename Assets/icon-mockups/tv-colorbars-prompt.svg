@@ -1,0 +1,49 @@
+<svg width="256" height="256" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="TV icon with color bars and prompt">
+  <defs>
+    <linearGradient id="tvFrame" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#3a3f4a"/>
+      <stop offset="100%" stop-color="#22262f"/>
+    </linearGradient>
+    <linearGradient id="bezel" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#d9d2c1"/>
+      <stop offset="100%" stop-color="#b9b19f"/>
+    </linearGradient>
+    <linearGradient id="screenGlow" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.20"/>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="150%">
+      <feDropShadow dx="0" dy="5" stdDeviation="5" flood-color="#000000" flood-opacity="0.35"/>
+    </filter>
+  </defs>
+
+  <line x1="88" y1="24" x2="112" y2="68" stroke="#8f96a6" stroke-width="3" stroke-linecap="round"/>
+  <line x1="168" y1="24" x2="144" y2="68" stroke="#8f96a6" stroke-width="3" stroke-linecap="round"/>
+
+  <rect x="20" y="64" width="216" height="148" rx="14" fill="url(#tvFrame)" filter="url(#shadow)"/>
+  <rect x="28" y="72" width="168" height="132" rx="11" fill="url(#bezel)"/>
+  <rect x="38" y="82" width="148" height="112" rx="8" fill="#101316"/>
+
+  <rect x="40" y="84" width="20" height="108" fill="#c7b44a"/>
+  <rect x="60" y="84" width="20" height="108" fill="#4aa6bb"/>
+  <rect x="80" y="84" width="20" height="108" fill="#4da66b"/>
+  <rect x="100" y="84" width="20" height="108" fill="#c8c8c8"/>
+  <rect x="120" y="84" width="20" height="108" fill="#b85b70"/>
+  <rect x="140" y="84" width="20" height="108" fill="#596fbb"/>
+  <rect x="160" y="84" width="24" height="108" fill="#2e3440"/>
+
+  <rect x="72" y="114" width="80" height="48" rx="8" fill="#0f131b" fill-opacity="0.45"/>
+  <path d="M80 122l22 14-22 14" fill="none" stroke="#f6f8fc" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M80 122l22 14-22 14" fill="none" stroke="#11161f" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" opacity="0.6"/>
+  <rect x="110" y="145" width="34" height="8" rx="4" fill="#f6f8fc"/>
+  <rect x="110" y="145" width="34" height="8" rx="4" fill="none" stroke="#11161f" stroke-width="1" opacity="0.55"/>
+
+  <rect x="40" y="84" width="144" height="34" rx="8" fill="url(#screenGlow)"/>
+
+  <rect x="200" y="84" width="28" height="8" rx="4" fill="#81889a"/>
+  <rect x="200" y="98" width="28" height="8" rx="4" fill="#81889a"/>
+  <circle cx="214" cy="124" r="9" fill="#aeb4c3"/>
+  <circle cx="214" cy="150" r="9" fill="#aeb4c3"/>
+  <rect x="36" y="214" width="32" height="6" rx="3" fill="#20242c"/>
+  <rect x="188" y="214" width="32" height="6" rx="3" fill="#20242c"/>
+</svg>
