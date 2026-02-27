@@ -232,6 +232,7 @@ jobs:
 
       - name: Publish to WinGet
         if: env.WINGET_PAT != ''
+        continue-on-error: true
         shell: pwsh
         run: |
           $tag = "${{ steps.tag.outputs.tag }}"
