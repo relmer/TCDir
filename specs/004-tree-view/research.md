@@ -88,7 +88,7 @@
 
 **Decision**: Add a new `CConfig::EAttribute` entry for tree connector color, configurable via the `TCDIR` environment variable using the existing color system.
 
-**Rationale**: The existing color system supports per-element color attributes (Date, Time, FileAttributePresent, Size, Directory, etc.). Adding a `TreeConnector` attribute follows the same pattern. The default color can be a subtle terminal color (e.g., LightGray) to distinguish structural connectors from content.
+**Rationale**: The existing color system supports per-element color attributes (Date, Time, FileAttributePresent, Size, Directory, etc.). Adding a `TreeConnector` attribute follows the same pattern. The default color is DarkGrey (`FC_DarkGrey`), providing subtle visual distinction from content without being distracting.
 
 **Alternatives considered**:
 - Hardcoded color (not configurable — violates UX consistency principle)
@@ -117,7 +117,7 @@
 
 ## R12: Per-Directory Display State Preservation Across Recursion
 
-**Decision**: Save and restore the per-directory display state (`m_cchStringLengthOfMaxFileSize`, `m_fInSyncRoot`, `m_owners`, `m_cchMaxOwnerLength`) around each recursive child call in `PrintDirectoryTreeMode`, via `SaveDirectoryState()` / `RestoreDirectoryState()` on `CResultsDisplayerTree`.
+**Decision**: Save and restore the per-directory display state (`m_cchStringLengthOfMaxFileSize`, `m_fInSyncRoot`, `m_owners`, `m_cchMaxOwnerLength`) around each recursive child call in `PrintDirectoryTreeMode`, via `SaveDirectoryState()` / `RestoreDirectoryState()` on `CResultsDisplayerTree`. The `SDirectoryDisplayState` struct captures these fields. Fields originally considered (`m_fDisplayedFirstEntry`, `m_cVisibleEntries`, `m_uliCurrentDirectoryTotalSize`) proved unnecessary because per-directory summaries are suppressed in tree mode (FR-019).
 
 **Rationale**: `BeginDirectory()` stores per-directory computed state (field widths, sync root flag) in member variables on the displayer. When tree mode recurses into a child directory, the child's `BeginDirectory()` call overwrites the parent's state. After returning from the child, the parent's remaining entries would render with the wrong column widths, causing misaligned output. Saving and restoring the state around each recursive descent preserves the parent's column layout. The state struct is small and the copy/move is negligible relative to I/O. Note: owner data is still saved/restored in the struct for potential future use, but `--Owner` is currently incompatible with `--Tree`.
 

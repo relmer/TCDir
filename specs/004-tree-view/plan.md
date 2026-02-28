@@ -15,7 +15,7 @@ Add a `--Tree` display mode that renders directory contents hierarchically with 
 **Testing**: Microsoft C++ Unit Test Framework (CppUnitTestFramework) in `UnitTest/` project  
 **Target Platform**: Windows 10/11, x64 and ARM64  
 **Project Type**: Single native console application (TCDirCore static lib + TCDir exe + UnitTest)  
-**Performance Goals**: Tree view must not regress performance of existing modes; measurable via `-P` flag  
+**Performance Goals**: Tree view must not regress performance of existing modes; measurable via `-P` flag. **Streaming output is the paramount performance concern** — the user must see progressive output as directories are enumerated, not wait for the entire tree to complete. This principle drove several key design decisions: the lister-driven architecture (MT lister controls traversal with flush points, rather than the displayer driving the walk), fixed-width abbreviated sizes (eliminates pre-scan latency), and the producer-side upward-propagation pruning design (display thread waits per-node rather than for the full tree).  
 **Constraints**: No external dependencies; all console output through `CConsole`; EHM patterns for HRESULT functions  
 **Scale/Scope**: Targets directories with 1000+ files across 50+ subdirectories; deterministic output with same sort order
 **Size Display**: Explorer-style abbreviated sizes (1024-based, 3 significant digits, B/KB/MB/GB/TB, 7-char fixed width); `--Size=Auto` default in tree mode, `--Size=Bytes` (comma-separated exact) default in non-tree mode
@@ -74,7 +74,7 @@ TCDirCore/
 ├── TreeConnectorState.h   # NEW: Tree connector state tracker (vector<bool> + prefix generation)
 ├── ResultsDisplayerTree.h      # NEW: Tree displayer (derives from CResultsDisplayerNormal)
 ├── ResultsDisplayerTree.cpp    # NEW: Tree display flow + tree-prefixed file rendering
-├── DirectoryLister.cpp    # Route --Tree to MT lister path; instantiate CResultsDisplayerTree
+├── DirectoryLister.cpp    # Route --Tree to MT lister path
 ├── MultiThreadedLister.h  # Add depth parameter, tree-pruning helpers, m_fTreePruningActive
 ├── MultiThreadedLister.cpp# Thread tree state through recursion; depth checks; producer-side propagation; display-side look-ahead
 ├── ResultsDisplayerNormal.h    # Make DisplayFileStreams virtual (for tree override)
@@ -98,7 +98,7 @@ UnitTest/
 └── FileComparatorTests.cpp          # Test interleaved sort mode
 ```
 
-**Structure Decision**: No new projects or directories. The feature extends the existing `TCDirCore` static library and `UnitTest` project. One new header (`TreeConnectorState.h`) encapsulates tree prefix logic. Two new files (`ResultsDisplayerTree.h`/`.cpp`) implement the tree displayer derived from `CResultsDisplayerNormal`, inheriting all column rendering helpers and overriding the display flow.
+**Structure Decision**: No new projects or directories. The feature extends the existing `TCDirCore` static library and `UnitTest` project. One new header (`TreeConnectorState.h`) encapsulates tree prefix logic. Two new files (`ResultsDisplayerTree.h`/`.cpp`) implement the tree displayer derived from `CResultsDisplayerNormal`, inheriting all column rendering helpers. `CResultsDisplayerTree` is instantiated in `TCDir.cpp` via a `CreateDisplayer` factory function (not in `DirectoryLister.cpp`), and the MT lister drives the tree walk externally by calling public methods on the displayer (see data-model.md Design Note).
 
 ## Complexity Tracking
 

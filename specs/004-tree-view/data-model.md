@@ -81,9 +81,9 @@ New class derived from `CResultsDisplayerNormal`. Overrides the display flow for
 
 | Method | Override | Description |
 |--------|----------|-------------|
-| `DisplayResults` | Yes (from `WithHeaderAndFooter`) | Tree-walking flow: drive header → recursive tree traversal (no per-subdir path headers, no per-dir summaries); grand total only |
-| `DisplayFileResults` | Yes (from `Normal`) | Same column sequence as Normal but prepends tree connector prefix before icon/filename; modified stream continuation with `│` prefix |
-| `DisplayTreeEntry` | New (private helper) | Internal helper called by `DisplayFileResults`: renders one file line — calls inherited column helpers, inserts tree prefix from `STreeConnectorState`, then icon + filename |
+| `DisplayResults` | Yes (from `WithHeaderAndFooter`) | Delegates to base class; tree-walking flow is driven externally by `CMultiThreadedLister::PrintDirectoryTreeMode` for streaming output (see Design Note below) |
+| `DisplayFileResults` | Yes (from `Normal`) | Delegates to base class; individual entry rendering is driven by MT lister calling `DisplaySingleEntry` directly |
+| `DisplaySingleEntry` | New (public) | Renders one file line — calls inherited column helpers, inserts tree prefix from `STreeConnectorState`, then icon + filename. Public because the MT lister calls it directly rather than through `DisplayFileResults`. |
 | `DisplayFileStreamsWithTreePrefix` | New | Like inherited `DisplayFileStreams` but prepends tree continuation prefix (`│   `) to each stream line |
 | `SaveDirectoryState` | New | Captures per-directory display state (field widths, sync root flag) into an `SDirectoryDisplayState` struct so it can be restored after recursing into a child |
 | `RestoreDirectoryState` | New | Restores previously saved per-directory display state after returning from a child directory recursion |
@@ -98,6 +98,8 @@ New class derived from `CResultsDisplayerNormal`. Overrides the display flow for
 | `m_cchMaxOwnerLength` | `size_t` | Max length of owner strings for column sizing |
 
 **Why save/restore is needed**: `BeginDirectory()` stores per-directory computed state in member variables. When tree mode recurses into a child, the child's `BeginDirectory()` overwrites the parent's state. Without save/restore, the parent's remaining entries after returning from the child render with incorrect column widths, causing misaligned output. Note: owner fields (`m_owners`, `m_cchMaxOwnerLength`) are retained in the struct but unused since `--Owner` is incompatible with `--Tree`.
+
+**Design Note — Lister-Driven Architecture**: The spec originally described a displayer-driven tree walk (where `DisplayResults` would control recursion). In practice, the MT lister drives the tree walk (`PrintDirectoryTreeMode` → `DisplayTreeEntries` → `RecurseIntoChildDirectory`) and calls tree-specific public methods (`DisplaySingleEntry`, `BeginDirectory`, `DisplayTreeRootHeader`, `DisplayTreeRootSummary`) directly. This inversion is necessary because streaming output (FR-020) requires flush points between entry display and child recursion, and the MT lister already owns the `CDirectoryInfo` tree and the console flush logic. `DisplayResults` and `DisplayFileResults` delegate to the base class for non-tree paths.
 
 **Pruning behavior**: When file masks are active (`m_fTreePruningActive` on `CMultiThreadedLister`), empty subdirectories are pruned using a thread-safe event-based approach. Each `CDirectoryInfo` node carries `m_fDescendantMatchFound` and `m_fSubtreeComplete` atomics (set by producer threads) that the display thread waits on to determine visibility. See R14 in research.md for the full design. Leaf directories with zero matching files and no matching descendants are skipped. Intermediate directories are rendered to preserve tree structure (FR-015). When a directory is pruned, the parent's `m_cSubDirectories` count is decremented so that `AccumulateTotals` only accumulates counts for directories actually shown in the output.
 
@@ -163,7 +165,7 @@ A new formatting function (or method on the displayer base class) that converts 
 | 1 GB+ | Same | `1.39 GB` | 7 |
 | 1 TB+ | Same | `1.00 TB` | 7 |
 
-**`<DIR>` formatting**: Centered in the same 7-character field: ` <DIR> `.
+**`<DIR>` formatting**: Rendered as `" <DIR>   "` (1 leading space + `<DIR>` + 3 trailing spaces) when abbreviated mode is active, matching the alignment padding used by the Bytes-mode `<DIR>` display path.
 
 **Usage**: Called by `DisplayResultsNormalFileSize` (or a tree-mode override) when `m_eSizeFormat` resolves to `Auto`. The existing comma-separated path is used when it resolves to `Bytes`.
 
@@ -176,7 +178,7 @@ CCommandLine ──parses──> m_fTree, m_cMaxDepth, m_cTreeIndent
      │
      ├─validates─> Switch conflicts (Tree vs Wide/Bare/Recurse; Depth without Tree)
      │
-     └─controls─> CMultiThreadedLister::PrintDirectoryTree
+     └─controls─> CMultiThreadedLister::PrintDirectoryTreeMode (lister-driven)
                        │
                        ├─creates─> STreeConnectorState
                        │                │
@@ -184,13 +186,15 @@ CCommandLine ──parses──> m_fTree, m_cMaxDepth, m_cTreeIndent
                        │                │
                        │                └─GetPrefix() per entry
                        │
-                       ├─passes──> CResultsDisplayerTree::DisplayResults (tree flow)
+                       ├─calls──> CResultsDisplayerTree (public methods directly)
                        │                │
-                       │                └─> CResultsDisplayerTree::DisplayFileResults
-                       │                        │
-                       │                        ├─ Calls inherited column helpers (date, attrs, size, ...)
-                       │                        ├─ Prepends tree prefix before icon/filename
-                       │                        └─ Uses DisplayFileStreamsWithTreePrefix() for streams
+                       │                ├─> DisplaySingleEntry (per-entry rendering)
+                       │                ├─> BeginDirectory (per-directory state setup)
+                       │                ├─> DisplayTreeRootHeader / DisplayTreeRootSummary
+                       │                ├─> SaveDirectoryState / RestoreDirectoryState
+                       │                └─> DisplayFileStreamsWithTreePrefix (streams)
+                       │
+                       ├─flushes─> CConsole::Flush() before child recursion (streaming output)
                        │
                        ├─checks──> m_cMaxDepth vs STreeConnectorState::Depth()
                        │
