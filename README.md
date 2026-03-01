@@ -7,11 +7,15 @@
 [![Downloads](https://img.shields.io/github/downloads/relmer/TCDir/total)](https://github.com/relmer/TCDir/releases)
 -->
 
-> [!TIP]
-> For your convenience, TCDir is now available through winget: 
-> ```powershell
-> winget install relmer.TCDir
-> ```
+## Install
+
+For your convenience, TCDir is now available through winget:
+
+```powershell
+winget install relmer.TCDir
+```
+
+## About TCDir
 
 TCDir ("Technicolor Directory") is a fast, colorized directory listing tool for Windows consoles.
 It's designed as a practical `dir`-style command with useful defaults (color by extension/attributes, Nerd Font file/folder icons, sorting, recursion, wide output, and a multi-threaded enumerator).
@@ -21,7 +25,7 @@ It's designed as a practical `dir`-style command with useful defaults (color by 
 ## What's New
 
 | Version | Highlights |
-|---|---|
+| :---: | :---: |
 | **5.1** | `--Tree` hierarchical directory view with depth control |
 | **5.0** | Nerd Font file/folder icons (~200 extensions, ~65 directories) |
 | **4.2** | Cloud sync status badges (OneDrive, iCloud), file owner, NTFS alternate data streams |
@@ -37,7 +41,7 @@ Hat tip to [Chris Kirmse](https://github.com/ckirmse) whose excellent [ZDir](htt
 ## Why TCDir?
 
 | Feature | `dir` | TCDir | [eza](https://github.com/eza-community/eza) | [lsd](https://github.com/lsd-rs/lsd) |
-|---|:---:|:---:|:---:|:---:|
+| :---: | :---: | :---: | :---: | :---: |
 | Color-coded by extension & attribute | — | ✅ | ✅ | ✅ |
 | Cloud sync status (OneDrive, iCloud) | — | ✅ | — | — |
 | Nerd Font file/folder icons | — | ✅ | ✅ | ✅ |
@@ -49,11 +53,11 @@ Hat tip to [Chris Kirmse](https://github.com/ckirmse) whose excellent [ZDir](htt
 | NTFS alternate data streams | ✅ | ✅ | — | — |
 | Configurable via environment variable | — | ✅ | — | — |
 
-## Installation
+## Manual installation
 
 ### Download
 
-Grab the latest binary for your architecture:
+If you're not a winget enthusiast, youc an grab the latest binary for your architecture directly:
 
 - [**TCDir.exe**](https://github.com/relmer/TCDir/releases/latest/download/TCDir.exe) — x64 (Intel/AMD 64-bit)
 - [**TCDir-ARM64.exe**](https://github.com/relmer/TCDir/releases/latest/download/TCDir-ARM64.exe) — ARM64 (Snapdragon, etc.)
@@ -61,12 +65,6 @@ Grab the latest binary for your architecture:
 Place the `.exe` somewhere on your `PATH`, or add its directory to your `PATH`.
 
 See all releases on the [Releases page](https://github.com/relmer/TCDir/releases).
-
-### winget
-
-```powershell
-winget install relmer.TCDir
-```
 
 <!--
 ### Other package managers (coming soon)
@@ -153,11 +151,13 @@ Common switches:
 Standard attributes: `D` (directory), `H` (hidden), `S` (system), `R` (read-only), `A` (archive)
 
 Cloud sync attributes (OneDrive, iCloud, etc.):
+
 - `O` - cloud-only placeholder files (not locally available)
 - `L` - locally available files (hydrated, can be dehydrated)
 - `V` - pinned/always available files (won't be dehydrated)
 
 Extended attributes:
+
 - `X` - not content indexed (excluded from Windows Search)
 - `I` - integrity stream enabled (ReFS only)
 - `B` - no scrub data (ReFS only)
@@ -169,6 +169,7 @@ Use `-` prefix to exclude (e.g., `/A:-H` excludes hidden files).
 ### Cloud file visualization
 
 When browsing cloud-synced folders (OneDrive, iCloud Drive, etc.), TCDir displays sync status symbols:
+
 - `○` (hollow) - cloud-only placeholder, not available offline
 - `◐` (half) - locally available, can be dehydrated
 - `●` (solid) - pinned, always available offline
@@ -177,9 +178,10 @@ When a Nerd Font is detected, the cloud symbols are automatically upgraded to de
 
 ### Nerd Font icons
 
-When TCDir detects a [Nerd Font](https://www.nerdfonts.com/) in the console, it automatically displays file and folder icons next to each entry — in normal, wide, and bare listing modes.
+When TCDir detects a [Nerd Font](https://www.nerdfonts.com/) installed, it automatically displays file and folder icons next to each entry — in normal, wide, and bare listing modes.
 
 Detection works via:
+
 1. **GDI glyph probe** — renders a canary glyph to confirm Nerd Font symbols are available in the active console font
 2. **System font enumeration** — checks whether any installed font's name contains "Nerd Font" or a "NF", "NFM", or "NFP" suffix
 3. **WezTerm detection** — WezTerm bundles Nerd Font symbols natively, so icons are enabled automatically
@@ -206,6 +208,7 @@ Incompatible with `-W` (wide), `-B` (bare), `-S` (recurse), `--Owner`, and `--Si
 ![TCDir tree listing](Assets/TCDir%20Tree.png)
 
 Examples:
+
 - Recurse through subdirectories: `TCDir.exe -s`
 ![TCDir recursive listing](Assets/TCDir%20Subdirectories.png)
 
@@ -258,26 +261,31 @@ Decoded breakdown of the example:
 - `.png=Black on Magenta` sets the `.png` extension color to black text on a magenta background
 
 Display items for color configuration:
+
 - `D` (Date), `S` (Size), `N` (Name), `Attr` (Attributes)
 - `CloudOnly`, `Local`, `Pinned` - cloud sync status symbol colors
 
 Icon override (`<.ext>=<Color>,U+<codepoint>`):
+
 - Override the icon glyph for any extension: `.rs=DarkRed,U+E7A8`
 - Color-only override (keep default glyph): `.js=Yellow`
 - Glyph-only override (keep default color): `.md=,U+F48A`
 
 File attribute colors (`Attr:<letter>`):
+
 - `H` (hidden), `S` (system), `R` (read-only), `D` (directory)
 
 - Here's an example of the default output, setting the TCDIR environment variable, then showing its effects:
 ![TCDir with TCDIR environment variable](Assets/TCDir%20Env%20Variable.png)
 
 To see the full list of supported colors and a nicely formatted explanation, use --Env.  
+
 - Any errors in the TCDIR variable are shown at the end.
 - `TCDir.exe --Env`:
 ![TCDir --Env help](Assets/TCDir%20Env.png)
 
 To see your current color configuration, use --Config:
+
 - All configuration settings are displayed along with the source of that configuration.
 - `TCDir.exe --Config`:
 ![TCDir --Config output](Assets/TCDir%20Config.png)
