@@ -6,6 +6,13 @@
 <!--
 [![Downloads](https://img.shields.io/github/downloads/relmer/TCDir/total)](https://github.com/relmer/TCDir/releases)
 -->
+
+> [!TIP]
+> For your convenience, TCDir is now available through winget: 
+> ```powershell
+> winget install relmer.TCDir
+> ```
+
 TCDir ("Technicolor Directory") is a fast, colorized directory listing tool for Windows consoles.
 It's designed as a practical `dir`-style command with useful defaults (color by extension/attributes, Nerd Font file/folder icons, sorting, recursion, wide output, and a multi-threaded enumerator).
 
@@ -55,11 +62,16 @@ Place the `.exe` somewhere on your `PATH`, or add its directory to your `PATH`.
 
 See all releases on the [Releases page](https://github.com/relmer/TCDir/releases).
 
-<!--
-### Package managers (coming soon)
+### winget
 
 ```powershell
 winget install relmer.TCDir
+```
+
+<!--
+### Other package managers (coming soon)
+
+```powershell
 scoop install tcdir
 ```
 -->
@@ -126,15 +138,15 @@ Common switches:
 - `-B`: bare listing format
 - `-P`: show performance timing information
 - `-M`: enable multi-threaded enumeration (default); use `-M-` to disable
+- `--Env`: show `TCDIR` environment variable help/syntax/current value
+- `--Config`: show current color configuration
+- `--Owner`: display file owner (DOMAIN\User format); not allowed with `--Tree`
+- `--Streams`: display NTFS alternate data streams
+- `--Icons`: enable Nerd Font file/folder icons; use `--Icons-` to disable
 - `--Tree`: hierarchical directory tree view; use `--Tree-` to disable
 - `--Depth=N`: limit tree depth to N levels (requires `--Tree`)
 - `--TreeIndent=N`: tree indent width per level, 1–8, default 4 (requires `--Tree`)
 - `--Size=Auto|Bytes`: `Auto` shows abbreviated sizes (e.g., `8.90 KB`); `Bytes` shows exact comma-separated sizes. Tree mode defaults to `Auto`, non-tree defaults to `Bytes`
-- `--Owner`: display file owner (DOMAIN\User format); not allowed with `--Tree`
-- `--Streams`: display NTFS alternate data streams
-- `--Env`: show `TCDIR` environment variable help/syntax/current value
-- `--Config`: show current color configuration
-- `--Icons`: enable Nerd Font file/folder icons; use `--Icons-` to disable
 
 ### Attribute filters (`/A:`)
 
@@ -227,10 +239,6 @@ Enable default switches by including the switch name:
 - `Depth=N` - set default tree depth limit
 - `TreeIndent=N` - set default tree indent width (1–8)
 - `Size=Auto` / `Size=Bytes` - set default size display format
-
-### Color customization
-
-Configure colors for display items, file attributes, and extensions:
 
 ### Color customization
 
