@@ -13,6 +13,7 @@ This document tracks which features have been ported and which are pending.
 | 002 | Full Application Spec  | Shipped            | v4.2          | Shipped            | v5.0          | Complete port — 100% output-parity target               |
 | 003 | Nerd Font File Icons   | Shipped            | v5.0.1038     | Shipped            | v5.0          | Ported from TCDir's 9-phase implementation              |
 | 004 | Tree View Display Mode | Shipped            | v5.1.1106     | Shipped            | v5.1.1132     | 64 tasks, 314 tests — output-parity verified            |
+| 005 | Pure Mask Dir Fix      | Shipped            | v5.1.1149     | Shipped            | v5.1.TBD      | `tcdir x64` now lists dir contents like `tcdir .\x64`  |
 
 ## Workflow
 
@@ -26,5 +27,5 @@ This document tracks which features have been ported and which are pending.
 
 | Project | Latest Release | Date       |
 | ------- | -------------- | ---------- |
-| TCDir   | v5.1.1106      | 2026-02-21 |
+| TCDir   | v5.1.1149      | 2026-03-05 |
 | RCDir   | v5.1.1132      | 2026-02-28 |
