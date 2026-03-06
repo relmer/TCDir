@@ -1,7 +1,7 @@
 # yaml-language-server: $schema=https://aka.ms/winget-manifest.defaultLocale.1.12.0.schema.json
 
 PackageIdentifier: relmer.TCDir
-PackageVersion: 5.1.1132
+PackageVersion: 5.1.1149
 PackageLocale: en-US
 Publisher: relmer
 PublisherUrl: https://github.com/relmer
@@ -24,6 +24,6 @@ Tags:
   - file-listing
   - terminal
   - windows
-ReleaseNotesUrl: https://github.com/relmer/TCDir/releases/tag/v5.1.1132
+ReleaseNotesUrl: https://github.com/relmer/TCDir/releases/tag/v5.1.1149
 ManifestType: defaultLocale
 ManifestVersion: 1.12.0
