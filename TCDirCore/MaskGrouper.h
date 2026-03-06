@@ -24,14 +24,23 @@ private:
     };
 
 public:
-    static bool              IsPureMask            (const wstring & mask);
+    static bool              IsPureMask            (const wstring       & mask);
     static vector<MaskGroup> GroupMasksByDirectory (const list<wstring> & masks);
 
 private:
-    static void SplitMaskIntoDirAndFileSpec        (const wstring          & mask,
-                                                    const filesystem::path & cwd,
-                                                    filesystem::path       & dirPath,
-                                                    filesystem::path       & fileSpec);
+    static void SplitMaskIntoDirAndFileSpec        (const wstring           & mask,
+                                                    const filesystem::path  & cwd,
+                                                    filesystem::path        & dirPath,
+                                                    filesystem::path        & fileSpec);
+
+    static void SplitPureMask                       (const wstring          & mask,
+                                                    const filesystem::path  & cwd,
+                                                    filesystem::path        & dirPath,
+                                                    filesystem::path        & fileSpec);
+
+    static void SplitQualifiedMask                  (const wstring          & mask,
+                                                    filesystem::path        & dirPath,
+                                                    filesystem::path        & fileSpec);
 
     static void AddMaskToGroups                    (const filesystem::path                      & dirPath,
                                                     const filesystem::path                      & fileSpec,

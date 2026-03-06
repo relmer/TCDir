@@ -65,73 +65,142 @@ void CMaskGrouper::SplitMaskIntoDirAndFileSpec (
 {
     if (IsPureMask (mask))
     {
-        //
-        // Pure mask - use current working directory
-        //
+        SplitPureMask (mask, cwd, dirPath, fileSpec);
+    }
+    else
+    {
+        SplitQualifiedMask (mask, dirPath, fileSpec);
+    }
 
+    return;
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CMaskGrouper::SplitPureMask
+//
+//  Handles a pure mask (no path separator).  If the mask has no wildcards and
+//  matches an existing directory name under cwd, it is treated as a directory
+//  to list.  Otherwise it is treated as a file pattern for the cwd.
+//
+////////////////////////////////////////////////////////////////////////////////
+
+void CMaskGrouper::SplitPureMask (
+    const wstring          & mask,
+    const filesystem::path & cwd,
+    filesystem::path       & dirPath,
+    filesystem::path       & fileSpec)
+{
+    //
+    // If the mask has no wildcards, check whether it's actually a directory
+    // name.  This makes "tcdir x64" behave the same as "tcdir .\x64" when
+    // x64 is a subdirectory.
+    //
+
+    bool fIsDir = false;
+
+    if (mask.find (L'*') == wstring::npos && mask.find (L'?') == wstring::npos)
+    {
+        filesystem::path purePath = cwd / mask;
+        WIN32_FIND_DATA  wfd     = {};
+        HANDLE           hFind   = FindFirstFileW (purePath.c_str(), &wfd);
+
+        if (hFind != INVALID_HANDLE_VALUE)
+        {
+            fIsDir = (wfd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0;
+            FindClose (hFind);
+        }
+    }
+
+    if (fIsDir)
+    {
+        dirPath  = cwd / mask;
+        fileSpec = L"*";
+    }
+    else
+    {
         dirPath  = cwd;
         fileSpec = mask;
+    }
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CMaskGrouper::SplitQualifiedMask
+//
+//  Handles a directory-qualified mask (contains path separators or a drive
+//  letter).  The mask is made absolute, then checked to see if it refers to
+//  an existing directory.  If so, "*" is used as the file spec.  Otherwise
+//  the mask is split into parent directory and filename.
+//
+////////////////////////////////////////////////////////////////////////////////
+
+void CMaskGrouper::SplitQualifiedMask (
+    const wstring          & mask,
+    filesystem::path       & dirPath,
+    filesystem::path       & fileSpec)
+{
+    filesystem::path maskPath = mask;
+
+
+
+    //
+    // Make it absolute so we can normalize the path
+    //
+
+    error_code ec;
+    filesystem::path absolutePath = filesystem::absolute (maskPath, ec);
+
+    if (ec)
+    {
+        //
+        // Fallback: use mask as-is
+        //
+
+        absolutePath = maskPath;
+    }
+
+    //
+    // Check if the mask is a directory (ends with separator or is existing dir)
+    //
+
+    bool fIsDir = false;
+
+    if (!mask.empty() && (mask.back() == L'\\' || mask.back() == L'/'))
+    {
+        fIsDir = true;
+    }
+    else
+    {
+        fIsDir = filesystem::is_directory (absolutePath, ec);
+    }
+
+    if (fIsDir)
+    {
+        //
+        // Directory only - use "*" as fileSpec
+        //
+
+        dirPath  = absolutePath;
+        fileSpec = L"*";
     }
     else
     {
         //
-        // Directory-qualified mask - split into directory and file spec
+        // Has file component
         //
 
-        filesystem::path maskPath = mask;
-        
-        //
-        // Make it absolute so we can normalize the path
-        //
-
-        error_code ec;
-        filesystem::path absolutePath = filesystem::absolute (maskPath, ec);
-        
-        if (ec)
-        {
-            //
-            // Fallback: use mask as-is
-            //
-
-            absolutePath = maskPath;
-        }
-
-        //
-        // Check if the mask is a directory (ends with separator or is existing dir)
-        //
-
-        bool fIsDir = false;
-        
-        if (!mask.empty() && (mask.back() == L'\\' || mask.back() == L'/'))
-        {
-            fIsDir = true;
-        }
-        else
-        {
-            fIsDir = filesystem::is_directory (absolutePath, ec);
-        }
-
-        if (fIsDir)
-        {
-            //
-            // Directory only - use "*" as fileSpec
-            //
-
-            dirPath  = absolutePath;
-            fileSpec = L"*";
-        }
-        else
-        {
-            //
-            // Has file component
-            //
-
-            dirPath  = absolutePath.parent_path();
-            fileSpec = absolutePath.filename();
-        }
+        dirPath  = absolutePath.parent_path();
+        fileSpec = absolutePath.filename();
     }
-
-    return;
 }
 
 

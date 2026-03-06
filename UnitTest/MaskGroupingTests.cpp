@@ -1,6 +1,7 @@
 #include "pch.h"
 #include "EhmTestHelper.h"
 #include "../TCDirCore/MaskGrouper.h"
+#include "Mocks/FileSystemMock.h"
 
 
 
@@ -230,6 +231,92 @@ namespace UnitTest
             
             Assert::AreEqual (1ull, groups.size());
             Assert::AreEqual (2ull, groups[0].second.size(), L"Both masks included");
+        }
+
+        TEST_METHOD(GroupMasks_PureMaskIsExistingDirectory_ListsContents)
+        {
+            //
+            // "tcdir subdir" should behave like "tcdir .\subdir" when subdir
+            // exists as a directory.  The fileSpec should be "*" (list contents).
+            //
+
+            wstring cwdStr  = filesystem::current_path().wstring();
+            wstring mockDir = cwdStr + L"\\subdir";
+
+            MockFileTree tree;
+            tree.AddDirectory (mockDir.c_str());
+
+            ScopedFileSystemMock mock (tree);
+
+
+
+            list<wstring> masks = { L"subdir" };
+
+            auto groups = CMaskGrouper::GroupMasksByDirectory (masks);
+
+            Assert::AreEqual (1ull, groups.size(), L"Should have 1 group");
+            Assert::AreEqual (1ull, groups[0].second.size(), L"Group should have 1 mask");
+            Assert::AreEqual (wstring (L"*"), groups[0].second[0].wstring(),
+                             L"Should default to * when pure mask is an existing directory");
+
+            wstring dirStr = groups[0].first.wstring();
+            Assert::IsTrue (dirStr.find (L"subdir") != wstring::npos,
+                           L"Dir path should contain 'subdir'");
+        }
+
+        TEST_METHOD(GroupMasks_PureMaskIsNotDirectory_TreatedAsPattern)
+        {
+            //
+            // "tcdir foo.txt" where foo.txt is NOT a directory should treat it
+            // as a filename pattern in the current directory, not list contents.
+            //
+
+            wstring cwdStr   = filesystem::current_path().wstring();
+            wstring mockFile = cwdStr + L"\\foo.txt";
+
+            MockFileTree tree;
+            tree.AddFile (mockFile.c_str(), 1024);
+
+            ScopedFileSystemMock mock (tree);
+
+
+
+            list<wstring> masks = { L"foo.txt" };
+
+            auto groups = CMaskGrouper::GroupMasksByDirectory (masks);
+
+            Assert::AreEqual (1ull, groups.size(), L"Should have 1 group");
+            Assert::AreEqual (1ull, groups[0].second.size(), L"Group should have 1 mask");
+            Assert::AreEqual (wstring (L"foo.txt"), groups[0].second[0].wstring(),
+                             L"Non-directory pure mask should be used as pattern");
+        }
+
+        TEST_METHOD(GroupMasks_WildcardMask_NeverTreatedAsDirectory)
+        {
+            //
+            // "tcdir *" should always be treated as a wildcard pattern, never
+            // as a directory name - even if FindFirstFileW("*") would match
+            // a directory entry.
+            //
+
+            wstring cwdStr  = filesystem::current_path().wstring();
+            wstring mockDir = cwdStr + L"\\subdir";
+
+            MockFileTree tree;
+            tree.AddDirectory (mockDir.c_str());
+
+            ScopedFileSystemMock mock (tree);
+
+
+
+            list<wstring> masks = { L"*" };
+
+            auto groups = CMaskGrouper::GroupMasksByDirectory (masks);
+
+            Assert::AreEqual (1ull, groups.size(), L"Should have 1 group");
+            Assert::AreEqual (1ull, groups[0].second.size(), L"Group should have 1 mask");
+            Assert::AreEqual (wstring (L"*"), groups[0].second[0].wstring(),
+                             L"Wildcard mask should remain as pattern, not become directory");
         }
 
     };
