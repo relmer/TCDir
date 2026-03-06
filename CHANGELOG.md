@@ -2,6 +2,15 @@
 
 All notable changes to TCDir are documented in this file.
 
+## [5.1.1149] - 2026-03-05
+
+### Fixed
+- `tcdir x64` now lists contents of the `x64` subdirectory instead of treating it as a filename pattern — behavior matches `tcdir .\x64`
+
+### Changed
+- Refactored `SplitMaskIntoDirAndFileSpec` into `SplitPureMask` and `SplitQualifiedMask` helpers
+- Updated winget manifest templates from schema 1.10.0 to 1.12.0
+
 ## [5.1.1106] - 2026-02-21
 
 ### Added
