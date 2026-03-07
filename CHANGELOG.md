@@ -5,7 +5,7 @@ All notable changes to TCDir are documented in this file.
 ## [5.1.1149] - 2026-03-05
 
 ### Fixed
-- `tcdir x64` now lists contents of the `x64` subdirectory instead of treating it as a filename pattern — behavior matches `tcdir .\x64`
+- `tcdir foo` now lists contents of the `foo` subdirectory instead of treating it as a filename pattern — behavior matches `tcdir .\foo`
 
 ### Changed
 - Refactored `SplitMaskIntoDirAndFileSpec` into `SplitPureMask` and `SplitQualifiedMask` helpers

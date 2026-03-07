@@ -29,9 +29,9 @@ param(
 
 $ErrorActionPreference = 'Stop'
 
-$repoRoot   = Split-Path $PSScriptRoot -Parent
-$wingetDir  = Join-Path $repoRoot 'winget'
-$versionFile = Join-Path $repoRoot 'TCDirCore\Version.h'
+$repoRoot    = Split-Path $PSScriptRoot -Parent
+$wingetDir   = Join-Path  $repoRoot 'winget'
+$versionFile = Join-Path  $repoRoot 'TCDirCore\Version.h'
 
 $owner = 'relmer'
 $repo  = 'TCDir'
@@ -103,8 +103,8 @@ Remove-Item $tempDir -Recurse -Force -ErrorAction SilentlyContinue
 
 # --- Update manifest files ---
 
-$versionYaml  = Join-Path $wingetDir "$owner.$repo.yaml"
-$localeYaml   = Join-Path $wingetDir "$owner.$repo.locale.en-US.yaml"
+$versionYaml   = Join-Path $wingetDir "$owner.$repo.yaml"
+$localeYaml    = Join-Path $wingetDir "$owner.$repo.locale.en-US.yaml"
 $installerYaml = Join-Path $wingetDir "$owner.$repo.installer.yaml"
 
 function Update-YamlField {
