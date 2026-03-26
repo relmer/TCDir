@@ -272,5 +272,110 @@ namespace UnitTest
 
             Assert::IsTrue (fFoundRoot);
         }
+
+
+
+
+        TEST_METHOD(GetAliases_FindsBlockInFile)
+        {
+            //
+            // Create a profile with aliases, then verify FindAliasBlock detects them
+            //
+
+            SAliasConfig config;
+
+            config.strRootAlias      = L"d";
+            config.strTcDirInvocation = L"tcdir";
+            config.rgSubAliases      = {
+                { L"dd", L"/a:d", L"dirs",  true },
+                { L"ds", L"/s",   L"search", true },
+            };
+
+            vector<wstring> rgBlockLines;
+
+            CAliasBlockGenerator::Generate (config, L"5.2.1150", rgBlockLines);
+
+            vector<wstring> rgLines = { L"# My profile", L"Import-Module posh-git" };
+
+            CProfileFileManager fileMgr;
+
+            fileMgr.AppendAliasBlock (rgLines, rgBlockLines);
+
+            SAliasBlock block;
+
+            fileMgr.FindAliasBlock (rgLines, block);
+
+
+
+            Assert::IsTrue (block.fFound);
+            Assert::AreEqual (L"d",  block.strRootAlias.c_str());
+            Assert::AreEqual (3u,    static_cast<unsigned>(block.rgAliasNames.size()));
+            Assert::AreEqual (L"d",  block.rgAliasNames[0].c_str());
+            Assert::AreEqual (L"dd", block.rgAliasNames[1].c_str());
+            Assert::AreEqual (L"ds", block.rgAliasNames[2].c_str());
+            Assert::AreEqual (L"5.2.1150", block.strVersion.c_str());
+        }
+
+
+
+
+        TEST_METHOD(GetAliases_NoAliases_BlockNotFound)
+        {
+            vector<wstring> rgLines = {
+                L"# My PowerShell profile",
+                L"Set-Location C:\\code",
+                L"Import-Module posh-git",
+            };
+
+            CProfileFileManager fileMgr;
+            SAliasBlock         block;
+
+            fileMgr.FindAliasBlock (rgLines, block);
+
+
+
+            Assert::IsFalse (block.fFound);
+        }
+
+
+
+
+        TEST_METHOD(GetAliases_MultipleProfilesCanBeScanned)
+        {
+            //
+            // Simulate scanning multiple profiles — verify independent block detection
+            //
+
+            CProfileFileManager fileMgr;
+            SAliasConfig        config;
+
+            config.strRootAlias      = L"d";
+            config.strTcDirInvocation = L"tcdir";
+            config.rgSubAliases      = {
+                { L"dd", L"/a:d", L"dirs", true },
+            };
+
+            vector<wstring> rgBlock;
+
+            CAliasBlockGenerator::Generate (config, L"5.2.1150", rgBlock);
+
+            // Profile 1: has aliases
+            vector<wstring> rgProfile1 = { L"# profile 1" };
+            fileMgr.AppendAliasBlock (rgProfile1, rgBlock);
+
+            // Profile 2: no aliases
+            vector<wstring> rgProfile2 = { L"# profile 2" };
+
+            SAliasBlock block1;
+            SAliasBlock block2;
+
+            fileMgr.FindAliasBlock (rgProfile1, block1);
+            fileMgr.FindAliasBlock (rgProfile2, block2);
+
+
+
+            Assert::IsTrue  (block1.fFound);
+            Assert::IsFalse (block2.fFound);
+        }
     };
 }
