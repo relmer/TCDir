@@ -175,6 +175,18 @@ g_pConsole->Printf (CConfig::Error, L"Error: %s\n", msg);
 - Avoid excessive nesting: if a function requires more than 2–3 levels of indentation beyond the EHM pattern, extract that inner logic into its own function
 - Each function should have a single clear purpose
 
+### Unit Testing — Isolation Rules
+- Unit tests **MUST NEVER** rely on or alter real system state
+- **ALL** system services **MUST** be mocked or abstracted behind interfaces:
+  - **File system**: No reading/writing actual files on disk — use in-memory data or mock I/O
+  - **Registry**: No accessing the Windows registry — mock all registry calls
+  - **Network**: No real HTTP/socket calls — mock network layers
+  - **Process/environment**: No inspecting real processes, environment variables, or console handles
+  - **System APIs**: No calling `SHGetKnownFolderPath`, `CreateToolhelp32Snapshot`, `OpenProcessToken`, etc. directly in tests
+- Tests must be **deterministic** and **repeatable** regardless of the machine or user running them
+- If a module uses system APIs, inject its dependencies through an interface so tests can substitute mocks
+- Temp files are acceptable **only** in integration tests, never in unit tests
+
 ---
 
 ## Communication Rules

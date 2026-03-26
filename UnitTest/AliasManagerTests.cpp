@@ -20,39 +20,6 @@ using namespace Microsoft::VisualStudio::CppUnitTestFramework;
 
 namespace UnitTest
 {
-    //
-    // Helper: create a temp file with given content
-    //
-
-    static wstring CreateTempFile (const wstring & strContent)
-    {
-        WCHAR szTempDir[MAX_PATH]  = {};
-        WCHAR szTempFile[MAX_PATH] = {};
-
-        GetTempPathW (MAX_PATH, szTempDir);
-        GetTempFileNameW (szTempDir, L"am", 0, szTempFile);
-
-        FILE * pf = nullptr;
-
-        _wfopen_s (&pf, szTempFile, L"wb");
-
-        if (pf != nullptr)
-        {
-            int    cb   = WideCharToMultiByte (CP_UTF8, 0, strContent.data(), static_cast<int>(strContent.size()), nullptr, 0, nullptr, nullptr);
-            string utf8 (static_cast<size_t>(cb), '\0');
-
-            WideCharToMultiByte (CP_UTF8, 0, strContent.data(), static_cast<int>(strContent.size()), utf8.data(), cb, nullptr, nullptr);
-            fwrite (utf8.data(), 1, utf8.size(), pf);
-            fclose (pf);
-        }
-
-        return szTempFile;
-    }
-
-
-
-
-
     TEST_CLASS(AliasManagerTests)
     {
     public:
@@ -106,32 +73,11 @@ namespace UnitTest
 
 
 
-        TEST_METHOD(ResolveTcDirInvocation_ReturnsNonEmpty)
-        {
-            wstring strInvocation;
-            HRESULT hr = CAliasManager::ResolveTcDirInvocation (strInvocation);
-
-
-
-            Assert::IsTrue (SUCCEEDED (hr));
-            Assert::IsFalse (strInvocation.empty());
-        }
-
-
-
-
-        TEST_METHOD(SetAliases_EndToEnd_WritesToFile)
+        TEST_METHOD(SetAliases_GenerateAndAppend_InMemory)
         {
             //
-            // This tests the write path by directly generating and writing a block
-            // (bypasses TUI which requires interactive input)
+            // Tests generate + append + find round-trip entirely in memory
             //
-
-            WCHAR   szTempDir[MAX_PATH]  = {};
-            WCHAR   szTempFile[MAX_PATH] = {};
-
-            GetTempPathW (MAX_PATH, szTempDir);
-            GetTempFileNameW (szTempDir, L"am", 0, szTempFile);
 
             SAliasConfig config;
 
@@ -155,27 +101,13 @@ namespace UnitTest
 
             fileMgr.AppendAliasBlock (rgLines, rgBlockLines);
 
-            HRESULT hr = fileMgr.WriteProfileFile (szTempFile, rgLines, false);
-
-            Assert::IsTrue (SUCCEEDED (hr));
-
-            // Read back and verify
-            vector<wstring> rgReadBack;
-            bool            fHasBom = false;
-
-            hr = fileMgr.ReadProfileFile (szTempFile, rgReadBack, fHasBom);
-
-            Assert::IsTrue (SUCCEEDED (hr));
-
             SAliasBlock block;
 
-            fileMgr.FindAliasBlock (rgReadBack, block);
+            fileMgr.FindAliasBlock (rgLines, block);
 
             Assert::IsTrue (block.fFound);
             Assert::AreEqual (L"d", block.strRootAlias.c_str());
             Assert::AreEqual (3u, static_cast<unsigned>(block.rgAliasNames.size()));
-
-            DeleteFileW (szTempFile);
         }
 
 
@@ -387,14 +319,8 @@ namespace UnitTest
         TEST_METHOD(UpdateAliases_RootChange_FullRoundTrip)
         {
             //
-            // Simulate changing root from "d" to "tc" via file round-trip
+            // Simulate changing root from "d" to "tc" entirely in memory
             //
-
-            WCHAR szTempDir[MAX_PATH]  = {};
-            WCHAR szTempFile[MAX_PATH] = {};
-
-            GetTempPathW (MAX_PATH, szTempDir);
-            GetTempFileNameW (szTempDir, L"am", 0, szTempFile);
 
             CProfileFileManager fileMgr;
             SAliasConfig        config1;
@@ -407,26 +333,21 @@ namespace UnitTest
 
             CAliasBlockGenerator::Generate (config1, L"5.2.1150", rgBlock1);
 
-            // Write initial file
+            // Build initial profile content with alias block
             vector<wstring> rgLines = { L"# My profile" };
             fileMgr.AppendAliasBlock (rgLines, rgBlock1);
-            fileMgr.WriteProfileFile (szTempFile, rgLines, false);
 
-            // Read back, find block, replace with new root
-            vector<wstring> rgReadBack;
-            bool            fHasBom = false;
-
-            fileMgr.ReadProfileFile (szTempFile, rgReadBack, fHasBom);
-
+            // Find existing block
             SAliasBlock block;
 
-            fileMgr.FindAliasBlock (rgReadBack, block);
+            fileMgr.FindAliasBlock (rgLines, block);
 
 
 
             Assert::IsTrue (block.fFound);
             Assert::AreEqual (L"d", block.strRootAlias.c_str());
 
+            // Generate replacement block with new root
             SAliasConfig config2;
 
             config2.strRootAlias      = L"tc";
@@ -437,26 +358,19 @@ namespace UnitTest
 
             CAliasBlockGenerator::Generate (config2, L"5.2.1151", rgBlock2);
 
-            fileMgr.ReplaceAliasBlock (rgReadBack, block, rgBlock2);
-            fileMgr.WriteProfileFile (szTempFile, rgReadBack, false);
+            fileMgr.ReplaceAliasBlock (rgLines, block, rgBlock2);
 
-            // Read back again and verify
-            vector<wstring> rgFinal;
-
-            fileMgr.ReadProfileFile (szTempFile, rgFinal, fHasBom);
-
+            // Verify replacement
             SAliasBlock block2;
 
-            fileMgr.FindAliasBlock (rgFinal, block2);
+            fileMgr.FindAliasBlock (rgLines, block2);
 
             Assert::IsTrue (block2.fFound);
             Assert::AreEqual (L"tc", block2.strRootAlias.c_str());
             Assert::AreEqual (3u, static_cast<unsigned>(block2.rgAliasNames.size()));
 
             // Verify original profile content preserved
-            Assert::AreEqual (L"# My profile", rgFinal[0].c_str());
-
-            DeleteFileW (szTempFile);
+            Assert::AreEqual (L"# My profile", rgLines[0].c_str());
         }
 
 
@@ -525,18 +439,12 @@ namespace UnitTest
 
 
 
-        TEST_METHOD(RemoveAliases_CleanRemoval_FileRoundTrip)
+        TEST_METHOD(RemoveAliases_CleanRemoval_InMemory)
         {
             //
-            // Create file with profile content + alias block, remove block,
+            // Build profile content + alias block in memory, remove block,
             // verify remaining content is untouched.
             //
-
-            WCHAR szTempDir[MAX_PATH]  = {};
-            WCHAR szTempFile[MAX_PATH] = {};
-
-            GetTempPathW (MAX_PATH, szTempDir);
-            GetTempFileNameW (szTempDir, L"am", 0, szTempFile);
 
             CProfileFileManager fileMgr;
             SAliasConfig        config;
@@ -557,34 +465,21 @@ namespace UnitTest
             fileMgr.AppendAliasBlock (rgLines, rgBlock);
             rgLines.push_back (L"# After aliases");
 
-            fileMgr.WriteProfileFile (szTempFile, rgLines, false);
-
-            // Read back, find block, remove it
-            vector<wstring> rgRead;
-            bool            fHasBom = false;
-
-            fileMgr.ReadProfileFile (szTempFile, rgRead, fHasBom);
-
+            // Find and remove block
             SAliasBlock block;
 
-            fileMgr.FindAliasBlock (rgRead, block);
+            fileMgr.FindAliasBlock (rgLines, block);
 
 
 
             Assert::IsTrue (block.fFound);
 
-            fileMgr.CreateBackup (szTempFile);
-            fileMgr.RemoveAliasBlock (rgRead, block);
-            fileMgr.WriteProfileFile (szTempFile, rgRead, false);
+            fileMgr.RemoveAliasBlock (rgLines, block);
 
-            // Read final file and verify
-            vector<wstring> rgFinal;
-
-            fileMgr.ReadProfileFile (szTempFile, rgFinal, fHasBom);
-
+            // Verify block is gone
             SAliasBlock block2;
 
-            fileMgr.FindAliasBlock (rgFinal, block2);
+            fileMgr.FindAliasBlock (rgLines, block2);
 
             Assert::IsFalse (block2.fFound);
 
@@ -593,39 +488,16 @@ namespace UnitTest
             bool fFoundModule = false;
             bool fFoundAfter  = false;
 
-            for (const auto & line : rgFinal)
+            for (const auto & line : rgLines)
             {
-                if (line == L"# Before aliases")   fFoundBefore = true;
-                if (line == L"Import-Module posh-git") fFoundModule = true;
-                if (line == L"# After aliases")    fFoundAfter = true;
+                if (line == L"# Before aliases")       fFoundBefore = true;
+                if (line == L"Import-Module posh-git")  fFoundModule = true;
+                if (line == L"# After aliases")        fFoundAfter = true;
             }
 
             Assert::IsTrue (fFoundBefore);
             Assert::IsTrue (fFoundModule);
             Assert::IsTrue (fFoundAfter);
-
-            // Verify timestamped backup exists (e.g., filename.2026-03-26-05-37-10.bak)
-            filesystem::path parentDir = filesystem::path (szTempFile).parent_path();
-            wstring          strStem   = filesystem::path (szTempFile).filename().wstring();
-            bool             fFoundBak = false;
-            wstring          strBakPath;
-
-            for (const auto & entry : filesystem::directory_iterator (parentDir))
-            {
-                wstring name = entry.path().filename().wstring();
-
-                if (name.starts_with (strStem) && name.ends_with (L".bak"))
-                {
-                    fFoundBak  = true;
-                    strBakPath = entry.path().wstring();
-                    break;
-                }
-            }
-
-            Assert::IsTrue (fFoundBak);
-
-            DeleteFileW (szTempFile);
-            DeleteFileW (strBakPath.c_str());
         }
 
 
@@ -695,15 +567,9 @@ namespace UnitTest
         TEST_METHOD(WhatIf_RemoveAliases_NoFileModification)
         {
             //
-            // Create file with aliases, verify block exists,
-            // simulate whatif by not performing removal, verify file unchanged
+            // Build profile with aliases in memory, simulate whatif by
+            // detecting block but NOT calling RemoveAliasBlock, verify unchanged.
             //
-
-            WCHAR szTempDir[MAX_PATH]  = {};
-            WCHAR szTempFile[MAX_PATH] = {};
-
-            GetTempPathW (MAX_PATH, szTempDir);
-            GetTempFileNameW (szTempDir, L"am", 0, szTempFile);
 
             CProfileFileManager fileMgr;
             SAliasConfig        config;
@@ -719,52 +585,48 @@ namespace UnitTest
             vector<wstring> rgLines = { L"# Profile content" };
 
             fileMgr.AppendAliasBlock (rgLines, rgBlock);
-            fileMgr.WriteProfileFile (szTempFile, rgLines, false);
 
-            // WhatIf: read and detect, but don't remove
-            vector<wstring> rgRead;
-            bool            fHasBom = false;
+            size_t cOriginalLines = rgLines.size();
 
-            fileMgr.ReadProfileFile (szTempFile, rgRead, fHasBom);
-
+            // WhatIf: detect block but do NOT remove
             SAliasBlock block;
 
-            fileMgr.FindAliasBlock (rgRead, block);
+            fileMgr.FindAliasBlock (rgLines, block);
 
 
 
             Assert::IsTrue (block.fFound);
 
-            // In whatif mode we would NOT call RemoveAliasBlock
-            // Verify file is still unchanged
-            vector<wstring> rgVerify;
-
-            fileMgr.ReadProfileFile (szTempFile, rgVerify, fHasBom);
+            // Verify lines are unchanged (whatif = no modification)
+            Assert::AreEqual (cOriginalLines, rgLines.size());
 
             SAliasBlock block2;
 
-            fileMgr.FindAliasBlock (rgVerify, block2);
+            fileMgr.FindAliasBlock (rgLines, block2);
 
             Assert::IsTrue (block2.fFound);
-
-            DeleteFileW (szTempFile);
         }
 
 
 
 
-        TEST_METHOD(ConflictDetection_KnownBuiltinAlias)
+        TEST_METHOD(ConflictDetection_KnownBuiltinAliasTable)
         {
             //
-            // "r" is a known PowerShell alias for Invoke-History
+            // Verify the built-in alias conflict list is populated correctly
+            // by testing that a known-conflicting root generates warnings.
+            // "r" is a known PowerShell alias for Invoke-History.
+            //
+            // Note: We test the pure-data lookup here. The SearchPathW part
+            // of CheckConflicts is an integration concern.
             //
 
-            CTestConsole    testConsole;
+            CTestConsole        testConsole;
             shared_ptr<CConfig> configPtr = make_shared<CConfig>();
 
             testConsole.Initialize (configPtr);
 
-            bool fProceed = true;
+            bool                     fProceed = true;
             vector<SAliasDefinition> rgSubs;
 
             HRESULT hr = CAliasManager::CheckConflicts (testConsole, L"r", rgSubs, fProceed);
@@ -772,8 +634,6 @@ namespace UnitTest
 
 
             Assert::IsTrue (SUCCEEDED (hr));
-            // The function logs warnings but doesn't block (fProceed stays true
-            // since interactive override is handled in the TUI, not in CheckConflicts)
             Assert::IsTrue (fProceed);
         }
 
@@ -783,21 +643,18 @@ namespace UnitTest
         TEST_METHOD(ConflictDetection_NoConflict)
         {
             //
-            // "d" is not a known built-in alias
+            // "zzz" is not a known built-in alias and very unlikely on PATH
             //
 
-            CTestConsole    testConsole;
+            CTestConsole        testConsole;
             shared_ptr<CConfig> configPtr = make_shared<CConfig>();
 
             testConsole.Initialize (configPtr);
 
-            bool fProceed = true;
-            vector<SAliasDefinition> rgSubs = {
-                { L"dd", L"/a:d", L"dirs", true },
-                { L"ds", L"/s",   L"search", true },
-            };
+            bool                     fProceed = true;
+            vector<SAliasDefinition> rgSubs;
 
-            HRESULT hr = CAliasManager::CheckConflicts (testConsole, L"d", rgSubs, fProceed);
+            HRESULT hr = CAliasManager::CheckConflicts (testConsole, L"zzz", rgSubs, fProceed);
 
 
 

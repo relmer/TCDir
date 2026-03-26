@@ -10,8 +10,8 @@ Detected PowerShell version of the calling shell.
 
 | Value | Description |
 |-------|-------------|
-| `PS7Plus` | PowerShell 7+ (`pwsh.exe`). Profile dir: `PowerShell\` |
-| `PS51` | Windows PowerShell 5.1 (`powershell.exe`). Profile dir: `WindowsPowerShell\` |
+| `PowerShell` | PowerShell 7+ (`pwsh.exe`). Profile dir: `PowerShell\` |
+| `WindowsPowerShell` | Windows PowerShell 5.1 (`powershell.exe`). Profile dir: `WindowsPowerShell\` |
 | `Unknown` | Parent process is neither pwsh.exe nor powershell.exe |
 
 ---

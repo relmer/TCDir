@@ -26,34 +26,62 @@ namespace UnitTest
 
 
 
-        TEST_METHOD(DetectPowerShellVersion_ReturnsValidVersion)
+        TEST_METHOD(MapImageName_Pwsh_ReturnsPowerShell)
         {
-            CProfilePathResolver resolver;
-            EPowerShellVersion   eVersion = EPowerShellVersion::Unknown;
-            HRESULT              hr       = resolver.DetectPowerShellVersion (eVersion);
-
-
-
-            // The test runner may or may not be PowerShell, so we just verify no crash
-            // and that we get a valid enum value
-            Assert::IsTrue (SUCCEEDED (hr) || eVersion == EPowerShellVersion::Unknown);
+            Assert::AreEqual (static_cast<int>(EPowerShellVersion::PowerShell),
+                              static_cast<int>(CProfilePathResolver::MapImageNameToVersion (L"pwsh.exe")));
         }
 
 
 
 
-        TEST_METHOD(ResolveProfilePaths_PS7Plus_ReturnsFourPaths)
+        TEST_METHOD(MapImageName_PwshUpperCase_ReturnsPowerShell)
         {
-            CProfilePathResolver             resolver;
-            vector<SProfileLocation>         rgLocations;
-            HRESULT                          hr = resolver.ResolveProfilePaths (EPowerShellVersion::PS7Plus, rgLocations);
+            Assert::AreEqual (static_cast<int>(EPowerShellVersion::PowerShell),
+                              static_cast<int>(CProfilePathResolver::MapImageNameToVersion (L"PWSH.EXE")));
+        }
 
 
 
-            Assert::IsTrue (SUCCEEDED (hr));
+
+        TEST_METHOD(MapImageName_Powershell_ReturnsWindowsPowerShell)
+        {
+            Assert::AreEqual (static_cast<int>(EPowerShellVersion::WindowsPowerShell),
+                              static_cast<int>(CProfilePathResolver::MapImageNameToVersion (L"powershell.exe")));
+        }
+
+
+
+
+        TEST_METHOD(MapImageName_Cmd_ReturnsUnknown)
+        {
+            Assert::AreEqual (static_cast<int>(EPowerShellVersion::Unknown),
+                              static_cast<int>(CProfilePathResolver::MapImageNameToVersion (L"cmd.exe")));
+        }
+
+
+
+
+        TEST_METHOD(MapImageName_Explorer_ReturnsUnknown)
+        {
+            Assert::AreEqual (static_cast<int>(EPowerShellVersion::Unknown),
+                              static_cast<int>(CProfilePathResolver::MapImageNameToVersion (L"explorer.exe")));
+        }
+
+
+
+
+        TEST_METHOD(BuildProfileLocations_PowerShell_ReturnsFourPaths)
+        {
+            vector<SProfileLocation> rgLocations;
+
+            CProfilePathResolver::BuildProfileLocations (L"C:\\Users\\test\\Documents", L"C:\\ProgramData",
+                                                          EPowerShellVersion::PowerShell, rgLocations);
+
+
+
             Assert::AreEqual (4u, static_cast<unsigned>(rgLocations.size()));
 
-            // Verify the directory component contains "PowerShell" (not "WindowsPowerShell")
             for (const auto & loc : rgLocations)
             {
                 Assert::IsTrue (loc.strResolvedPath.find (L"\\PowerShell\\") != wstring::npos);
@@ -64,18 +92,17 @@ namespace UnitTest
 
 
 
-        TEST_METHOD(ResolveProfilePaths_PS51_ReturnsFourPaths)
+        TEST_METHOD(BuildProfileLocations_WindowsPowerShell_UsesCorrectDir)
         {
-            CProfilePathResolver             resolver;
-            vector<SProfileLocation>         rgLocations;
-            HRESULT                          hr = resolver.ResolveProfilePaths (EPowerShellVersion::PS51, rgLocations);
+            vector<SProfileLocation> rgLocations;
+
+            CProfilePathResolver::BuildProfileLocations (L"C:\\Users\\test\\Documents", L"C:\\ProgramData",
+                                                          EPowerShellVersion::WindowsPowerShell, rgLocations);
 
 
 
-            Assert::IsTrue (SUCCEEDED (hr));
             Assert::AreEqual (4u, static_cast<unsigned>(rgLocations.size()));
 
-            // Verify the directory component contains "WindowsPowerShell"
             for (const auto & loc : rgLocations)
             {
                 Assert::IsTrue (loc.strResolvedPath.find (L"\\WindowsPowerShell\\") != wstring::npos);
@@ -85,15 +112,14 @@ namespace UnitTest
 
 
 
-        TEST_METHOD(ResolveProfilePaths_ScopesAreCorrect)
+        TEST_METHOD(BuildProfileLocations_ScopesAreCorrect)
         {
-            CProfilePathResolver             resolver;
-            vector<SProfileLocation>         rgLocations;
-            HRESULT                          hr = resolver.ResolveProfilePaths (EPowerShellVersion::PS7Plus, rgLocations);
+            vector<SProfileLocation> rgLocations;
+
+            CProfilePathResolver::BuildProfileLocations (L"C:\\Users\\test\\Documents", L"C:\\ProgramData",
+                                                          EPowerShellVersion::PowerShell, rgLocations);
 
 
-
-            Assert::IsTrue (SUCCEEDED (hr));
 
             Assert::AreEqual (static_cast<int>(EProfileScope::CurrentUserCurrentHost), static_cast<int>(rgLocations[0].eScope));
             Assert::AreEqual (static_cast<int>(EProfileScope::CurrentUserAllHosts),    static_cast<int>(rgLocations[1].eScope));
@@ -104,15 +130,14 @@ namespace UnitTest
 
 
 
-        TEST_METHOD(ResolveProfilePaths_AllUsersRequiresAdmin)
+        TEST_METHOD(BuildProfileLocations_AllUsersRequiresAdmin)
         {
-            CProfilePathResolver             resolver;
-            vector<SProfileLocation>         rgLocations;
-            HRESULT                          hr = resolver.ResolveProfilePaths (EPowerShellVersion::PS7Plus, rgLocations);
+            vector<SProfileLocation> rgLocations;
+
+            CProfilePathResolver::BuildProfileLocations (L"C:\\Users\\test\\Documents", L"C:\\ProgramData",
+                                                          EPowerShellVersion::PowerShell, rgLocations);
 
 
-
-            Assert::IsTrue (SUCCEEDED (hr));
 
             Assert::IsFalse (rgLocations[0].fRequiresAdmin);
             Assert::IsFalse (rgLocations[1].fRequiresAdmin);
@@ -123,15 +148,14 @@ namespace UnitTest
 
 
 
-        TEST_METHOD(ResolveProfilePaths_VariableNamesCorrect)
+        TEST_METHOD(BuildProfileLocations_VariableNamesCorrect)
         {
-            CProfilePathResolver             resolver;
-            vector<SProfileLocation>         rgLocations;
-            HRESULT                          hr = resolver.ResolveProfilePaths (EPowerShellVersion::PS7Plus, rgLocations);
+            vector<SProfileLocation> rgLocations;
+
+            CProfilePathResolver::BuildProfileLocations (L"C:\\Users\\test\\Documents", L"C:\\ProgramData",
+                                                          EPowerShellVersion::PowerShell, rgLocations);
 
 
-
-            Assert::IsTrue (SUCCEEDED (hr));
 
             Assert::AreEqual (L"$PROFILE.CurrentUserCurrentHost", rgLocations[0].strVariableName.c_str());
             Assert::AreEqual (L"$PROFILE.CurrentUserAllHosts",    rgLocations[1].strVariableName.c_str());
@@ -142,16 +166,75 @@ namespace UnitTest
 
 
 
-        TEST_METHOD(IsRunningAsAdmin_ReturnsResult)
+        TEST_METHOD(BuildProfileLocations_FullPathsCorrect_PowerShell)
         {
-            CProfilePathResolver resolver;
-            bool                 fIsAdmin = false;
-            HRESULT              hr       = resolver.IsRunningAsAdmin (fIsAdmin);
+            vector<SProfileLocation> rgLocations;
+
+            CProfilePathResolver::BuildProfileLocations (L"C:\\Users\\test\\Documents", L"C:\\ProgramData",
+                                                          EPowerShellVersion::PowerShell, rgLocations);
 
 
 
-            Assert::IsTrue (SUCCEEDED (hr));
-            // Just verify it returns without error — actual value depends on test runner
+            Assert::AreEqual (L"C:\\Users\\test\\Documents\\PowerShell\\Microsoft.PowerShell_profile.ps1", rgLocations[0].strResolvedPath.c_str());
+            Assert::AreEqual (L"C:\\Users\\test\\Documents\\PowerShell\\profile.ps1",                      rgLocations[1].strResolvedPath.c_str());
+            Assert::AreEqual (L"C:\\ProgramData\\PowerShell\\Microsoft.PowerShell_profile.ps1",            rgLocations[2].strResolvedPath.c_str());
+            Assert::AreEqual (L"C:\\ProgramData\\PowerShell\\profile.ps1",                                 rgLocations[3].strResolvedPath.c_str());
+        }
+
+
+
+
+        TEST_METHOD(BuildProfileLocations_FullPathsCorrect_WindowsPowerShell)
+        {
+            vector<SProfileLocation> rgLocations;
+
+            CProfilePathResolver::BuildProfileLocations (L"C:\\Users\\test\\Documents", L"C:\\ProgramData",
+                                                          EPowerShellVersion::WindowsPowerShell, rgLocations);
+
+
+
+            Assert::AreEqual (L"C:\\Users\\test\\Documents\\WindowsPowerShell\\Microsoft.PowerShell_profile.ps1", rgLocations[0].strResolvedPath.c_str());
+            Assert::AreEqual (L"C:\\Users\\test\\Documents\\WindowsPowerShell\\profile.ps1",                      rgLocations[1].strResolvedPath.c_str());
+            Assert::AreEqual (L"C:\\ProgramData\\WindowsPowerShell\\Microsoft.PowerShell_profile.ps1",            rgLocations[2].strResolvedPath.c_str());
+            Assert::AreEqual (L"C:\\ProgramData\\WindowsPowerShell\\profile.ps1",                                 rgLocations[3].strResolvedPath.c_str());
+        }
+
+
+
+
+        TEST_METHOD(BuildProfileLocations_FExistsDefaultsFalse)
+        {
+            vector<SProfileLocation> rgLocations;
+
+            CProfilePathResolver::BuildProfileLocations (L"C:\\Fake\\Documents", L"C:\\Fake\\ProgramData",
+                                                          EPowerShellVersion::PowerShell, rgLocations);
+
+
+
+            for (const auto & loc : rgLocations)
+            {
+                Assert::IsFalse (loc.fExists);
+            }
+        }
+
+
+
+
+        TEST_METHOD(BuildProfileLocations_OneDriveRedirectedPath)
+        {
+            //
+            // Verify path construction works with OneDrive-redirected Documents
+            //
+
+            vector<SProfileLocation> rgLocations;
+
+            CProfilePathResolver::BuildProfileLocations (L"C:\\Users\\test\\OneDrive\\Documents", L"C:\\ProgramData",
+                                                          EPowerShellVersion::PowerShell, rgLocations);
+
+
+
+            Assert::AreEqual (L"C:\\Users\\test\\OneDrive\\Documents\\PowerShell\\profile.ps1",
+                              rgLocations[1].strResolvedPath.c_str());
         }
     };
 }

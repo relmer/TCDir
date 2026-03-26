@@ -97,6 +97,34 @@ Error:
 
 ////////////////////////////////////////////////////////////////////////////////
 //
+//  CProfilePathResolver::MapImageNameToVersion
+//
+//  Pure-logic mapping from a process image filename to PS version enum.
+//  No system calls — directly unit-testable.
+//
+////////////////////////////////////////////////////////////////////////////////
+
+EPowerShellVersion CProfilePathResolver::MapImageNameToVersion (const wstring & strImageName)
+{
+    if (_wcsicmp (strImageName.c_str(), L"pwsh.exe") == 0)
+    {
+        return EPowerShellVersion::PowerShell;
+    }
+
+    if (_wcsicmp (strImageName.c_str(), L"powershell.exe") == 0)
+    {
+        return EPowerShellVersion::WindowsPowerShell;
+    }
+
+    return EPowerShellVersion::Unknown;
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
 //  CProfilePathResolver::DetectPowerShellVersion
 //
 //  Inspects the parent process image name to determine PS version.
@@ -115,21 +143,67 @@ HRESULT CProfilePathResolver::DetectPowerShellVersion (EPowerShellVersion & eVer
     hr = GetParentProcessImageName (strImageName);
     CHR (hr);
 
-    if (_wcsicmp (strImageName.c_str(), L"pwsh.exe") == 0)
-    {
-        eVersion = EPowerShellVersion::PS7Plus;
-    }
-    else if (_wcsicmp (strImageName.c_str(), L"powershell.exe") == 0)
-    {
-        eVersion = EPowerShellVersion::PS51;
-    }
-    else
-    {
-        eVersion = EPowerShellVersion::Unknown;
-    }
+    eVersion = MapImageNameToVersion (strImageName);
 
 Error:
     return hr;
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CProfilePathResolver::BuildProfileLocations
+//
+//  Pure-logic path construction — no system calls, directly unit-testable.
+//  Builds the four profile SProfileLocation structs from base directory paths.
+//  Does NOT check filesystem::exists (caller does that).
+//
+////////////////////////////////////////////////////////////////////////////////
+
+void CProfilePathResolver::BuildProfileLocations (const wstring & strDocuments, const wstring & strProgramData,
+                                                   EPowerShellVersion eVersion, vector<SProfileLocation> & rgLocations)
+{
+    rgLocations.clear();
+
+    LPCWSTR pszPsDir = (eVersion == EPowerShellVersion::PowerShell)
+                      ? L"PowerShell"
+                      : L"WindowsPowerShell";
+
+    struct SProfileDef
+    {
+        EProfileScope eScope;
+        LPCWSTR       pszVarName;
+        const wstring & strBaseDir;
+        LPCWSTR       pszFilename;
+        bool          fRequiresAdmin;
+    };
+
+    SProfileDef defs[] =
+    {
+        { EProfileScope::CurrentUserCurrentHost, L"$PROFILE.CurrentUserCurrentHost", strDocuments,   L"Microsoft.PowerShell_profile.ps1", false },
+        { EProfileScope::CurrentUserAllHosts,    L"$PROFILE.CurrentUserAllHosts",    strDocuments,   L"profile.ps1",                      false },
+        { EProfileScope::AllUsersCurrentHost,    L"$PROFILE.AllUsersCurrentHost",    strProgramData, L"Microsoft.PowerShell_profile.ps1", true  },
+        { EProfileScope::AllUsersAllHosts,       L"$PROFILE.AllUsersAllHosts",       strProgramData, L"profile.ps1",                      true  },
+    };
+
+    for (const auto & def : defs)
+    {
+        filesystem::path profilePath = filesystem::path (def.strBaseDir) / pszPsDir / def.pszFilename;
+
+        SProfileLocation loc;
+
+        loc.eScope          = def.eScope;
+        loc.strVariableName = def.pszVarName;
+        loc.strResolvedPath = profilePath.wstring();
+        loc.fExists         = false;
+        loc.fRequiresAdmin  = def.fRequiresAdmin;
+        loc.fHasAliasBlock  = false;
+
+        rgLocations.push_back (std::move (loc));
+    }
 }
 
 
@@ -152,16 +226,6 @@ HRESULT CProfilePathResolver::ResolveProfilePaths (EPowerShellVersion eVersion, 
 
 
 
-    rgLocations.clear();
-
-    //
-    // Determine the PS subdirectory name
-    //
-
-    LPCWSTR pszPsDir = (eVersion == EPowerShellVersion::PS7Plus)
-                      ? L"PowerShell"
-                      : L"WindowsPowerShell";
-
     //
     // Resolve Documents folder (handles OneDrive KFM redirection)
     //
@@ -177,42 +241,18 @@ HRESULT CProfilePathResolver::ResolveProfilePaths (EPowerShellVersion eVersion, 
     CHR (hr);
 
     //
-    // Build the four profile locations
+    // Build profile locations using the pure-logic helper
     //
 
+    BuildProfileLocations (pszDocuments, pszProgramData, eVersion, rgLocations);
+
+    //
+    // Check which files actually exist on disk
+    //
+
+    for (auto & loc : rgLocations)
     {
-        struct SProfileDef
-        {
-            EProfileScope eScope;
-            LPCWSTR       pszVarName;
-            LPCWSTR       pszBaseDir;
-            LPCWSTR       pszFilename;
-            bool          fRequiresAdmin;
-        };
-
-        SProfileDef defs[] =
-        {
-            { EProfileScope::CurrentUserCurrentHost, L"$PROFILE.CurrentUserCurrentHost", pszDocuments,   L"Microsoft.PowerShell_profile.ps1", false },
-            { EProfileScope::CurrentUserAllHosts,    L"$PROFILE.CurrentUserAllHosts",    pszDocuments,   L"profile.ps1",                      false },
-            { EProfileScope::AllUsersCurrentHost,    L"$PROFILE.AllUsersCurrentHost",    pszProgramData, L"Microsoft.PowerShell_profile.ps1", true  },
-            { EProfileScope::AllUsersAllHosts,       L"$PROFILE.AllUsersAllHosts",       pszProgramData, L"profile.ps1",                      true  },
-        };
-
-        for (const auto & def : defs)
-        {
-            filesystem::path profilePath = filesystem::path (def.pszBaseDir) / pszPsDir / def.pszFilename;
-
-            SProfileLocation loc;
-
-            loc.eScope          = def.eScope;
-            loc.strVariableName = def.pszVarName;
-            loc.strResolvedPath = profilePath.wstring();
-            loc.fExists         = filesystem::exists (profilePath);
-            loc.fRequiresAdmin  = def.fRequiresAdmin;
-            loc.fHasAliasBlock  = false;
-
-            rgLocations.push_back (std::move (loc));
-        }
+        loc.fExists = filesystem::exists (loc.strResolvedPath);
     }
 
 Error:

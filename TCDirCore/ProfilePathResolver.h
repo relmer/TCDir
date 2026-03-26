@@ -14,9 +14,9 @@
 
 enum class EPowerShellVersion
 {
-    PS7Plus,    // PowerShell 7+ (pwsh.exe). Profile dir: "PowerShell\"
-    PS51,       // Windows PowerShell 5.1 (powershell.exe). Profile dir: "WindowsPowerShell\"
-    Unknown     // Parent process is neither pwsh.exe nor powershell.exe
+    PowerShell,         // PowerShell 7+ (pwsh.exe). Profile dir: "PowerShell\"
+    WindowsPowerShell,  // Windows PowerShell 5.1 (powershell.exe). Profile dir: "WindowsPowerShell\"
+    Unknown             // Parent process is neither pwsh.exe nor powershell.exe
 };
 
 
@@ -83,6 +83,14 @@ public:
     HRESULT DetectPowerShellVersion     (EPowerShellVersion & eVersion);
     HRESULT ResolveProfilePaths         (EPowerShellVersion eVersion, vector<SProfileLocation> & rgLocations);
     HRESULT IsRunningAsAdmin            (bool & fIsAdmin);
+
+    //
+    // Pure-logic helpers — no system calls, directly unit-testable
+    //
+
+    static EPowerShellVersion MapImageNameToVersion   (const wstring & strImageName);
+    static void               BuildProfileLocations   (const wstring & strDocuments, const wstring & strProgramData,
+                                                       EPowerShellVersion eVersion, vector<SProfileLocation> & rgLocations);
 
 private:
     HRESULT GetParentProcessImageName   (wstring & strImageName);

@@ -16,46 +16,6 @@ using namespace Microsoft::VisualStudio::CppUnitTestFramework;
 
 namespace UnitTest
 {
-    //
-    // Helper to create a temp file with given content
-    //
-
-    static wstring CreateTempProfileFile (const wstring & strContent, bool fWriteBom = false)
-    {
-        WCHAR szTempDir[MAX_PATH]  = {};
-        WCHAR szTempFile[MAX_PATH] = {};
-
-        GetTempPathW (MAX_PATH, szTempDir);
-        GetTempFileNameW (szTempDir, L"pf", 0, szTempFile);
-
-        FILE * pf = nullptr;
-
-        _wfopen_s (&pf, szTempFile, L"wb");
-
-        if (pf != nullptr)
-        {
-            if (fWriteBom)
-            {
-                unsigned char bom[] = { 0xEF, 0xBB, 0xBF };
-                fwrite (bom, 1, 3, pf);
-            }
-
-            // Convert to UTF-8
-            int cb = WideCharToMultiByte (CP_UTF8, 0, strContent.data(), static_cast<int>(strContent.size()), nullptr, 0, nullptr, nullptr);
-            string strUtf8 (static_cast<size_t>(cb), '\0');
-            WideCharToMultiByte (CP_UTF8, 0, strContent.data(), static_cast<int>(strContent.size()), strUtf8.data(), cb, nullptr, nullptr);
-            fwrite (strUtf8.data(), 1, strUtf8.size(), pf);
-
-            fclose (pf);
-        }
-
-        return szTempFile;
-    }
-
-
-
-
-
     TEST_CLASS(ProfileFileManagerTests)
     {
     public:
@@ -63,52 +23,6 @@ namespace UnitTest
         TEST_CLASS_INITIALIZE(ClassInitialize)
         {
             SetupEhmForUnitTests();
-        }
-
-
-
-
-        TEST_METHOD(ReadProfileFile_BasicContent)
-        {
-            wstring strPath = CreateTempProfileFile (L"line1\r\nline2\r\nline3");
-
-            CProfileFileManager fileMgr;
-            vector<wstring>     rgLines;
-            bool                fHasBom = false;
-
-            HRESULT hr = fileMgr.ReadProfileFile (strPath, rgLines, fHasBom);
-
-
-
-            Assert::IsTrue (SUCCEEDED (hr));
-            Assert::AreEqual (3u, static_cast<unsigned>(rgLines.size()));
-            Assert::AreEqual (L"line1", rgLines[0].c_str());
-            Assert::AreEqual (L"line2", rgLines[1].c_str());
-            Assert::AreEqual (L"line3", rgLines[2].c_str());
-            Assert::IsFalse (fHasBom);
-
-            DeleteFileW (strPath.c_str());
-        }
-
-
-
-
-        TEST_METHOD(ReadProfileFile_Utf8Bom_Preserved)
-        {
-            wstring strPath = CreateTempProfileFile (L"# profile content\r\n", true);
-
-            CProfileFileManager fileMgr;
-            vector<wstring>     rgLines;
-            bool                fHasBom = false;
-
-            HRESULT hr = fileMgr.ReadProfileFile (strPath, rgLines, fHasBom);
-
-
-
-            Assert::IsTrue (SUCCEEDED (hr));
-            Assert::IsTrue (fHasBom);
-
-            DeleteFileW (strPath.c_str());
         }
 
 
@@ -165,105 +79,6 @@ namespace UnitTest
             Assert::AreEqual (L"d", block.strRootAlias.c_str());
             Assert::AreEqual (2u, static_cast<unsigned>(block.rgAliasNames.size()));
             Assert::AreEqual (L"5.2.1150", block.strVersion.c_str());
-        }
-
-
-
-
-        TEST_METHOD(WriteProfileFile_RoundTrip)
-        {
-            WCHAR szTempDir[MAX_PATH]  = {};
-            WCHAR szTempFile[MAX_PATH] = {};
-
-            GetTempPathW (MAX_PATH, szTempDir);
-            GetTempFileNameW (szTempDir, L"pf", 0, szTempFile);
-
-            CProfileFileManager fileMgr;
-            vector<wstring>     rgLines = { L"line1", L"line2" };
-
-            HRESULT hr = fileMgr.WriteProfileFile (szTempFile, rgLines, false);
-
-
-
-            Assert::IsTrue (SUCCEEDED (hr));
-
-            vector<wstring> rgReadBack;
-            bool            fHasBom = false;
-
-            hr = fileMgr.ReadProfileFile (szTempFile, rgReadBack, fHasBom);
-
-            Assert::IsTrue (SUCCEEDED (hr));
-            Assert::AreEqual (2u, static_cast<unsigned>(rgReadBack.size()));
-            Assert::AreEqual (L"line1", rgReadBack[0].c_str());
-            Assert::AreEqual (L"line2", rgReadBack[1].c_str());
-
-            DeleteFileW (szTempFile);
-        }
-
-
-
-
-        TEST_METHOD(WriteProfileFile_PreservesBom)
-        {
-            WCHAR szTempDir[MAX_PATH]  = {};
-            WCHAR szTempFile[MAX_PATH] = {};
-
-            GetTempPathW (MAX_PATH, szTempDir);
-            GetTempFileNameW (szTempDir, L"pf", 0, szTempFile);
-
-            CProfileFileManager fileMgr;
-            vector<wstring>     rgLines = { L"test" };
-
-
-
-            fileMgr.WriteProfileFile (szTempFile, rgLines, true);
-
-            // Re-read and verify BOM
-            vector<wstring> rgReadBack;
-            bool            fHasBom = false;
-
-            fileMgr.ReadProfileFile (szTempFile, rgReadBack, fHasBom);
-
-            Assert::IsTrue (fHasBom);
-
-            DeleteFileW (szTempFile);
-        }
-
-
-
-
-        TEST_METHOD(CreateBackup_CreatesFile)
-        {
-            wstring strPath = CreateTempProfileFile (L"original content");
-
-            CProfileFileManager fileMgr;
-
-            fileMgr.CreateBackup (strPath);
-
-
-
-            // Find the timestamped .bak file (e.g., filename.2026-03-26-05-37-10.bak)
-            filesystem::path parentDir = filesystem::path (strPath).parent_path();
-            wstring          strStem   = filesystem::path (strPath).filename().wstring();
-            bool             fFoundBak = false;
-            wstring          strBakPath;
-
-            for (const auto & entry : filesystem::directory_iterator (parentDir))
-            {
-                wstring name = entry.path().filename().wstring();
-
-                if (name.starts_with (strStem) && name.ends_with (L".bak"))
-                {
-                    fFoundBak  = true;
-                    strBakPath = entry.path().wstring();
-                    break;
-                }
-            }
-
-            Assert::IsTrue (fFoundBak);
-
-            DeleteFileW (strPath.c_str());
-            DeleteFileW (strBakPath.c_str());
         }
 
 
