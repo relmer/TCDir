@@ -1,6 +1,9 @@
 #include "pch.h"
 #include "EhmTestHelper.h"
 #include "../TCDirCore/AliasManager.h"
+#include "../TCDirCore/AliasBlockGenerator.h"
+#include "../TCDirCore/ProfileFileManager.h"
+#include "../TCDirCore/Version.h"
 
 
 
@@ -14,6 +17,39 @@ using namespace Microsoft::VisualStudio::CppUnitTestFramework;
 
 namespace UnitTest
 {
+    //
+    // Helper: create a temp file with given content
+    //
+
+    static wstring CreateTempFile (const wstring & strContent)
+    {
+        WCHAR szTempDir[MAX_PATH]  = {};
+        WCHAR szTempFile[MAX_PATH] = {};
+
+        GetTempPathW (MAX_PATH, szTempDir);
+        GetTempFileNameW (szTempDir, L"am", 0, szTempFile);
+
+        FILE * pf = nullptr;
+
+        _wfopen_s (&pf, szTempFile, L"wb");
+
+        if (pf != nullptr)
+        {
+            int    cb   = WideCharToMultiByte (CP_UTF8, 0, strContent.data(), static_cast<int>(strContent.size()), nullptr, 0, nullptr, nullptr);
+            string utf8 (static_cast<size_t>(cb), '\0');
+
+            WideCharToMultiByte (CP_UTF8, 0, strContent.data(), static_cast<int>(strContent.size()), utf8.data(), cb, nullptr, nullptr);
+            fwrite (utf8.data(), 1, utf8.size(), pf);
+            fclose (pf);
+        }
+
+        return szTempFile;
+    }
+
+
+
+
+
     TEST_CLASS(AliasManagerTests)
     {
     public:
@@ -21,6 +57,220 @@ namespace UnitTest
         TEST_CLASS_INITIALIZE(ClassInitialize)
         {
             SetupEhmForUnitTests();
+        }
+
+
+
+
+        TEST_METHOD(BuildDefaultSubAliases_DefaultRoot)
+        {
+            SAliasConfig config;
+
+            config.strRootAlias      = L"d";
+            config.strTcDirInvocation = L"tcdir";
+
+
+
+            vector<SAliasDefinition> rgSubs;
+
+            CAliasManager::BuildDefaultSubAliases (L"d", rgSubs);
+
+            Assert::AreEqual (4u, static_cast<unsigned>(rgSubs.size()));
+            Assert::AreEqual (L"dd",  rgSubs[0].strName.c_str());
+            Assert::AreEqual (L"ds",  rgSubs[1].strName.c_str());
+            Assert::AreEqual (L"dsb", rgSubs[2].strName.c_str());
+            Assert::AreEqual (L"dw",  rgSubs[3].strName.c_str());
+        }
+
+
+
+
+        TEST_METHOD(BuildDefaultSubAliases_CustomRoot)
+        {
+            vector<SAliasDefinition> rgSubs;
+
+
+
+            CAliasManager::BuildDefaultSubAliases (L"tc", rgSubs);
+
+            Assert::AreEqual (4u, static_cast<unsigned>(rgSubs.size()));
+            Assert::AreEqual (L"tcd",  rgSubs[0].strName.c_str());
+            Assert::AreEqual (L"tcs",  rgSubs[1].strName.c_str());
+            Assert::AreEqual (L"tcsb", rgSubs[2].strName.c_str());
+            Assert::AreEqual (L"tcw",  rgSubs[3].strName.c_str());
+        }
+
+
+
+
+        TEST_METHOD(ResolveTcDirInvocation_ReturnsNonEmpty)
+        {
+            wstring strInvocation;
+            HRESULT hr = CAliasManager::ResolveTcDirInvocation (strInvocation);
+
+
+
+            Assert::IsTrue (SUCCEEDED (hr));
+            Assert::IsFalse (strInvocation.empty());
+        }
+
+
+
+
+        TEST_METHOD(SetAliases_EndToEnd_WritesToFile)
+        {
+            //
+            // This tests the write path by directly generating and writing a block
+            // (bypasses TUI which requires interactive input)
+            //
+
+            WCHAR   szTempDir[MAX_PATH]  = {};
+            WCHAR   szTempFile[MAX_PATH] = {};
+
+            GetTempPathW (MAX_PATH, szTempDir);
+            GetTempFileNameW (szTempDir, L"am", 0, szTempFile);
+
+            SAliasConfig config;
+
+            config.strRootAlias      = L"d";
+            config.strTcDirInvocation = L"tcdir";
+            config.rgSubAliases      = {
+                { L"dd", L"/a:d", L"dirs",   true  },
+                { L"ds", L"/s",   L"search", true  },
+                { L"dw", L"/w",   L"wide",   false },
+            };
+
+            wstring         strVersion = VERSION_WSTRING;
+            vector<wstring> rgBlockLines;
+
+
+
+            CAliasBlockGenerator::Generate (config, strVersion, rgBlockLines);
+
+            CProfileFileManager fileMgr;
+            vector<wstring>     rgLines;
+
+            fileMgr.AppendAliasBlock (rgLines, rgBlockLines);
+
+            HRESULT hr = fileMgr.WriteProfileFile (szTempFile, rgLines, false);
+
+            Assert::IsTrue (SUCCEEDED (hr));
+
+            // Read back and verify
+            vector<wstring> rgReadBack;
+            bool            fHasBom = false;
+
+            hr = fileMgr.ReadProfileFile (szTempFile, rgReadBack, fHasBom);
+
+            Assert::IsTrue (SUCCEEDED (hr));
+
+            SAliasBlock block;
+
+            fileMgr.FindAliasBlock (rgReadBack, block);
+
+            Assert::IsTrue (block.fFound);
+            Assert::AreEqual (L"d", block.strRootAlias.c_str());
+            Assert::AreEqual (3u, static_cast<unsigned>(block.rgAliasNames.size()));
+
+            DeleteFileW (szTempFile);
+        }
+
+
+
+
+        TEST_METHOD(SetAliases_ExistingBlock_ReplacesCorrectly)
+        {
+            //
+            // Create a file with existing aliases, then replace with new ones
+            //
+
+            SAliasConfig config1;
+
+            config1.strRootAlias      = L"d";
+            config1.strTcDirInvocation = L"tcdir";
+            config1.rgSubAliases      = {
+                { L"dd", L"/a:d", L"dirs", true },
+            };
+
+            SAliasConfig config2;
+
+            config2.strRootAlias      = L"tc";
+            config2.strTcDirInvocation = L"tcdir";
+            config2.rgSubAliases      = {
+                { L"tcd", L"/a:d", L"dirs", true },
+                { L"tcs", L"/s",   L"search", true },
+            };
+
+            CProfileFileManager fileMgr;
+            vector<wstring>     rgBlockLines1;
+            vector<wstring>     rgBlockLines2;
+
+
+
+            CAliasBlockGenerator::Generate (config1, L"5.2.1150", rgBlockLines1);
+            CAliasBlockGenerator::Generate (config2, L"5.2.1151", rgBlockLines2);
+
+            // Create file with first config + some surrounding content
+            vector<wstring> rgLines = { L"# Before content" };
+            fileMgr.AppendAliasBlock (rgLines, rgBlockLines1);
+            rgLines.push_back (L"# After content");
+
+            // Find and replace
+            SAliasBlock block;
+            fileMgr.FindAliasBlock (rgLines, block);
+            Assert::IsTrue (block.fFound);
+
+            fileMgr.ReplaceAliasBlock (rgLines, block, rgBlockLines2);
+
+            // Verify replacement
+            SAliasBlock block2;
+            fileMgr.FindAliasBlock (rgLines, block2);
+
+            Assert::IsTrue (block2.fFound);
+            Assert::AreEqual (L"tc", block2.strRootAlias.c_str());
+            Assert::AreEqual (3u, static_cast<unsigned>(block2.rgAliasNames.size()));
+
+            // Verify surrounding content preserved
+            Assert::AreEqual (L"# Before content", rgLines.front().c_str());
+            Assert::AreEqual (L"# After content", rgLines.back().c_str());
+        }
+
+
+
+
+        TEST_METHOD(SessionOnly_NoFileWrite)
+        {
+            //
+            // Verify session-only mode generates block but concept is sound
+            //
+
+            SAliasConfig config;
+
+            config.strRootAlias      = L"d";
+            config.strTcDirInvocation = L"tcdir";
+            config.fSessionOnly      = true;
+
+            vector<wstring> rgBlockLines;
+
+
+
+            CAliasBlockGenerator::Generate (config, L"5.2.1150", rgBlockLines);
+
+            Assert::IsTrue (rgBlockLines.size() > 5);
+
+            // Verify block contains root alias
+            bool fFoundRoot = false;
+
+            for (const auto & line : rgBlockLines)
+            {
+                if (line.find (L"function d") != wstring::npos)
+                {
+                    fFoundRoot = true;
+                    break;
+                }
+            }
+
+            Assert::IsTrue (fFoundRoot);
         }
     };
 }

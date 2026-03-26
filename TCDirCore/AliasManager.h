@@ -70,7 +70,6 @@ public:
     static HRESULT GetAliases     (CConsole & console);
     static HRESULT RemoveAliases  (CConsole & console, bool fWhatIf);
 
-private:
     static void    BuildDefaultSubAliases  (const wstring & strRoot, vector<SAliasDefinition> & rgOut);
     static HRESULT ResolveTcDirInvocation  (wstring & strInvocation);
     static HRESULT CheckConflicts          (CConsole & console, const wstring & strRoot,
