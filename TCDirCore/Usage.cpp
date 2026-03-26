@@ -269,6 +269,10 @@ void CUsage::DisplaySynopsis (CConsole & console, wchar_t chPrefix)
         format (L"[{{InformationHighlight}}{0}Depth{{Information}}={{InformationHighlight}}N{{Information}}] ", pszLong),
         format (L"[{{InformationHighlight}}{0}TreeIndent{{Information}}={{InformationHighlight}}N{{Information}}] ", pszLong),
         format (L"[{{InformationHighlight}}{0}Size{{Information}}={{InformationHighlight}}Auto{{Information}}|{{InformationHighlight}}Bytes{{Information}}]", pszLong),
+        format (L" [{{InformationHighlight}}{0}Set-Aliases{{Information}}]", pszLong),
+        format (L" [{{InformationHighlight}}{0}Get-Aliases{{Information}}]", pszLong),
+        format (L" [{{InformationHighlight}}{0}Remove-Aliases{{Information}}]", pszLong),
+        format (L" [{{InformationHighlight}}{0}WhatIf{{Information}}]", pszLong),
 #ifdef _DEBUG
         format (L" [{{InformationHighlight}}{0}Debug{{Information}}]", pszLong),
 #endif
@@ -382,7 +386,12 @@ void CUsage::DisplayUsage (CConsole & console, wchar_t chPrefix, optional<bool> 
         L"  {{InformationHighlight}}{1}Depth{{Information}}={{InformationHighlight}}N{{Information}}         {6}Limits tree depth to N levels (requires {{InformationHighlight}}{1}Tree{{Information}}).\n"
         L"  {{InformationHighlight}}{1}TreeIndent{{Information}}={{InformationHighlight}}N{{Information}}    {6}Sets tree indent width (1-8, default 4; requires {{InformationHighlight}}{1}Tree{{Information}}).\n"
         L"  {{InformationHighlight}}{1}Size{{Information}}={{InformationHighlight}}Auto{{Information}}|{{InformationHighlight}}Bytes{{Information}} {6}File size format: {{InformationHighlight}}Auto{{Information}} = abbreviated (KB/MB/GB), {{InformationHighlight}}Bytes{{Information}} = exact with commas.\n"
-        L"  {6}                   Default: {{InformationHighlight}}Auto{{Information}} in tree mode, {{InformationHighlight}}Bytes{{Information}} otherwise."
+        L"  {6}                   Default: {{InformationHighlight}}Auto{{Information}} in tree mode, {{InformationHighlight}}Bytes{{Information}} otherwise.\n"
+        L"\n"
+        L"  {{InformationHighlight}}{1}Set-Aliases{{Information}}     {6}Interactive wizard to configure PowerShell aliases for tcdir.\n"
+        L"  {{InformationHighlight}}{1}Get-Aliases{{Information}}     {6}Display currently configured tcdir aliases and their source locations.\n"
+        L"  {{InformationHighlight}}{1}Remove-Aliases{{Information}}  {6}Interactive wizard to remove tcdir aliases from a profile.\n"
+        L"  {{InformationHighlight}}{1}WhatIf{{Information}}          {6}Preview changes without modifying files (use with {{InformationHighlight}}{1}Set-Aliases{{Information}} or {{InformationHighlight}}{1}Remove-Aliases{{Information}})."
 #ifdef _DEBUG
         L"\n  {{InformationHighlight}}{1}Debug{{Information}}           {6}Displays raw file attributes in hex for diagnosing edge cases."
 #endif
