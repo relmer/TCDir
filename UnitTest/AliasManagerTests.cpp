@@ -377,5 +377,146 @@ namespace UnitTest
             Assert::IsTrue  (block1.fFound);
             Assert::IsFalse (block2.fFound);
         }
+
+
+
+
+        TEST_METHOD(UpdateAliases_RootChange_FullRoundTrip)
+        {
+            //
+            // Simulate changing root from "d" to "tc" via file round-trip
+            //
+
+            WCHAR szTempDir[MAX_PATH]  = {};
+            WCHAR szTempFile[MAX_PATH] = {};
+
+            GetTempPathW (MAX_PATH, szTempDir);
+            GetTempFileNameW (szTempDir, L"am", 0, szTempFile);
+
+            CProfileFileManager fileMgr;
+            SAliasConfig        config1;
+
+            config1.strRootAlias      = L"d";
+            config1.strTcDirInvocation = L"tcdir";
+            config1.rgSubAliases      = { { L"dd", L"/a:d", L"dirs", true } };
+
+            vector<wstring> rgBlock1;
+
+            CAliasBlockGenerator::Generate (config1, L"5.2.1150", rgBlock1);
+
+            // Write initial file
+            vector<wstring> rgLines = { L"# My profile" };
+            fileMgr.AppendAliasBlock (rgLines, rgBlock1);
+            fileMgr.WriteProfileFile (szTempFile, rgLines, false);
+
+            // Read back, find block, replace with new root
+            vector<wstring> rgReadBack;
+            bool            fHasBom = false;
+
+            fileMgr.ReadProfileFile (szTempFile, rgReadBack, fHasBom);
+
+            SAliasBlock block;
+
+            fileMgr.FindAliasBlock (rgReadBack, block);
+
+
+
+            Assert::IsTrue (block.fFound);
+            Assert::AreEqual (L"d", block.strRootAlias.c_str());
+
+            SAliasConfig config2;
+
+            config2.strRootAlias      = L"tc";
+            config2.strTcDirInvocation = L"tcdir";
+            config2.rgSubAliases      = { { L"tcd", L"/a:d", L"dirs", true }, { L"tcs", L"/s", L"search", true } };
+
+            vector<wstring> rgBlock2;
+
+            CAliasBlockGenerator::Generate (config2, L"5.2.1151", rgBlock2);
+
+            fileMgr.ReplaceAliasBlock (rgReadBack, block, rgBlock2);
+            fileMgr.WriteProfileFile (szTempFile, rgReadBack, false);
+
+            // Read back again and verify
+            vector<wstring> rgFinal;
+
+            fileMgr.ReadProfileFile (szTempFile, rgFinal, fHasBom);
+
+            SAliasBlock block2;
+
+            fileMgr.FindAliasBlock (rgFinal, block2);
+
+            Assert::IsTrue (block2.fFound);
+            Assert::AreEqual (L"tc", block2.strRootAlias.c_str());
+            Assert::AreEqual (3u, static_cast<unsigned>(block2.rgAliasNames.size()));
+
+            // Verify original profile content preserved
+            Assert::AreEqual (L"# My profile", rgFinal[0].c_str());
+
+            DeleteFileW (szTempFile);
+        }
+
+
+
+
+        TEST_METHOD(UpdateAliases_SameRootDifferentSubs)
+        {
+            //
+            // Same root "d", but toggle sub-aliases
+            //
+
+            CProfileFileManager fileMgr;
+
+            SAliasConfig config1;
+
+            config1.strRootAlias      = L"d";
+            config1.strTcDirInvocation = L"tcdir";
+            config1.rgSubAliases      = {
+                { L"dd", L"/a:d", L"dirs", true },
+                { L"ds", L"/s",   L"search", true },
+            };
+
+            SAliasConfig config2;
+
+            config2.strRootAlias      = L"d";
+            config2.strTcDirInvocation = L"tcdir";
+            config2.rgSubAliases      = {
+                { L"dd", L"/a:d", L"dirs", false },   // disabled
+                { L"ds", L"/s",   L"search", true },
+                { L"dw", L"/w",   L"wide", true },    // newly enabled
+            };
+
+            vector<wstring> rgBlock1;
+            vector<wstring> rgBlock2;
+
+            CAliasBlockGenerator::Generate (config1, L"5.2.1150", rgBlock1);
+            CAliasBlockGenerator::Generate (config2, L"5.2.1151", rgBlock2);
+
+            vector<wstring> rgLines;
+
+            fileMgr.AppendAliasBlock (rgLines, rgBlock1);
+
+            SAliasBlock block;
+
+            fileMgr.FindAliasBlock (rgLines, block);
+
+
+
+            Assert::IsTrue (block.fFound);
+
+            fileMgr.ReplaceAliasBlock (rgLines, block, rgBlock2);
+
+            SAliasBlock block2;
+
+            fileMgr.FindAliasBlock (rgLines, block2);
+
+            Assert::IsTrue (block2.fFound);
+            Assert::AreEqual (L"d", block2.strRootAlias.c_str());
+            // Should have: d, ds, dw (dd disabled)
+            Assert::AreEqual (3u, static_cast<unsigned>(block2.rgAliasNames.size()));
+            Assert::AreEqual (L"d",  block2.rgAliasNames[0].c_str());
+            Assert::AreEqual (L"ds", block2.rgAliasNames[1].c_str());
+            Assert::AreEqual (L"dw", block2.rgAliasNames[2].c_str());
+        }
     };
 }
