@@ -518,5 +518,115 @@ namespace UnitTest
             Assert::AreEqual (L"ds", block2.rgAliasNames[1].c_str());
             Assert::AreEqual (L"dw", block2.rgAliasNames[2].c_str());
         }
+
+
+
+
+        TEST_METHOD(RemoveAliases_CleanRemoval_FileRoundTrip)
+        {
+            //
+            // Create file with profile content + alias block, remove block,
+            // verify remaining content is untouched.
+            //
+
+            WCHAR szTempDir[MAX_PATH]  = {};
+            WCHAR szTempFile[MAX_PATH] = {};
+
+            GetTempPathW (MAX_PATH, szTempDir);
+            GetTempFileNameW (szTempDir, L"am", 0, szTempFile);
+
+            CProfileFileManager fileMgr;
+            SAliasConfig        config;
+
+            config.strRootAlias      = L"d";
+            config.strTcDirInvocation = L"tcdir";
+            config.rgSubAliases      = { { L"dd", L"/a:d", L"dirs", true } };
+
+            vector<wstring> rgBlock;
+
+            CAliasBlockGenerator::Generate (config, L"5.2.1150", rgBlock);
+
+            vector<wstring> rgLines = {
+                L"# Before aliases",
+                L"Import-Module posh-git",
+            };
+
+            fileMgr.AppendAliasBlock (rgLines, rgBlock);
+            rgLines.push_back (L"# After aliases");
+
+            fileMgr.WriteProfileFile (szTempFile, rgLines, false);
+
+            // Read back, find block, remove it
+            vector<wstring> rgRead;
+            bool            fHasBom = false;
+
+            fileMgr.ReadProfileFile (szTempFile, rgRead, fHasBom);
+
+            SAliasBlock block;
+
+            fileMgr.FindAliasBlock (rgRead, block);
+
+
+
+            Assert::IsTrue (block.fFound);
+
+            fileMgr.CreateBackup (szTempFile);
+            fileMgr.RemoveAliasBlock (rgRead, block);
+            fileMgr.WriteProfileFile (szTempFile, rgRead, false);
+
+            // Read final file and verify
+            vector<wstring> rgFinal;
+
+            fileMgr.ReadProfileFile (szTempFile, rgFinal, fHasBom);
+
+            SAliasBlock block2;
+
+            fileMgr.FindAliasBlock (rgFinal, block2);
+
+            Assert::IsFalse (block2.fFound);
+
+            // Verify original content preserved
+            bool fFoundBefore = false;
+            bool fFoundModule = false;
+            bool fFoundAfter  = false;
+
+            for (const auto & line : rgFinal)
+            {
+                if (line == L"# Before aliases")   fFoundBefore = true;
+                if (line == L"Import-Module posh-git") fFoundModule = true;
+                if (line == L"# After aliases")    fFoundAfter = true;
+            }
+
+            Assert::IsTrue (fFoundBefore);
+            Assert::IsTrue (fFoundModule);
+            Assert::IsTrue (fFoundAfter);
+
+            // Verify backup exists
+            wstring strBak = wstring (szTempFile) + L".bak";
+            Assert::IsTrue (filesystem::exists (strBak));
+
+            DeleteFileW (szTempFile);
+            DeleteFileW (strBak.c_str());
+        }
+
+
+
+
+        TEST_METHOD(RemoveAliases_NoAliases_NothingToRemove)
+        {
+            vector<wstring> rgLines = {
+                L"# My profile",
+                L"Set-Location C:\\code",
+            };
+
+            CProfileFileManager fileMgr;
+            SAliasBlock         block;
+
+            fileMgr.FindAliasBlock (rgLines, block);
+
+
+
+            Assert::IsFalse (block.fFound);
+        }
     };
 }
