@@ -3,7 +3,10 @@
 #include "../TCDirCore/AliasManager.h"
 #include "../TCDirCore/AliasBlockGenerator.h"
 #include "../TCDirCore/ProfileFileManager.h"
+#include "../TCDirCore/Console.h"
+#include "../TCDirCore/Config.h"
 #include "../TCDirCore/Version.h"
+#include "Mocks/TestConsole.h"
 
 
 
@@ -729,6 +732,61 @@ namespace UnitTest
             Assert::IsTrue (block2.fFound);
 
             DeleteFileW (szTempFile);
+        }
+
+
+
+
+        TEST_METHOD(ConflictDetection_KnownBuiltinAlias)
+        {
+            //
+            // "r" is a known PowerShell alias for Invoke-History
+            //
+
+            CTestConsole    testConsole;
+            shared_ptr<CConfig> configPtr = make_shared<CConfig>();
+
+            testConsole.Initialize (configPtr);
+
+            bool fProceed = true;
+            vector<SAliasDefinition> rgSubs;
+
+            HRESULT hr = CAliasManager::CheckConflicts (testConsole, L"r", rgSubs, fProceed);
+
+
+
+            Assert::IsTrue (SUCCEEDED (hr));
+            // The function logs warnings but doesn't block (fProceed stays true
+            // since interactive override is handled in the TUI, not in CheckConflicts)
+            Assert::IsTrue (fProceed);
+        }
+
+
+
+
+        TEST_METHOD(ConflictDetection_NoConflict)
+        {
+            //
+            // "d" is not a known built-in alias
+            //
+
+            CTestConsole    testConsole;
+            shared_ptr<CConfig> configPtr = make_shared<CConfig>();
+
+            testConsole.Initialize (configPtr);
+
+            bool fProceed = true;
+            vector<SAliasDefinition> rgSubs = {
+                { L"dd", L"/a:d", L"dirs", true },
+                { L"ds", L"/s",   L"search", true },
+            };
+
+            HRESULT hr = CAliasManager::CheckConflicts (testConsole, L"d", rgSubs, fProceed);
+
+
+
+            Assert::IsTrue (SUCCEEDED (hr));
+            Assert::IsTrue (fProceed);
         }
     };
 }

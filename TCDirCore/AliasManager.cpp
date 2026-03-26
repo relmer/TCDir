@@ -139,6 +139,7 @@ HRESULT CAliasManager::SetAliases (CConsole & console, bool fWhatIf)
     vector<SAliasDefinition>        rgSubAliases;
     vector<pair<wstring, bool>>     rgCheckItems;
     bool                            fIsAdmin = false;
+    bool                            fProceedAfterConflicts = true;
     vector<wstring>                 rgRadioItems;
     int                             iDefault = 0;
     SAliasConfig                    config;
@@ -258,6 +259,12 @@ HRESULT CAliasManager::SetAliases (CConsole & console, bool fWhatIf)
     {
         rgSubAliases[i].fEnabled = rgCheckItems[i].second;
     }
+
+    //
+    // Check for conflicts with existing commands/aliases
+    //
+
+    CheckConflicts (console, strRootAlias, rgSubAliases, fProceedAfterConflicts);
 
     //
     // Step 3: Profile location
