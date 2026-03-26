@@ -57,7 +57,7 @@
 
 - [X] T020 Implement `ReadProfileFile()`: read UTF-8 file (with/without BOM) into `vector<wstring>` lines in `TCDirCore/ProfileFileManager.cpp`
 - [X] T021 Implement `FindAliasBlock()`: scan lines for opening/closing markers, return `SAliasBlock` with line indices and parsed alias names in `TCDirCore/ProfileFileManager.cpp`
-- [X] T022 Implement `WriteProfileFile()`: create `.bak` backup (FR-070), write lines back preserving encoding, create parent directories if needed (FR-072) in `TCDirCore/ProfileFileManager.cpp`
+- [X] T022 Implement `WriteProfileFile()`: create timestamped `.bak` backup (FR-070), write lines back preserving encoding, create parent directories if needed (FR-072) in `TCDirCore/ProfileFileManager.cpp`
 - [X] T023 Implement `ReplaceAliasBlock()`: remove lines[start..end], insert new block at same position in `TCDirCore/ProfileFileManager.cpp`
 - [X] T024 Implement `AppendAliasBlock()`: append block at end of file in `TCDirCore/ProfileFileManager.cpp`
 - [X] T025 Implement `RemoveAliasBlock()`: delete lines[start..end] inclusive (FR-054, FR-055) in `TCDirCore/ProfileFileManager.cpp`

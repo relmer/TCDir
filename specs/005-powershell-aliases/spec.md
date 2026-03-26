@@ -11,7 +11,7 @@
 
 - Q: What should happen when the user's profile already contains manually-written tcdir aliases (no marker comments)? → A: Ignore them entirely — only manage marker-delimited blocks
 - Q: What should happen when the terminal does not support ANSI VT escape sequences? → A: Not applicable — VT support is a baseline requirement for tcdir; no fallback needed
-- Q: What should happen when marker comments exist but content between them was manually altered? → A: Replace the entire marker-delimited block unconditionally; the `.bak` backup protects the user. Block delimiters are required (multi-line functions). Marker comments must explicitly warn that tcdir manages and replaces the block.
+- Q: What should happen when marker comments exist but content between them was manually altered? → A: Replace the entire marker-delimited block unconditionally; the timestamped `.bak` backup protects the user. Block delimiters are required (multi-line functions). Marker comments must explicitly warn that tcdir manages and replaces the block.
 - Q: How should the generated root function resolve the tcdir executable? → A: At setup time, check the path of the running tcdir.exe instance. If that path is on PATH, generate functions using the short name `tcdir`. If not on PATH, bake the full path into the generated functions.
 - Q: Should the tool support Windows PowerShell 5.1 profile paths in addition to PowerShell 7+? → A: Yes, fully support both. Auto-detect which PS version launched tcdir by inspecting the parent process image name (`pwsh.exe` = 7+, `powershell.exe` = 5.1). `PSModulePath` env var is NOT usable — PS 7+ includes both `\PowerShell\` and `\WindowsPowerShell\` paths. All three commands (`--set-aliases`, `--get-aliases`, `--remove-aliases`) scope to the detected PS version's profile paths only.
 
@@ -123,7 +123,7 @@ During setup, the system checks whether the chosen root alias or sub-aliases con
 - What happens when the profile file uses an encoding other than UTF-8 (e.g., UTF-16, BOM)? → **Resolved**: Check first bytes for BOM. `FF FE` or `FE FF` (UTF-16) → bail with clear error directing user to convert to UTF-8. `EF BB BF` (UTF-8 BOM) → read as UTF-8, preserve BOM on write. No BOM → read as UTF-8 (handles both UTF-8 and ASCII).
 - What happens when the user's profile already contains tcdir-related code that was manually written (not via `--set-aliases`, so no marker comments)? → **Resolved**: The tool ignores them entirely. Only marker-delimited blocks (per FR-040) are managed. Manual aliases are invisible to the tool.
 - What happens when the user's terminal does not support ANSI escape sequences (very old conhost without VT mode)? → **Resolved**: Not applicable. VT support is a baseline requirement for tcdir; the alias wizard inherits this requirement.
-- What happens when the marker comments are present but the content between them has been manually altered? → **Resolved**: The entire marker-delimited block is replaced unconditionally. The `.bak` backup (FR-070) preserves the previous state.
+- What happens when the marker comments are present but the content between them has been manually altered? → **Resolved**: The entire marker-delimited block is replaced unconditionally. The timestamped `.bak` backup (FR-070) preserves the previous state.
 - What happens if the profile directory path contains spaces or special characters? → **Resolved**: Paths with spaces are handled by proper quoting in generated PowerShell code (`& "full path"`). Windows NTFS path characters are inherently limited; no special handling needed beyond quoting.
 - What happens when the user presses Ctrl+C or closes the terminal mid-wizard? → **Resolved**: Console mode and cursor visibility are restored via RAII guard. No files are modified until the final write step, so mid-wizard abort leaves no partial state.
 - What happens when `--set-aliases` and `--remove-aliases` are both specified? → **Resolved**: Handled by FR-005 — mutual exclusivity validation produces an error.
@@ -190,7 +190,7 @@ During setup, the system checks whether the chosen root alias or sub-aliases con
 
 #### File Operations Safety
 
-- **FR-070**: Before modifying any profile file, the tool MUST create a backup copy with a `.bak` extension
+- **FR-070**: Before modifying any profile file, the tool MUST create a timestamped backup copy named `{filename}.{YYYY-MM-DD-HH-MM-SS}.bak`
 - **FR-071**: The tool MUST check the first bytes of a profile file for a BOM. If a UTF-16 BOM is detected (`FF FE` or `FE FF`), the tool MUST display an error and refuse to modify the file. If a UTF-8 BOM (`EF BB BF`) is present, it MUST be preserved on write-back. If no BOM is present, the file MUST be read and written as UTF-8.
 - **FR-072**: If the target profile file does not exist, the tool MUST create it (and any missing parent directories)
 - **FR-073**: If the target profile file cannot be written (permissions, locked), the tool MUST display a clear error message and exit without partial writes

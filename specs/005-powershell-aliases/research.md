@@ -105,7 +105,7 @@
 - For append: add block at end of file
 - For replace: remove lines[open..close] inclusive, insert new block at same position
 
-**Backup Strategy**: Copy original to `{filename}.bak` before any modification (FR-070).
+**Backup Strategy**: Copy original to `{filename}.{YYYY-MM-DD-HH-MM-SS}.bak` before any modification (FR-070). Timestamped names prevent overwriting previous backups.
 
 **Encoding**: Read/write as UTF-8. Detect BOM on read (0xEF 0xBB 0xBF) and preserve it on write.
 

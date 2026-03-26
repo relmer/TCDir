@@ -242,12 +242,28 @@ namespace UnitTest
 
 
 
-            wstring strBak = strPath + L".bak";
+            // Find the timestamped .bak file (e.g., filename.2026-03-26-05-37-10.bak)
+            filesystem::path parentDir = filesystem::path (strPath).parent_path();
+            wstring          strStem   = filesystem::path (strPath).filename().wstring();
+            bool             fFoundBak = false;
+            wstring          strBakPath;
 
-            Assert::IsTrue (filesystem::exists (strBak));
+            for (const auto & entry : filesystem::directory_iterator (parentDir))
+            {
+                wstring name = entry.path().filename().wstring();
+
+                if (name.starts_with (strStem) && name.ends_with (L".bak"))
+                {
+                    fFoundBak  = true;
+                    strBakPath = entry.path().wstring();
+                    break;
+                }
+            }
+
+            Assert::IsTrue (fFoundBak);
 
             DeleteFileW (strPath.c_str());
-            DeleteFileW (strBak.c_str());
+            DeleteFileW (strBakPath.c_str());
         }
 
 

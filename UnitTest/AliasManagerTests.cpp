@@ -604,12 +604,28 @@ namespace UnitTest
             Assert::IsTrue (fFoundModule);
             Assert::IsTrue (fFoundAfter);
 
-            // Verify backup exists
-            wstring strBak = wstring (szTempFile) + L".bak";
-            Assert::IsTrue (filesystem::exists (strBak));
+            // Verify timestamped backup exists (e.g., filename.2026-03-26-05-37-10.bak)
+            filesystem::path parentDir = filesystem::path (szTempFile).parent_path();
+            wstring          strStem   = filesystem::path (szTempFile).filename().wstring();
+            bool             fFoundBak = false;
+            wstring          strBakPath;
+
+            for (const auto & entry : filesystem::directory_iterator (parentDir))
+            {
+                wstring name = entry.path().filename().wstring();
+
+                if (name.starts_with (strStem) && name.ends_with (L".bak"))
+                {
+                    fFoundBak  = true;
+                    strBakPath = entry.path().wstring();
+                    break;
+                }
+            }
+
+            Assert::IsTrue (fFoundBak);
 
             DeleteFileW (szTempFile);
-            DeleteFileW (strBak.c_str());
+            DeleteFileW (strBakPath.c_str());
         }
 
 

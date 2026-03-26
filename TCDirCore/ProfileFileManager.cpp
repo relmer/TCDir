@@ -390,7 +390,21 @@ HRESULT CProfileFileManager::CreateBackup (const wstring & strPath)
 
     if (filesystem::exists (strPath))
     {
-        wstring strBakPath = strPath + L".bak";
+        //
+        // Build timestamped backup name: filename.2026-03-26-05-37-10.bak
+        //
+
+        auto              now       = chrono::system_clock::now();
+        auto              timeT     = chrono::system_clock::to_time_t (now);
+        tm                localTime = {};
+        WCHAR             szTimestamp[32] = {};
+
+        localtime_s (&localTime, &timeT);
+        swprintf_s (szTimestamp, L".%04d-%02d-%02d-%02d-%02d-%02d.bak",
+                    localTime.tm_year + 1900, localTime.tm_mon + 1, localTime.tm_mday,
+                    localTime.tm_hour, localTime.tm_min, localTime.tm_sec);
+
+        wstring strBakPath = strPath + szTimestamp;
 
         filesystem::copy_file (strPath, strBakPath, filesystem::copy_options::overwrite_existing);
     }
