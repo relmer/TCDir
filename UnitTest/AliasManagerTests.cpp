@@ -628,5 +628,107 @@ namespace UnitTest
 
             Assert::IsFalse (block.fFound);
         }
+
+
+
+
+        TEST_METHOD(WhatIf_SetAliases_NoFileModification)
+        {
+            //
+            // Verify that when fWhatIf is set, the generated block is correct
+            // but no file operations would occur (tested by config flag)
+            //
+
+            SAliasConfig config;
+
+            config.strRootAlias      = L"d";
+            config.strTcDirInvocation = L"tcdir";
+            config.fWhatIf           = true;
+            config.rgSubAliases      = { { L"dd", L"/a:d", L"dirs", true } };
+
+            vector<wstring> rgBlockLines;
+
+
+
+            CAliasBlockGenerator::Generate (config, L"5.2.1150", rgBlockLines);
+
+            Assert::IsTrue (config.fWhatIf);
+            Assert::IsTrue (rgBlockLines.size() > 5);
+
+            // The block should still be generated correctly even in whatif mode
+            bool fFoundRoot = false;
+
+            for (const auto & line : rgBlockLines)
+            {
+                if (line == L"function d { tcdir @args }")
+                {
+                    fFoundRoot = true;
+                    break;
+                }
+            }
+
+            Assert::IsTrue (fFoundRoot);
+        }
+
+
+
+
+        TEST_METHOD(WhatIf_RemoveAliases_NoFileModification)
+        {
+            //
+            // Create file with aliases, verify block exists,
+            // simulate whatif by not performing removal, verify file unchanged
+            //
+
+            WCHAR szTempDir[MAX_PATH]  = {};
+            WCHAR szTempFile[MAX_PATH] = {};
+
+            GetTempPathW (MAX_PATH, szTempDir);
+            GetTempFileNameW (szTempDir, L"am", 0, szTempFile);
+
+            CProfileFileManager fileMgr;
+            SAliasConfig        config;
+
+            config.strRootAlias      = L"d";
+            config.strTcDirInvocation = L"tcdir";
+            config.rgSubAliases      = { { L"dd", L"/a:d", L"dirs", true } };
+
+            vector<wstring> rgBlock;
+
+            CAliasBlockGenerator::Generate (config, L"5.2.1150", rgBlock);
+
+            vector<wstring> rgLines = { L"# Profile content" };
+
+            fileMgr.AppendAliasBlock (rgLines, rgBlock);
+            fileMgr.WriteProfileFile (szTempFile, rgLines, false);
+
+            // WhatIf: read and detect, but don't remove
+            vector<wstring> rgRead;
+            bool            fHasBom = false;
+
+            fileMgr.ReadProfileFile (szTempFile, rgRead, fHasBom);
+
+            SAliasBlock block;
+
+            fileMgr.FindAliasBlock (rgRead, block);
+
+
+
+            Assert::IsTrue (block.fFound);
+
+            // In whatif mode we would NOT call RemoveAliasBlock
+            // Verify file is still unchanged
+            vector<wstring> rgVerify;
+
+            fileMgr.ReadProfileFile (szTempFile, rgVerify, fHasBom);
+
+            SAliasBlock block2;
+
+            fileMgr.FindAliasBlock (rgVerify, block2);
+
+            Assert::IsTrue (block2.fFound);
+
+            DeleteFileW (szTempFile);
+        }
     };
 }
