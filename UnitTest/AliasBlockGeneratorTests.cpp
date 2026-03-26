@@ -217,5 +217,68 @@ namespace UnitTest
             Assert::IsTrue (fFoundRoot);
             Assert::IsTrue (fFoundSub);
         }
+
+
+
+
+        TEST_METHOD(Generate_PathWithSpaces_ProperQuoting)
+        {
+            SAliasConfig config;
+
+            config.strRootAlias      = L"d";
+            config.strTcDirInvocation = L"C:\\Program Files\\TCDir\\tcdir.exe";
+            config.rgSubAliases      = {
+                { L"dd", L"/a:d", L"dirs", true },
+            };
+
+            vector<wstring> rgLines;
+
+
+
+            CAliasBlockGenerator::Generate (config, L"5.2.1150", rgLines);
+
+            bool fFoundQuotedPath = false;
+
+            for (const auto & line : rgLines)
+            {
+                if (line.find (L"& \"C:\\Program Files\\TCDir\\tcdir.exe\"") != wstring::npos)
+                {
+                    fFoundQuotedPath = true;
+                    break;
+                }
+            }
+
+            Assert::IsTrue (fFoundQuotedPath, L"Path with spaces must use call operator and quoting");
+        }
+
+
+
+
+        TEST_METHOD(Generate_NoSubAliases_OnlyRoot)
+        {
+            SAliasConfig config;
+
+            config.strRootAlias      = L"d";
+            config.strTcDirInvocation = L"tcdir";
+            // No sub-aliases at all
+
+            vector<wstring> rgLines;
+
+
+
+            CAliasBlockGenerator::Generate (config, L"5.2.1150", rgLines);
+
+            int cFunctions = 0;
+
+            for (const auto & line : rgLines)
+            {
+                if (line.starts_with (L"function "))
+                {
+                    ++cFunctions;
+                }
+            }
+
+            Assert::AreEqual (1, cFunctions, L"Only root function should be present");
+        }
     };
 }
