@@ -167,11 +167,11 @@ During setup, the system checks whether the chosen root alias or sub-aliases con
 
 #### Alias Block Format
 
-- **FR-040**: The persisted alias block MUST be delimited by marker comments that explicitly warn the block is managed: `# >>> tcdir aliases — DO NOT EDIT: this block is managed by tcdir and will be replaced <<<` (opening) and `# >>> end tcdir aliases <<<` (closing)
+- **FR-040**: The persisted alias block MUST be wrapped in an 80-character-wide `#` banner. The header banner includes the version, a DO NOT EDIT warning, and usage instructions. The footer banner contains `# End TCDir Aliases`. The scanner identifies the block by looking for `#  TCDir Aliases` in the header and `# End TCDir Aliases` in the footer. See alias-block format example in quickstart.md.
 - **FR-041**: At setup time, the tool MUST determine the path of the currently running tcdir.exe. If that path is reachable via PATH, the root alias function MUST invoke `tcdir` by short name. If not on PATH, the root alias function MUST invoke the full resolved path to tcdir.exe.
 - **FR-042**: The root alias MUST be defined as a simple passthrough PowerShell function that invokes tcdir (by name or full path per FR-041) and passes all arguments via `@args`. No fallback behavior (e.g., `Get-ChildItem`) or post-invocation output (e.g., `Write-Host`)
 - **FR-043**: Each sub-alias MUST be defined as a PowerShell function that invokes the root function with the appropriate flags prepended
-- **FR-044**: The alias block MUST include a comment with the tcdir version that generated it
+- **FR-044**: The alias block header MUST include the tcdir version that generated it (e.g., `tcdir v5.2.1150`). The minor version bumps to 5.2 for this feature.
 
 #### Remove Aliases Flow
 
