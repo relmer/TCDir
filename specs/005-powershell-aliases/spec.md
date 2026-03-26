@@ -5,6 +5,16 @@
 **Status**: Draft
 **Input**: User description: "Interactive PowerShell alias configuration: tcdir --set-aliases, --get-aliases, --remove-aliases with TUI for configuring root alias, sub-aliases, and profile storage location"
 
+## Clarifications
+
+### Session 2026-03-25
+
+- Q: What should happen when the user's profile already contains manually-written tcdir aliases (no marker comments)? → A: Ignore them entirely — only manage marker-delimited blocks
+- Q: What should happen when the terminal does not support ANSI VT escape sequences? → A: Not applicable — VT support is a baseline requirement for tcdir; no fallback needed
+- Q: What should happen when marker comments exist but content between them was manually altered? → A: Replace the entire marker-delimited block unconditionally; the `.bak` backup protects the user. Block delimiters are required (multi-line functions). Marker comments must explicitly warn that tcdir manages and replaces the block.
+- Q: How should the generated root function resolve the tcdir executable? → A: At setup time, check the path of the running tcdir.exe instance. If that path is on PATH, generate functions using the short name `tcdir`. If not on PATH, bake the full path into the generated functions.
+- Q: Should the tool support Windows PowerShell 5.1 profile paths in addition to PowerShell 7+? → A: Yes, fully support both. Auto-detect which PS version launched tcdir by inspecting the parent process image name (`pwsh.exe` = 7+, `powershell.exe` = 5.1). `PSModulePath` env var is NOT usable — PS 7+ includes both `\PowerShell\` and `\WindowsPowerShell\` paths. All three commands (`--set-aliases`, `--get-aliases`, `--remove-aliases`) scope to the detected PS version's profile paths only.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - First-Time Alias Setup (Priority: P1)
@@ -111,13 +121,13 @@ During setup, the system checks whether the chosen root alias or sub-aliases con
 
 - What happens when the profile file exists but is read-only or locked by another process?
 - What happens when the profile file uses an encoding other than UTF-8 (e.g., UTF-16, BOM)?
-- What happens when the user's profile already contains tcdir-related code that was manually written (not via `--set-aliases`, so no marker comments)?
-- What happens when the user's terminal does not support ANSI escape sequences (very old conhost without VT mode)?
-- What happens when the marker comments are present but the content between them has been manually altered?
+- What happens when the user's profile already contains tcdir-related code that was manually written (not via `--set-aliases`, so no marker comments)? → **Resolved**: The tool ignores them entirely. Only marker-delimited blocks (`# >>> tcdir aliases` / `# <<< tcdir aliases`) are managed. Manual aliases are invisible to the tool.
+- What happens when the user's terminal does not support ANSI escape sequences (very old conhost without VT mode)? → **Resolved**: Not applicable. VT support is a baseline requirement for tcdir; the alias wizard inherits this requirement.
+- What happens when the marker comments are present but the content between them has been manually altered? → **Resolved**: The entire marker-delimited block is replaced unconditionally. The `.bak` backup (FR-070) preserves the previous state.
 - What happens if the profile directory path contains spaces or special characters?
 - What happens when the user presses Ctrl+C or closes the terminal mid-wizard?
 - What happens when `--set-aliases` and `--remove-aliases` are both specified?
-- What happens when `--whatif` is used without `--set-aliases` or `--remove-aliases`?
+- What happens when `--whatif` is used without `--set-aliases` or `--remove-aliases`? → **Resolved**: Display an error stating `--whatif` is only valid with `--set-aliases` or `--remove-aliases`.
 
 ## Requirements *(mandatory)*
 
@@ -157,14 +167,15 @@ During setup, the system checks whether the chosen root alias or sub-aliases con
 
 #### Alias Block Format
 
-- **FR-040**: The persisted alias block MUST be delimited by marker comments: `# >>> tcdir aliases` and `# <<< tcdir aliases`
-- **FR-041**: The root alias MUST be defined as a PowerShell function that invokes the tcdir executable path and passes all arguments
-- **FR-042**: Each sub-alias MUST be defined as a PowerShell function that invokes the root function with the appropriate flags prepended
-- **FR-043**: The alias block MUST include a comment with the tcdir version that generated it
+- **FR-040**: The persisted alias block MUST be delimited by marker comments that explicitly warn the block is managed: `# >>> tcdir aliases — DO NOT EDIT: this block is managed by tcdir and will be replaced <<<` (opening) and `# >>> end tcdir aliases <<<` (closing)
+- **FR-041**: At setup time, the tool MUST determine the path of the currently running tcdir.exe. If that path is reachable via PATH, the root alias function MUST invoke `tcdir` by short name. If not on PATH, the root alias function MUST invoke the full resolved path to tcdir.exe.
+- **FR-042**: The root alias MUST be defined as a simple passthrough PowerShell function that invokes tcdir (by name or full path per FR-041) and passes all arguments via `@args`. No fallback behavior (e.g., `Get-ChildItem`) or post-invocation output (e.g., `Write-Host`)
+- **FR-043**: Each sub-alias MUST be defined as a PowerShell function that invokes the root function with the appropriate flags prepended
+- **FR-044**: The alias block MUST include a comment with the tcdir version that generated it
 
 #### Remove Aliases Flow
 
-- **FR-050**: The remove wizard MUST scan all four PowerShell profile file paths for tcdir marker comments before presenting options
+- **FR-050**: The remove wizard MUST scan all PowerShell profile file paths (both 7+ and 5.1) for tcdir marker comments before presenting options
 - **FR-051**: The remove wizard MUST only list profile locations that contain tcdir aliases
 - **FR-052**: Under each profile location, the remove wizard MUST display the specific alias names found
 - **FR-053**: If no tcdir aliases are found in any location, the tool MUST display a message stating so and exit
@@ -173,7 +184,7 @@ During setup, the system checks whether the chosen root alias or sub-aliases con
 
 #### Get Aliases (Non-Interactive)
 
-- **FR-060**: `--get-aliases` MUST scan all four PowerShell profile paths for tcdir alias blocks
+- **FR-060**: `--get-aliases` MUST scan all PowerShell profile paths (both 7+ and 5.1) for tcdir alias blocks
 - **FR-061**: For each location containing aliases, the output MUST show the profile variable name, resolved path, and each alias name with its mapping
 - **FR-062**: `--get-aliases` MUST NOT require interactive input — it runs and exits
 
@@ -187,8 +198,9 @@ During setup, the system checks whether the chosen root alias or sub-aliases con
 
 #### Profile Path Resolution
 
-- **FR-080**: The tool MUST resolve all four PowerShell profile paths without spawning a PowerShell child process, using known environment variables and standard path conventions
-- **FR-081**: The four profile paths are: Current User Current Host, Current User All Hosts, All Users Current Host, All Users All Hosts
+- **FR-080**: The tool MUST resolve all PowerShell profile paths without spawning a PowerShell child process, using `SHGetKnownFolderPath(FOLDERID_Documents)` for per-user paths and `SHGetKnownFolderPath(FOLDERID_ProgramData)` for all-users paths, correctly handling folder redirection (e.g., OneDrive)
+- **FR-081**: The tool MUST resolve profile paths for both PowerShell 7+ (`Documents\PowerShell\`) and Windows PowerShell 5.1 (`Documents\WindowsPowerShell\`). For each version, the four profile paths are: Current User Current Host, Current User All Hosts, All Users Current Host, All Users All Hosts
+- **FR-082**: The tool MUST auto-detect the calling PowerShell version by inspecting the parent process image name (`pwsh.exe` → 7+, `powershell.exe` → 5.1). If the parent is neither (e.g., CMD, Explorer), display an error directing the user to run from PowerShell. All alias commands MUST scope profile paths to the detected version only. The "Current Host" profile filename is `Microsoft.PowerShell_profile.ps1` for both `pwsh.exe` and `powershell.exe`
 
 ### Key Entities
 
@@ -200,7 +212,7 @@ During setup, the system checks whether the chosen root alias or sub-aliases con
 ## Assumptions
 
 - Users invoke `--set-aliases` from a PowerShell prompt (not CMD). If invoked from CMD, the tool displays a message directing the user to run from PowerShell.
-- The tool targets PowerShell 7+ (`pwsh`). PowerShell 5.1 (Windows PowerShell) uses a different profile directory (`WindowsPowerShell` vs `PowerShell`); v1 targets only PowerShell 7+ paths.
+- The tool targets both PowerShell 7+ (`pwsh`) and Windows PowerShell 5.1 (`powershell`). Profile directories differ (`PowerShell` vs `WindowsPowerShell`) but the generated alias code is compatible with both. The calling PS version is auto-detected via parent process inspection (`PSModulePath` is not usable — PS 7+ includes both version paths). Path resolution uses Windows APIs to handle Documents folder redirection (OneDrive, etc.).
 - The winget portable install places `tcdir.exe` in a directory already on `PATH` via the winget links mechanism, so the alias function can reference `tcdir` by name rather than full path.
 - ANSI VT escape sequences are supported in the user's terminal (Windows Terminal, VS Code terminal, modern conhost). If VT mode cannot be enabled, the TUI falls back gracefully or errors with a clear message.
 - Profile files use UTF-8 encoding (with or without BOM). This is the default for PowerShell 7+.
