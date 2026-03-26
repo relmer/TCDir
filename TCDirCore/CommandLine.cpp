@@ -338,6 +338,40 @@ HRESULT CCommandLine::ValidateSwitchCombinations (void)
         CBREx (false, E_INVALIDARG);
     }
 
+    //
+    // Alias switches: mutually exclusive with each other and with listing switches
+    //
+
+    {
+        int cAliasFlags = (m_fSetAliases ? 1 : 0)
+                        + (m_fGetAliases ? 1 : 0)
+                        + (m_fRemoveAliases ? 1 : 0);
+
+        if (cAliasFlags > 1)
+        {
+            m_strValidationError = L"--set-aliases, --get-aliases, and --remove-aliases are mutually exclusive.";
+            CBREx (false, E_INVALIDARG);
+        }
+
+        if (cAliasFlags > 0)
+        {
+            bool fHasListingSwitch = m_fRecurse || m_fWideListing || m_fBareListing || m_fTree
+                                  || m_fShowOwner || m_fShowStreams || m_fEnv || m_fConfig;
+
+            if (fHasListingSwitch)
+            {
+                m_strValidationError = L"Alias switches cannot be combined with listing switches.";
+                CBREx (false, E_INVALIDARG);
+            }
+        }
+
+        if (m_fWhatIf && !m_fSetAliases && !m_fRemoveAliases)
+        {
+            m_strValidationError = L"--whatif is only valid with --set-aliases or --remove-aliases.";
+            CBREx (false, E_INVALIDARG);
+        }
+    }
+
 Error:
     return hr;
 }
@@ -455,12 +489,16 @@ HRESULT CCommandLine::HandleLongSwitch (LPCWSTR pszArg, int & cArg, WCHAR ** & p
 
     static const LongSwitchEntry s_krgLongSwitches[] =
     {
-        {  L"env",     &CCommandLine::m_fEnv         },
-        {  L"config",  &CCommandLine::m_fConfig      },
-        {  L"owner",   &CCommandLine::m_fShowOwner   },
-        {  L"streams", &CCommandLine::m_fShowStreams },
+        {  L"env",            &CCommandLine::m_fEnv            },
+        {  L"config",         &CCommandLine::m_fConfig         },
+        {  L"owner",          &CCommandLine::m_fShowOwner      },
+        {  L"streams",        &CCommandLine::m_fShowStreams    },
+        {  L"set-aliases",    &CCommandLine::m_fSetAliases     },
+        {  L"get-aliases",    &CCommandLine::m_fGetAliases     },
+        {  L"remove-aliases", &CCommandLine::m_fRemoveAliases  },
+        {  L"whatif",         &CCommandLine::m_fWhatIf         },
 #ifdef _DEBUG
-        {  L"debug",   &CCommandLine::m_fDebug       },
+        {  L"debug",          &CCommandLine::m_fDebug          },
 #endif
     };
 
@@ -642,6 +680,10 @@ bool CCommandLine::IsRecognizedLongSwitch (const wstring & strSwitch)
         L"depth",
         L"treeindent",
         L"size",
+        L"set-aliases",
+        L"get-aliases",
+        L"remove-aliases",
+        L"whatif",
     };
 
 

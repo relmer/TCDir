@@ -85,6 +85,10 @@ public:
     int                m_cTreeIndent                                       = 4;        // --TreeIndent=N (1-8)
     ESizeFormat        m_eSizeFormat                                       = ESizeFormat::Default;  // --Size=Auto|Bytes
     wstring            m_strValidationError;                                            // Validation error message (empty if no error)
+    bool               m_fSetAliases                                       = false;    // --set-aliases switch
+    bool               m_fGetAliases                                       = false;    // --get-aliases switch
+    bool               m_fRemoveAliases                                    = false;    // --remove-aliases switch
+    bool               m_fWhatIf                                           = false;    // --whatif switch
 
 
     //

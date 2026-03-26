@@ -276,6 +276,11 @@
     <ClCompile Include="ResultsDisplayerBaseTests.cpp" />
     <ClCompile Include="ResultsDisplayerTests.cpp" />
     <ClCompile Include="TreeConnectorStateTests.cpp" />
+    <ClCompile Include="AliasBlockGeneratorTests.cpp" />
+    <ClCompile Include="AliasManagerTests.cpp" />
+    <ClCompile Include="ProfileFileManagerTests.cpp" />
+    <ClCompile Include="ProfilePathResolverTests.cpp" />
+    <ClCompile Include="TuiWidgetsTests.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="EhmTestHelper.h" />

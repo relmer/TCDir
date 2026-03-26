@@ -216,6 +216,8 @@
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="AliasBlockGenerator.h" />
+    <ClInclude Include="AliasManager.h" />
     <ClInclude Include="AnsiCodes.h" />
     <ClInclude Include="Color.h" />
     <ClInclude Include="CommandLine.h" />
@@ -243,6 +245,9 @@
     <ClInclude Include="ResultsDisplayerWide.h" />
     <ClInclude Include="ResultsDisplayerWithHeaderAndFooter.h" />
     <ClInclude Include="SizeFormat.h" />
+    <ClInclude Include="ProfileFileManager.h" />
+    <ClInclude Include="ProfilePathResolver.h" />
+    <ClInclude Include="TuiWidgets.h" />
     <ClInclude Include="UniqueFindHandle.h" />
     <ClInclude Include="Usage.h" />
     <ClInclude Include="Version.h" />
@@ -250,6 +255,8 @@
     <ClInclude Include="WorkQueue.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="AliasBlockGenerator.cpp" />
+    <ClCompile Include="AliasManager.cpp" />
     <ClCompile Include="CommandLine.cpp" />
     <ClCompile Include="Config.cpp" />
     <ClCompile Include="Console.cpp" />
@@ -276,7 +283,10 @@
     <ClCompile Include="ResultsDisplayerTree.cpp" />
     <ClCompile Include="ResultsDisplayerWide.cpp" />
     <ClCompile Include="ResultsDisplayerWithHeaderAndFooter.cpp" />
+    <ClCompile Include="ProfileFileManager.cpp" />
+    <ClCompile Include="ProfilePathResolver.cpp" />
     <ClCompile Include="TCDir.cpp" />
+    <ClCompile Include="TuiWidgets.cpp" />
     <ClCompile Include="Usage.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
