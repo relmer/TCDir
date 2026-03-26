@@ -119,14 +119,14 @@ During setup, the system checks whether the chosen root alias or sub-aliases con
 
 ### Edge Cases
 
-- What happens when the profile file exists but is read-only or locked by another process?
-- What happens when the profile file uses an encoding other than UTF-8 (e.g., UTF-16, BOM)?
-- What happens when the user's profile already contains tcdir-related code that was manually written (not via `--set-aliases`, so no marker comments)? → **Resolved**: The tool ignores them entirely. Only marker-delimited blocks (`# >>> tcdir aliases` / `# <<< tcdir aliases`) are managed. Manual aliases are invisible to the tool.
+- What happens when the profile file exists but is read-only or locked by another process? → **Resolved**: Handled by FR-073 — display a clear error message and exit without partial writes.
+- What happens when the profile file uses an encoding other than UTF-8 (e.g., UTF-16, BOM)? → **Resolved**: Check first bytes for BOM. `FF FE` or `FE FF` (UTF-16) → bail with clear error directing user to convert to UTF-8. `EF BB BF` (UTF-8 BOM) → read as UTF-8, preserve BOM on write. No BOM → read as UTF-8 (handles both UTF-8 and ASCII).
+- What happens when the user's profile already contains tcdir-related code that was manually written (not via `--set-aliases`, so no marker comments)? → **Resolved**: The tool ignores them entirely. Only marker-delimited blocks (per FR-040) are managed. Manual aliases are invisible to the tool.
 - What happens when the user's terminal does not support ANSI escape sequences (very old conhost without VT mode)? → **Resolved**: Not applicable. VT support is a baseline requirement for tcdir; the alias wizard inherits this requirement.
 - What happens when the marker comments are present but the content between them has been manually altered? → **Resolved**: The entire marker-delimited block is replaced unconditionally. The `.bak` backup (FR-070) preserves the previous state.
-- What happens if the profile directory path contains spaces or special characters?
-- What happens when the user presses Ctrl+C or closes the terminal mid-wizard?
-- What happens when `--set-aliases` and `--remove-aliases` are both specified?
+- What happens if the profile directory path contains spaces or special characters? → **Resolved**: Paths with spaces are handled by proper quoting in generated PowerShell code (`& "full path"`). Windows NTFS path characters are inherently limited; no special handling needed beyond quoting.
+- What happens when the user presses Ctrl+C or closes the terminal mid-wizard? → **Resolved**: Console mode and cursor visibility are restored via RAII guard. No files are modified until the final write step, so mid-wizard abort leaves no partial state.
+- What happens when `--set-aliases` and `--remove-aliases` are both specified? → **Resolved**: Handled by FR-005 — mutual exclusivity validation produces an error.
 - What happens when `--whatif` is used without `--set-aliases` or `--remove-aliases`? → **Resolved**: Display an error stating `--whatif` is only valid with `--set-aliases` or `--remove-aliases`.
 
 ## Requirements *(mandatory)*
@@ -175,7 +175,7 @@ During setup, the system checks whether the chosen root alias or sub-aliases con
 
 #### Remove Aliases Flow
 
-- **FR-050**: The remove wizard MUST scan all PowerShell profile file paths (both 7+ and 5.1) for tcdir marker comments before presenting options
+- **FR-050**: The remove wizard MUST scan all PowerShell profile file paths for the detected PS version for tcdir marker comments before presenting options
 - **FR-051**: The remove wizard MUST only list profile locations that contain tcdir aliases
 - **FR-052**: Under each profile location, the remove wizard MUST display the specific alias names found
 - **FR-053**: If no tcdir aliases are found in any location, the tool MUST display a message stating so and exit
@@ -184,14 +184,14 @@ During setup, the system checks whether the chosen root alias or sub-aliases con
 
 #### Get Aliases (Non-Interactive)
 
-- **FR-060**: `--get-aliases` MUST scan all PowerShell profile paths (both 7+ and 5.1) for tcdir alias blocks
+- **FR-060**: `--get-aliases` MUST scan all PowerShell profile paths for the detected PS version for tcdir alias blocks
 - **FR-061**: For each location containing aliases, the output MUST show the profile variable name, resolved path, and each alias name with its mapping
 - **FR-062**: `--get-aliases` MUST NOT require interactive input — it runs and exits
 
 #### File Operations Safety
 
 - **FR-070**: Before modifying any profile file, the tool MUST create a backup copy with a `.bak` extension
-- **FR-071**: The tool MUST preserve the original file encoding when writing back modified profile content
+- **FR-071**: The tool MUST check the first bytes of a profile file for a BOM. If a UTF-16 BOM is detected (`FF FE` or `FE FF`), the tool MUST display an error and refuse to modify the file. If a UTF-8 BOM (`EF BB BF`) is present, it MUST be preserved on write-back. If no BOM is present, the file MUST be read and written as UTF-8.
 - **FR-072**: If the target profile file does not exist, the tool MUST create it (and any missing parent directories)
 - **FR-073**: If the target profile file cannot be written (permissions, locked), the tool MUST display a clear error message and exit without partial writes
 - **FR-074**: Conflict detection MUST scan for existing PowerShell aliases, functions, or commands that match the chosen alias names, and warn the user with the identity of the conflicting command
