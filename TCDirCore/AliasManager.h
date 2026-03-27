@@ -6,6 +6,8 @@
 #include "ProfileFileManager.h"
 #include "AliasBlockGenerator.h"
 
+class CTuiWidgets;
+
 
 
 
@@ -70,9 +72,33 @@ public:
     static HRESULT GetAliases     (CConsole & console);
     static HRESULT RemoveAliases  (CConsole & console, bool fWhatIf);
 
-    static void    BuildDefaultSubAliases  (const wstring & strRoot, vector<SAliasDefinition> & rgOut);
-    static HRESULT ResolveTcDirInvocation  (wstring & strInvocation);
-    static HRESULT CheckConflicts          (CConsole & console, const wstring & strRoot,
-                                            const vector<SAliasDefinition> & rgSubs,
-                                            bool & fProceed);
+    static void    BuildDefaultSubAliases  (const wstring                    & strRoot,
+                                            vector<SAliasDefinition>         & rgOut);
+
+    static HRESULT ResolveTcDirInvocation  (wstring                          & strInvocation);
+
+    static HRESULT CheckConflicts          (CConsole                         & console,
+                                            const wstring                    & strRoot,
+                                            const vector<SAliasDefinition>   & rgSubs,
+                                            bool                             & fProceed);
+
+private:
+    static HRESULT ScanProfiles            (CConsole                         & console,
+                                            CTuiWidgets                      & tui,
+                                            vector<SProfileLocation>         & rgLocations,
+                                            SAliasBlock                      & existingBlock);
+
+    static void    BuildSubAliasLabels     (const wstring                    & strRoot,
+                                            const vector<SAliasDefinition>   & rgSubs,
+                                            vector<pair<wstring, bool>>      & rgCheckItems);
+
+    static void    BuildProfileLabels      (const vector<SProfileLocation>   & rgLocations,
+                                            bool                               fIsAdmin,
+                                            int                                cxConsole,
+                                            vector<wstring>                  & rgRadioItems,
+                                            int                              & iDefault);
+
+    static HRESULT ApplyAliasBlock         (CConsole                         & console,
+                                            const SAliasConfig               & config,
+                                            const vector<wstring>            & rgBlockLines);
 };

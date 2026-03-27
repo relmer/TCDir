@@ -41,4 +41,30 @@ namespace UnicodeSymbols
     static constexpr WCHAR Copyright        = L'\u00A9';  // © - Copyright symbol
     static constexpr WCHAR Overline         = L'\u203E';  // ‾ - Overline for underlining text above
 
+    //
+    // Interactive menu symbols
+    //
+
+    static constexpr WCHAR FocusIndicator   = L'\u276F';  // ❯ - Focus/cursor indicator
+    static constexpr WCHAR RadioSelected    = L'\u25CF';  // ● - Selected radio button
+    static constexpr WCHAR CheckMark        = L'\u2713';  // ✓ - Checkbox checked
+
+    //
+    // Braille spinner animation frames
+    //
+
+    static constexpr LPCWSTR SpinnerFrames[] =
+    {
+        L"\u2808",  // ⠈
+        L"\u2818",  // ⠘
+        L"\u2830",  // ⠰
+        L"\u2860",  // ⡠
+        L"\u28C0",  // ⣀
+        L"\u2840",  // ⡀
+        L"\u2820",  // ⠠
+        L"\u2810",  // ⠐
+    };
+
+    static constexpr int SpinnerFrameCount = _countof (SpinnerFrames);
+
 }   // namespace UnicodeSymbols

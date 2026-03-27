@@ -7,18 +7,6 @@
 
 
 
-//
-// Marker strings used to delimit the alias block in profile files.
-// The scanner looks for these to find existing blocks.
-//
-
-static constexpr LPCWSTR k_pszHeaderMarker = L"#  TCDir Aliases";
-static constexpr LPCWSTR k_pszFooterMarker = L"# End TCDir Aliases";
-
-
-
-
-
 ////////////////////////////////////////////////////////////////////////////////
 //
 //  CAliasBlockGenerator::Generate
@@ -82,6 +70,6 @@ void CAliasBlockGenerator::Generate (const SAliasConfig & config, const wstring 
 
     rgBlockLines.push_back (L"");
     rgBlockLines.push_back (L"################################################################################");
-    rgBlockLines.push_back (L"# End TCDir Aliases");
+    rgBlockLines.push_back (L"#  End TCDir Aliases");
     rgBlockLines.push_back (L"################################################################################");
 }

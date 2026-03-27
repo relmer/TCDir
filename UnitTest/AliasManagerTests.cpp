@@ -45,11 +45,12 @@ namespace UnitTest
 
             CAliasManager::BuildDefaultSubAliases (L"d", rgSubs);
 
-            Assert::AreEqual (4u, static_cast<unsigned>(rgSubs.size()));
-            Assert::AreEqual (L"dd",  rgSubs[0].strName.c_str());
-            Assert::AreEqual (L"ds",  rgSubs[1].strName.c_str());
-            Assert::AreEqual (L"dsb", rgSubs[2].strName.c_str());
-            Assert::AreEqual (L"dw",  rgSubs[3].strName.c_str());
+            Assert::AreEqual (5u, static_cast<unsigned>(rgSubs.size()));
+            Assert::AreEqual (L"dt",  rgSubs[0].strName.c_str());
+            Assert::AreEqual (L"dw",  rgSubs[1].strName.c_str());
+            Assert::AreEqual (L"dd",  rgSubs[2].strName.c_str());
+            Assert::AreEqual (L"ds",  rgSubs[3].strName.c_str());
+            Assert::AreEqual (L"dsb", rgSubs[4].strName.c_str());
         }
 
 
@@ -63,11 +64,12 @@ namespace UnitTest
 
             CAliasManager::BuildDefaultSubAliases (L"tc", rgSubs);
 
-            Assert::AreEqual (4u, static_cast<unsigned>(rgSubs.size()));
-            Assert::AreEqual (L"tcd",  rgSubs[0].strName.c_str());
-            Assert::AreEqual (L"tcs",  rgSubs[1].strName.c_str());
-            Assert::AreEqual (L"tcsb", rgSubs[2].strName.c_str());
-            Assert::AreEqual (L"tcw",  rgSubs[3].strName.c_str());
+            Assert::AreEqual (5u, static_cast<unsigned>(rgSubs.size()));
+            Assert::AreEqual (L"tct",  rgSubs[0].strName.c_str());
+            Assert::AreEqual (L"tcw",  rgSubs[1].strName.c_str());
+            Assert::AreEqual (L"tcd",  rgSubs[2].strName.c_str());
+            Assert::AreEqual (L"tcs",  rgSubs[3].strName.c_str());
+            Assert::AreEqual (L"tcsb", rgSubs[4].strName.c_str());
         }
 
 

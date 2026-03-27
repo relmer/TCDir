@@ -133,7 +133,7 @@ EPowerShellVersion CProfilePathResolver::MapImageNameToVersion (const wstring & 
 
 HRESULT CProfilePathResolver::DetectPowerShellVersion (EPowerShellVersion & eVersion)
 {
-    HRESULT hr = S_OK;
+    HRESULT hr           = S_OK;
     wstring strImageName;
 
 
@@ -163,15 +163,12 @@ Error:
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-void CProfilePathResolver::BuildProfileLocations (const wstring & strDocuments, const wstring & strProgramData,
-                                                   EPowerShellVersion eVersion, vector<SProfileLocation> & rgLocations)
+void CProfilePathResolver::BuildProfileLocations (
+    const wstring            & strDocuments, 
+    const wstring            & strProgramData,
+    EPowerShellVersion         eVersion, 
+    vector<SProfileLocation> & rgLocations)
 {
-    rgLocations.clear();
-
-    LPCWSTR pszPsDir = (eVersion == EPowerShellVersion::PowerShell)
-                      ? L"PowerShell"
-                      : L"WindowsPowerShell";
-
     struct SProfileDef
     {
         EProfileScope eScope;
@@ -188,6 +185,14 @@ void CProfilePathResolver::BuildProfileLocations (const wstring & strDocuments, 
         { EProfileScope::AllUsersCurrentHost,    L"$PROFILE.AllUsersCurrentHost",    strProgramData, L"Microsoft.PowerShell_profile.ps1", true  },
         { EProfileScope::AllUsersAllHosts,       L"$PROFILE.AllUsersAllHosts",       strProgramData, L"profile.ps1",                      true  },
     };
+
+    LPCWSTR pszPsDir = (eVersion == EPowerShellVersion::PowerShell)
+                      ? L"PowerShell"
+                      : L"WindowsPowerShell";
+                  
+
+
+    rgLocations.clear();
 
     for (const auto & def : defs)
     {

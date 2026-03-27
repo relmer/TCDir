@@ -51,16 +51,22 @@ public:
     ETuiResult RadioButtonList(LPCWSTR pszPrompt, const vector<wstring> & rgItems, int & iSelected);
     ETuiResult Confirmation   (LPCWSTR pszPrompt, const vector<wstring> & rgPreview);
 
-private:
-    HRESULT  ReadKey           (INPUT_RECORD & irec);
-    void     HideCursor        (void);
-    void     ShowCursor        (void);
-    void     MoveCursorUp      (int cLines);
-    void     ClearCurrentLine  (void);
+    void     ShowSpinner      (LPCWSTR pszMessage);
+    void     HideSpinner      (void);
 
-    CConsole &  m_console;
-    HANDLE      m_hStdIn          = INVALID_HANDLE_VALUE;
-    DWORD       m_dwOriginalMode  = 0;
-    bool        m_fInitialized    = false;
-    bool        m_fCursorHidden   = false;
+private:
+    HRESULT  ReadKey              (INPUT_RECORD & irec);
+    void     HideCursor           (void);
+    void     ShowCursor           (void);
+    void     MoveCursorUp         (int cLines);
+    void     ClearCurrentLine     (void);
+    void     MoveToRenderStart    (int cRenderedLines);
+
+    CConsole &   m_console;
+    HANDLE       m_hStdIn          = INVALID_HANDLE_VALUE;
+    DWORD        m_dwOriginalMode  = 0;
+    bool         m_fInitialized    = false;
+    bool         m_fCursorHidden   = false;
+    atomic<bool> m_fSpinnerActive  = false;
+    thread       m_spinnerThread;
 };

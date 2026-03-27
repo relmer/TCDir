@@ -18,7 +18,7 @@ static constexpr unsigned char k_rgUtf16BE[]  = { 0xFE, 0xFF };
 //
 
 static constexpr LPCWSTR k_pszHeaderMarker = L"#  TCDir Aliases";
-static constexpr LPCWSTR k_pszFooterMarker = L"# End TCDir Aliases";
+static constexpr LPCWSTR k_pszFooterMarker = L"#  End TCDir Aliases";
 
 
 
@@ -219,7 +219,7 @@ HRESULT CProfileFileManager::FindAliasBlock (const vector<wstring> & rgLines, SA
             }
 
             //
-            // Find closing marker: line containing "# End TCDir Aliases"
+            // Find closing marker: line containing "#  End TCDir Aliases"
             //
 
             for (size_t j = i + 1; j < rgLines.size(); ++j)

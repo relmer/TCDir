@@ -1,6 +1,7 @@
 #include "pch.h"
 #include "TuiWidgets.h"
 
+#include "AnsiCodes.h"
 #include "Config.h"
 #include "UnicodeSymbols.h"
 
@@ -108,6 +109,8 @@ Error:
 
 void CTuiWidgets::Cleanup (void)
 {
+    HideSpinner();
+
     if (m_fInitialized)
     {
         ShowCursor();
@@ -130,7 +133,7 @@ void CTuiWidgets::HideCursor (void)
 {
     if (!m_fCursorHidden)
     {
-        m_console.Puts (CConfig::Information, L"\x1b[?25l");
+        m_console.Printf (CConfig::Information, AnsiCodes::CURSOR_HIDE);
         m_console.Flush();
         m_fCursorHidden = true;
     }
@@ -141,7 +144,7 @@ void CTuiWidgets::ShowCursor (void)
 {
     if (m_fCursorHidden)
     {
-        m_console.Puts (CConfig::Information, L"\x1b[?25h");
+        m_console.Printf (CConfig::Information, AnsiCodes::CURSOR_SHOW);
         m_console.Flush();
         m_fCursorHidden = false;
     }
@@ -161,14 +164,27 @@ void CTuiWidgets::MoveCursorUp (int cLines)
 {
     if (cLines > 0)
     {
-        m_console.Printf (CConfig::Information, L"\x1b[%dA", cLines);
+        m_console.Printf (CConfig::Information, L"" CSI L"%dA", cLines);
     }
 }
 
 
 void CTuiWidgets::ClearCurrentLine (void)
 {
-    m_console.Puts (CConfig::Information, L"\r\x1b[2K");
+    m_console.Printf (CConfig::Information, AnsiCodes::ERASE_LINE);
+}
+
+
+void CTuiWidgets::MoveToRenderStart (int cRenderedLines)
+{
+    //
+    // Move cursor up by the number of lines previously rendered,
+    // positioning at the start of the item area for overwrite.
+    //
+
+    MoveCursorUp (cRenderedLines);
+    m_console.Printf (CConfig::Information, L"\r");
+    m_console.Flush();
 }
 
 
@@ -238,9 +254,7 @@ ETuiResult CTuiWidgets::TextInput (LPCWSTR pszPrompt, const wstring & strDefault
     strResult = strDefault;
     ShowCursor();
 
-    m_console.Printf (CConfig::Information, L"  %s", pszPrompt);
-    m_console.Printf (CConfig::InformationHighlight, L" [%s]", strDefault.c_str());
-    m_console.Puts (CConfig::Information, L": ");
+    m_console.ColorPrintf (L"{Information}  %s [{InformationHighlight}%s{Information}]: ", pszPrompt, strDefault.c_str());
     m_console.Flush();
 
     wstring strInput;
@@ -271,7 +285,7 @@ ETuiResult CTuiWidgets::TextInput (LPCWSTR pszPrompt, const wstring & strDefault
                 strResult = strInput;
             }
 
-            m_console.Puts (CConfig::Information, L"\n");
+            m_console.Printf (CConfig::Information, L"\n");
             m_console.Flush();
             HideCursor();
             return ETuiResult::Confirmed;
@@ -282,7 +296,7 @@ ETuiResult CTuiWidgets::TextInput (LPCWSTR pszPrompt, const wstring & strDefault
             if (!strInput.empty())
             {
                 strInput.pop_back();
-                m_console.Puts (CConfig::Information, L"\b \b");
+                m_console.Printf (CConfig::Information, L"\b \b");
                 m_console.Flush();
             }
 
@@ -318,45 +332,58 @@ ETuiResult CTuiWidgets::TextInput (LPCWSTR pszPrompt, const wstring & strDefault
 
 ETuiResult CTuiWidgets::CheckboxList (LPCWSTR pszPrompt, vector<pair<wstring, bool>> & rgItems)
 {
-    HRESULT hr     = S_OK;
-    int     iFocus = 0;
-    int     cItems = static_cast<int>(rgItems.size());
+    HRESULT hr             = S_OK;
+    int     iFocus         = 0;
+    int     cItems         = static_cast<int>(rgItems.size());
+    int     cRenderedLines = cItems + 1;  // items + blank line (help line has no \n, cursor stays on it)
 
 
 
-    auto Render = [&] ()
+    auto Render = [&] (bool fShowFocus)
     {
-        m_console.Printf (CConfig::Information, L"  %s\n", pszPrompt);
-
         for (int i = 0; i < cItems; ++i)
         {
-            LPCWSTR pszFocus = (i == iFocus) ? L"  \x1b[36m\u276F\x1b[0m " : L"    ";
-            LPCWSTR pszBox   = rgItems[i].second ? L"[\x1b[36m\u25CF\x1b[0m]" : L"[ ]";
-
-            m_console.Printf (CConfig::Information, L"%s%s %s\n", pszFocus, pszBox, rgItems[i].first.c_str());
-        }
-
-        m_console.Puts (CConfig::Information, L"\n  (Space=toggle, Enter=confirm, Esc=cancel)\n");
-        m_console.Flush();
-    };
-
-    auto ClearRender = [&] ()
-    {
-        int cTotalLines = cItems + 2;  // prompt + items + help line
-
-        MoveCursorUp (cTotalLines);
-
-        for (int i = 0; i < cTotalLines; ++i)
-        {
             ClearCurrentLine();
-            m_console.Puts (CConfig::Information, L"\n");
+
+            if (fShowFocus && i == iFocus)
+            {
+                m_console.ColorPrintf (L"  {InformationHighlight}%c{Information} ", UnicodeSymbols::FocusIndicator);
+            }
+            else
+            {
+                m_console.ColorPrintf (L"    ");
+            }
+
+            if (rgItems[i].second)
+            {
+                m_console.ColorPrintf (L"{Information}[{InformationHighlight}%c{Information}] ", UnicodeSymbols::CheckMark);
+            }
+            else
+            {
+                m_console.ColorPrintf (L"{Information}[ ] ");
+            }
+
+            m_console.ColorPrintf (L"{Information}%s\n", rgItems[i].first.c_str());
         }
 
-        MoveCursorUp (cTotalLines);
+        ClearCurrentLine();
+        m_console.ColorPrintf (L"\n");
+        ClearCurrentLine();
+
+        if (fShowFocus)
+        {
+            m_console.ColorPrintf (L"{Information}  (Space=toggle, Enter=confirm, Esc=cancel)");
+        }
+
         m_console.Flush();
     };
 
-    Render();
+    //
+    // Print prompt, then render items below it
+    //
+
+    m_console.Printf (CConfig::Information, L"  %s\n", pszPrompt);
+    Render (true);
 
     for (;;)
     {
@@ -373,21 +400,31 @@ ETuiResult CTuiWidgets::CheckboxList (LPCWSTR pszPrompt, vector<pair<wstring, bo
 
         if (vk == VK_ESCAPE)
         {
+            MoveToRenderStart (cRenderedLines);
+            Render (false);
+            ClearCurrentLine();
+            m_console.Printf (CConfig::Information, L"\n");
+            m_console.Flush();
             return ETuiResult::Cancelled;
         }
 
         if (vk == VK_RETURN)
         {
+            MoveToRenderStart (cRenderedLines);
+            Render (false);
+            ClearCurrentLine();
+            m_console.Printf (CConfig::Information, L"\n");
+            m_console.Flush();
             return ETuiResult::Confirmed;
         }
 
-        if (vk == VK_UP && iFocus > 0)
+        if (vk == VK_UP)
         {
-            --iFocus;
+            iFocus = (iFocus > 0) ? iFocus - 1 : cItems - 1;
         }
-        else if (vk == VK_DOWN && iFocus < cItems - 1)
+        else if (vk == VK_DOWN)
         {
-            ++iFocus;
+            iFocus = (iFocus < cItems - 1) ? iFocus + 1 : 0;
         }
         else if (vk == VK_SPACE)
         {
@@ -398,8 +435,8 @@ ETuiResult CTuiWidgets::CheckboxList (LPCWSTR pszPrompt, vector<pair<wstring, bo
             continue;
         }
 
-        ClearRender();
-        Render();
+        MoveToRenderStart (cRenderedLines);
+        Render (true);
     }
 
     return ETuiResult::Cancelled;
@@ -426,39 +463,99 @@ ETuiResult CTuiWidgets::RadioButtonList (LPCWSTR pszPrompt, const vector<wstring
 
 
 
-    auto Render = [&] ()
-    {
-        m_console.Printf (CConfig::Information, L"  %s\n", pszPrompt);
+    //
+    // Count total rendered lines: each item may span multiple lines (contains \n)
+    //
 
+    auto CountRenderedLines = [&] () -> int
+    {
+        int cLines = 0;
+
+        for (const auto & item : rgItems)
+        {
+            cLines += 1;  // At least one line per item
+
+            for (wchar_t ch : item)
+            {
+                if (ch == L'\n')
+                {
+                    ++cLines;
+                }
+            }
+        }
+
+        return cLines + 1;  // + blank line (help line has no \n, cursor stays on it)
+    };
+
+    int cRenderedLines = CountRenderedLines();
+
+    auto Render = [&] (bool fShowFocus, int iSelectedDot = -1)
+    {
         for (int i = 0; i < cItems; ++i)
         {
-            LPCWSTR pszFocus  = (i == iFocus) ? L"  \x1b[36m\u276F\x1b[0m " : L"    ";
-            LPCWSTR pszRadio  = (i == iFocus) ? L"(\x1b[36m\u25CF\x1b[0m)" : L"( )";
-
-            m_console.Printf (CConfig::Information, L"%s%s %s\n", pszFocus, pszRadio, rgItems[i].c_str());
-        }
-
-        m_console.Puts (CConfig::Information, L"\n  (Enter=select, Esc=cancel)\n");
-        m_console.Flush();
-    };
-
-    auto ClearRender = [&] ()
-    {
-        int cTotalLines = cItems + 2;
-
-        MoveCursorUp (cTotalLines);
-
-        for (int i = 0; i < cTotalLines; ++i)
-        {
             ClearCurrentLine();
-            m_console.Puts (CConfig::Information, L"\n");
+
+            bool fShowDot = (fShowFocus && i == iFocus) || (i == iSelectedDot);
+
+            if (fShowFocus && i == iFocus)
+            {
+                m_console.ColorPrintf (L"  {InformationHighlight}%c{Information} ", UnicodeSymbols::FocusIndicator);
+            }
+            else
+            {
+                m_console.ColorPrintf (L"    ");
+            }
+
+            if (fShowDot)
+            {
+                m_console.ColorPrintf (L"{Information}({InformationHighlight}%c{Information}) ", UnicodeSymbols::RadioSelected);
+            }
+            else
+            {
+                m_console.ColorPrintf (L"{Information}( ) ");
+            }
+
+            //
+            // Render item text — for multi-line items, clear each continuation line
+            //
+
+            const wstring & item = rgItems[i];
+            size_t          pos  = 0;
+
+            while (pos < item.size())
+            {
+                size_t nl = item.find (L'\n', pos);
+
+                if (nl == wstring::npos)
+                {
+                    m_console.ColorPrintf (L"{Information}%s\n", item.substr (pos).c_str());
+                    break;
+                }
+
+                m_console.ColorPrintf (L"{Information}%s\n", item.substr (pos, nl - pos).c_str());
+                pos = nl + 1;
+                ClearCurrentLine();
+            }
         }
 
-        MoveCursorUp (cTotalLines);
+        ClearCurrentLine();
+        m_console.ColorPrintf (L"\n");
+        ClearCurrentLine();
+
+        if (fShowFocus)
+        {
+            m_console.ColorPrintf (L"{Information}  (Enter=select, Esc=cancel)");
+        }
+
         m_console.Flush();
     };
 
-    Render();
+    //
+    // Print prompt, then render items below it
+    //
+
+    m_console.Printf (CConfig::Information, L"  %s\n", pszPrompt);
+    Render (true);
 
     for (;;)
     {
@@ -475,30 +572,40 @@ ETuiResult CTuiWidgets::RadioButtonList (LPCWSTR pszPrompt, const vector<wstring
 
         if (vk == VK_ESCAPE)
         {
+            MoveToRenderStart (cRenderedLines);
+            Render (false);
+            ClearCurrentLine();
+            m_console.Printf (CConfig::Information, L"\n");
+            m_console.Flush();
             return ETuiResult::Cancelled;
         }
 
         if (vk == VK_RETURN)
         {
             iSelected = iFocus;
+            MoveToRenderStart (cRenderedLines);
+            Render (false, iFocus);
+            ClearCurrentLine();
+            m_console.Printf (CConfig::Information, L"\n");
+            m_console.Flush();
             return ETuiResult::Confirmed;
         }
 
-        if (vk == VK_UP && iFocus > 0)
+        if (vk == VK_UP)
         {
-            --iFocus;
+            iFocus = (iFocus > 0) ? iFocus - 1 : cItems - 1;
         }
-        else if (vk == VK_DOWN && iFocus < cItems - 1)
+        else if (vk == VK_DOWN)
         {
-            ++iFocus;
+            iFocus = (iFocus < cItems - 1) ? iFocus + 1 : 0;
         }
         else
         {
             continue;
         }
 
-        ClearRender();
-        Render();
+        MoveToRenderStart (cRenderedLines);
+        Render (true);
     }
 
     return ETuiResult::Cancelled;
@@ -523,17 +630,17 @@ ETuiResult CTuiWidgets::Confirmation (LPCWSTR pszPrompt, const vector<wstring> &
 
 
     //
-    // Display preview
+    // Display preview in default color
     //
 
     for (const auto & line : rgPreview)
     {
-        m_console.Printf (CConfig::Information, L"  %s\n", line.c_str());
+        m_console.Printf (CConfig::Default, L"  %s\n", line.c_str());
     }
 
     m_console.Printf (CConfig::Information, L"\n  %s ", pszPrompt);
-    m_console.Puts (CConfig::InformationHighlight, L"[Y/n]");
-    m_console.Puts (CConfig::Information, L": ");
+    m_console.Printf (CConfig::InformationHighlight, L"[Y/n]");
+    m_console.Printf (CConfig::Information, L": ");
     m_console.Flush();
 
     ShowCursor();
@@ -554,7 +661,7 @@ ETuiResult CTuiWidgets::Confirmation (LPCWSTR pszPrompt, const vector<wstring> &
 
         if (vk == VK_ESCAPE || ch == L'n' || ch == L'N')
         {
-            m_console.Puts (CConfig::Information, L"n\n");
+            m_console.Printf (CConfig::Information, L"n\n");
             m_console.Flush();
             HideCursor();
             return ETuiResult::Cancelled;
@@ -562,7 +669,7 @@ ETuiResult CTuiWidgets::Confirmation (LPCWSTR pszPrompt, const vector<wstring> &
 
         if (vk == VK_RETURN || ch == L'y' || ch == L'Y')
         {
-            m_console.Puts (CConfig::Information, L"y\n");
+            m_console.Printf (CConfig::Information, L"y\n");
             m_console.Flush();
             HideCursor();
             return ETuiResult::Confirmed;
@@ -571,4 +678,88 @@ ETuiResult CTuiWidgets::Confirmation (LPCWSTR pszPrompt, const vector<wstring> &
 
     HideCursor();
     return ETuiResult::Cancelled;
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CTuiWidgets::ShowSpinner
+//
+//  Displays an animated Braille dot spinner with a message on a background
+//  thread. Call HideSpinner() to stop and clear the line.
+//
+////////////////////////////////////////////////////////////////////////////////
+
+void CTuiWidgets::ShowSpinner (LPCWSTR pszMessage)
+{
+    m_fSpinnerActive = true;
+
+    m_spinnerThread = thread ([this, msg = wstring (pszMessage)] ()
+    {
+        HANDLE hOut  = GetStdHandle (STD_OUTPUT_HANDLE);
+        int    frame = 0;
+
+
+
+        while (m_fSpinnerActive)
+        {
+            wstring line = format (L"\r  {}{}{}  {}", 
+                                   AnsiCodes::FG_CYAN_ON,
+                                   UnicodeSymbols::SpinnerFrames[frame % UnicodeSymbols::SpinnerFrameCount],
+                                   AnsiCodes::SGR_RESET, msg);
+            DWORD   cch  = 0;
+
+
+            
+            WriteConsoleW (hOut, line.c_str(), static_cast<DWORD>(line.size()), &cch, nullptr);
+
+            ++frame;
+            Sleep (80);
+        }
+    });
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CTuiWidgets::HideSpinner
+//
+//  Stops the spinner thread and clears the line.
+//
+////////////////////////////////////////////////////////////////////////////////
+
+void CTuiWidgets::HideSpinner (void)
+{
+    HRESULT hr       = S_OK;
+    HANDLE  hOut     = GetStdHandle (STD_OUTPUT_HANDLE);
+    LPCWSTR pszClear = AnsiCodes::ERASE_LINE;
+    DWORD   cch      = 0;
+
+
+
+
+    BAIL_OUT_IF (!m_fSpinnerActive, S_OK);
+
+    m_fSpinnerActive = false;
+
+    if (m_spinnerThread.joinable())
+    {
+        m_spinnerThread.join();
+    }    
+
+    //
+    // Clear the spinner line
+    //
+
+    WriteConsoleW (hOut, pszClear, static_cast<DWORD>(wcslen (pszClear)), &cch, nullptr);
+
+
+Error:
+    return;
 }
