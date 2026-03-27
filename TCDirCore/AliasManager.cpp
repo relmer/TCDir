@@ -195,7 +195,7 @@ Error:
 
 ////////////////////////////////////////////////////////////////////////////////
 //
-//  BuildSubAliasLabels  (file-scope helper)
+//  CAliasManager::BuildSubAliasLabels
 //
 //  Creates column-aligned checkbox labels from the sub-alias definitions.
 //
@@ -235,7 +235,7 @@ void CAliasManager::BuildSubAliasLabels (
 
 ////////////////////////////////////////////////////////////////////////////////
 //
-//  BuildProfileLabels  (file-scope helper)
+//  CAliasManager::BuildProfileLabels
 //
 //  Creates radio button labels for profile locations with aligned columns
 //  and path wrapping at backslash boundaries when the line exceeds console width.
@@ -350,85 +350,32 @@ void CAliasManager::BuildProfileLabels (
 
 ////////////////////////////////////////////////////////////////////////////////
 //
-//  ApplyAliasBlock  (file-scope helper)
+//  CAliasManager::WriteAliasBlockToFile
 //
-//  Handles the final step: WhatIf preview, session-only console output,
-//  or actual file write with backup.
+//  Reads the target profile, creates a backup, inserts or replaces the alias
+//  block, and writes the file back.
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-HRESULT CAliasManager::ApplyAliasBlock (
-    CConsole                         & console,
-    const SAliasConfig               & config,
-    const vector<wstring>            & rgBlockLines)
+HRESULT CAliasManager::WriteAliasBlockToFile (
+    CConsole              & console,
+    const wstring         & strTargetPath,
+    const vector<wstring> & rgBlockLines)
 {
-    HRESULT             hr = S_OK;
+    HRESULT             hr          = S_OK;
     CProfileFileManager fileMgr;
     vector<wstring>     rgFileLines;
     bool                fHasBom     = false;
-    bool                fFileExists = false;
     SAliasBlock         targetBlock;
 
 
 
-    //
-    // WhatIf mode
-    //
-
-    if (config.fWhatIf)
+    if (filesystem::exists (strTargetPath))
     {
-        console.Puts (CConfig::Information, L"\n  What if: The following alias block would be written");
-
-        if (!config.fSessionOnly)
-        {
-            console.Printf (CConfig::Information, L" to:\n  %s\n", config.strTargetPath.c_str());
-        }
-        else
-        {
-            console.Puts (CConfig::Information, L" to console.\n");
-        }
-
-        console.Puts (CConfig::Information, L"\n");
-
-        for (const auto & line : rgBlockLines)
-        {
-            console.Printf (CConfig::Information, L"  %s\n", line.c_str());
-        }
-
-        console.Puts (CConfig::Information, L"\n  What if: No changes were made.\n");
-        console.Flush();
-        goto Error;
-    }
-
-    //
-    // Session-only: output block to console for user to paste
-    //
-
-    if (config.fSessionOnly)
-    {
-        console.Puts (CConfig::Information, L"\n  Paste the following into your PowerShell session:\n\n");
-
-        for (const auto & line : rgBlockLines)
-        {
-            console.Printf (CConfig::Information, L"%s\n", line.c_str());
-        }
-
-        console.Flush();
-        goto Error;
-    }
-
-    //
-    // Write to profile file
-    //
-
-    fFileExists = filesystem::exists (config.strTargetPath);
-
-    if (fFileExists)
-    {
-        hr = fileMgr.ReadProfileFile (config.strTargetPath, rgFileLines, fHasBom);
+        hr = fileMgr.ReadProfileFile (strTargetPath, rgFileLines, fHasBom);
         CHR (hr);
 
-        hr = fileMgr.CreateBackup (config.strTargetPath);
+        hr = fileMgr.CreateBackup (strTargetPath);
         CHR (hr);
     }
 
@@ -443,19 +390,124 @@ HRESULT CAliasManager::ApplyAliasBlock (
         fileMgr.AppendAliasBlock (rgFileLines, rgBlockLines);
     }
 
-    hr = fileMgr.WriteProfileFile (config.strTargetPath, rgFileLines, fHasBom);
+    hr = fileMgr.WriteProfileFile (strTargetPath, rgFileLines, fHasBom);
+    CHR (hr);
 
-    if (FAILED (hr))
+Error:
+    if (SUCCEEDED (hr))
     {
-        console.Printf (CConfig::Error, L"\n  Error: Could not write to %s\n", config.strTargetPath.c_str());
+        console.Printf (CConfig::Information, L"\n  Aliases written to: %s\n", strTargetPath.c_str());
+        console.Puts (CConfig::Information, L"  Reload your profile to activate: . $PROFILE\n");
+    }
+    else
+    {
+        console.Printf (CConfig::Error, L"\n  Error: Could not write to %s\n", strTargetPath.c_str());
         console.Puts (CConfig::Error, L"  Check that the file is not locked and you have write permission.\n");
-        console.Flush();
-        goto Error;
     }
 
-    console.Printf (CConfig::Information, L"\n  Aliases written to: %s\n", config.strTargetPath.c_str());
-    console.Puts (CConfig::Information, L"  Reload your profile to activate: . $PROFILE\n");
     console.Flush();
+    return hr;
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CAliasManager::PrintWhatIfPreview
+//
+//  Displays a preview of what would be written without modifying any files.
+//
+////////////////////////////////////////////////////////////////////////////////
+
+void CAliasManager::PrintWhatIfPreview (
+    CConsole              & console,
+    const SAliasConfig    & config,
+    const vector<wstring> & rgBlockLines)
+{
+    console.Printf (CConfig::Information, L"\n  Whatif: The following alias block would be written");
+
+    if (!config.fSessionOnly)
+    {
+        console.Printf (CConfig::Information, L" to:\n  %s\n", config.strTargetPath.c_str());
+    }
+    else
+    {
+        console.Printf (CConfig::Information, L" to console.\n");
+    }
+
+    console.Printf (CConfig::Information, L"\n");
+
+    for (const auto & line : rgBlockLines)
+    {
+        console.Printf (CConfig::Default, L"  %s\n", line.c_str());
+    }
+
+    console.Printf (CConfig::Error, L"\n  Whatif: No changes were made.\n");
+    console.Flush();
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CAliasManager::PrintSessionOnlyBlock
+//
+//  Outputs the alias block to the console for the user to paste manually.
+//
+////////////////////////////////////////////////////////////////////////////////
+
+void CAliasManager::PrintSessionOnlyBlock (
+    CConsole              & console,
+    const vector<wstring> & rgBlockLines)
+{
+    console.Printf (CConfig::Information, L"\n  Paste the following into your PowerShell session:\n\n");
+
+    for (const auto & line : rgBlockLines)
+    {
+        console.Printf (CConfig::Information, L"%s\n", line.c_str());
+    }
+
+    console.Flush();
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CAliasManager::ApplyAliasBlock
+//
+//  Routes to WhatIf preview, session-only console output, or file write.
+//
+////////////////////////////////////////////////////////////////////////////////
+
+HRESULT CAliasManager::ApplyAliasBlock (
+    CConsole              & console,
+    const SAliasConfig    & config,
+    const vector<wstring> & rgBlockLines)
+{
+    HRESULT hr = S_OK;
+
+
+
+    if (config.fWhatIf)
+    {
+        PrintWhatIfPreview (console, config, rgBlockLines);
+    }
+    else if (config.fSessionOnly)
+    {
+        PrintSessionOnlyBlock (console, rgBlockLines);
+    }
+    else
+    {
+        hr = WriteAliasBlockToFile (console, config.strTargetPath, rgBlockLines);
+        CHR (hr);
+    }
 
 Error:
     return hr;
@@ -517,8 +569,14 @@ HRESULT CAliasManager::SetAliases (CConsole & console, bool fWhatIf)
     // Introduction text
     //
 
-    console.Printf (CConfig::InformationHighlight, L"  TCDir Alias Setup\n");
-    console.Printf (CConfig::Information, L"\n");
+    console.Printf (CConfig::InformationHighlight, L"  TCDir Alias Setup");
+
+    if (fWhatIf)
+    {
+        console.Printf (CConfig::Error, L"  (Whatif: preview only, no changes will be made)");
+    }
+
+    console.Printf (CConfig::Information, L"\n\n");
     console.Printf (CConfig::Information, L"  This wizard configures PowerShell aliases so you can invoke tcdir\n");
     console.Printf (CConfig::Information, L"  with short commands (e.g., 'd' instead of 'tcdir'). Aliases will be\n");
     console.Printf (CConfig::Information, L"  saved to your PowerShell profile and loaded automatically.\n");
@@ -535,7 +593,7 @@ HRESULT CAliasManager::SetAliases (CConsole & console, bool fWhatIf)
     {
         console.Puts (CConfig::Information, L"\n  Cancelled.\n");
         console.Flush();
-        goto Error;
+        BAIL_OUT_IF (true, S_OK);
     }
 
     strRootAlias = strResult;
@@ -556,7 +614,7 @@ HRESULT CAliasManager::SetAliases (CConsole & console, bool fWhatIf)
     {
         console.Puts (CConfig::Information, L"\n  Cancelled.\n");
         console.Flush();
-        goto Error;
+        BAIL_OUT_IF (true, S_OK);
     }
 
     for (size_t i = 0; i < rgSubAliases.size(); ++i)
@@ -578,13 +636,19 @@ HRESULT CAliasManager::SetAliases (CConsole & console, bool fWhatIf)
 
     BuildProfileLabels (rgLocations, fIsAdmin, static_cast<int>(console.GetWidth()), rgRadioItems, iDefault);
 
-    tuiResult = tui.RadioButtonList (L"Save aliases to:", rgRadioItems, iDefault);
+    {
+        LPCWSTR pszPrompt = fWhatIf
+                          ? L"Save aliases to: {Error}(Whatif: no changes will be written)"
+                          : L"Save aliases to:";
+
+        tuiResult = tui.RadioButtonList (pszPrompt, rgRadioItems, iDefault);
+    }
 
     if (tuiResult == ETuiResult::Cancelled)
     {
         console.Puts (CConfig::Information, L"\n  Cancelled.\n");
         console.Flush();
-        goto Error;
+        BAIL_OUT_IF (true, S_OK);
     }
 
     //
@@ -619,6 +683,9 @@ HRESULT CAliasManager::SetAliases (CConsole & console, bool fWhatIf)
     //
     // Step 4: Preview / confirmation
     //
+    // In WhatIf mode, skip confirmation — just show the preview and the
+    // "no changes" message.
+    //
 
     if (config.fSessionOnly)
     {
@@ -631,13 +698,20 @@ HRESULT CAliasManager::SetAliases (CConsole & console, bool fWhatIf)
         rgPreview.push_back (line);
     }
 
+    if (config.fWhatIf)
+    {
+        tui.Cleanup();
+        PrintWhatIfPreview (console, config, rgBlockLines);
+        BAIL_OUT_IF (true, S_OK);
+    }
+
     tuiResult = tui.Confirmation (L"Apply these changes?", rgPreview);
 
     if (tuiResult == ETuiResult::Cancelled)
     {
         console.Puts (CConfig::Information, L"\n  Cancelled.\n");
         console.Flush();
-        goto Error;
+        BAIL_OUT_IF (true, S_OK);
     }
 
     //
@@ -849,7 +923,7 @@ HRESULT CAliasManager::RemoveAliases (CConsole & console, bool fWhatIf)
         {
             console.Puts (CConfig::Information, L"\n  No tcdir aliases found in any profile.\n");
             console.Flush();
-            goto Error;
+            BAIL_OUT_IF (true, S_OK);
         }
 
         //
@@ -881,7 +955,7 @@ HRESULT CAliasManager::RemoveAliases (CConsole & console, bool fWhatIf)
         {
             console.Puts (CConfig::Information, L"\n  Cancelled.\n");
             console.Flush();
-            goto Error;
+            BAIL_OUT_IF (true, S_OK);
         }
 
         //
@@ -896,7 +970,7 @@ HRESULT CAliasManager::RemoveAliases (CConsole & console, bool fWhatIf)
 
         if (fWhatIf)
         {
-            console.Printf (CConfig::Information, L"\n  What if: The following aliases would be removed from:\n  %s\n\n",
+            console.Printf (CConfig::Information, L"\n  Whatif: The following aliases would be removed from:\n  %s\n\n",
                             rgLocations[rgFound[iSelected].iLocation].strResolvedPath.c_str());
 
             for (const auto & name : rgFound[iSelected].block.rgAliasNames)
@@ -904,9 +978,9 @@ HRESULT CAliasManager::RemoveAliases (CConsole & console, bool fWhatIf)
                 console.Printf (CConfig::Information, L"    %s\n", name.c_str());
             }
 
-            console.Puts (CConfig::Information, L"\n  What if: No changes were made.\n");
+            console.Puts (CConfig::Information, L"\n  Whatif: No changes were made.\n");
             console.Flush();
-            goto Error;
+            BAIL_OUT_IF (true, S_OK);
         }
 
         //
@@ -932,7 +1006,7 @@ HRESULT CAliasManager::RemoveAliases (CConsole & console, bool fWhatIf)
                 console.Printf (CConfig::Error, L"\n  Error: Could not write to %s\n",
                                 rgLocations[rgFound[iSelected].iLocation].strResolvedPath.c_str());
                 console.Flush();
-                goto Error;
+                CHR (hr);
             }
 
             console.Printf (CConfig::Information, L"\n  Aliases removed from: %s\n",

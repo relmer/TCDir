@@ -101,4 +101,15 @@ private:
     static HRESULT ApplyAliasBlock         (CConsole                         & console,
                                             const SAliasConfig               & config,
                                             const vector<wstring>            & rgBlockLines);
+
+    static void    PrintWhatIfPreview      (CConsole                         & console,
+                                            const SAliasConfig               & config,
+                                            const vector<wstring>            & rgBlockLines);
+
+    static void    PrintSessionOnlyBlock   (CConsole                         & console,
+                                            const vector<wstring>            & rgBlockLines);
+
+    static HRESULT WriteAliasBlockToFile   (CConsole                         & console,
+                                            const wstring                    & strTargetPath,
+                                            const vector<wstring>            & rgBlockLines);
 };

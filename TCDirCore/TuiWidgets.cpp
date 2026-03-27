@@ -554,7 +554,7 @@ ETuiResult CTuiWidgets::RadioButtonList (LPCWSTR pszPrompt, const vector<wstring
     // Print prompt, then render items below it
     //
 
-    m_console.Printf (CConfig::Information, L"  %s\n", pszPrompt);
+    m_console.ColorPrintf (L"{Information}  %s\n", pszPrompt);
     Render (true);
 
     for (;;)
@@ -713,7 +713,7 @@ void CTuiWidgets::ShowSpinner (LPCWSTR pszMessage)
             DWORD   cch  = 0;
 
 
-            
+
             WriteConsoleW (hOut, line.c_str(), static_cast<DWORD>(line.size()), &cch, nullptr);
 
             ++frame;
