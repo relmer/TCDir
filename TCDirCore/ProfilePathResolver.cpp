@@ -58,14 +58,13 @@ Error:
 
 ////////////////////////////////////////////////////////////////////////////////
 //
-//  CProfilePathResolver::QueryProcessImageName
+//  CProfilePathResolver::QueryProcessImagePath
 //
-//  Opens a process by PID and queries its full image path, returning just
-//  the filename (e.g., "pwsh.exe").
+//  Opens a process by PID and queries its full image path.
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-HRESULT CProfilePathResolver::QueryProcessImageName (DWORD dwPid, wstring & strImageName)
+HRESULT CProfilePathResolver::QueryProcessImagePath (DWORD dwPid, wstring & strFullPath)
 {
     HRESULT hr               = S_OK;
     HANDLE  hProc            = nullptr;
@@ -81,7 +80,7 @@ HRESULT CProfilePathResolver::QueryProcessImageName (DWORD dwPid, wstring & strI
     fSuccess = QueryFullProcessImageNameW (hProc, 0, szPath, &cchPath);
     CWRA (fSuccess);
 
-    strImageName = filesystem::path (szPath).filename().wstring();
+    strFullPath = szPath;
 
 Error:
     if (hProc != nullptr)
@@ -108,14 +107,49 @@ HRESULT CProfilePathResolver::GetParentProcessImageName (wstring & strImageName)
 {
     HRESULT hr          = S_OK;
     DWORD   dwParentPid = 0;
+    wstring strFullPath;
 
 
 
     hr = FindParentPid (dwParentPid);
     CHR (hr);
 
-    hr = QueryProcessImageName (dwParentPid, strImageName);
+    hr = QueryProcessImagePath (dwParentPid, strFullPath);
     CHR (hr);
+
+    strImageName = filesystem::path (strFullPath).filename().wstring();
+
+Error:
+    return hr;
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CProfilePathResolver::GetParentProcessDirectory
+//
+//  Finds the parent process and returns its installation directory ($PSHOME).
+//
+////////////////////////////////////////////////////////////////////////////////
+
+HRESULT CProfilePathResolver::GetParentProcessDirectory (wstring & strDirectory)
+{
+    HRESULT hr          = S_OK;
+    DWORD   dwParentPid = 0;
+    wstring strFullPath;
+
+
+
+    hr = FindParentPid (dwParentPid);
+    CHR (hr);
+
+    hr = QueryProcessImagePath (dwParentPid, strFullPath);
+    CHR (hr);
+
+    strDirectory = filesystem::path (strFullPath).parent_path().wstring();
 
 Error:
     return hr;
@@ -195,38 +229,41 @@ Error:
 
 void CProfilePathResolver::BuildProfileLocations (
     const wstring            & strDocuments, 
-    const wstring            & strProgramData,
+    const wstring            & strPSHome,
     EPowerShellVersion         eVersion, 
     vector<SProfileLocation> & rgLocations)
 {
-    struct SProfileDef
-    {
-        EProfileScope eScope;
-        LPCWSTR       pszVarName;
-        const wstring & strBaseDir;
-        LPCWSTR       pszFilename;
-        bool          fRequiresAdmin;
-    };
-
-    SProfileDef defs[] =
-    {
-        { EProfileScope::CurrentUserCurrentHost, L"$PROFILE.CurrentUserCurrentHost", strDocuments,   L"Microsoft.PowerShell_profile.ps1", false },
-        { EProfileScope::CurrentUserAllHosts,    L"$PROFILE.CurrentUserAllHosts",    strDocuments,   L"profile.ps1",                      false },
-        { EProfileScope::AllUsersCurrentHost,    L"$PROFILE.AllUsersCurrentHost",    strProgramData, L"Microsoft.PowerShell_profile.ps1", true  },
-        { EProfileScope::AllUsersAllHosts,       L"$PROFILE.AllUsersAllHosts",       strProgramData, L"profile.ps1",                      true  },
-    };
+    //
+    // CurrentUser paths go under Documents\PowerShell\ (or WindowsPowerShell\).
+    // AllUsers paths go directly under $PSHOME (the PS installation directory).
+    //
 
     LPCWSTR pszPsDir = (eVersion == EPowerShellVersion::PowerShell)
                       ? L"PowerShell"
                       : L"WindowsPowerShell";
-                  
 
+    struct SProfileDef
+    {
+        EProfileScope     eScope;
+        LPCWSTR           pszVarName;
+        filesystem::path  basePath;
+        LPCWSTR           pszFilename;
+        bool              fRequiresAdmin;
+    };
+
+    SProfileDef defs[] =
+    {
+        { EProfileScope::CurrentUserCurrentHost, L"$PROFILE.CurrentUserCurrentHost", filesystem::path (strDocuments) / pszPsDir, L"Microsoft.PowerShell_profile.ps1", false },
+        { EProfileScope::CurrentUserAllHosts,    L"$PROFILE.CurrentUserAllHosts",    filesystem::path (strDocuments) / pszPsDir, L"profile.ps1",                      false },
+        { EProfileScope::AllUsersCurrentHost,    L"$PROFILE.AllUsersCurrentHost",    filesystem::path (strPSHome),               L"Microsoft.PowerShell_profile.ps1", true  },
+        { EProfileScope::AllUsersAllHosts,       L"$PROFILE.AllUsersAllHosts",       filesystem::path (strPSHome),               L"profile.ps1",                      true  },
+    };
 
     rgLocations.clear();
 
     for (const auto & def : defs)
     {
-        filesystem::path profilePath = filesystem::path (def.strBaseDir) / pszPsDir / def.pszFilename;
+        filesystem::path profilePath = def.basePath / def.pszFilename;
         SProfileLocation loc;
 
         loc.eScope          = def.eScope;
@@ -254,9 +291,9 @@ void CProfilePathResolver::BuildProfileLocations (
 
 HRESULT CProfilePathResolver::ResolveProfilePaths (EPowerShellVersion eVersion, vector<SProfileLocation> & rgLocations)
 {
-    HRESULT hr             = S_OK;
-    PWSTR   pszDocuments   = nullptr;
-    PWSTR   pszProgramData = nullptr;
+    HRESULT hr           = S_OK;
+    PWSTR   pszDocuments = nullptr;
+    wstring strPSHome;
 
 
 
@@ -268,17 +305,17 @@ HRESULT CProfilePathResolver::ResolveProfilePaths (EPowerShellVersion eVersion, 
     CHR (hr);
 
     //
-    // Resolve ProgramData folder
+    // Resolve $PSHOME — the parent PowerShell process's installation directory
     //
 
-    hr = SHGetKnownFolderPath (FOLDERID_ProgramData, 0, nullptr, &pszProgramData);
+    hr = GetParentProcessDirectory (strPSHome);
     CHR (hr);
 
     //
     // Build profile locations using the pure-logic helper
     //
 
-    BuildProfileLocations (pszDocuments, pszProgramData, eVersion, rgLocations);
+    BuildProfileLocations (pszDocuments, strPSHome, eVersion, rgLocations);
 
     //
     // Check which files actually exist on disk
@@ -293,11 +330,6 @@ Error:
     if (pszDocuments != nullptr)
     {
         CoTaskMemFree (pszDocuments);
-    }
-
-    if (pszProgramData != nullptr)
-    {
-        CoTaskMemFree (pszProgramData);
     }
 
     return hr;

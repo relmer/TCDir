@@ -89,12 +89,15 @@ public:
     //
 
     static EPowerShellVersion MapImageNameToVersion   (const wstring & strImageName);
-    static void               BuildProfileLocations   (const wstring & strDocuments, const wstring & strProgramData,
-                                                       EPowerShellVersion eVersion, vector<SProfileLocation> & rgLocations);
+    static void               BuildProfileLocations   (const wstring & strDocuments,
+                                                       const wstring & strPSHome,
+                                                       EPowerShellVersion eVersion,
+                                                       vector<SProfileLocation> & rgLocations);
 
 private:
     HRESULT GetParentProcessImageName    (wstring & strImageName);
+    HRESULT GetParentProcessDirectory    (wstring & strDirectory);
 
     static HRESULT FindParentPid         (DWORD & dwParentPid);
-    static HRESULT QueryProcessImageName (DWORD dwPid, wstring & strImageName);
+    static HRESULT QueryProcessImagePath (DWORD dwPid, wstring & strFullPath);
 };

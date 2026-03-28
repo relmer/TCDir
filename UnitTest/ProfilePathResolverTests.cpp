@@ -75,7 +75,7 @@ namespace UnitTest
         {
             vector<SProfileLocation> rgLocations;
 
-            CProfilePathResolver::BuildProfileLocations (L"C:\\Users\\test\\Documents", L"C:\\ProgramData",
+            CProfilePathResolver::BuildProfileLocations (L"C:\\Users\\test\\Documents", L"C:\\Program Files\\PowerShell\\7",
                                                           EPowerShellVersion::PowerShell, rgLocations);
 
 
@@ -96,17 +96,16 @@ namespace UnitTest
         {
             vector<SProfileLocation> rgLocations;
 
-            CProfilePathResolver::BuildProfileLocations (L"C:\\Users\\test\\Documents", L"C:\\ProgramData",
+            CProfilePathResolver::BuildProfileLocations (L"C:\\Users\\test\\Documents", L"C:\\Windows\\System32\\WindowsPowerShell\\v1.0",
                                                           EPowerShellVersion::WindowsPowerShell, rgLocations);
 
 
 
             Assert::AreEqual (4u, static_cast<unsigned>(rgLocations.size()));
 
-            for (const auto & loc : rgLocations)
-            {
-                Assert::IsTrue (loc.strResolvedPath.find (L"\\WindowsPowerShell\\") != wstring::npos);
-            }
+            // CurrentUser paths use Documents\WindowsPowerShell\ subdirectory
+            Assert::IsTrue (rgLocations[0].strResolvedPath.find (L"\\WindowsPowerShell\\") != wstring::npos);
+            Assert::IsTrue (rgLocations[1].strResolvedPath.find (L"\\WindowsPowerShell\\") != wstring::npos);
         }
 
 
@@ -116,7 +115,7 @@ namespace UnitTest
         {
             vector<SProfileLocation> rgLocations;
 
-            CProfilePathResolver::BuildProfileLocations (L"C:\\Users\\test\\Documents", L"C:\\ProgramData",
+            CProfilePathResolver::BuildProfileLocations (L"C:\\Users\\test\\Documents", L"C:\\Program Files\\PowerShell\\7",
                                                           EPowerShellVersion::PowerShell, rgLocations);
 
 
@@ -134,7 +133,7 @@ namespace UnitTest
         {
             vector<SProfileLocation> rgLocations;
 
-            CProfilePathResolver::BuildProfileLocations (L"C:\\Users\\test\\Documents", L"C:\\ProgramData",
+            CProfilePathResolver::BuildProfileLocations (L"C:\\Users\\test\\Documents", L"C:\\Program Files\\PowerShell\\7",
                                                           EPowerShellVersion::PowerShell, rgLocations);
 
 
@@ -152,7 +151,7 @@ namespace UnitTest
         {
             vector<SProfileLocation> rgLocations;
 
-            CProfilePathResolver::BuildProfileLocations (L"C:\\Users\\test\\Documents", L"C:\\ProgramData",
+            CProfilePathResolver::BuildProfileLocations (L"C:\\Users\\test\\Documents", L"C:\\Program Files\\PowerShell\\7",
                                                           EPowerShellVersion::PowerShell, rgLocations);
 
 
@@ -170,15 +169,15 @@ namespace UnitTest
         {
             vector<SProfileLocation> rgLocations;
 
-            CProfilePathResolver::BuildProfileLocations (L"C:\\Users\\test\\Documents", L"C:\\ProgramData",
+            CProfilePathResolver::BuildProfileLocations (L"C:\\Users\\test\\Documents", L"C:\\Program Files\\PowerShell\\7",
                                                           EPowerShellVersion::PowerShell, rgLocations);
 
 
 
             Assert::AreEqual (L"C:\\Users\\test\\Documents\\PowerShell\\Microsoft.PowerShell_profile.ps1", rgLocations[0].strResolvedPath.c_str());
             Assert::AreEqual (L"C:\\Users\\test\\Documents\\PowerShell\\profile.ps1",                      rgLocations[1].strResolvedPath.c_str());
-            Assert::AreEqual (L"C:\\ProgramData\\PowerShell\\Microsoft.PowerShell_profile.ps1",            rgLocations[2].strResolvedPath.c_str());
-            Assert::AreEqual (L"C:\\ProgramData\\PowerShell\\profile.ps1",                                 rgLocations[3].strResolvedPath.c_str());
+            Assert::AreEqual (L"C:\\Program Files\\PowerShell\\7\\Microsoft.PowerShell_profile.ps1",         rgLocations[2].strResolvedPath.c_str());
+            Assert::AreEqual (L"C:\\Program Files\\PowerShell\\7\\profile.ps1",                              rgLocations[3].strResolvedPath.c_str());
         }
 
 
@@ -188,15 +187,15 @@ namespace UnitTest
         {
             vector<SProfileLocation> rgLocations;
 
-            CProfilePathResolver::BuildProfileLocations (L"C:\\Users\\test\\Documents", L"C:\\ProgramData",
+            CProfilePathResolver::BuildProfileLocations (L"C:\\Users\\test\\Documents", L"C:\\Windows\\System32\\WindowsPowerShell\\v1.0",
                                                           EPowerShellVersion::WindowsPowerShell, rgLocations);
 
 
 
             Assert::AreEqual (L"C:\\Users\\test\\Documents\\WindowsPowerShell\\Microsoft.PowerShell_profile.ps1", rgLocations[0].strResolvedPath.c_str());
             Assert::AreEqual (L"C:\\Users\\test\\Documents\\WindowsPowerShell\\profile.ps1",                      rgLocations[1].strResolvedPath.c_str());
-            Assert::AreEqual (L"C:\\ProgramData\\WindowsPowerShell\\Microsoft.PowerShell_profile.ps1",            rgLocations[2].strResolvedPath.c_str());
-            Assert::AreEqual (L"C:\\ProgramData\\WindowsPowerShell\\profile.ps1",                                 rgLocations[3].strResolvedPath.c_str());
+            Assert::AreEqual (L"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\Microsoft.PowerShell_profile.ps1", rgLocations[2].strResolvedPath.c_str());
+            Assert::AreEqual (L"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\profile.ps1",                      rgLocations[3].strResolvedPath.c_str());
         }
 
 
@@ -206,7 +205,7 @@ namespace UnitTest
         {
             vector<SProfileLocation> rgLocations;
 
-            CProfilePathResolver::BuildProfileLocations (L"C:\\Fake\\Documents", L"C:\\Fake\\ProgramData",
+            CProfilePathResolver::BuildProfileLocations (L"C:\\Fake\\Documents", L"C:\\\\Fake\\\\PSHome",
                                                           EPowerShellVersion::PowerShell, rgLocations);
 
 
@@ -228,7 +227,7 @@ namespace UnitTest
 
             vector<SProfileLocation> rgLocations;
 
-            CProfilePathResolver::BuildProfileLocations (L"C:\\Users\\test\\OneDrive\\Documents", L"C:\\ProgramData",
+            CProfilePathResolver::BuildProfileLocations (L"C:\\Users\\test\\OneDrive\\Documents", L"C:\\Program Files\\PowerShell\\7",
                                                           EPowerShellVersion::PowerShell, rgLocations);
 
 
