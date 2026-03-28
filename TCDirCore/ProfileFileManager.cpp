@@ -258,6 +258,8 @@ HRESULT CProfileFileManager::FindAliasBlock (const vector<wstring> & rgLines, SA
 
             if (line.starts_with (L"function "))
             {
+                block.rgFunctionLines.push_back (line);
+
                 size_t posSpace = line.find (L' ', 9);
 
                 if (posSpace != wstring::npos)

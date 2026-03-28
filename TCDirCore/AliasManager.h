@@ -147,7 +147,8 @@ private:
 
     static bool    DisplayProfileAliases   (CConsole                         & console,
                                             CProfileFileManager              & fileMgr,
-                                            const SProfileLocation           & loc);
+                                            const SProfileLocation           & loc,
+                                            bool                               fPrintLeadingSeparator);
 
     static HRESULT RemoveAliasBlockFromFile(CConsole                         & console,
                                             const wstring                    & strPath);

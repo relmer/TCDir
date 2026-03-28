@@ -91,6 +91,7 @@ A parsed alias block found in an existing profile file.
 | `iEndLine` | `size_t` | 0-based line index of the closing marker |
 | `strRootAlias` | `wstring` | Detected root alias name (parsed from block content) |
 | `rgAliasNames` | `vector<wstring>` | All function names found in the block |
+| `rgFunctionLines` | `vector<wstring>` | Full `function xxx { ... }` lines from the block |
 | `strVersion` | `wstring` | tcdir version that generated the block |
 
 ---

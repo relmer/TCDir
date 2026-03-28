@@ -20,6 +20,7 @@ struct SAliasBlock
     size_t          iEndLine    = 0;     // 0-based line index of closing marker
     wstring         strRootAlias;        // Detected root alias name
     vector<wstring> rgAliasNames;        // All function names found in the block
+    vector<wstring> rgFunctionLines;     // Full "function xxx { ... }" lines from the block
     wstring         strVersion;          // tcdir version that generated the block
     bool            fFound      = false; // Whether a block was found
 };
