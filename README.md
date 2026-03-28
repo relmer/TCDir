@@ -26,6 +26,7 @@ It's designed as a practical `dir`-style command with useful defaults (color by 
 
 | Version | Highlights |
 | :---: | :---: |
+| **5.2** | Interactive PowerShell alias configuration (`--set-aliases`, `--get-aliases`, `--remove-aliases`) |
 | **5.1** | `--Tree` hierarchical directory view with depth control |
 | **5.0** | Nerd Font file/folder icons (~200 extensions, ~65 directories) |
 | **4.2** | Cloud sync status badges (OneDrive, iCloud), file owner, NTFS alternate data streams |
@@ -74,14 +75,29 @@ scoop install tcdir
 ```
 -->
 
-### Shell integration
+### Shell aliases
 
-Make TCDir your default directory listing command:
+TCDir includes a built-in alias configuration wizard. Run from PowerShell:
 
 ```powershell
-# Add to your PowerShell profile ($PROFILE):
-Set-Alias dir tcdir -Option AllScope
+tcdir --set-aliases
 ```
+
+The wizard walks you through:
+
+1. **Root alias** — a short name (e.g., `d`) that maps to `tcdir`
+2. **Sub-aliases** — derived commands like `dt` (tree), `dw` (wide), `dd` (dirs-only), `ds` (recursive), `dsb` (recursive bare)
+3. **Profile location** — which PowerShell profile to save to, or output for the current session only
+
+The generated aliases are PowerShell functions stored between marker comments in your profile. To inspect or remove them later:
+
+```powershell
+tcdir --get-aliases       # show configured aliases
+tcdir --remove-aliases    # interactive removal
+tcdir --set-aliases --whatif  # preview without writing
+```
+
+Both PowerShell 7+ (`pwsh`) and Windows PowerShell 5.1 (`powershell`) are supported — the wizard auto-detects which version launched it.
 
 ## Requirements
 
@@ -145,6 +161,10 @@ Common switches:
 - `--Depth=N`: limit tree depth to N levels (requires `--Tree`)
 - `--TreeIndent=N`: tree indent width per level, 1–8, default 4 (requires `--Tree`)
 - `--Size=Auto|Bytes`: `Auto` shows abbreviated sizes (e.g., `8.90 KB`); `Bytes` shows exact comma-separated sizes. Tree mode defaults to `Auto`, non-tree defaults to `Bytes`
+- `--set-aliases`: interactive wizard to configure PowerShell aliases for tcdir
+- `--get-aliases`: display all configured tcdir aliases and their source profiles
+- `--remove-aliases`: interactive removal of tcdir aliases from profile files
+- `--whatif`: dry-run modifier for `--set-aliases` or `--remove-aliases` (preview only, no file changes)
 
 ### Attribute filters (`/A:`)
 
