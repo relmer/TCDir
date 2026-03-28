@@ -37,30 +37,56 @@ void CAliasBlockGenerator::Generate (const SAliasConfig & config, const wstring 
     rgBlockLines.push_back (L"");
 
     //
-    // Root alias function
+    // Compute column widths for aligned output
     //
 
     wstring strInvocation = config.strTcDirInvocation;
-
-    if (strInvocation.find (L' ') != wstring::npos)
-    {
-        // Path contains spaces — use call operator with quoting
-        rgBlockLines.push_back (format (L"function {} {{ & \"{}\" @args }}", config.strRootAlias, strInvocation));
-    }
-    else
-    {
-        rgBlockLines.push_back (format (L"function {} {{ {} @args }}", config.strRootAlias, strInvocation));
-    }
+    bool    fQuotePath    = (strInvocation.find (L' ') != wstring::npos);
 
     //
-    // Sub-alias functions
+    // Build the body string for each function, then compute max widths
     //
+
+    wstring              strRootBody = fQuotePath
+                                     ? format (L"& \"{}\" @args", strInvocation)
+                                     : format (L"{} @args", strInvocation);
+
+    size_t               cchMaxName  = config.strRootAlias.size();
+    size_t               cchMaxBody  = strRootBody.size();
+    vector<wstring>      rgSubBodies;
 
     for (const auto & sub : config.rgSubAliases)
     {
         if (sub.fEnabled)
         {
-            rgBlockLines.push_back (format (L"function {} {{ {} {} @args }}", sub.strName, config.strRootAlias, sub.strFlags));
+            wstring body = format (L"{} {} @args", config.strRootAlias, sub.strFlags);
+
+            cchMaxName = max (cchMaxName, sub.strName.size());
+            cchMaxBody = max (cchMaxBody, body.size());
+            rgSubBodies.push_back (body);
+        }
+    }
+
+    //
+    // Root alias function
+    //
+
+    rgBlockLines.push_back (format (L"function {:<{}} {{ {:<{}} }}", config.strRootAlias, cchMaxName, strRootBody, cchMaxBody));
+
+    //
+    // Sub-alias functions
+    //
+
+    {
+        size_t iBody = 0;
+
+        for (const auto & sub : config.rgSubAliases)
+        {
+            if (sub.fEnabled)
+            {
+                rgBlockLines.push_back (format (L"function {:<{}} {{ {:<{}} }}", sub.strName, cchMaxName, rgSubBodies[iBody], cchMaxBody));
+                ++iBody;
+            }
         }
     }
 

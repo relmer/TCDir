@@ -519,56 +519,14 @@ Error:
 
 ////////////////////////////////////////////////////////////////////////////////
 //
-//  CAliasManager::SetAliases
+//  CAliasManager::PrintIntroduction
 //
-//  Interactive wizard for setting up aliases.
+//  Displays the wizard header and description text.
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-HRESULT CAliasManager::SetAliases (CConsole & console, bool fWhatIf)
+void CAliasManager::PrintIntroduction (CConsole & console, bool fWhatIf)
 {
-    HRESULT                         hr = S_OK;
-    CTuiWidgets                     tui (console);
-    vector<SProfileLocation>        rgLocations;
-    SAliasBlock                     existingBlock;
-    wstring                         strRootAlias = L"d";
-    wstring                         strResult;
-    vector<SAliasDefinition>        rgSubAliases;
-    vector<pair<wstring, bool>>     rgCheckItems;
-    vector<wstring>                 rgRadioItems;
-    int                             iDefault = 0;
-    SAliasConfig                    config;
-    vector<wstring>                 rgBlockLines;
-    vector<wstring>                 rgPreview;
-    ETuiResult                      tuiResult = ETuiResult::Cancelled;
-    bool                            fProceedAfterConflicts = true;
-    bool                            fIsAdmin = false;
-
-
-
-    //
-    // Scan profiles (with spinner)
-    //
-
-    hr = ScanProfiles (console, tui, rgLocations, existingBlock);
-    CHR (hr);
-
-    //
-    // Initialize TUI
-    //
-
-    hr = tui.Init();
-    CHR (hr);
-
-    if (existingBlock.fFound && !existingBlock.strRootAlias.empty())
-    {
-        strRootAlias = existingBlock.strRootAlias;
-    }
-
-    //
-    // Introduction text
-    //
-
     console.Printf (CConfig::InformationHighlight, L"  TCDir Alias Setup");
 
     if (fWhatIf)
@@ -582,90 +540,36 @@ HRESULT CAliasManager::SetAliases (CConsole & console, bool fWhatIf)
     console.Printf (CConfig::Information, L"  saved to your PowerShell profile and loaded automatically.\n");
     console.Printf (CConfig::Information, L"\n");
     console.Flush();
+}
 
-    //
-    // Step 1: Root alias
-    //
 
-    tuiResult = tui.TextInput (L"Root alias name (1-4 chars)", strRootAlias, strResult, 4);
 
-    if (tuiResult == ETuiResult::Cancelled)
-    {
-        console.Puts (CConfig::Information, L"\n  Cancelled.\n");
-        console.Flush();
-        BAIL_OUT_IF (true, S_OK);
-    }
 
-    strRootAlias = strResult;
 
-    console.Printf (CConfig::Information, L"\n");
-    console.Flush();
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CAliasManager::BuildConfigFromWizard
+//
+//  Populates an SAliasConfig from the wizard's collected results.
+//
+////////////////////////////////////////////////////////////////////////////////
 
-    //
-    // Step 2: Sub-aliases
-    //
-
-    BuildDefaultSubAliases (strRootAlias, rgSubAliases);
-    BuildSubAliasLabels (strRootAlias, rgSubAliases, rgCheckItems);
-
-    tuiResult = tui.CheckboxList (L"Select sub-aliases:", rgCheckItems);
-
-    if (tuiResult == ETuiResult::Cancelled)
-    {
-        console.Puts (CConfig::Information, L"\n  Cancelled.\n");
-        console.Flush();
-        BAIL_OUT_IF (true, S_OK);
-    }
-
-    for (size_t i = 0; i < rgSubAliases.size(); ++i)
-    {
-        rgSubAliases[i].fEnabled = rgCheckItems[i].second;
-    }
-
-    CheckConflicts (console, strRootAlias, rgSubAliases, fProceedAfterConflicts);
-
-    //
-    // Step 3: Profile location
-    //
-
-    {
-        CProfilePathResolver resolver;
-
-        resolver.IsRunningAsAdmin (fIsAdmin);
-    }
-
-    BuildProfileLabels (rgLocations, fIsAdmin, static_cast<int>(console.GetWidth()), rgRadioItems, iDefault);
-
-    {
-        LPCWSTR pszPrompt = fWhatIf
-                          ? L"Save aliases to: {Error}(Whatif: no changes will be written)"
-                          : L"Save aliases to:";
-
-        tuiResult = tui.RadioButtonList (pszPrompt, rgRadioItems, iDefault);
-    }
-
-    if (tuiResult == ETuiResult::Cancelled)
-    {
-        console.Puts (CConfig::Information, L"\n  Cancelled.\n");
-        console.Flush();
-        BAIL_OUT_IF (true, S_OK);
-    }
-
-    //
-    // Build config from wizard results
-    //
-
+void CAliasManager::BuildConfigFromWizard (
+    SAliasConfig                     & config,
+    const wstring                    & strRootAlias,
+    const vector<SAliasDefinition>   & rgSubAliases,
+    const vector<SProfileLocation>   & rgLocations,
+    int                                iSelected,
+    bool                               fWhatIf)
+{
     config.strRootAlias = strRootAlias;
     config.rgSubAliases = rgSubAliases;
     config.fWhatIf      = fWhatIf;
 
-    hr = ResolveTcDirInvocation (config.strTcDirInvocation);
-    CHR (hr);
-
-    if (iDefault < static_cast<int>(rgLocations.size()))
+    if (iSelected < static_cast<int>(rgLocations.size()))
     {
-        config.eTargetScope  = rgLocations[iDefault].eScope;
-        config.strTargetPath = rgLocations[iDefault].strResolvedPath;
+        config.eTargetScope  = rgLocations[iSelected].eScope;
+        config.strTargetPath = rgLocations[iSelected].strResolvedPath;
         config.fSessionOnly  = false;
     }
     else
@@ -673,18 +577,46 @@ HRESULT CAliasManager::SetAliases (CConsole & console, bool fWhatIf)
         config.eTargetScope  = EProfileScope::SessionOnly;
         config.fSessionOnly  = true;
     }
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CAliasManager::ConfirmAndApply
+//
+//  Shows the preview, asks for confirmation (unless Whatif), and applies.
+//  In Whatif mode, prints the preview and exits without confirmation.
+//
+////////////////////////////////////////////////////////////////////////////////
+
+HRESULT CAliasManager::ConfirmAndApply (
+    CConsole              & console,
+    CTuiWidgets           & tui,
+    SAliasConfig          & config,
+    const vector<wstring> & rgBlockLines)
+{
+    HRESULT         hr        = S_OK;
+    vector<wstring> rgPreview;
+    ETuiResult      tuiResult = ETuiResult::Cancelled;
+
+
 
     //
-    // Generate the alias block
+    // In Whatif mode, skip confirmation — print preview and exit
     //
 
-    CAliasBlockGenerator::Generate (config, wstring (VERSION_WSTRING), rgBlockLines);
+    if (config.fWhatIf)
+    {
+        tui.Cleanup();
+        PrintWhatIfPreview (console, config, rgBlockLines);
+        BAIL_OUT_IF (true, S_OK);
+    }
 
     //
-    // Step 4: Preview / confirmation
-    //
-    // In WhatIf mode, skip confirmation — just show the preview and the
-    // "no changes" message.
+    // Build preview lines
     //
 
     if (config.fSessionOnly)
@@ -698,13 +630,6 @@ HRESULT CAliasManager::SetAliases (CConsole & console, bool fWhatIf)
         rgPreview.push_back (line);
     }
 
-    if (config.fWhatIf)
-    {
-        tui.Cleanup();
-        PrintWhatIfPreview (console, config, rgBlockLines);
-        BAIL_OUT_IF (true, S_OK);
-    }
-
     tuiResult = tui.Confirmation (L"Apply these changes?", rgPreview);
 
     if (tuiResult == ETuiResult::Cancelled)
@@ -713,10 +638,6 @@ HRESULT CAliasManager::SetAliases (CConsole & console, bool fWhatIf)
         console.Flush();
         BAIL_OUT_IF (true, S_OK);
     }
-
-    //
-    // Apply
-    //
 
     tui.Cleanup();
 
@@ -733,6 +654,238 @@ Error:
 
 ////////////////////////////////////////////////////////////////////////////////
 //
+//  CAliasManager::PromptRootAlias
+//
+//  Asks the user for the root alias name (1-4 alphanumeric chars).
+//
+////////////////////////////////////////////////////////////////////////////////
+
+ETuiResult CAliasManager::PromptRootAlias (
+    CConsole              & console,
+    CTuiWidgets           & tui,
+    const SAliasBlock     & existingBlock,
+    wstring               & strRootAlias)
+{
+    wstring strDefault = L"d";
+
+    if (existingBlock.fFound && !existingBlock.strRootAlias.empty())
+    {
+        strDefault = existingBlock.strRootAlias;
+    }
+
+    ETuiResult result = tui.TextInput (L"Root alias name (1-4 chars)", strDefault, strRootAlias, 4);
+
+    if (result == ETuiResult::Confirmed)
+    {
+        console.Printf (CConfig::Information, L"\n");
+        console.Flush();
+    }
+
+    return result;
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CAliasManager::PromptSubAliases
+//
+//  Presents the sub-alias checkbox list and applies selections.
+//
+////////////////////////////////////////////////////////////////////////////////
+
+ETuiResult CAliasManager::PromptSubAliases (
+    CConsole                 & console,
+    CTuiWidgets              & tui,
+    const wstring            & strRootAlias,
+    vector<SAliasDefinition> & rgSubAliases)
+{
+    vector<pair<wstring, bool>> rgCheckItems;
+    bool                        fProceed     = true;
+
+
+
+    BuildDefaultSubAliases (strRootAlias, rgSubAliases);
+    BuildSubAliasLabels    (strRootAlias, rgSubAliases, rgCheckItems);
+
+    ETuiResult result = tui.CheckboxList (L"Select sub-aliases:", rgCheckItems);
+
+    if (result == ETuiResult::Confirmed)
+    {
+        for (size_t i = 0; i < rgSubAliases.size(); ++i)
+        {
+            rgSubAliases[i].fEnabled = rgCheckItems[i].second;
+        }
+
+        CheckConflicts (console, strRootAlias, rgSubAliases, fProceed);
+    }
+
+    return result;
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CAliasManager::PromptProfileLocation
+//
+//  Presents the profile location radio list and returns the selection index.
+//
+////////////////////////////////////////////////////////////////////////////////
+
+ETuiResult CAliasManager::PromptProfileLocation (
+    CConsole                       & console,
+    CTuiWidgets                    & tui,
+    const vector<SProfileLocation> & rgLocations,
+    bool                             fWhatIf,
+    int                            & iSelected)
+{
+    vector<wstring>      rgRadioItems;
+    bool                 fIsAdmin     = false;
+    CProfilePathResolver resolver;
+
+
+
+    resolver.IsRunningAsAdmin (fIsAdmin);
+
+    BuildProfileLabels (rgLocations, fIsAdmin, static_cast<int> (console.GetWidth()), rgRadioItems, iSelected);
+
+    LPCWSTR pszPrompt = fWhatIf
+                      ? L"Save aliases to: {Error}(Whatif: no changes will be written)"
+                      : L"Save aliases to:";
+
+    return tui.RadioButtonList (pszPrompt, rgRadioItems, iSelected);
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CAliasManager::SetAliases
+//
+//  Interactive wizard for setting up aliases.
+//
+////////////////////////////////////////////////////////////////////////////////
+
+HRESULT CAliasManager::SetAliases (CConsole & console, bool fWhatIf)
+{
+    HRESULT                  hr            = S_OK;
+    CTuiWidgets              tui             (console);
+    vector<SProfileLocation> rgLocations;
+    SAliasBlock              existingBlock;
+    wstring                  strRootAlias;
+    vector<SAliasDefinition> rgSubAliases;
+    int                      iSelected     = 0;
+    SAliasConfig             config;
+    vector<wstring>          rgBlockLines;
+    ETuiResult               tuiResult     = ETuiResult::Cancelled;
+
+
+
+    hr = ScanProfiles (console, tui, rgLocations, existingBlock);
+    CHR (hr);
+
+    hr = tui.Init();
+    CHR (hr);
+
+    PrintIntroduction (console, fWhatIf);
+
+    tuiResult = PromptRootAlias (console, tui, existingBlock, strRootAlias);
+    BAIL_OUT_IF (tuiResult == ETuiResult::Cancelled, S_OK);
+
+    tuiResult = PromptSubAliases (console, tui, strRootAlias, rgSubAliases);
+    BAIL_OUT_IF (tuiResult == ETuiResult::Cancelled, S_OK);
+
+    tuiResult = PromptProfileLocation (console, tui, rgLocations, fWhatIf, iSelected);
+    BAIL_OUT_IF (tuiResult == ETuiResult::Cancelled, S_OK);
+
+    BuildConfigFromWizard (config, strRootAlias, rgSubAliases, rgLocations, iSelected, fWhatIf);
+
+    hr = ResolveTcDirInvocation (config.strTcDirInvocation);
+    CHR (hr);
+
+    CAliasBlockGenerator::Generate (config, wstring (VERSION_WSTRING), rgBlockLines);
+
+    hr = ConfirmAndApply (console, tui, config, rgBlockLines);
+    CHR (hr);
+
+Error:
+    return hr;
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CAliasManager::DisplayProfileAliases
+//
+//  Reads a single profile file, finds an alias block, and displays it.
+//  Returns true if aliases were found and displayed, false otherwise.
+//
+////////////////////////////////////////////////////////////////////////////////
+
+bool CAliasManager::DisplayProfileAliases (
+    CConsole               & console,
+    CProfileFileManager    & fileMgr,
+    const SProfileLocation & loc)
+{
+    vector<wstring> rgLines;
+    bool            fHasBom = false;
+    SAliasBlock     block;
+
+
+
+    if (!loc.fExists)
+    {
+        return false;
+    }
+
+    if (FAILED (fileMgr.ReadProfileFile (loc.strResolvedPath, rgLines, fHasBom)))
+    {
+        return false;
+    }
+
+    fileMgr.FindAliasBlock (rgLines, block);
+
+    if (!block.fFound)
+    {
+        return false;
+    }
+
+    console.Printf (CConfig::InformationHighlight, L"  %s\n", loc.strVariableName.c_str());
+    console.Printf (CConfig::Information, L"  %s\n", loc.strResolvedPath.c_str());
+
+    if (!block.strVersion.empty())
+    {
+        console.Printf (CConfig::Information, L"  Generated by tcdir v%s\n", block.strVersion.c_str());
+    }
+
+    console.Puts (CConfig::Information, L"\n");
+
+    for (const auto & name : block.rgAliasNames)
+    {
+        console.Printf (CConfig::Information, L"    %s\n", name.c_str());
+    }
+
+    console.Puts (CConfig::Information, L"\n");
+
+    return true;
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
 //  CAliasManager::GetAliases
 //
 //  Scans profile files and displays found alias blocks.
@@ -741,18 +894,14 @@ Error:
 
 HRESULT CAliasManager::GetAliases (CConsole & console)
 {
-    HRESULT                  hr         = S_OK;
+    HRESULT                  hr          = S_OK;
     CProfilePathResolver     resolver;
     CProfileFileManager      fileMgr;
-    EPowerShellVersion       eVersion   = EPowerShellVersion::Unknown;
-    bool                     fFoundAny  = false;
+    EPowerShellVersion       eVersion    = EPowerShellVersion::Unknown;
+    bool                     fFoundAny   = false;
     vector<SProfileLocation> rgLocations;
 
 
-
-    //
-    // Detect PowerShell version
-    //
 
     hr = resolver.DetectPowerShellVersion (eVersion);
     CHR (hr);
@@ -760,61 +909,20 @@ HRESULT CAliasManager::GetAliases (CConsole & console)
     if (eVersion == EPowerShellVersion::Unknown)
     {
         console.Puts (CConfig::Error, L"\n  This command must be run from PowerShell (pwsh.exe or powershell.exe).\n");
-        console.Flush();
         CHR (E_FAIL);
     }
-
-    //
-    // Resolve and scan all profile paths
-    //
 
     hr = resolver.ResolveProfilePaths (eVersion, rgLocations);
     CHR (hr);
 
     console.Puts (CConfig::Information, L"\n");
 
-    for (auto & loc : rgLocations)
+    for (const auto & loc : rgLocations)
     {
-        if (!loc.fExists)
+        if (DisplayProfileAliases (console, fileMgr, loc))
         {
-            continue;
+            fFoundAny = true;
         }
-
-        vector<wstring> rgLines;
-        bool            fHasBom = false;
-
-        if (FAILED (fileMgr.ReadProfileFile (loc.strResolvedPath, rgLines, fHasBom)))
-        {
-            continue;
-        }
-
-        SAliasBlock block;
-
-        fileMgr.FindAliasBlock (rgLines, block);
-
-        if (!block.fFound)
-        {
-            continue;
-        }
-
-        fFoundAny = true;
-
-        console.Printf (CConfig::InformationHighlight, L"  %s\n", loc.strVariableName.c_str());
-        console.Printf (CConfig::Information, L"  %s\n", loc.strResolvedPath.c_str());
-
-        if (!block.strVersion.empty())
-        {
-            console.Printf (CConfig::Information, L"  Generated by tcdir v%s\n", block.strVersion.c_str());
-        }
-
-        console.Puts (CConfig::Information, L"\n");
-
-        for (const auto & name : block.rgAliasNames)
-        {
-            console.Printf (CConfig::Information, L"    %s\n", name.c_str());
-        }
-
-        console.Puts (CConfig::Information, L"\n");
     }
 
     if (!fFoundAny)
@@ -823,10 +931,125 @@ HRESULT CAliasManager::GetAliases (CConsole & console)
         console.Puts (CConfig::Information, L"  Run 'tcdir --set-aliases' to configure aliases.\n");
     }
 
+    
+Error:
     console.Flush();
 
-Error:
     return hr;
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CAliasManager::RemoveAliasBlockFromFile
+//
+//  Reads the profile, creates a backup, removes the alias block, and writes
+//  the file back.
+//
+////////////////////////////////////////////////////////////////////////////////
+
+HRESULT CAliasManager::RemoveAliasBlockFromFile (
+    CConsole      & console,
+    const wstring & strPath)
+{
+    HRESULT             hr          = S_OK;
+    CProfileFileManager fileMgr;
+    vector<wstring>     rgFileLines;
+    bool                fHasBom     = false;
+    SAliasBlock         block;
+
+
+
+    hr = fileMgr.ReadProfileFile (strPath, rgFileLines, fHasBom);
+    CHR (hr);
+
+    hr = fileMgr.CreateBackup (strPath);
+    CHR (hr);
+
+    fileMgr.FindAliasBlock (rgFileLines, block);
+
+    if (block.fFound)
+    {
+        fileMgr.RemoveAliasBlock (rgFileLines, block);
+
+        hr = fileMgr.WriteProfileFile (strPath, rgFileLines, fHasBom);
+        CHR (hr);
+    }
+
+Error:
+    if (SUCCEEDED (hr))
+    {
+        console.Printf (CConfig::Information, L"\n  Aliases removed from: %s\n", strPath.c_str());
+    }
+    else
+    {
+        console.Printf (CConfig::Error, L"\n  Error: Could not write to %s\n", strPath.c_str());
+    }
+
+    return hr;
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CAliasManager::FindProfilesWithAliases
+//
+//  Scans all profile locations for alias blocks.  For each profile that has
+//  a block, builds a radio label and records the resolved path and alias names.
+//  Returns true if at least one profile has aliases.
+//
+////////////////////////////////////////////////////////////////////////////////
+
+bool CAliasManager::FindProfilesWithAliases (
+    vector<SProfileLocation> & rgLocations,
+    vector<wstring>          & rgRadioLabels,
+    vector<wstring>          & rgResolvedPaths,
+    vector<vector<wstring>>  & rgAliasNames)
+{
+    CProfileFileManager fileMgr;
+
+
+
+    for (size_t i = 0; i < rgLocations.size(); ++i)
+    {
+        if (!rgLocations[i].fExists) continue;
+
+        vector<wstring> rgLines;
+        bool            fBom = false;
+        SAliasBlock     block;
+
+        if (FAILED (fileMgr.ReadProfileFile (rgLocations[i].strResolvedPath, rgLines, fBom))) continue;
+
+        fileMgr.FindAliasBlock (rgLines, block);
+
+        if (!block.fFound) continue;
+
+        rgLocations[i].fHasAliasBlock = true;
+
+        //
+        // Build the radio label: "$PROFILE.xxx (path) - aliases: a, b, c"
+        //
+
+        wstring label = format (L"{} ({}) - aliases: ", rgLocations[i].strVariableName, rgLocations[i].strResolvedPath);
+
+        for (size_t j = 0; j < block.rgAliasNames.size(); ++j)
+        {
+            if (j > 0) label += L", ";
+            label += block.rgAliasNames[j];
+        }
+
+        rgRadioLabels.push_back (label);
+        rgResolvedPaths.push_back (rgLocations[i].strResolvedPath);
+        rgAliasNames.push_back (block.rgAliasNames);
+    }
+
+    return !rgRadioLabels.empty();
 }
 
 
@@ -843,24 +1066,18 @@ Error:
 
 HRESULT CAliasManager::RemoveAliases (CConsole & console, bool fWhatIf)
 {
-    HRESULT                  hr = S_OK;
+    HRESULT                  hr              = S_OK;
     CProfilePathResolver     resolver;
-    CProfileFileManager      fileMgr;
-    EPowerShellVersion       eVersion = EPowerShellVersion::Unknown;
-    CTuiWidgets              tui (console);
+    EPowerShellVersion       eVersion        = EPowerShellVersion::Unknown;
+    CTuiWidgets              tui               (console);
     vector<SProfileLocation> rgLocations;
-    vector<wstring>          rgRadioItems;
-    int                      iSelected = 0;
-    ETuiResult               tuiResult = ETuiResult::Cancelled;
-    vector<wstring>          rgFileLines;
-    bool                     fHasBom = false;
-    SAliasBlock              removalBlock;
+    vector<wstring>          rgRadioLabels;
+    vector<wstring>          rgResolvedPaths;
+    vector<vector<wstring>>  rgAliasNames;
+    int                      iSelected       = 0;
+    ETuiResult               tuiResult       = ETuiResult::Cancelled;
 
 
-
-    //
-    // Detect PowerShell version
-    //
 
     hr = resolver.DetectPowerShellVersion (eVersion);
     CHR (hr);
@@ -868,154 +1085,47 @@ HRESULT CAliasManager::RemoveAliases (CConsole & console, bool fWhatIf)
     if (eVersion == EPowerShellVersion::Unknown)
     {
         console.Puts (CConfig::Error, L"\n  This command must be run from PowerShell (pwsh.exe or powershell.exe).\n");
-        console.Flush();
         CHR (E_FAIL);
     }
-
-    //
-    // Resolve and scan all profile paths
-    //
 
     hr = resolver.ResolveProfilePaths (eVersion, rgLocations);
     CHR (hr);
 
-    //
-    // Find profiles that have alias blocks
-    //
-
+    if (!FindProfilesWithAliases (rgLocations, rgRadioLabels, rgResolvedPaths, rgAliasNames))
     {
-        struct SFoundBlock
-        {
-            size_t      iLocation;
-            SAliasBlock block;
-            bool        fHasBom;
-        };
-
-        vector<SFoundBlock> rgFound;
-
-        for (size_t i = 0; i < rgLocations.size(); ++i)
-        {
-            if (!rgLocations[i].fExists)
-            {
-                continue;
-            }
-
-            vector<wstring> rgLines;
-            bool            fBom = false;
-
-            if (FAILED (fileMgr.ReadProfileFile (rgLocations[i].strResolvedPath, rgLines, fBom)))
-            {
-                continue;
-            }
-
-            SAliasBlock block;
-
-            fileMgr.FindAliasBlock (rgLines, block);
-
-            if (block.fFound)
-            {
-                rgLocations[i].fHasAliasBlock = true;
-                rgFound.push_back ({ i, block, fBom });
-            }
-        }
-
-        if (rgFound.empty())
-        {
-            console.Puts (CConfig::Information, L"\n  No tcdir aliases found in any profile.\n");
-            console.Flush();
-            BAIL_OUT_IF (true, S_OK);
-        }
-
-        //
-        // Initialize TUI and present options
-        //
-
-        hr = tui.Init();
-        CHR (hr);
-
-        console.Puts (CConfig::Information, L"\n");
-
-        for (const auto & found : rgFound)
-        {
-            const auto & loc   = rgLocations[found.iLocation];
-            wstring      label = format (L"{} ({}) - aliases: ", loc.strVariableName, loc.strResolvedPath);
-
-            for (size_t j = 0; j < found.block.rgAliasNames.size(); ++j)
-            {
-                if (j > 0) label += L", ";
-                label += found.block.rgAliasNames[j];
-            }
-
-            rgRadioItems.push_back (label);
-        }
-
-        tuiResult = tui.RadioButtonList (L"Remove aliases from:", rgRadioItems, iSelected);
-
-        if (tuiResult == ETuiResult::Cancelled)
-        {
-            console.Puts (CConfig::Information, L"\n  Cancelled.\n");
-            console.Flush();
-            BAIL_OUT_IF (true, S_OK);
-        }
-
-        //
-        // Cleanup TUI before file operations
-        //
-
-        tui.Cleanup();
-
-        //
-        // WhatIf mode
-        //
-
-        if (fWhatIf)
-        {
-            console.Printf (CConfig::Information, L"\n  Whatif: The following aliases would be removed from:\n  %s\n\n",
-                            rgLocations[rgFound[iSelected].iLocation].strResolvedPath.c_str());
-
-            for (const auto & name : rgFound[iSelected].block.rgAliasNames)
-            {
-                console.Printf (CConfig::Information, L"    %s\n", name.c_str());
-            }
-
-            console.Puts (CConfig::Information, L"\n  Whatif: No changes were made.\n");
-            console.Flush();
-            BAIL_OUT_IF (true, S_OK);
-        }
-
-        //
-        // Perform removal
-        //
-
-        hr = fileMgr.ReadProfileFile (rgLocations[rgFound[iSelected].iLocation].strResolvedPath, rgFileLines, fHasBom);
-        CHR (hr);
-
-        hr = fileMgr.CreateBackup (rgLocations[rgFound[iSelected].iLocation].strResolvedPath);
-        CHR (hr);
-
-        fileMgr.FindAliasBlock (rgFileLines, removalBlock);
-
-        if (removalBlock.fFound)
-        {
-            fileMgr.RemoveAliasBlock (rgFileLines, removalBlock);
-
-            hr = fileMgr.WriteProfileFile (rgLocations[rgFound[iSelected].iLocation].strResolvedPath, rgFileLines, fHasBom);
-
-            if (FAILED (hr))
-            {
-                console.Printf (CConfig::Error, L"\n  Error: Could not write to %s\n",
-                                rgLocations[rgFound[iSelected].iLocation].strResolvedPath.c_str());
-                console.Flush();
-                CHR (hr);
-            }
-
-            console.Printf (CConfig::Information, L"\n  Aliases removed from: %s\n",
-                            rgLocations[rgFound[iSelected].iLocation].strResolvedPath.c_str());
-            console.Flush();
-        }
+        console.Puts (CConfig::Information, L"\n  No tcdir aliases found in any profile.\n");
+        BAIL_OUT_IF (true, S_OK);
     }
 
+    hr = tui.Init();
+    CHR (hr);
+
+    console.Puts (CConfig::Information, L"\n");
+
+    tuiResult = tui.RadioButtonList (L"Remove aliases from:", rgRadioLabels, iSelected);
+    BAIL_OUT_IF (tuiResult == ETuiResult::Cancelled, S_OK);
+
+    tui.Cleanup();
+
+    if (fWhatIf)
+    {
+        console.Printf (CConfig::Information, L"\n  Whatif: The following aliases would be removed from:\n  %s\n\n",
+                        rgResolvedPaths[iSelected].c_str());
+
+        for (const auto & name : rgAliasNames[iSelected])
+        {
+            console.Printf (CConfig::Information, L"    %s\n", name.c_str());
+        }
+
+        console.Printf (CConfig::Error, L"\n  Whatif: No changes were made.\n");
+        BAIL_OUT_IF (true, S_OK);
+    }
+
+    hr = RemoveAliasBlockFromFile (console, rgResolvedPaths[iSelected]);
+    CHR (hr);
+
 Error:
+    console.Flush();
     return hr;
 }
 

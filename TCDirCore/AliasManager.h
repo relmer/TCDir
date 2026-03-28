@@ -7,6 +7,7 @@
 #include "AliasBlockGenerator.h"
 
 class CTuiWidgets;
+enum class ETuiResult;
 
 
 
@@ -98,6 +99,37 @@ private:
                                             vector<wstring>                  & rgRadioItems,
                                             int                              & iDefault);
 
+    static void    PrintIntroduction       (CConsole                         & console,
+                                            bool                               fWhatIf);
+
+    static ETuiResult PromptRootAlias      (CConsole                         & console,
+                                            CTuiWidgets                      & tui,
+                                            const SAliasBlock                & existingBlock,
+                                            wstring                          & strRootAlias);
+
+    static ETuiResult PromptSubAliases     (CConsole                         & console,
+                                            CTuiWidgets                      & tui,
+                                            const wstring                    & strRootAlias,
+                                            vector<SAliasDefinition>         & rgSubAliases);
+
+    static ETuiResult PromptProfileLocation (CConsole                        & console,
+                                            CTuiWidgets                      & tui,
+                                            const vector<SProfileLocation>   & rgLocations,
+                                            bool                               fWhatIf,
+                                            int                              & iSelected);
+
+    static void    BuildConfigFromWizard   (SAliasConfig                     & config,
+                                            const wstring                    & strRootAlias,
+                                            const vector<SAliasDefinition>   & rgSubAliases,
+                                            const vector<SProfileLocation>   & rgLocations,
+                                            int                                iSelected,
+                                            bool                               fWhatIf);
+
+    static HRESULT ConfirmAndApply         (CConsole                         & console,
+                                            CTuiWidgets                      & tui,
+                                            SAliasConfig                     & config,
+                                            const vector<wstring>            & rgBlockLines);
+
     static HRESULT ApplyAliasBlock         (CConsole                         & console,
                                             const SAliasConfig               & config,
                                             const vector<wstring>            & rgBlockLines);
@@ -112,4 +144,16 @@ private:
     static HRESULT WriteAliasBlockToFile   (CConsole                         & console,
                                             const wstring                    & strTargetPath,
                                             const vector<wstring>            & rgBlockLines);
+
+    static bool    DisplayProfileAliases   (CConsole                         & console,
+                                            CProfileFileManager              & fileMgr,
+                                            const SProfileLocation           & loc);
+
+    static HRESULT RemoveAliasBlockFromFile(CConsole                         & console,
+                                            const wstring                    & strPath);
+
+    static bool    FindProfilesWithAliases (vector<SProfileLocation>         & rgLocations,
+                                            vector<wstring>                  & rgRadioLabels,
+                                            vector<wstring>                  & rgResolvedPaths,
+                                            vector<vector<wstring>>          & rgAliasNames);
 };

@@ -109,7 +109,7 @@ namespace UnitTest
 
             for (const auto & line : rgLines)
             {
-                if (line == L"function d { tcdir @args }")
+                if (line.find (L"function d") != wstring::npos && line.find (L"tcdir @args") != wstring::npos)
                 {
                     fFoundRoot = true;
                     break;
@@ -176,8 +176,8 @@ namespace UnitTest
 
             for (const auto & line : rgLines)
             {
-                if (line == L"function dd { d /a:d @args }")  fFoundDd = true;
-                if (line == L"function ds { d /s @args }")    fFoundDs = true;
+                if (line.find (L"function dd") != wstring::npos && line.find (L"/a:d @args") != wstring::npos)  fFoundDd = true;
+                if (line.find (L"function ds") != wstring::npos && line.find (L"/s @args") != wstring::npos)    fFoundDs = true;
                 if (line.find (L"function dw") != wstring::npos)  fFoundDw = true;
             }
 
@@ -210,8 +210,8 @@ namespace UnitTest
 
             for (const auto & line : rgLines)
             {
-                if (line == L"function tc { tcdir @args }")    fFoundRoot = true;
-                if (line == L"function tcd { tc /a:d @args }") fFoundSub  = true;
+                if (line.find (L"function tc") != wstring::npos && line.find (L"tcdir @args") != wstring::npos)     fFoundRoot = true;
+                if (line.find (L"function tcd") != wstring::npos && line.find (L"/a:d @args") != wstring::npos)  fFoundSub  = true;
             }
 
             Assert::IsTrue (fFoundRoot);

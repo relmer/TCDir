@@ -553,7 +553,7 @@ namespace UnitTest
 
             for (const auto & line : rgBlockLines)
             {
-                if (line == L"function d { tcdir @args }")
+                if (line.find (L"function d") != wstring::npos && line.find (L"tcdir @args") != wstring::npos)
                 {
                     fFoundRoot = true;
                     break;
