@@ -2,7 +2,7 @@
 
 All notable changes to TCDir are documented in this file.
 
-## [5.2.1343] - 2026-03-28
+## [5.2.1346] - 2026-03-28
 
 ### Added
 - `--set-aliases`: interactive TUI wizard for configuring PowerShell aliases
