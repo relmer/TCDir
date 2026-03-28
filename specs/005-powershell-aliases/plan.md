@@ -54,8 +54,10 @@ TCDirCore/
 ├── ProfilePathResolver.h/.cpp   # PS version detection + profile path resolution
 ├── ProfileFileManager.h/.cpp    # Read/write/backup profile files, marker block parsing
 ├── AliasBlockGenerator.h/.cpp   # Generate PowerShell alias function code
-├── TuiWidgets.h/.cpp            # Interactive TUI components (text input, radio, checkbox, confirmation)
+├── TuiWidgets.h/.cpp            # Interactive TUI components (text input, radio, checkbox, confirmation, spinner)
 ├── CommandLine.h/.cpp           # (MODIFIED) Add new switch entries + validation
+├── AnsiCodes.h                  # (MODIFIED) Add cursor hide/show, erase line, spinner color codes
+├── UnicodeSymbols.h             # (MODIFIED) Add focus indicator, radio/check marks, spinner frames
 ├── TCDir.cpp                    # (MODIFIED) Add dispatch to AliasManager
 ├── Usage.cpp                    # (MODIFIED) Add --set-aliases/--get-aliases/--remove-aliases help text
 └── pch.h                        # (MODIFIED) Add TlHelp32.h, shlobj.h if not present

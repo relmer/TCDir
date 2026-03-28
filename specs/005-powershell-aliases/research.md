@@ -40,10 +40,12 @@
 |-------|-------|--------|
 | Current User, Current Host | `{Documents}\PowerShell\Microsoft.PowerShell_profile.ps1` | `{Documents}\WindowsPowerShell\Microsoft.PowerShell_profile.ps1` |
 | Current User, All Hosts | `{Documents}\PowerShell\profile.ps1` | `{Documents}\WindowsPowerShell\profile.ps1` |
-| All Users, Current Host | `{ProgramData}\PowerShell\Microsoft.PowerShell_profile.ps1` | `{ProgramData}\WindowsPowerShell\Microsoft.PowerShell_profile.ps1` |
-| All Users, All Hosts | `{ProgramData}\PowerShell\profile.ps1` | `{ProgramData}\WindowsPowerShell\profile.ps1` |
+| All Users, Current Host | `{PSHOME}\Microsoft.PowerShell_profile.ps1` | `{PSHOME}\Microsoft.PowerShell_profile.ps1` |
+| All Users, All Hosts | `{PSHOME}\profile.ps1` | `{PSHOME}\profile.ps1` |
 
 **Key Finding**: "Current Host" filename is `Microsoft.PowerShell_profile.ps1` for both `pwsh.exe` and `powershell.exe`. The directory differs, not the filename.
+
+**Key Finding**: AllUsers paths use `$PSHOME` (the PowerShell installation directory, e.g., `C:\Program Files\PowerShell\7\`), NOT `$FOLDERID_ProgramData`. This matches PowerShell's own `$PROFILE` resolution. The `$PSHOME` directory is determined by extracting the parent directory from the parent process's image path.
 
 **Memory Management**: `CoTaskMemFree(pszPath)` required. Needs `ole32.lib`.
 
@@ -99,9 +101,10 @@
 **Rationale**: Profile files are small (typically <1KB, rarely >10KB). In-memory manipulation is simpler and safer than streaming. Atomic write (write to temp → rename) prevents partial writes on crash.
 
 **Marker Block Handling**:
-- Opening: `# >>> tcdir aliases — DO NOT EDIT: this block is managed by tcdir and will be replaced <<<`
-- Closing: `# >>> end tcdir aliases <<<`
-- Scan for opening marker → find closing marker → extract or replace range
+- Opening scanner: line containing `#  TCDir Aliases`
+- Closing scanner: line containing `#  End TCDir Aliases`
+- Both markers appear inside 80-char `####` banner blocks
+- Scan for opening marker → backtrack to banner start → find closing marker → advance past trailing `####` line
 - For append: add block at end of file
 - For replace: remove lines[open..close] inclusive, insert new block at same position
 

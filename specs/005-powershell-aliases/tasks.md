@@ -43,7 +43,7 @@
 ### ProfilePathResolver (Layer 0)
 
 - [X] T013 Implement parent process detection: `CreateToolhelp32Snapshot` → find parent PID → `OpenProcess` → `QueryFullProcessImageNameW` → extract exe name → return `EPowerShellVersion` in `TCDirCore/ProfilePathResolver.cpp`
-- [X] T014 Implement profile path resolution: `SHGetKnownFolderPath(FOLDERID_Documents)` for per-user paths, `SHGetKnownFolderPath(FOLDERID_ProgramData)` for all-users paths, build 4 `SProfileLocation` structs for detected PS version in `TCDirCore/ProfilePathResolver.cpp`
+- [X] T014 Implement profile path resolution: `SHGetKnownFolderPath(FOLDERID_Documents)` for per-user paths, parent process directory (`$PSHOME`) for all-users paths, build 4 `SProfileLocation` structs for detected PS version in `TCDirCore/ProfilePathResolver.cpp`
 - [X] T015 Implement admin privilege detection for AllUsers scopes (check write access or token elevation) in `TCDirCore/ProfilePathResolver.cpp`
 - [X] T016 [P] Create `UnitTest/ProfilePathResolverTests.cpp`: test path construction for PS7+ and PS5.1, test admin detection, test Unknown parent handling; add to `UnitTest/UnitTest.vcxproj`
 
@@ -133,7 +133,7 @@
 
 **Independent Test**: Have aliases in a profile, run `--remove-aliases`, verify block removed and rest of profile untouched.
 
-- [X] T050 [US4] Implement `RemoveAliases()` in `TCDirCore/AliasManager.cpp`: detect PS version → resolve paths → scan for blocks → if none found display message and exit (FR-053) → present radio list of profiles with aliases (FR-051, FR-052) → confirm → remove block via `ProfileFileManager::RemoveAliasBlock()`
+- [X] T050 [US4] Implement `RemoveAliases()` in `TCDirCore/AliasManager.cpp`: detect PS version → resolve paths → scan for blocks → if none found display message and exit (FR-053) → present checkbox list of profiles with aliases (FR-051, FR-052), unchecked by default (opt-in removal) → remove selected blocks via `ProfileFileManager::RemoveAliasBlock()`
 - [X] T051 [US4] Add dispatch in `TCDir.cpp`: if `m_fRemoveAliases` is set, call `CAliasManager::RemoveAliases()` and exit
 - [X] T052 [US4] Add `--remove-aliases` help text to `TCDirCore/Usage.cpp`
 - [X] T053 [US4] Add RemoveAliases tests to `UnitTest/AliasManagerTests.cpp`: test successful removal, no-aliases-found case, profile content preservation

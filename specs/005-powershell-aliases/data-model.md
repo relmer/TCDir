@@ -54,13 +54,14 @@ A single alias (root or sub) to be generated.
 
 | Field | Type | Description |
 |-------|------|-------------|
-| `strName` | `wstring` | Alias function name (e.g., `d`, `dd`, `ds`) |
-| `strFlags` | `wstring` | tcdir flags to prepend (empty for root; e.g., `/a:d` for dirs-only) |
+| `strName` | `wstring` | Alias function name (e.g., `d`, `dt`, `dd`, `ds`) |
+| `strFlags` | `wstring` | tcdir flags to prepend (empty for root; e.g., `-a:d` for dirs-only) |
+| `strDescription` | `wstring` | Human-readable description (e.g., `Tree view`, `Directories only`) |
 | `fEnabled` | `bool` | Whether selected by user in the checkbox step |
 
 **Validation Rules**:
 - Root alias: 1-4 alphanumeric characters (FR-021)
-- Sub-alias name: root + suffix (suffix from fixed set: `d`, `s`, `sb`, `w`)
+- Sub-alias name: root + suffix (suffix from fixed set: `t`, `d`, `s`, `sb`, `w`)
 
 ---
 
@@ -115,10 +116,14 @@ A parsed alias block found in an existing profile file.
 
 ```
 [Start] → Scan profiles → [No aliases found → exit] 
-                         → [Aliases found] → Step1_SelectProfile → Step2_Confirm → [Remove/WhatIf]
-                                                                                      ↓
-[Escape] ──────────────────────────────────────────────────────────────────→ [Cancelled]
+                         → [Aliases found] → Step1_SelectProfiles → [Remove/WhatIf]
+                                                                         ↓
+[Escape] ─────────────────────────────────────────────────────→ [Cancelled]
 ```
+
+| State | Input Widget | Output |
+|-------|-------------|--------|
+| Step1_SelectProfiles | Checkbox list (multi-select, unchecked by default) | Selected profiles for removal |
 
 ---
 

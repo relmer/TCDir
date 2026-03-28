@@ -28,8 +28,8 @@ A user installs tcdir via winget and wants to set up short aliases so they can t
 **Acceptance Scenarios**:
 
 1. **Given** tcdir is installed and no aliases exist, **When** the user runs `tcdir --set-aliases`, **Then** an interactive TUI launches showing step-by-step configuration screens.
-2. **Given** the user is on the root alias step, **When** they accept the default `d`, **Then** the root alias is set to `d` and sub-aliases are derived from it (`dd`, `ds`, `dsb`, `dw`).
-3. **Given** the user is on the root alias step, **When** they type `tc` as a custom root, **Then** sub-aliases are recalculated (`tcd`, `tcs`, `tcsb`, `tcw`).
+2. **Given** the user is on the root alias step, **When** they accept the default `d`, **Then** the root alias is set to `d` and sub-aliases are derived from it (`dt`, `dw`, `dd`, `ds`, `dsb`).
+3. **Given** the user is on the root alias step, **When** they type `tc` as a custom root, **Then** sub-aliases are recalculated (`tct`, `tcw`, `tcd`, `tcs`, `tcsb`).
 4. **Given** the user is on the sub-aliases step, **When** they toggle off `dsb` and proceed, **Then** only the selected sub-aliases are included in the output.
 5. **Given** the user chooses "Current User, All Hosts" as the storage location, **When** they confirm, **Then** the alias block is appended to that profile file with marker comments.
 6. **Given** the user has `--whatif` specified, **When** the wizard completes, **Then** the output shows what would be written but no files are modified.
@@ -79,8 +79,8 @@ A user wants to remove tcdir aliases from their profile and/or current session. 
 
 **Acceptance Scenarios**:
 
-1. **Given** tcdir aliases exist in one or more profile files, **When** the user runs `tcdir --remove-aliases`, **Then** only profiles containing tcdir aliases are listed as options.
-2. **Given** the user selects a profile file for removal, **When** they confirm, **Then** the tcdir alias block (between marker comments) is removed and no other profile content is modified.
+1. **Given** tcdir aliases exist in one or more profile files, **When** the user runs `tcdir --remove-aliases`, **Then** only profiles containing tcdir aliases are listed as checkbox options, defaulting to unchecked (opt-in removal).
+2. **Given** the user selects one or more profile files for removal, **When** they confirm, **Then** the tcdir alias block (between marker comments) is removed from each selected profile and no other profile content is modified.
 3. **Given** no tcdir aliases are found anywhere, **When** the user runs `tcdir --remove-aliases`, **Then** the output says no tcdir aliases were found.
 4. **Given** aliases exist in a profile, **When** `--remove-aliases --whatif` is used, **Then** the tool shows what would be removed without making changes.
 
@@ -145,7 +145,7 @@ During setup, the system checks whether the chosen root alias or sub-aliases con
 
 - **FR-010**: The TUI MUST use `❯` as the focus indicator for the currently highlighted option
 - **FR-011**: The TUI MUST use `(●)` / `( )` for radio button (single-select) widgets
-- **FR-012**: The TUI MUST use `[●]` / `[ ]` for checkbox (multi-select) widgets
+- **FR-012**: The TUI MUST use `[✓]` / `[ ]` for checkbox (multi-select) widgets
 - **FR-013**: The TUI MUST respond to arrow keys (↑/↓) for navigation, Space for toggling, Enter for confirming, and Escape for cancelling
 - **FR-014**: The TUI MUST hide the console cursor during interactive menu display and restore it on exit
 - **FR-015**: Pressing Escape at any step MUST cancel the entire operation without modifying any files, displaying a cancellation message
@@ -156,13 +156,13 @@ During setup, the system checks whether the chosen root alias or sub-aliases con
 - **FR-020**: The set-aliases wizard MUST present a text input for the root alias with a default value of `d`
 - **FR-021**: The root alias input MUST accept any string of 1-4 alphanumeric characters
 - **FR-022**: After the root alias is chosen, the wizard MUST present a checkbox list of sub-aliases, each derived by appending a suffix to the root alias
-- **FR-023**: The predefined sub-alias suffixes MUST be: `d` (directories only, maps to `/a:d`), `s` (recursive, maps to `/s`), `sb` (recursive bare, maps to `/s /b`), `w` (wide format, maps to `/w`)
+- **FR-023**: The predefined sub-alias suffixes MUST be: `t` (tree view, maps to `--tree`), `d` (directories only, maps to `-a:d`), `s` (recursive, maps to `-s`), `sb` (recursive bare, maps to `-s -b`), `w` (wide format, maps to `-w`)
 - **FR-024**: All sub-aliases MUST default to selected (checked)
 - **FR-025**: The wizard MUST present a radio button list of PowerShell profile storage locations, showing both the profile variable name and the resolved file path
 - **FR-026**: The default storage location MUST be "Current User, All Hosts" (`$PROFILE.CurrentUserAllHosts`)
 - **FR-027**: The storage location list MUST include an option for "Current session only (not persisted)"
 - **FR-028**: Profile locations requiring administrator privileges MUST be visually marked with "(requires admin)"
-- **FR-029**: Before writing, the wizard MUST display a preview of the complete alias block and target file path, and require explicit confirmation
+- **FR-029**: Before writing, the wizard MUST display a preview of the complete alias block and target file path. In normal mode, explicit confirmation is required. In `--whatif` mode, the preview is shown directly without a confirmation prompt.
 - **FR-030**: If existing tcdir aliases are detected in any profile (via marker comments), the wizard MUST inform the user and offer to replace them
 
 #### Alias Block Format
@@ -198,14 +198,14 @@ During setup, the system checks whether the chosen root alias or sub-aliases con
 
 #### Profile Path Resolution
 
-- **FR-080**: The tool MUST resolve all PowerShell profile paths without spawning a PowerShell child process, using `SHGetKnownFolderPath(FOLDERID_Documents)` for per-user paths and `SHGetKnownFolderPath(FOLDERID_ProgramData)` for all-users paths, correctly handling folder redirection (e.g., OneDrive)
+- **FR-080**: The tool MUST resolve all PowerShell profile paths without spawning a PowerShell child process. For per-user (CurrentUser) paths, use `SHGetKnownFolderPath(FOLDERID_Documents)` correctly handling folder redirection (e.g., OneDrive). For all-users (AllUsers) paths, use `$PSHOME` — the parent PowerShell process's installation directory (e.g., `C:\Program Files\PowerShell\7\`), determined by extracting the directory from the parent process image path.
 - **FR-081**: The tool MUST resolve profile paths for both PowerShell 7+ (`Documents\PowerShell\`) and Windows PowerShell 5.1 (`Documents\WindowsPowerShell\`). For each version, the four profile paths are: Current User Current Host, Current User All Hosts, All Users Current Host, All Users All Hosts
 - **FR-082**: The tool MUST auto-detect the calling PowerShell version by inspecting the parent process image name (`pwsh.exe` → 7+, `powershell.exe` → 5.1). If the parent is neither (e.g., CMD, Explorer), display an error directing the user to run from PowerShell. All alias commands MUST scope profile paths to the detected version only. The "Current Host" profile filename is `Microsoft.PowerShell_profile.ps1` for both `pwsh.exe` and `powershell.exe`
 
 ### Key Entities
 
 - **Root Alias**: The primary short command (e.g., `d`, `tc`) that maps to invoking tcdir with passthrough arguments
-- **Sub-Alias**: A derived command that prepends specific tcdir flags before the user's arguments (e.g., `dd` → `d /a:d`)
+- **Sub-Alias**: A derived command that prepends specific tcdir flags before the user's arguments (e.g., `dd` → `d -a:d`)
 - **Alias Block**: The delimited section of PowerShell code written to a profile file, bounded by marker comments, containing all alias function definitions
 - **Profile Location**: One of the four standard PowerShell profile file paths, identified by scope (user/machine) and host (current/all)
 
