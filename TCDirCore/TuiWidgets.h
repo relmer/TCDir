@@ -62,11 +62,11 @@ private:
     void     ClearCurrentLine     (void);
     void     MoveToRenderStart    (int cRenderedLines);
 
-    CConsole &   m_console;
-    HANDLE       m_hStdIn          = INVALID_HANDLE_VALUE;
-    DWORD        m_dwOriginalMode  = 0;
-    bool         m_fInitialized    = false;
-    bool         m_fCursorHidden   = false;
-    atomic<bool> m_fSpinnerActive  = false;
-    thread       m_spinnerThread;
+    CConsole     & m_console;
+    HANDLE         m_hStdIn          = INVALID_HANDLE_VALUE;
+    DWORD          m_dwOriginalMode  = 0;
+    bool           m_fInitialized    = false;
+    bool           m_fCursorHidden   = false;
+    atomic<bool>   m_fSpinnerActive  = false;
+    thread         m_spinnerThread;
 };

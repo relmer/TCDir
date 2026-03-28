@@ -396,13 +396,15 @@ HRESULT CAliasManager::WriteAliasBlockToFile (
 Error:
     if (SUCCEEDED (hr))
     {
-        console.Printf (CConfig::Information, L"\n  Aliases written to: %s\n", strTargetPath.c_str());
-        console.Puts (CConfig::Information, L"  Reload your profile to activate: . $PROFILE\n");
+        console.Printf (CConfig::Information, L"\n  Aliases written to: %s\n\n", strTargetPath.c_str());
+        console.Puts   (CConfig::Information, L"  To activate, open a new PowerShell window or paste this command:");
+        console.Printf (CConfig::Default,     L"    . \"%s\"\n", strTargetPath.c_str());
+        console.Puts   (CConfig::Information, L"    ^--- the dot is required; paste the entire line exactly as shown");
     }
     else
     {
         console.Printf (CConfig::Error, L"\n  Error: Could not write to %s\n", strTargetPath.c_str());
-        console.Puts (CConfig::Error, L"  Check that the file is not locked and you have write permission.\n");
+        console.Puts   (CConfig::Error, L"  Check that the file is not locked and you have write permission.");
     }
 
     console.Flush();
@@ -616,14 +618,30 @@ HRESULT CAliasManager::ConfirmAndApply (
     }
 
     //
-    // Build preview lines
+    // Session-only — skip confirmation, just output the function definitions
     //
 
     if (config.fSessionOnly)
     {
-        rgPreview.push_back (L"Output: Console only (paste into your session)");
-        rgPreview.push_back (L"");
+        tui.Cleanup();
+
+        console.Printf (CConfig::Information, L"\n  Paste the following into your PowerShell session:\n\n");
+
+        for (const auto & line : rgBlockLines)
+        {
+            if (!line.empty() && line[0] != L'#')
+            {
+                console.Printf (CConfig::Default, L"  %s\n", line.c_str());
+            }
+        }
+
+        console.Flush();
+        BAIL_OUT_IF (true, S_OK);
     }
+
+    //
+    // Build preview and confirm
+    //
 
     for (const auto & line : rgBlockLines)
     {
