@@ -2,6 +2,32 @@
 
 All notable changes to TCDir are documented in this file.
 
+## [5.2.1343] - 2026-03-28
+
+### Added
+- `--set-aliases`: interactive TUI wizard for configuring PowerShell aliases
+  - Root alias name (1-4 chars, default `d`) with derived sub-aliases (`dt`, `dw`, `dd`, `ds`, `dsb`)
+  - Sub-alias checkbox selection (tree view, wide, directories-only, recursive, recursive bare)
+  - Profile location radio selection (4 PS profile scopes + session-only)
+  - Alias block preview with confirmation before writing
+  - Conflict detection against existing PowerShell commands/aliases
+  - Auto-detection of calling PowerShell version (7+ or 5.1) via parent process inspection
+  - AllUsers profile paths resolved from `$PSHOME` (PS install directory)
+  - CurrentUser profile paths resolved via `SHGetKnownFolderPath` with OneDrive KFM support
+  - Spinner animation during profile scanning
+  - Timestamped `.bak` backups before modifying profile files
+- `--get-aliases`: non-interactive display of all configured tcdir aliases across profile files
+- `--remove-aliases`: interactive checkbox-based removal from one or more profiles (opt-in selection)
+- `--whatif`: dry-run modifier for `--set-aliases` and `--remove-aliases` (preview without file changes)
+- TUI widget infrastructure: text input, checkbox list, radio button list, confirmation prompt
+  - Multi-line label support with blank-line separators
+  - In-place re-rendering via cursor movement (no screen flicker)
+  - RAII console mode/cursor restore on Ctrl+C or Escape
+- 464 unit tests (up from 408)
+
+### Changed
+- Minor version bump from 5.1 to 5.2
+
 ## [5.1.1149] - 2026-03-05
 
 ### Fixed

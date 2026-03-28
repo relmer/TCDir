@@ -32,6 +32,22 @@ namespace AnsiCodes
     //
     
     constexpr const wchar_t * SGR_COLOR_FORMAT = CSI L"{};{}" SGR_END;
+
+    //
+    // Cursor control sequences
+    //
+
+    constexpr const wchar_t * CURSOR_HIDE        = CSI L"?25l";             // Hide cursor
+    constexpr const wchar_t * CURSOR_SHOW        = CSI L"?25h";             // Show cursor
+    constexpr const wchar_t * CURSOR_UP_FORMAT   = CSI L"{}A";              // Move cursor up N lines (use with format)
+    constexpr const wchar_t * ERASE_LINE         = L"\r" CSI L"2K";         // Move to column 0 and erase entire line
+
+    //
+    // SGR color shortcuts for TUI widgets
+    //
+
+    constexpr const wchar_t * FG_CYAN_ON         = CSI L"36" SGR_END;       // Set foreground to cyan
+    constexpr const wchar_t * SGR_RESET          = CSI L"0"  SGR_END;       // Reset all attributes
     
     //
     // Foreground ANSI color codes (30-37 = normal, 90-97 = bright)

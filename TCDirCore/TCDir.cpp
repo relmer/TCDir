@@ -3,6 +3,7 @@
 
 #include "pch.h"
 
+#include "AliasManager.h"
 #include "CommandLine.h"
 #include "Config.h"
 #include "Console.h"
@@ -64,6 +65,17 @@ static HRESULT ProcessCommandLine (
     {
         CUsage::DisplayCurrentConfiguration (console, cmdline.GetSwitchPrefix(), cmdline.m_fIcons);
         BAIL_OUT_IF (cmdline.m_fConfig, S_FALSE);
+    }
+
+    //
+    // Alias management commands — process and exit before directory listing
+    //
+
+    if (cmdline.m_fSetAliases || cmdline.m_fGetAliases || cmdline.m_fRemoveAliases)
+    {
+        hr = CAliasManager::Run (cmdline, console);
+        CHR (hr);
+        BAIL_OUT_IF (true, S_FALSE);
     }
 
     //

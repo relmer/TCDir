@@ -1,0 +1,159 @@
+#pragma once
+
+#include "CommandLine.h"
+#include "Console.h"
+#include "ProfilePathResolver.h"
+#include "ProfileFileManager.h"
+#include "AliasBlockGenerator.h"
+
+class CTuiWidgets;
+enum class ETuiResult;
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  SAliasDefinition
+//
+//  A single alias (root or sub) to be generated.
+//
+////////////////////////////////////////////////////////////////////////////////
+
+struct SAliasDefinition
+{
+    wstring strName;         // Alias function name (e.g., "d", "dd", "ds")
+    wstring strFlags;        // tcdir flags to prepend (empty for root; e.g., "/a:d")
+    wstring strDescription;  // Human-readable description (e.g., "directories only")
+    bool    fEnabled = true; // Whether selected by user in the checkbox step
+};
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  SAliasConfig
+//
+//  The complete user configuration from the TUI wizard.
+//
+////////////////////////////////////////////////////////////////////////////////
+
+struct SAliasConfig
+{
+    wstring                  strRootAlias;        // Root alias name chosen by user (default: "d")
+    wstring                  strTcDirInvocation;  // How to invoke tcdir ("tcdir" or full path)
+    vector<SAliasDefinition> rgSubAliases;        // Sub-aliases with enabled/disabled state
+    EProfileScope            eTargetScope  = EProfileScope::CurrentUserAllHosts;
+    wstring                  strTargetPath;       // Resolved path for the chosen profile
+    bool                     fSessionOnly  = false;
+    bool                     fWhatIf       = false;
+};
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CAliasManager
+//
+//  Orchestrates the three alias flows: set, get, remove.
+//
+////////////////////////////////////////////////////////////////////////////////
+
+class CAliasManager
+{
+public:
+    static HRESULT Run            (CCommandLine & cmdline, CConsole & console);
+
+    static HRESULT SetAliases     (CConsole & console, bool fWhatIf);
+    static HRESULT GetAliases     (CConsole & console);
+    static HRESULT RemoveAliases  (CConsole & console, bool fWhatIf);
+
+    static void    BuildDefaultSubAliases  (const wstring                    & strRoot,
+                                            vector<SAliasDefinition>         & rgOut);
+
+    static HRESULT ResolveTcDirInvocation  (wstring                          & strInvocation);
+
+    static HRESULT CheckConflicts          (CConsole                         & console,
+                                            const wstring                    & strRoot,
+                                            const vector<SAliasDefinition>   & rgSubs,
+                                            bool                             & fProceed);
+
+private:
+    static HRESULT ScanProfiles            (CConsole                         & console,
+                                            CTuiWidgets                      & tui,
+                                            vector<SProfileLocation>         & rgLocations,
+                                            SAliasBlock                      & existingBlock);
+
+    static void    BuildSubAliasLabels     (const wstring                    & strRoot,
+                                            const vector<SAliasDefinition>   & rgSubs,
+                                            vector<pair<wstring, bool>>      & rgCheckItems);
+
+    static void    BuildProfileLabels      (const vector<SProfileLocation>   & rgLocations,
+                                            bool                               fIsAdmin,
+                                            int                                cxConsole,
+                                            vector<wstring>                  & rgRadioItems,
+                                            int                              & iDefault);
+
+    static void    PrintIntroduction       (CConsole                         & console,
+                                            bool                               fWhatIf);
+
+    static ETuiResult PromptRootAlias      (CConsole                         & console,
+                                            CTuiWidgets                      & tui,
+                                            const SAliasBlock                & existingBlock,
+                                            wstring                          & strRootAlias);
+
+    static ETuiResult PromptSubAliases     (CConsole                         & console,
+                                            CTuiWidgets                      & tui,
+                                            const wstring                    & strRootAlias,
+                                            vector<SAliasDefinition>         & rgSubAliases);
+
+    static ETuiResult PromptProfileLocation (CConsole                        & console,
+                                            CTuiWidgets                      & tui,
+                                            const vector<SProfileLocation>   & rgLocations,
+                                            bool                               fWhatIf,
+                                            int                              & iSelected);
+
+    static void    BuildConfigFromWizard   (SAliasConfig                     & config,
+                                            const wstring                    & strRootAlias,
+                                            const vector<SAliasDefinition>   & rgSubAliases,
+                                            const vector<SProfileLocation>   & rgLocations,
+                                            int                                iSelected,
+                                            bool                               fWhatIf);
+
+    static HRESULT ConfirmAndApply         (CConsole                         & console,
+                                            CTuiWidgets                      & tui,
+                                            SAliasConfig                     & config,
+                                            const vector<wstring>            & rgBlockLines);
+
+    static HRESULT ApplyAliasBlock         (CConsole                         & console,
+                                            const SAliasConfig               & config,
+                                            const vector<wstring>            & rgBlockLines);
+
+    static void    PrintWhatIfPreview      (CConsole                         & console,
+                                            const SAliasConfig               & config,
+                                            const vector<wstring>            & rgBlockLines);
+
+    static void    PrintSessionOnlyBlock   (CConsole                         & console,
+                                            const vector<wstring>            & rgBlockLines);
+
+    static HRESULT WriteAliasBlockToFile   (CConsole                         & console,
+                                            const wstring                    & strTargetPath,
+                                            const vector<wstring>            & rgBlockLines);
+
+    static bool    DisplayProfileAliases   (CConsole                         & console,
+                                            CProfileFileManager              & fileMgr,
+                                            const SProfileLocation           & loc);
+
+    static HRESULT RemoveAliasBlockFromFile(CConsole                         & console,
+                                            const wstring                    & strPath);
+
+    static bool    FindProfilesWithAliases (vector<SProfileLocation>         & rgLocations,
+                                            vector<pair<wstring, bool>>      & rgCheckItems,
+                                            vector<wstring>                  & rgResolvedPaths,
+                                            vector<vector<wstring>>          & rgAliasNames);
+};

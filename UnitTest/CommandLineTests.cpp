@@ -912,6 +912,137 @@ namespace UnitTest
 
 
 
+        TEST_METHOD(ParseSetAliasesSwitch)
+        {
+            CCommandLine    cl;
+            const wchar_t * a1      = L"--set-aliases";
+            wchar_t       * argv1[] = { const_cast<wchar_t *>(a1) };
+            HRESULT         hr      = cl.Parse(1, argv1);
+
+
+
+            Assert::IsTrue (SUCCEEDED(hr));
+            Assert::IsTrue (cl.m_fSetAliases);
+        }
+
+
+
+
+        TEST_METHOD(ParseGetAliasesSwitch)
+        {
+            CCommandLine    cl;
+            const wchar_t * a1      = L"--get-aliases";
+            wchar_t       * argv1[] = { const_cast<wchar_t *>(a1) };
+            HRESULT         hr      = cl.Parse(1, argv1);
+
+
+
+            Assert::IsTrue (SUCCEEDED(hr));
+            Assert::IsTrue (cl.m_fGetAliases);
+        }
+
+
+
+
+        TEST_METHOD(ParseRemoveAliasesSwitch)
+        {
+            CCommandLine    cl;
+            const wchar_t * a1      = L"--remove-aliases";
+            wchar_t       * argv1[] = { const_cast<wchar_t *>(a1) };
+            HRESULT         hr      = cl.Parse(1, argv1);
+
+
+
+            Assert::IsTrue (SUCCEEDED(hr));
+            Assert::IsTrue (cl.m_fRemoveAliases);
+        }
+
+
+
+
+        TEST_METHOD(ParseWhatIfSwitch)
+        {
+            CCommandLine    cl;
+            const wchar_t * a1      = L"--set-aliases";
+            const wchar_t * a2      = L"--whatif";
+            wchar_t       * argv[]  = { const_cast<wchar_t *>(a1), const_cast<wchar_t *>(a2) };
+            HRESULT         hr      = cl.Parse(2, argv);
+
+
+
+            Assert::IsTrue (SUCCEEDED(hr));
+            Assert::IsTrue (cl.m_fSetAliases);
+            Assert::IsTrue (cl.m_fWhatIf);
+        }
+
+
+
+
+        TEST_METHOD(AliasSwitchesMutuallyExclusive)
+        {
+            CCommandLine    cl;
+            const wchar_t * a1      = L"--set-aliases";
+            const wchar_t * a2      = L"--get-aliases";
+            wchar_t       * argv[]  = { const_cast<wchar_t *>(a1), const_cast<wchar_t *>(a2) };
+            HRESULT         hr      = cl.Parse(2, argv);
+
+
+
+            Assert::IsTrue (FAILED(hr));
+            Assert::IsFalse (cl.m_strValidationError.empty());
+        }
+
+
+
+
+        TEST_METHOD(WhatIfWithoutAliasSwitchFails)
+        {
+            CCommandLine    cl;
+            const wchar_t * a1      = L"--whatif";
+            wchar_t       * argv1[] = { const_cast<wchar_t *>(a1) };
+            HRESULT         hr      = cl.Parse(1, argv1);
+
+
+
+            Assert::IsTrue (FAILED(hr));
+            Assert::IsFalse (cl.m_strValidationError.empty());
+        }
+
+
+
+
+        TEST_METHOD(AliasSwitchWithListingSwitchFails)
+        {
+            CCommandLine    cl;
+            const wchar_t * a1      = L"--set-aliases";
+            const wchar_t * a2      = L"/s";
+            wchar_t       * argv[]  = { const_cast<wchar_t *>(a1), const_cast<wchar_t *>(a2) };
+            HRESULT         hr      = cl.Parse(2, argv);
+
+
+
+            Assert::IsTrue (FAILED(hr));
+            Assert::IsFalse (cl.m_strValidationError.empty());
+        }
+
+
+
+
+        TEST_METHOD(SetAliasesSingleDashFails)
+        {
+            CCommandLine    cl;
+            const wchar_t * a1      = L"-set-aliases";
+            wchar_t       * argv1[] = { const_cast<wchar_t *>(a1) };
+            HRESULT         hr      = cl.Parse(1, argv1);
+
+
+
+            Assert::IsTrue (FAILED(hr));
+        }
+
+
+
+
 
         TEST_METHOD(ParseTreeSwitchCaseInsensitive)
         {

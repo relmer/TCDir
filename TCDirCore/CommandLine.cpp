@@ -292,50 +292,84 @@ HRESULT CCommandLine::ValidateSwitchCombinations (void)
         if (m_fWideListing)
         {
             m_strValidationError = L"--Tree and -W (wide) cannot be used together.";
-            CBREx (false, E_INVALIDARG);
+            CHR (E_INVALIDARG);
         }
 
         if (m_fBareListing)
         {
             m_strValidationError = L"--Tree and -B (bare) cannot be used together.";
-            CBREx (false, E_INVALIDARG);
+            CHR (E_INVALIDARG);
         }
 
         if (m_fRecurse)
         {
             m_strValidationError = L"--Tree and -S (recurse) cannot be used together.";
-            CBREx (false, E_INVALIDARG);
+            CHR (E_INVALIDARG);
         }
 
         if (m_fShowOwner)
         {
             m_strValidationError = L"--Tree and --Owner cannot be used together.";
-            CBREx (false, E_INVALIDARG);
+            CHR (E_INVALIDARG);
         }
 
         if (m_eSizeFormat == ESizeFormat::Bytes)
         {
             m_strValidationError = L"--Tree and --Size=Bytes cannot be used together.";
-            CBREx (false, E_INVALIDARG);
+            CHR (E_INVALIDARG);
         }
     }
 
     if (m_cMaxDepth != 0 && !m_fTree)
     {
         m_strValidationError = L"--Depth requires --Tree.";
-        CBREx (false, E_INVALIDARG);
+        CHR (E_INVALIDARG);
     }
 
     if (m_cTreeIndent != 4 && !m_fTree)
     {
         m_strValidationError = L"--TreeIndent requires --Tree.";
-        CBREx (false, E_INVALIDARG);
+        CHR (E_INVALIDARG);
     }
 
     if (m_cTreeIndent < 1 || m_cTreeIndent > 8)
     {
         m_strValidationError = L"--TreeIndent must be between 1 and 8.";
-        CBREx (false, E_INVALIDARG);
+        CHR (E_INVALIDARG);
+    }
+
+    //
+    // Alias switches: mutually exclusive with each other and with listing switches
+    //
+
+    {
+        int cAliasFlags = (m_fSetAliases ? 1 : 0)
+                        + (m_fGetAliases ? 1 : 0)
+                        + (m_fRemoveAliases ? 1 : 0);
+
+        if (cAliasFlags > 1)
+        {
+            m_strValidationError = L"--set-aliases, --get-aliases, and --remove-aliases are mutually exclusive.";
+            CHR (E_INVALIDARG);
+        }
+
+        if (cAliasFlags > 0)
+        {
+            bool fHasListingSwitch = m_fRecurse || m_fWideListing || m_fBareListing || m_fTree
+                                  || m_fShowOwner || m_fShowStreams || m_fEnv || m_fConfig;
+
+            if (fHasListingSwitch)
+            {
+                m_strValidationError = L"Alias switches cannot be combined with listing switches.";
+                CHR (E_INVALIDARG);
+            }
+        }
+
+        if (m_fWhatIf && !m_fSetAliases && !m_fRemoveAliases)
+        {
+            m_strValidationError = L"--whatif is only valid with --set-aliases or --remove-aliases.";
+            CHR (E_INVALIDARG);
+        }
     }
 
 Error:
@@ -455,12 +489,16 @@ HRESULT CCommandLine::HandleLongSwitch (LPCWSTR pszArg, int & cArg, WCHAR ** & p
 
     static const LongSwitchEntry s_krgLongSwitches[] =
     {
-        {  L"env",     &CCommandLine::m_fEnv         },
-        {  L"config",  &CCommandLine::m_fConfig      },
-        {  L"owner",   &CCommandLine::m_fShowOwner   },
-        {  L"streams", &CCommandLine::m_fShowStreams },
+        {  L"env",            &CCommandLine::m_fEnv            },
+        {  L"config",         &CCommandLine::m_fConfig         },
+        {  L"owner",          &CCommandLine::m_fShowOwner      },
+        {  L"streams",        &CCommandLine::m_fShowStreams    },
+        {  L"set-aliases",    &CCommandLine::m_fSetAliases     },
+        {  L"get-aliases",    &CCommandLine::m_fGetAliases     },
+        {  L"remove-aliases", &CCommandLine::m_fRemoveAliases  },
+        {  L"whatif",         &CCommandLine::m_fWhatIf         },
 #ifdef _DEBUG
-        {  L"debug",   &CCommandLine::m_fDebug       },
+        {  L"debug",          &CCommandLine::m_fDebug          },
 #endif
     };
 
@@ -568,7 +606,7 @@ HRESULT CCommandLine::HandleLongSwitch (LPCWSTR pszArg, int & cArg, WCHAR ** & p
             if (n < 1)
             {
                 m_strValidationError = L"--Depth must be a positive integer.";
-                CBREx (false, E_INVALIDARG);
+                CHR (E_INVALIDARG);
             }
 
             m_cMaxDepth = n;
@@ -583,7 +621,7 @@ HRESULT CCommandLine::HandleLongSwitch (LPCWSTR pszArg, int & cArg, WCHAR ** & p
             if (n < 1 || n > 8)
             {
                 m_strValidationError = L"--TreeIndent must be between 1 and 8.";
-                CBREx (false, E_INVALIDARG);
+                CHR (E_INVALIDARG);
             }
 
             m_cTreeIndent = n;
@@ -604,7 +642,7 @@ HRESULT CCommandLine::HandleLongSwitch (LPCWSTR pszArg, int & cArg, WCHAR ** & p
             else
             {
                 m_strValidationError = L"--Size must be Auto or Bytes.";
-                CBREx (false, E_INVALIDARG);
+                CHR (E_INVALIDARG);
             }
 
             hr = S_OK;
@@ -642,6 +680,10 @@ bool CCommandLine::IsRecognizedLongSwitch (const wstring & strSwitch)
         L"depth",
         L"treeindent",
         L"size",
+        L"set-aliases",
+        L"get-aliases",
+        L"remove-aliases",
+        L"whatif",
     };
 
 

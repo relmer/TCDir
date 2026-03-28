@@ -19,7 +19,9 @@
 #include <aclapi.h>
 #include <cfapi.h>
 #include <lmcons.h>
+#include <shlobj.h>
 #include <strsafe.h>
+#include <tlhelp32.h>
 
 #pragma comment(lib, "cldapi.lib")
 #pragma comment(lib, "gdi32.lib")
