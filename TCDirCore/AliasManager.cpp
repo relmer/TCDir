@@ -1019,16 +1019,17 @@ Error:
 //  CAliasManager::FindProfilesWithAliases
 //
 //  Scans all profile locations for alias blocks.  For each profile that has
-//  a block, builds a radio label and records the resolved path and alias names.
+//  a block, builds a checkbox label and records the resolved path and alias
+//  names.  All items default to unchecked so removal is opt-in.
 //  Returns true if at least one profile has aliases.
 //
 ////////////////////////////////////////////////////////////////////////////////
 
 bool CAliasManager::FindProfilesWithAliases (
-    vector<SProfileLocation> & rgLocations,
-    vector<wstring>          & rgRadioLabels,
-    vector<wstring>          & rgResolvedPaths,
-    vector<vector<wstring>>  & rgAliasNames)
+    vector<SProfileLocation>    & rgLocations,
+    vector<pair<wstring, bool>> & rgCheckItems,
+    vector<wstring>             & rgResolvedPaths,
+    vector<vector<wstring>>     & rgAliasNames)
 {
     CProfileFileManager fileMgr;
 
@@ -1051,10 +1052,13 @@ bool CAliasManager::FindProfilesWithAliases (
         rgLocations[i].fHasAliasBlock = true;
 
         //
-        // Build the radio label: "$PROFILE.xxx (path) - aliases: a, b, c"
+        // Build the radio label with aliases on a second line, indented under
+        // the variable name (past the radio button prefix).
         //
 
-        wstring label = format (L"{} ({}) - aliases: ", rgLocations[i].strVariableName, rgLocations[i].strResolvedPath);
+        wstring label = format (L"{} ({})", rgLocations[i].strVariableName, rgLocations[i].strResolvedPath);
+
+        label += L"\n        Found aliases: ";
 
         for (size_t j = 0; j < block.rgAliasNames.size(); ++j)
         {
@@ -1062,12 +1066,21 @@ bool CAliasManager::FindProfilesWithAliases (
             label += block.rgAliasNames[j];
         }
 
-        rgRadioLabels.push_back (label);
+        //
+        // Add a trailing blank line to separate multi-line items visually
+        //
+
+        if (!rgCheckItems.empty())
+        {
+            rgCheckItems.back().first += L"\n";
+        }
+
+        rgCheckItems.push_back ({ label, false });
         rgResolvedPaths.push_back (rgLocations[i].strResolvedPath);
         rgAliasNames.push_back (block.rgAliasNames);
     }
 
-    return !rgRadioLabels.empty();
+    return !rgCheckItems.empty();
 }
 
 
@@ -1089,11 +1102,11 @@ HRESULT CAliasManager::RemoveAliases (CConsole & console, bool fWhatIf)
     EPowerShellVersion       eVersion        = EPowerShellVersion::Unknown;
     CTuiWidgets              tui               (console);
     vector<SProfileLocation> rgLocations;
-    vector<wstring>          rgRadioLabels;
+    vector<pair<wstring, bool>> rgCheckItems;
     vector<wstring>          rgResolvedPaths;
     vector<vector<wstring>>  rgAliasNames;
-    int                      iSelected       = 0;
     ETuiResult               tuiResult       = ETuiResult::Cancelled;
+    bool                     fAnySelected    = false;
 
 
 
@@ -1109,7 +1122,7 @@ HRESULT CAliasManager::RemoveAliases (CConsole & console, bool fWhatIf)
     hr = resolver.ResolveProfilePaths (eVersion, rgLocations);
     CHR (hr);
 
-    if (!FindProfilesWithAliases (rgLocations, rgRadioLabels, rgResolvedPaths, rgAliasNames))
+    if (!FindProfilesWithAliases (rgLocations, rgCheckItems, rgResolvedPaths, rgAliasNames))
     {
         console.Puts (CConfig::Information, L"\n  No tcdir aliases found in any profile.\n");
         BAIL_OUT_IF (true, S_OK);
@@ -1120,27 +1133,47 @@ HRESULT CAliasManager::RemoveAliases (CConsole & console, bool fWhatIf)
 
     console.Puts (CConfig::Information, L"\n");
 
-    tuiResult = tui.RadioButtonList (L"Remove aliases from:", rgRadioLabels, iSelected);
+    tuiResult = tui.CheckboxList (L"Remove aliases from:", rgCheckItems);
     BAIL_OUT_IF (tuiResult == ETuiResult::Cancelled, S_OK);
 
     tui.Cleanup();
 
-    if (fWhatIf)
+    //
+    // Process each selected profile
+    //
+
+    for (size_t i = 0; i < rgCheckItems.size(); ++i)
     {
-        console.Printf (CConfig::Information, L"\n  Whatif: The following aliases would be removed from:\n  %s\n\n",
-                        rgResolvedPaths[iSelected].c_str());
+        if (!rgCheckItems[i].second) continue;
 
-        for (const auto & name : rgAliasNames[iSelected])
+        fAnySelected = true;
+
+        if (fWhatIf)
         {
-            console.Printf (CConfig::Information, L"    %s\n", name.c_str());
-        }
+            console.Printf (CConfig::Information, L"\n  Whatif: The following aliases would be removed from:\n  %s\n\n",
+                            rgResolvedPaths[i].c_str());
 
-        console.Printf (CConfig::Error, L"\n  Whatif: No changes were made.\n");
-        BAIL_OUT_IF (true, S_OK);
+            for (const auto & name : rgAliasNames[i])
+            {
+                console.Printf (CConfig::Information, L"    %s\n", name.c_str());
+            }
+        }
+        else
+        {
+            hr = RemoveAliasBlockFromFile (console, rgResolvedPaths[i]);
+            CHR (hr);
+        }
     }
 
-    hr = RemoveAliasBlockFromFile (console, rgResolvedPaths[iSelected]);
-    CHR (hr);
+    if (fWhatIf && fAnySelected)
+    {
+        console.Printf (CConfig::Error, L"\n  Whatif: No changes were made.\n");
+    }
+
+    if (!fAnySelected)
+    {
+        console.Puts (CConfig::Information, L"\n  No profiles selected.\n");
+    }
 
 Error:
     console.Flush();

@@ -335,9 +335,34 @@ ETuiResult CTuiWidgets::CheckboxList (LPCWSTR pszPrompt, vector<pair<wstring, bo
     HRESULT hr             = S_OK;
     int     iFocus         = 0;
     int     cItems         = static_cast<int>(rgItems.size());
-    int     cRenderedLines = cItems + 1;  // items + blank line (help line has no \n, cursor stays on it)
 
 
+
+    //
+    // Count total rendered lines: each item may span multiple lines (contains \n)
+    //
+
+    auto CountRenderedLines = [&] () -> int
+    {
+        int cLines = 0;
+
+        for (const auto & item : rgItems)
+        {
+            cLines += 1;  // At least one line per item
+
+            for (wchar_t ch : item.first)
+            {
+                if (ch == L'\n')
+                {
+                    ++cLines;
+                }
+            }
+        }
+
+        return cLines + 1;  // + blank line (help line has no \n, cursor stays on it)
+    };
+
+    int cRenderedLines = CountRenderedLines();
 
     auto Render = [&] (bool fShowFocus)
     {
@@ -363,7 +388,38 @@ ETuiResult CTuiWidgets::CheckboxList (LPCWSTR pszPrompt, vector<pair<wstring, bo
                 m_console.ColorPrintf (L"{Information}[ ] ");
             }
 
-            m_console.ColorPrintf (L"{Information}%s\n", rgItems[i].first.c_str());
+            //
+            // Render item text — for multi-line items, clear each continuation line
+            //
+
+            const wstring & item = rgItems[i].first;
+            size_t          pos  = 0;
+
+            while (pos < item.size())
+            {
+                size_t nl = item.find (L'\n', pos);
+
+                if (nl == wstring::npos)
+                {
+                    m_console.ColorPrintf (L"{Information}%s\n", item.substr (pos).c_str());
+                    break;
+                }
+
+                m_console.ColorPrintf (L"{Information}%s\n", item.substr (pos, nl - pos).c_str());
+                pos = nl + 1;
+                ClearCurrentLine();
+            }
+
+            //
+            // If the label ends with \n, emit the blank separator line so
+            // the physical line count matches CountRenderedLines.
+            //
+
+            if (!item.empty() && item.back() == L'\n')
+            {
+                m_console.ColorPrintf (L"\n");
+                ClearCurrentLine();
+            }
         }
 
         ClearCurrentLine();
@@ -534,6 +590,17 @@ ETuiResult CTuiWidgets::RadioButtonList (LPCWSTR pszPrompt, const vector<wstring
 
                 m_console.ColorPrintf (L"{Information}%s\n", item.substr (pos, nl - pos).c_str());
                 pos = nl + 1;
+                ClearCurrentLine();
+            }
+
+            //
+            // If the label ends with \n, emit the blank separator line so
+            // the physical line count matches CountRenderedLines.
+            //
+
+            if (!item.empty() && item.back() == L'\n')
+            {
+                m_console.ColorPrintf (L"\n");
                 ClearCurrentLine();
             }
         }

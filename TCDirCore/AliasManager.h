@@ -153,7 +153,7 @@ private:
                                             const wstring                    & strPath);
 
     static bool    FindProfilesWithAliases (vector<SProfileLocation>         & rgLocations,
-                                            vector<wstring>                  & rgRadioLabels,
+                                            vector<pair<wstring, bool>>      & rgCheckItems,
                                             vector<wstring>                  & rgResolvedPaths,
                                             vector<vector<wstring>>          & rgAliasNames);
 };
