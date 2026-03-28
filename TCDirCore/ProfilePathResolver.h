@@ -93,5 +93,8 @@ public:
                                                        EPowerShellVersion eVersion, vector<SProfileLocation> & rgLocations);
 
 private:
-    HRESULT GetParentProcessImageName   (wstring & strImageName);
+    HRESULT GetParentProcessImageName    (wstring & strImageName);
+
+    static HRESULT FindParentPid         (DWORD & dwParentPid);
+    static HRESULT QueryProcessImageName (DWORD dwPid, wstring & strImageName);
 };

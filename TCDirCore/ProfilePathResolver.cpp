@@ -7,87 +7,117 @@
 
 ////////////////////////////////////////////////////////////////////////////////
 //
-//  CProfilePathResolver::GetParentProcessImageName
+//  CProfilePathResolver::FindParentPid
 //
-//  Uses ToolHelp snapshot to find parent PID, then queries its image name.
+//  Uses a ToolHelp snapshot to find the parent PID of the current process.
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-HRESULT CProfilePathResolver::GetParentProcessImageName (wstring & strImageName)
+HRESULT CProfilePathResolver::FindParentPid (DWORD & dwParentPid)
 {
-    HRESULT hr           = S_OK;
-    HANDLE  hSnapshot    = INVALID_HANDLE_VALUE;
-    HANDLE  hParent      = nullptr;
-    DWORD   dwCurrentPid = GetCurrentProcessId();
-    DWORD   dwParentPid  = 0;
-    bool    fFoundParent = false;
+    HRESULT         hr           = S_OK;
+    HANDLE          hSnapshot    = INVALID_HANDLE_VALUE;
+    DWORD           dwCurrentPid = GetCurrentProcessId();
+    BOOL            fSuccess     = FALSE;
+    PROCESSENTRY32W pe           = { .dwSize = sizeof (pe) };
+    bool            fFound       = false;
 
 
-
-    //
-    // Take a snapshot of all processes and find our parent PID
-    //
 
     hSnapshot = CreateToolhelp32Snapshot (TH32CS_SNAPPROCESS, 0);
-    CBRAEx (hSnapshot != INVALID_HANDLE_VALUE, HRESULT_FROM_WIN32 (GetLastError()));
+    CWRA (hSnapshot != INVALID_HANDLE_VALUE);
 
+    for (fSuccess = Process32FirstW (hSnapshot, &pe); 
+         fSuccess; 
+         fSuccess = Process32NextW (hSnapshot, &pe))
     {
-        PROCESSENTRY32W pe = {};
-
-        pe.dwSize = sizeof (pe);
-
-        BOOL fOk = Process32FirstW (hSnapshot, &pe);
-
-        while (fOk)
+        if (pe.th32ProcessID == dwCurrentPid)
         {
-            if (pe.th32ProcessID == dwCurrentPid)
-            {
-                dwParentPid  = pe.th32ParentProcessID;
-                fFoundParent = true;
-                break;
-            }
-
-            pe.dwSize = sizeof (pe);
-            fOk       = Process32NextW (hSnapshot, &pe);
+            dwParentPid = pe.th32ParentProcessID;
+            fFound      = true;
+            break;
         }
     }
 
-    CBRAEx (fFoundParent, E_FAIL);
+    CBRAEx (fFound, E_FAIL);
 
-    //
-    // Open the parent process and query its image name
-    //
 
-    hParent = OpenProcess (PROCESS_QUERY_LIMITED_INFORMATION, FALSE, dwParentPid);
-    CBRAEx (hParent != nullptr, HRESULT_FROM_WIN32 (GetLastError()));
-
-    {
-        WCHAR szPath[MAX_PATH] = {};
-        DWORD cchPath          = MAX_PATH;
-
-        BOOL fOk = QueryFullProcessImageNameW (hParent, 0, szPath, &cchPath);
-        CBRAEx (fOk, HRESULT_FROM_WIN32 (GetLastError()));
-
-        //
-        // Extract just the filename
-        //
-
-        filesystem::path fullPath (szPath);
-
-        strImageName = fullPath.filename().wstring();
-    }
-
+    
 Error:
-    if (hParent != nullptr)
-    {
-        CloseHandle (hParent);
-    }
-
     if (hSnapshot != INVALID_HANDLE_VALUE)
     {
         CloseHandle (hSnapshot);
     }
 
+    return hr;
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CProfilePathResolver::QueryProcessImageName
+//
+//  Opens a process by PID and queries its full image path, returning just
+//  the filename (e.g., "pwsh.exe").
+//
+////////////////////////////////////////////////////////////////////////////////
+
+HRESULT CProfilePathResolver::QueryProcessImageName (DWORD dwPid, wstring & strImageName)
+{
+    HRESULT hr               = S_OK;
+    HANDLE  hProc            = nullptr;
+    WCHAR   szPath[MAX_PATH] = {};
+    BOOL    fSuccess         = FALSE;
+    DWORD   cchPath          = MAX_PATH;
+
+
+
+    hProc = OpenProcess (PROCESS_QUERY_LIMITED_INFORMATION, FALSE, dwPid);
+    CWRA (hProc != nullptr);
+
+    fSuccess = QueryFullProcessImageNameW (hProc, 0, szPath, &cchPath);
+    CWRA (fSuccess);
+
+    strImageName = filesystem::path (szPath).filename().wstring();
+
+Error:
+    if (hProc != nullptr)
+    {
+        CloseHandle (hProc);
+    }
+
+    return hr;
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CProfilePathResolver::GetParentProcessImageName
+//
+//  Finds the parent process and returns its image filename.
+//
+////////////////////////////////////////////////////////////////////////////////
+
+HRESULT CProfilePathResolver::GetParentProcessImageName (wstring & strImageName)
+{
+    HRESULT hr          = S_OK;
+    DWORD   dwParentPid = 0;
+
+
+
+    hr = FindParentPid (dwParentPid);
+    CHR (hr);
+
+    hr = QueryProcessImageName (dwParentPid, strImageName);
+    CHR (hr);
+
+Error:
     return hr;
 }
 
@@ -197,7 +227,6 @@ void CProfilePathResolver::BuildProfileLocations (
     for (const auto & def : defs)
     {
         filesystem::path profilePath = filesystem::path (def.strBaseDir) / pszPsDir / def.pszFilename;
-
         SProfileLocation loc;
 
         loc.eScope          = def.eScope;
@@ -289,6 +318,7 @@ Error:
 HRESULT CProfilePathResolver::IsRunningAsAdmin (bool & fIsAdmin)
 {
     HRESULT         hr        = S_OK;
+    BOOL            fSuccess  = FALSE;
     HANDLE          hToken    = nullptr;
     TOKEN_ELEVATION elevation = {};
     DWORD           cbSize    = sizeof (elevation);
@@ -296,12 +326,12 @@ HRESULT CProfilePathResolver::IsRunningAsAdmin (bool & fIsAdmin)
 
 
     fIsAdmin = false;
+    
+    fSuccess = OpenProcessToken (GetCurrentProcess(), TOKEN_QUERY, &hToken);
+    CWRA (fSuccess);
 
-    BOOL fOk = OpenProcessToken (GetCurrentProcess(), TOKEN_QUERY, &hToken);
-    CBRAEx (fOk, HRESULT_FROM_WIN32 (GetLastError()));
-
-    fOk = GetTokenInformation (hToken, TokenElevation, &elevation, sizeof (elevation), &cbSize);
-    CBRAEx (fOk, HRESULT_FROM_WIN32 (GetLastError()));
+    fSuccess = GetTokenInformation (hToken, TokenElevation, &elevation, sizeof (elevation), &cbSize);
+    CWRA (fSuccess);
 
     fIsAdmin = (elevation.TokenIsElevated != 0);
 

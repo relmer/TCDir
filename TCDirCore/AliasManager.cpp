@@ -70,7 +70,7 @@ HRESULT CAliasManager::ResolveTcDirInvocation (wstring & strInvocation)
     //
 
     cch = GetModuleFileNameW (nullptr, szExePath, MAX_PATH);
-    CBRAEx (cch > 0 && cch < MAX_PATH, HRESULT_FROM_WIN32 (GetLastError()));
+    CWRA (cch > 0 && cch < MAX_PATH);
 
     //
     // Check if "tcdir.exe" is findable via PATH
