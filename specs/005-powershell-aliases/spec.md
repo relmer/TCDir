@@ -200,7 +200,7 @@ During setup, the system checks whether the chosen root alias or sub-aliases con
 - **FR-071**: The tool MUST check the first bytes of a profile file for a BOM. If a UTF-16 BOM is detected (`FF FE` or `FE FF`), the tool MUST display an error and refuse to modify the file. If a UTF-8 BOM (`EF BB BF`) is present, it MUST be preserved on write-back. If no BOM is present, the file MUST be read and written as UTF-8.
 - **FR-072**: If the target profile file does not exist, the tool MUST create it (and any missing parent directories)
 - **FR-073**: If the target profile file cannot be written (permissions, locked), the tool MUST display a clear error message and exit without partial writes
-- **FR-074**: Conflict detection MUST check the root alias immediately after entry against known PowerShell built-in aliases. If the root alias conflicts, the tool MUST display an error and loop back to the root alias prompt (blocking). Sub-alias conflicts MUST be detected before displaying the checkbox list — conflicting sub-aliases are shown with an `[x]` marker in Error color, are locked (cannot be toggled on), and display a red warning line underneath.
+- **FR-074**: Conflict detection MUST check the root alias immediately after entry against known PowerShell built-in aliases. If the root alias conflicts, the tool MUST display an error and loop back to the root alias prompt (blocking). Sub-alias conflicts MUST be detected before displaying the checkbox list — conflicting sub-aliases are shown with an `[x]` marker in Error color, are locked (cannot be toggled on), and display a red `^ conflicts with PowerShell built-in` warning line underneath with the caret aligned under the alias name.
 
 #### Profile Path Resolution
 
