@@ -691,15 +691,29 @@ ETuiResult CAliasManager::PromptRootAlias (
         strDefault = existingBlock.strRootAlias;
     }
 
-    ETuiResult result = tui.TextInput (L"Root alias name (1-4 chars)", strDefault, strRootAlias, 4);
-
-    if (result == ETuiResult::Confirmed)
+    for (;;)
     {
+        ETuiResult result = tui.TextInput (L"Root alias name (1-4 chars)", strDefault, strRootAlias, 4);
+
+        if (result != ETuiResult::Confirmed)
+        {
+            return result;
+        }
+
+        wstring strConflict = FindBuiltinConflict (strRootAlias);
+
+        if (!strConflict.empty())
+        {
+            console.Printf (CConfig::Error, L"\n  '%s' conflicts with PowerShell alias for '%s'. Choose a different name.\n\n",
+                strRootAlias.c_str(), strConflict.c_str());
+            console.Flush();
+            continue;
+        }
+
         console.Printf (CConfig::Information, L"\n");
         console.Flush();
+        return ETuiResult::Confirmed;
     }
-
-    return result;
 }
 
 
@@ -715,20 +729,39 @@ ETuiResult CAliasManager::PromptRootAlias (
 ////////////////////////////////////////////////////////////////////////////////
 
 ETuiResult CAliasManager::PromptSubAliases (
-    CConsole                 & console,
+    CConsole                 & /*console*/,
     CTuiWidgets              & tui,
     const wstring            & strRootAlias,
     vector<SAliasDefinition> & rgSubAliases)
 {
     vector<pair<wstring, bool>> rgCheckItems;
-    bool                        fProceed     = true;
 
 
 
     BuildDefaultSubAliases (strRootAlias, rgSubAliases);
     BuildSubAliasLabels    (strRootAlias, rgSubAliases, rgCheckItems);
 
-    ETuiResult result = tui.CheckboxList (L"Select sub-aliases:", rgCheckItems);
+    //
+    // Pre-check sub-aliases for conflicts and build locked flags.
+    // Conflicting sub-aliases are unchecked and locked.
+    //
+
+    vector<bool> rgLocked;
+
+    for (size_t i = 0; i < rgSubAliases.size(); ++i)
+    {
+        wstring strConflict = FindBuiltinConflict (rgSubAliases[i].strName);
+        bool    fLocked     = !strConflict.empty();
+
+        rgLocked.push_back (fLocked);
+
+        if (fLocked)
+        {
+            rgCheckItems[i].second = false;
+        }
+    }
+
+    ETuiResult result = tui.CheckboxList (L"Select sub-aliases:", rgCheckItems, rgLocked);
 
     if (result == ETuiResult::Confirmed)
     {
@@ -736,8 +769,6 @@ ETuiResult CAliasManager::PromptSubAliases (
         {
             rgSubAliases[i].fEnabled = rgCheckItems[i].second;
         }
-
-        CheckConflicts (console, strRootAlias, rgSubAliases, fProceed);
     }
 
     return result;
@@ -1193,6 +1224,70 @@ HRESULT CAliasManager::RemoveAliases (CConsole & console, bool fWhatIf)
 Error:
     console.Flush();
     return hr;
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CAliasManager::FindBuiltinConflict
+//
+//  Checks a single alias name against the built-in PowerShell alias table.
+//  Returns the conflicting cmdlet name, or empty string if no conflict.
+//
+////////////////////////////////////////////////////////////////////////////////
+
+/*static*/ wstring CAliasManager::FindBuiltinConflict (const wstring & strName)
+{
+    static constexpr struct { LPCWSTR alias; LPCWSTR command; } s_krgBuiltins[] =
+    {
+        { L"ac",  L"Add-Content"           },
+        { L"cat", L"Get-Content"           },
+        { L"cd",  L"Set-Location"          },
+        { L"cls", L"Clear-Host"            },
+        { L"cp",  L"Copy-Item"             },
+        { L"diff",L"Compare-Object"        },
+        { L"dir", L"Get-ChildItem"         },
+        { L"echo",L"Write-Output"          },
+        { L"fc",  L"Format-Custom"         },
+        { L"fl",  L"Format-List"           },
+        { L"ft",  L"Format-Table"          },
+        { L"fw",  L"Format-Wide"           },
+        { L"gc",  L"Get-Content"           },
+        { L"gm",  L"Get-Member"            },
+        { L"gp",  L"Get-ItemProperty"      },
+        { L"h",   L"Get-History"           },
+        { L"ls",  L"Get-ChildItem"         },
+        { L"man", L"help"                  },
+        { L"md",  L"mkdir"                 },
+        { L"mi",  L"Move-Item"             },
+        { L"mp",  L"Move-ItemProperty"     },
+        { L"mv",  L"Move-Item"             },
+        { L"ni",  L"New-Item"              },
+        { L"ps",  L"Get-Process"           },
+        { L"r",   L"Invoke-History"        },
+        { L"rd",  L"Remove-Item"           },
+        { L"ri",  L"Remove-Item"           },
+        { L"rm",  L"Remove-Item"           },
+        { L"sc",  L"Set-Content"           },
+        { L"si",  L"Set-Item"              },
+        { L"sl",  L"Set-Location"          },
+        { L"sp",  L"Set-ItemProperty"      },
+        { L"sv",  L"Set-Variable"          },
+        { L"type",L"Get-Content"           },
+    };
+
+    for (const auto & builtin : s_krgBuiltins)
+    {
+        if (_wcsicmp (strName.c_str(), builtin.alias) == 0)
+        {
+            return builtin.command;
+        }
+    }
+
+    return {};
 }
 
 

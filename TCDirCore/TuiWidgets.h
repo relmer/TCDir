@@ -47,7 +47,7 @@ public:
     //
 
     ETuiResult TextInput      (LPCWSTR pszPrompt, const wstring & strDefault, wstring & strResult, int cchMax = 4);
-    ETuiResult CheckboxList   (LPCWSTR pszPrompt, vector<pair<wstring, bool>> & rgItems);
+    ETuiResult CheckboxList   (LPCWSTR pszPrompt, vector<pair<wstring, bool>> & rgItems, const vector<bool> & rgLocked = {});
     ETuiResult RadioButtonList(LPCWSTR pszPrompt, const vector<wstring> & rgItems, int & iSelected);
     ETuiResult Confirmation   (LPCWSTR pszPrompt, const vector<wstring> & rgPreview);
 

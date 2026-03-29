@@ -83,6 +83,8 @@ public:
                                             const vector<SAliasDefinition>   & rgSubs,
                                             bool                             & fProceed);
 
+    static wstring FindBuiltinConflict     (const wstring                    & strName);
+
 private:
     static HRESULT ScanProfiles            (CConsole                         & console,
                                             CTuiWidgets                      & tui,

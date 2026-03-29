@@ -257,6 +257,17 @@ ETuiResult CTuiWidgets::TextInput (LPCWSTR pszPrompt, const wstring & strDefault
     m_console.ColorPrintf (L"{Information}  %s [{InformationHighlight}%s{Information}]: ", pszPrompt, strDefault.c_str());
     m_console.Flush();
 
+    //
+    // Display guidance line below the prompt, then move cursor back up
+    //
+
+    m_console.Printf (CConfig::Information, L"\n  (Enter=confirm, Esc=cancel)");
+    m_console.Printf (CConfig::Information, L"\x1b[1A");
+
+    int cchPromptLine = 2 + static_cast<int>(wcslen (pszPrompt)) + 2 + static_cast<int>(strDefault.size()) + 3;
+    m_console.Printf (CConfig::Information, L"\x1b[%dG", cchPromptLine + 1);
+    m_console.Flush();
+
     wstring strInput;
 
     for (;;)
@@ -274,6 +285,8 @@ ETuiResult CTuiWidgets::TextInput (LPCWSTR pszPrompt, const wstring & strDefault
 
         if (vk == VK_ESCAPE)
         {
+            m_console.Printf (CConfig::Information, L"\n\x1b[2K");
+            m_console.Flush();
             HideCursor();
             return ETuiResult::Cancelled;
         }
@@ -285,7 +298,7 @@ ETuiResult CTuiWidgets::TextInput (LPCWSTR pszPrompt, const wstring & strDefault
                 strResult = strInput;
             }
 
-            m_console.Printf (CConfig::Information, L"\n");
+            m_console.Printf (CConfig::Information, L"\n\x1b[2K");
             m_console.Flush();
             HideCursor();
             return ETuiResult::Confirmed;
@@ -330,7 +343,7 @@ ETuiResult CTuiWidgets::TextInput (LPCWSTR pszPrompt, const wstring & strDefault
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-ETuiResult CTuiWidgets::CheckboxList (LPCWSTR pszPrompt, vector<pair<wstring, bool>> & rgItems)
+ETuiResult CTuiWidgets::CheckboxList (LPCWSTR pszPrompt, vector<pair<wstring, bool>> & rgItems, const vector<bool> & rgLocked)
 {
     HRESULT hr             = S_OK;
     int     iFocus         = 0;
@@ -346,16 +359,22 @@ ETuiResult CTuiWidgets::CheckboxList (LPCWSTR pszPrompt, vector<pair<wstring, bo
     {
         int cLines = 0;
 
-        for (const auto & item : rgItems)
+        for (size_t i = 0; i < rgItems.size(); ++i)
         {
             cLines += 1;  // At least one line per item
 
-            for (wchar_t ch : item.first)
+            for (wchar_t ch : rgItems[i].first)
             {
                 if (ch == L'\n')
                 {
                     ++cLines;
                 }
+            }
+
+            // Locked items get an extra warning line
+            if (i < rgLocked.size() && rgLocked[i])
+            {
+                ++cLines;
             }
         }
 
@@ -382,6 +401,10 @@ ETuiResult CTuiWidgets::CheckboxList (LPCWSTR pszPrompt, vector<pair<wstring, bo
             if (rgItems[i].second)
             {
                 m_console.ColorPrintf (L"{Information}[{InformationHighlight}%c{Information}] ", UnicodeSymbols::CheckMark);
+            }
+            else if (i < static_cast<int>(rgLocked.size()) && rgLocked[i])
+            {
+                m_console.ColorPrintf (L"{Information}[{Error}x{Information}] ");
             }
             else
             {
@@ -419,6 +442,16 @@ ETuiResult CTuiWidgets::CheckboxList (LPCWSTR pszPrompt, vector<pair<wstring, bo
             {
                 m_console.ColorPrintf (L"\n");
                 ClearCurrentLine();
+            }
+
+            //
+            // Locked items get a warning line below
+            //
+
+            if (i < static_cast<int>(rgLocked.size()) && rgLocked[i])
+            {
+                ClearCurrentLine();
+                m_console.ColorPrintf (L"{Error}          ^ conflicts with PowerShell built-in\n");
             }
         }
 
@@ -484,6 +517,11 @@ ETuiResult CTuiWidgets::CheckboxList (LPCWSTR pszPrompt, vector<pair<wstring, bo
         }
         else if (vk == VK_SPACE)
         {
+            if (iFocus < static_cast<int>(rgLocked.size()) && rgLocked[iFocus])
+            {
+                continue;  // Locked items cannot be toggled
+            }
+
             rgItems[iFocus].second = !rgItems[iFocus].second;
         }
         else
