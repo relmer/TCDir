@@ -59,7 +59,7 @@ void CAliasBlockGenerator::Generate (const SAliasConfig & config, const wstring 
     {
         if (sub.fEnabled)
         {
-            wstring body = format (L"{} {} @args", config.strRootAlias, sub.strFlags);
+            wstring body = format (L"{} {} @args", config.strRootAlias, QuotePsFlags (sub.strFlags));
 
             cchMaxName = max (cchMaxName, sub.strName.size());
             cchMaxBody = max (cchMaxBody, body.size());
@@ -98,4 +98,53 @@ void CAliasBlockGenerator::Generate (const SAliasConfig & config, const wstring 
     rgBlockLines.push_back (L"################################################################################");
     rgBlockLines.push_back (L"#  End TCDir Aliases");
     rgBlockLines.push_back (L"################################################################################");
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CAliasBlockGenerator::QuotePsFlags
+//
+//  Quote individual flag tokens that would be misinterpreted by PowerShell.
+//  PowerShell treats -name:value as named-parameter binding inside function
+//  calls, which splits e.g. "-a:d" into two arguments.  Wrapping such tokens
+//  in single quotes prevents the split.
+//
+//  Tokens that start with '-' and contain ':' are wrapped in single quotes.
+//  Multi-token flags (e.g., "-s -b") are split, quoted individually if needed,
+//  and reassembled.
+//
+////////////////////////////////////////////////////////////////////////////////
+
+wstring CAliasBlockGenerator::QuotePsFlags (const wstring & strFlags)
+{
+    wstring strResult;
+    wistringstream stream (strFlags);
+    wstring strToken;
+    bool fFirst = true;
+
+    while (stream >> strToken)
+    {
+        if (!fFirst)
+        {
+            strResult += L' ';
+        }
+        fFirst = false;
+
+        if (strToken.size() >= 2 && strToken[0] == L'-' && strToken.find (L':') != wstring::npos)
+        {
+            strResult += L'\'';
+            strResult += strToken;
+            strResult += L'\'';
+        }
+        else
+        {
+            strResult += strToken;
+        }
+    }
+
+    return strResult;
 }

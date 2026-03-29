@@ -280,5 +280,71 @@ namespace UnitTest
 
             Assert::AreEqual (1, cFunctions, L"Only root function should be present");
         }
+
+
+
+
+        TEST_METHOD(Generate_DashColonFlags_SingleQuoted)
+        {
+            SAliasConfig config;
+
+            config.strRootAlias       = L"d";
+            config.strTcDirInvocation = L"tcdir";
+            config.rgSubAliases       = {
+                { L"dd", L"-a:d",  L"dirs",   true },
+                { L"ds", L"-s",    L"recurse", true },
+                { L"do", L"-o:s",  L"sort",   true },
+            };
+
+            vector<wstring> rgLines;
+
+
+
+            CAliasBlockGenerator::Generate (config, L"5.2.1150", rgLines);
+
+            bool fFoundDd = false;
+            bool fFoundDs = false;
+            bool fFoundDo = false;
+
+            for (const auto & line : rgLines)
+            {
+                if (line.find (L"function dd") != wstring::npos && line.find (L"'-a:d'") != wstring::npos)  fFoundDd = true;
+                if (line.find (L"function ds") != wstring::npos && line.find (L"-s @args") != wstring::npos) fFoundDs = true;
+                if (line.find (L"function do") != wstring::npos && line.find (L"'-o:s'") != wstring::npos)  fFoundDo = true;
+            }
+
+            Assert::IsTrue (fFoundDd, L"-a:d should be single-quoted as '-a:d'");
+            Assert::IsTrue (fFoundDs, L"-s should NOT be quoted");
+            Assert::IsTrue (fFoundDo, L"-o:s should be single-quoted as '-o:s'");
+        }
+
+
+
+
+        TEST_METHOD(Generate_SlashColonFlags_NotQuoted)
+        {
+            SAliasConfig config;
+
+            config.strRootAlias       = L"d";
+            config.strTcDirInvocation = L"tcdir";
+            config.rgSubAliases       = {
+                { L"dd", L"/a:d", L"dirs", true },
+            };
+
+            vector<wstring> rgLines;
+
+
+
+            CAliasBlockGenerator::Generate (config, L"5.2.1150", rgLines);
+
+            bool fFoundDd = false;
+
+            for (const auto & line : rgLines)
+            {
+                if (line.find (L"function dd") != wstring::npos && line.find (L"/a:d @args") != wstring::npos)  fFoundDd = true;
+            }
+
+            Assert::IsTrue (fFoundDd, L"/a:d should NOT be quoted — only dash-colon needs quoting");
+        }
     };
 }
