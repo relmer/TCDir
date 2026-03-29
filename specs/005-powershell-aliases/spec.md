@@ -166,7 +166,8 @@ During setup, the system checks whether the chosen root alias or sub-aliases con
 - **FR-026**: The default storage location MUST be "Current User, All Hosts" (`$PROFILE.CurrentUserAllHosts`)
 - **FR-027**: The storage location list MUST include an option for "Current session only (not persisted)"
 - **FR-028**: Profile locations requiring administrator privileges MUST be visually marked with "(requires admin)"
-- **FR-029**: Before writing, the wizard MUST display a preview of the complete alias block and target file path. In normal mode, explicit confirmation is required. In `--whatif` mode, the preview is shown directly without a confirmation prompt.
+- **FR-029**: Before writing, the wizard MUST display a preview of the complete alias block and target file path. In normal mode, explicit confirmation is required via a `[Y/n]` prompt — the `Y/n` text and the user's typed response character MUST be in InformationHighlight (white). The blinking caret MUST be visible during the prompt. In `--whatif` mode, the preview is shown directly without a confirmation prompt.
+- **FR-029a**: After successful alias writing, the activation instruction line (e.g., `. "C:\path\to\profile.ps1"`) MUST be displayed in InformationHighlight (white) so it stands out for easy copy-paste.
 - **FR-030**: If existing tcdir aliases are detected in any profile (via marker comments), the wizard MUST inform the user and offer to replace them
 
 #### Alias Block Format

@@ -728,7 +728,8 @@ ETuiResult CTuiWidgets::Confirmation (LPCWSTR pszPrompt, const vector<wstring> &
 
         if (vk == VK_ESCAPE || ch == L'n' || ch == L'N')
         {
-            m_console.Printf (CConfig::Information, L"n\n");
+            m_console.Printf (CConfig::InformationHighlight, L"n");
+            m_console.Printf (CConfig::Information, L"\n");
             m_console.Flush();
             HideCursor();
             return ETuiResult::Cancelled;
@@ -736,7 +737,8 @@ ETuiResult CTuiWidgets::Confirmation (LPCWSTR pszPrompt, const vector<wstring> &
 
         if (vk == VK_RETURN || ch == L'y' || ch == L'Y')
         {
-            m_console.Printf (CConfig::Information, L"y\n");
+            m_console.Printf (CConfig::InformationHighlight, L"y");
+            m_console.Printf (CConfig::Information, L"\n");
             m_console.Flush();
             HideCursor();
             return ETuiResult::Confirmed;

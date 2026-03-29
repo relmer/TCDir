@@ -398,7 +398,7 @@ Error:
     {
         console.Printf (CConfig::Information, L"\n  Aliases written to: %s\n\n", strTargetPath.c_str());
         console.Puts   (CConfig::Information, L"  To activate, open a new PowerShell window or paste this command:");
-        console.Printf (CConfig::Default,     L"    . \"%s\"\n", strTargetPath.c_str());
+        console.Printf (CConfig::InformationHighlight, L"    . \"%s\"\n", strTargetPath.c_str());
         console.Puts   (CConfig::Information, L"    ^--- the dot is required; paste the entire line exactly as shown");
     }
     else
