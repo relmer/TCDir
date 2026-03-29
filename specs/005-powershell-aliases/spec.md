@@ -176,6 +176,7 @@ During setup, the system checks whether the chosen root alias or sub-aliases con
 - **FR-041**: At setup time, the tool MUST determine the path of the currently running tcdir.exe. If that path is reachable via PATH, the root alias function MUST invoke `tcdir` by short name. If not on PATH, the root alias function MUST invoke the full resolved path to tcdir.exe.
 - **FR-042**: The root alias MUST be defined as a simple passthrough PowerShell function that invokes tcdir (by name or full path per FR-041) and passes all arguments via `@args`. No fallback behavior (e.g., `Get-ChildItem`) or post-invocation output (e.g., `Write-Host`)
 - **FR-043**: Each sub-alias MUST be defined as a PowerShell function that invokes the root function with the appropriate flags prepended
+- **FR-043a**: Any flag token that starts with `-` and contains `:` (e.g., `-a:d`, `-o:s`, `-t:c`) MUST be wrapped in single quotes in the generated function body (e.g., `d '-a:d' @args`). PowerShell interprets bare `-name:value` inside function calls as named-parameter binding, which splits the token into two arguments. The `/` prefix is not affected.
 - **FR-044**: The alias block header MUST include the tcdir version that generated it (e.g., `tcdir v5.2.1150`). The minor version bumps to 5.2 for this feature.
 
 #### Remove Aliases Flow
@@ -199,7 +200,7 @@ During setup, the system checks whether the chosen root alias or sub-aliases con
 - **FR-071**: The tool MUST check the first bytes of a profile file for a BOM. If a UTF-16 BOM is detected (`FF FE` or `FE FF`), the tool MUST display an error and refuse to modify the file. If a UTF-8 BOM (`EF BB BF`) is present, it MUST be preserved on write-back. If no BOM is present, the file MUST be read and written as UTF-8.
 - **FR-072**: If the target profile file does not exist, the tool MUST create it (and any missing parent directories)
 - **FR-073**: If the target profile file cannot be written (permissions, locked), the tool MUST display a clear error message and exit without partial writes
-- **FR-074**: Conflict detection MUST check the root alias immediately after entry against known PowerShell built-in aliases. If the root alias conflicts, the tool MUST display an error and loop back to the root alias prompt (blocking). Sub-alias conflicts after the checkbox step produce a non-blocking warning showing the conflicting command identity.
+- **FR-074**: Conflict detection MUST check the root alias immediately after entry against known PowerShell built-in aliases. If the root alias conflicts, the tool MUST display an error and loop back to the root alias prompt (blocking). Sub-alias conflicts MUST be detected before displaying the checkbox list — conflicting sub-aliases are shown with an `[x]` marker in Error color, are locked (cannot be toggled on), and display a red warning line underneath.
 
 #### Profile Path Resolution
 

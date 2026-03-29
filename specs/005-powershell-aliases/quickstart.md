@@ -96,12 +96,12 @@ if (cl.m_fSetAliases || cl.m_fGetAliases || cl.m_fRemoveAliases)
 #
 ################################################################################
 
-function d   { tcdir @args     }
-function dt  { d --tree @args  }
-function dw  { d -w @args      }
-function dd  { d -a:d @args    }
-function ds  { d -s @args      }
-function dsb { d -s -b @args   }
+function d   { tcdir @args      }
+function dt  { d --tree @args   }
+function dw  { d -w @args       }
+function dd  { d '-a:d' @args   }
+function ds  { d -s @args       }
+function dsb { d -s -b @args    }
 
 ################################################################################
 #  End TCDir Aliases
