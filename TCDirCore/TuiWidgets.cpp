@@ -451,7 +451,7 @@ ETuiResult CTuiWidgets::CheckboxList (LPCWSTR pszPrompt, vector<pair<wstring, bo
             if (i < static_cast<int>(rgLocked.size()) && rgLocked[i])
             {
                 ClearCurrentLine();
-                m_console.ColorPrintf (L"{Error}          ^ conflicts with PowerShell built-in\n");
+                m_console.ColorPrintf (L"{Error}        ^ conflicts with PowerShell built-in\n");
             }
         }
 
