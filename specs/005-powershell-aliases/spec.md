@@ -147,9 +147,11 @@ During setup, the system checks whether the chosen root alias or sub-aliases con
 - **FR-011**: The TUI MUST use `(●)` / `( )` for radio button (single-select) widgets
 - **FR-012**: The TUI MUST use `[✓]` / `[ ]` for checkbox (multi-select) widgets
 - **FR-013**: The TUI MUST respond to arrow keys (↑/↓) for navigation, Space for toggling, Enter for confirming, and Escape for cancelling
-- **FR-014**: The TUI MUST hide the console cursor during interactive menu display and restore it on exit
+- **FR-014**: The TUI MUST hide the console cursor during checkbox and radio button display, but MUST show the blinking caret during text input prompts. Cursor visibility MUST be restored to its original state on exit.
 - **FR-015**: Pressing Escape at any step MUST cancel the entire operation without modifying any files, displaying a cancellation message
 - **FR-016**: The TUI MUST use ANSI escape sequences for cursor movement and line updates
+- **FR-017**: The wizard title line (e.g., "TCDir Alias Setup") MUST be displayed in InformationHighlight (white). All `--whatif` status messages and indicators MUST be displayed in Error color (red).
+- **FR-018**: In text input prompts, the default value shown in brackets (e.g., `[d]`) MUST be displayed in InformationHighlight (white).
 
 #### Set Aliases Flow
 

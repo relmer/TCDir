@@ -109,7 +109,7 @@ void CAliasManager::BuildDefaultSubAliases (const wstring & strRoot, vector<SAli
 
     rgOut.push_back ({ strRoot + L"t",  L"--tree",  L"Tree view",        true });
     rgOut.push_back ({ strRoot + L"w",  L"-w",      L"Wide format",      true });
-    rgOut.push_back ({ strRoot + L"d",  L"-a:d",    L"Directories only", true });
+    rgOut.push_back ({ strRoot + L"d",  L"/a:d",    L"Directories only", true });
     rgOut.push_back ({ strRoot + L"s",  L"-s",      L"Recursive",        true });
     rgOut.push_back ({ strRoot + L"sb", L"-s -b",   L"Recursive bare",   true });
 }
