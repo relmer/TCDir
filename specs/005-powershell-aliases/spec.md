@@ -151,7 +151,7 @@ During setup, the system checks whether the chosen root alias or sub-aliases con
 - **FR-015**: Pressing Escape at any step MUST cancel the entire operation without modifying any files, displaying a cancellation message
 - **FR-016**: The TUI MUST use ANSI escape sequences for cursor movement and line updates
 - **FR-017**: The wizard title line (e.g., "TCDir Alias Setup") MUST be displayed in InformationHighlight (white). All `--whatif` status messages and indicators MUST be displayed in Error color (red).
-- **FR-018**: In text input prompts, the default value shown in brackets (e.g., `[d]`) MUST be displayed in InformationHighlight (white).
+- **FR-018**: In text input prompts, the default value shown in brackets (e.g., `[d]`) and characters typed by the user MUST be displayed in InformationHighlight (white).
 - **FR-019**: In checkbox and radio button lists, the focus indicator (`\u276f`) and the active marks (`\u2713` for checkboxes, `\u25cf` for radio buttons) MUST be displayed in InformationHighlight (white). Inactive/unchecked items use the default Information color.
 - **FR-019a**: The alias block preview (banners, comments, and function lines) shown during `--set-aliases` confirmation and `--whatif` MUST be displayed in Default color (grey), visually distinguishing it from surrounding wizard text.
 
