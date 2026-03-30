@@ -35,11 +35,11 @@ BEGIN
 	BEGIN
 		BLOCK "040904B0"
 		BEGIN
-			VALUE "CompanyName",      "relmer"
+			VALUE "CompanyName",      "Robert Elmer"
 			VALUE "FileDescription",  "Technicolor Directory"
 			VALUE "FileVersion",      VER_FILEVERSION_STR
 			VALUE "InternalName",     "TCDir"
-			VALUE "LegalCopyright",   "Copyright (C) " STRINGIFY(VERSION_YEAR) " relmer"
+			VALUE "LegalCopyright",   "Copyright (C) " STRINGIFY(VERSION_YEAR) " Robert Elmer"
 			VALUE "OriginalFilename", "TCDir.exe"
 			VALUE "ProductName",      "TCDir"
 			VALUE "ProductVersion",   VER_PRODUCTVERSION_STR
