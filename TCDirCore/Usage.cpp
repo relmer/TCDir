@@ -1860,45 +1860,100 @@ void CUsage::DisplayConfigFileHelp (CConsole & console, wchar_t chPrefix)
 
 
 
-    console.ColorPuts (L"\n{InformationHighlight}Config File Support\n");
-    console.ColorPuts (L"{Default}");
+    // Same body as k_wszEnvVarHelpBody but phrased for config file.
+    // {0} = config file path
+    // Color markers use {{EAttributeName}} which format() escapes to {EAttributeName}
+    // for ColorPuts to parse.
+
+    static constexpr wchar_t k_wszConfigFileHelpBody[] =
+        L"\n"
+        L"{{Information}}Create a file at {{InformationHighlight}}{0}{{Information}} to set default colors"
+        L" for display items, file attributes, or file extensions:\n"
+        L"  One setting per line.  Lines beginning with {{InformationHighlight}}#{{Information}} are comments.\n"
+        L"\n"
+        L"  [{{InformationHighlight}}<Switch>{{Information}}] | "
+        L"[{{InformationHighlight}}<Item>{{Information}} | "
+        L"{{InformationHighlight}}Attr:<FileAttr>{{Information}} | "
+        L"{{InformationHighlight}}<.ext>{{Information}} | "
+        L"{{InformationHighlight}}dir:<name>{{Information}}] = "
+        L"[{{InformationHighlight}}<Fore>{{Information}} [on {{InformationHighlight}}<Back>{{Information}}]]"
+        L"[{{InformationHighlight}},<Icon>{{Information}}]\n"
+        L"\n"
+        L"  {{InformationHighlight}}<Switch>{{Information}}    A command-line switch:\n"
+        L"                  {{InformationHighlight}}W{{Information}}        Wide listing format\n"
+        L"                  {{InformationHighlight}}P{{Information}}        Display performance timing information\n"
+        L"                  {{InformationHighlight}}S{{Information}}        Recurse into subdirectories\n"
+        L"                  {{InformationHighlight}}M{{Information}}        Enables multi-threaded enumeration (default); use {{InformationHighlight}}M-{{Information}} to disable\n"
+        L"                  {{InformationHighlight}}Owner{{Information}}    Display file ownership\n"
+        L"                  {{InformationHighlight}}Streams{{Information}}  Display alternate data streams (NTFS)\n"
+        L"                  {{InformationHighlight}}Icons{{Information}}    Enable file-type icons; use {{InformationHighlight}}Icons-{{Information}} to disable\n"
+        L"\n"
+        L"  {{InformationHighlight}}<Item>{{Information}}      A display item:\n"
+        L"                  {{InformationHighlight}}D{{Information}}  Date                     {{InformationHighlight}}T{{Information}}  Time\n"
+        L"                  {{InformationHighlight}}S{{Information}}  Size                     {{InformationHighlight}}R{{Information}}  Directory name\n"
+        L"                  {{InformationHighlight}}I{{Information}}  Information              {{InformationHighlight}}H{{Information}}  Information highlight\n"
+        L"                  {{InformationHighlight}}E{{Information}}  Error                    {{InformationHighlight}}F{{Information}}  File (default)\n"
+        L"                  {{InformationHighlight}}O{{Information}}  Owner                    {{InformationHighlight}}M{{Information}}  Stream\n"
+        L"\n"
+        L"              Cloud status (use full name, e.g., {{InformationHighlight}}CloudOnly=Blue{{Information}}):\n"
+        L"                  {{InformationHighlight}}CloudOnly{{Information}}                   {{InformationHighlight}}LocallyAvailable{{Information}}\n"
+        L"                  {{InformationHighlight}}AlwaysLocallyAvailable{{Information}}\n"
+        L"\n"
+        L"  {{InformationHighlight}}<FileAttr>{{Information}}  A file attribute (see file attributes below)\n"
+        L"                  {{InformationHighlight}}R{{Information}}  Read-only                {{InformationHighlight}}H{{Information}}  Hidden\n"
+        L"                  {{InformationHighlight}}S{{Information}}  System                   {{InformationHighlight}}A{{Information}}  Archive\n"
+        L"                  {{InformationHighlight}}T{{Information}}  Temporary                {{InformationHighlight}}E{{Information}}  Encrypted\n"
+        L"                  {{InformationHighlight}}C{{Information}}  Compressed               {{InformationHighlight}}P{{Information}}  Reparse point\n"
+        L"                  {{InformationHighlight}}0{{Information}}  Sparse file\n"
+        L"\n"
+        L"  {{InformationHighlight}}<.ext>{{Information}}      A file extension, including the leading period.\n"
+        L"\n"
+        L"  {{InformationHighlight}}<name>    {{Information}}  A well-known directory name (case-insensitive, e.g., {{InformationHighlight}}dir:.git{{Information}}).\n"
+        L"\n"
+        L"  {{InformationHighlight}}<Fore>{{Information}}      Foreground color\n"
+        L"  {{InformationHighlight}}<Back>{{Information}}      Background color";
+
+    wstring displayPath = filePath.empty() ? L"~\\.tcdirconfig" : filePath;
+
+    console.ColorPuts (format (k_wszConfigFileHelpBody, displayPath).c_str());
+
+    DisplayColorConfiguration (console);
+
+    console.ColorPuts (
+        L"  {InformationHighlight}<Icon>{Information}      An icon code point (requires Nerd Font):\n"
+        L"                  {InformationHighlight}U+XXXX{Information}   Hex code point (e.g., {InformationHighlight}U+E61D{Information})\n"
+        L"                  {InformationHighlight}<glyph>{Information}  A literal Nerd Font glyph character\n"
+        L"                  (empty)  Suppresses the icon for that entry\n");
+
+    console.ColorPuts (
+        L"  {Information}Example {Default}.tcdirconfig{Information} file:\n"
+        L"\n"
+        L"  {Default}  # Enable tree view with icons\n"
+        L"    Tree\n"
+        L"    Icons\n"
+        L"\n"
+        L"    # Set colors\n"
+        L"    D = LightGreen\n"
+        L"    .cpp = White on Blue,U+E61D\n"
+        L"    Attr:H = DarkGrey\n");
+
+    console.ColorPuts (L"  {Information}Environment variable settings override config file settings.");
+
+    console.Puts (CConfig::EAttribute::Default, L"");
 
     //
-    // File path and load status
+    // Show file status and issues
     //
 
     if (filePath.empty())
     {
-        console.ColorPuts (L"  {Information}Config file path: {Default}(not resolved — USERPROFILE not set)");
+        console.ColorPuts (L"  {Information}Config file path: {Default}(not resolved \u2014 USERPROFILE not set)");
     }
     else
     {
-        console.ColorPrintf (L"  {Information}Config file path: {Default}%s\n", filePath.c_str());
+        console.ColorPrintf (L"  {Information}Config file path: {InformationHighlight}%s\n", filePath.c_str());
         console.ColorPrintf (L"  {Information}Load status:      {Default}%s\n", fLoaded ? L"Loaded" : L"Not found");
     }
-
-    //
-    // Syntax reference
-    //
-
-    console.ColorPuts (L"\n  {InformationHighlight}Syntax:\n");
-    console.ColorPuts (L"  {Information}Lines are processed one per line. Comments begin with #.");
-    console.ColorPuts (L"  {Information}All settings from the " TCDIR_ENV_VAR_NAME L" environment variable are supported:");
-    console.ColorPuts (L"  {Default}");
-    console.ColorPuts (L"  {Information}  Switches:      {Default}w, b, S, P, M, Owner, Streams, Icons, Tree");
-    console.ColorPuts (L"  {Information}  Negation:       {Default}W-, M-, Icons-, Tree-");
-    console.ColorPuts (L"  {Information}  Parameters:     {Default}Depth=N, TreeIndent=N, Size=Auto|Bytes");
-    console.ColorPuts (L"  {Information}  Colors:         {Default}.ext=Color [on Background]");
-    console.ColorPuts (L"  {Information}  Display attrs:  {Default}D=Color, T=Color, S=Color, etc.");
-    console.ColorPuts (L"  {Information}  Icons:          {Default}.ext=Color,U+XXXX");
-    console.ColorPuts (L"  {Information}  File attrs:     {Default}attr:H=Color, attr:S=Color");
-    console.ColorPuts (L"  {Information}  Dir icons:      {Default}dir:name=Color,U+XXXX");
-    console.ColorPuts (L"  {Default}");
-    console.ColorPuts (L"  {Information}Environment variable settings override config file settings.");
-
-    //
-    // Show errors if any
-    //
 
     DisplayConfigFileIssues (console, chPrefix, false);
 }
