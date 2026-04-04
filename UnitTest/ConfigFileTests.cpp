@@ -697,5 +697,129 @@ namespace UnitTest
             // Date attribute was not overridden by config file or env var
             Assert::AreEqual (CConfig::EAttributeSource::Default, config.m_rgAttributeSources[CConfig::EAttribute::Date]);
         }
+
+        //
+        // T027: Inline comment edge cases
+        //
+
+        TEST_METHOD (InlineComment_SettingWithMultipleHashChars)
+        {
+            ConfigFileProbe config;
+            config.SetConfigLines ({ L".cpp=Yellow  # C++ files ## important" });
+            config.Initialize (FC_LightGrey);
+
+
+
+            Assert::IsTrue (config.m_mapExtensionToTextAttr.contains (L".cpp"));
+            Assert::AreEqual ((WORD) FC_Yellow, config.m_mapExtensionToTextAttr[L".cpp"]);
+        }
+
+        TEST_METHOD (InlineComment_CommentOnlyLineWithLeadingWhitespace)
+        {
+            ConfigFileProbe config;
+            config.SetConfigLines ({ L"   # indented comment", L".cpp=Yellow" });
+            config.Initialize (FC_LightGrey);
+
+
+
+            Assert::IsTrue (config.m_mapExtensionToTextAttr.contains (L".cpp"));
+            Assert::AreEqual ((size_t) 0, config.m_configFileParseResult.errors.size());
+        }
+
+        TEST_METHOD (InlineComment_SwitchWithInlineComment)
+        {
+            ConfigFileProbe config;
+            config.SetConfigLines ({ L"w  # enable wide listing" });
+            config.Initialize (FC_LightGrey);
+
+
+
+            Assert::IsTrue (config.m_fWideListing.has_value());
+            Assert::IsTrue (config.m_fWideListing.value());
+        }
+
+        //
+        // T028: Whitespace handling
+        //
+
+        TEST_METHOD (Whitespace_TabsAsWhitespace)
+        {
+            ConfigFileProbe config;
+            config.SetConfigLines ({ L"\t.cpp=Yellow\t" });
+            config.Initialize (FC_LightGrey);
+
+
+
+            Assert::IsTrue (config.m_mapExtensionToTextAttr.contains (L".cpp"));
+            Assert::AreEqual ((WORD) FC_Yellow, config.m_mapExtensionToTextAttr[L".cpp"]);
+        }
+
+        TEST_METHOD (Whitespace_TabOnlyLines_Skipped)
+        {
+            ConfigFileProbe config;
+            config.SetConfigLines ({
+                L"\t\t",
+                L".cpp=Yellow",
+                L"\t",
+                L".h=LightBlue"
+            });
+            config.Initialize (FC_LightGrey);
+
+
+
+            Assert::IsTrue (config.m_mapExtensionToTextAttr.contains (L".cpp"));
+            Assert::IsTrue (config.m_mapExtensionToTextAttr.contains (L".h"));
+            Assert::AreEqual ((size_t) 0, config.m_configFileParseResult.errors.size());
+        }
+
+        TEST_METHOD (Whitespace_MixedTabsAndSpaces_Trimmed)
+        {
+            ConfigFileProbe config;
+            config.SetConfigLines ({ L"\t  .cpp=Yellow  \t" });
+            config.Initialize (FC_LightGrey);
+
+
+
+            Assert::IsTrue (config.m_mapExtensionToTextAttr.contains (L".cpp"));
+            Assert::AreEqual ((WORD) FC_Yellow, config.m_mapExtensionToTextAttr[L".cpp"]);
+        }
+
+        //
+        // T029: Duplicate setting tests — last occurrence wins within config file
+        //
+
+        TEST_METHOD (Duplicate_LastOccurrenceWins_Color)
+        {
+            ConfigFileProbe config;
+            config.SetConfigLines ({ L".cpp=LightGreen", L".cpp=Yellow" });
+            config.Initialize (FC_LightGrey);
+
+
+
+            Assert::AreEqual ((WORD) FC_Yellow, config.m_mapExtensionToTextAttr[L".cpp"]);
+        }
+
+        TEST_METHOD (Duplicate_LastOccurrenceWins_DisplayAttribute)
+        {
+            ConfigFileProbe config;
+            config.SetConfigLines ({ L"D=LightGreen", L"D=Yellow" });
+            config.Initialize (FC_LightGrey);
+
+
+
+            Assert::AreEqual ((WORD) FC_Yellow, config.m_rgAttributes[CConfig::EAttribute::Date]);
+        }
+
+        TEST_METHOD (Duplicate_SwitchToggled_LastWins)
+        {
+            ConfigFileProbe config;
+            config.SetConfigLines ({ L"w", L"W-" });
+            config.Initialize (FC_LightGrey);
+
+
+
+            Assert::IsTrue (config.m_fWideListing.has_value());
+            Assert::IsFalse (config.m_fWideListing.value());
+        }
     };
 }

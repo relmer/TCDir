@@ -1668,13 +1668,13 @@ Error:
 
 wstring_view CConfig::TrimWhitespace (wstring_view str)
 {
-    size_t start = str.find_first_not_of (L" ");
+    size_t start = str.find_first_not_of (L" \t");
     if (start == wstring_view::npos)
     {
         return L"";  // String is all whitespace
     }
     
-    size_t end = str.find_last_not_of (L" ");
+    size_t end = str.find_last_not_of (L" \t");
     return str.substr (start, end - start + 1);
 }
 

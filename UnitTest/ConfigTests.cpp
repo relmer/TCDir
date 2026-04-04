@@ -396,23 +396,25 @@ namespace UnitTest
 
 
 
-        TEST_METHOD(ParseColorSpec_TabNotWhitespace_ReturnsZero)
+        TEST_METHOD(ParseColorSpec_TabIsWhitespace_TrimmedAndParsed)
         {
             ConfigProbe config;
             
-            // Tab characters should NOT be treated as whitespace
+            // Tab characters ARE treated as whitespace (trimmed)
             WORD    result = 0;
             HRESULT hr     = config.ParseColorSpec (L"\tYellow"sv, result);
-            Assert::AreEqual ((HRESULT)E_INVALIDARG, hr);
-            Assert::AreEqual ((WORD)0, result);
+            Assert::AreEqual (S_OK, hr);
+            Assert::AreEqual ((WORD)FC_Yellow, result);
             
+            result = 0;
             hr = config.ParseColorSpec (L"Yellow\t"sv, result);
-            Assert::AreEqual ((HRESULT)E_INVALIDARG, hr);
-            Assert::AreEqual ((WORD)0, result);
+            Assert::AreEqual (S_OK, hr);
+            Assert::AreEqual ((WORD)FC_Yellow, result);
             
+            result = 0;
             hr = config.ParseColorSpec (L"\tYellow\t"sv, result);
-            Assert::AreEqual ((HRESULT)E_INVALIDARG, hr);
-            Assert::AreEqual ((WORD)0, result);
+            Assert::AreEqual (S_OK, hr);
+            Assert::AreEqual ((WORD)FC_Yellow, result);
         }
 
 
@@ -499,24 +501,24 @@ namespace UnitTest
 
 
 
-        TEST_METHOD(TrimWhitespace_TabNotWhitespace_NotTrimmed)
+        TEST_METHOD(TrimWhitespace_TabIsWhitespace_Trimmed)
         {
             ConfigProbe config;
             
-            // Tab characters should NOT be treated as whitespace
+            // Tab characters ARE treated as whitespace (trimmed)
             auto result = config.TrimWhitespace(L"\ttest"sv);
-            Assert::AreEqual ((size_t)5, result.length());
-            Assert::AreEqual (L'\t', result[0]);
+            Assert::AreEqual ((size_t)4, result.length());
+            Assert::AreEqual (L't', result[0]);
             
             result = config.TrimWhitespace(L"test\t"sv);
-            Assert::AreEqual ((size_t)5, result.length());
-            Assert::AreEqual (L'\t', result[4]);
+            Assert::AreEqual ((size_t)4, result.length());
+            Assert::AreEqual (L't', result[3]);
             
             result = config.TrimWhitespace(L"\ttest\t"sv);
-            Assert::AreEqual ((size_t)6, result.length());
+            Assert::AreEqual ((size_t)4, result.length());
             
             result = config.TrimWhitespace(L"\t\t"sv);
-            Assert::AreEqual ((size_t)2, result.length());
+            Assert::AreEqual ((size_t)0, result.length());
         }
 
 
