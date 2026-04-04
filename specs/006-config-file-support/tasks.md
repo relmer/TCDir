@@ -9,7 +9,7 @@
 
 - [ ] T001 Add `<fstream>` to TCDirCore/pch.h
 - [ ] T002 [P] Create IConfigFileReader interface and CConfigFileReader class in TCDirCore/ConfigFileReader.h
-- [ ] T003 [P] Create CConfigFileReader implementation stub in TCDirCore/ConfigFileReader.cpp
+- [ ] T003 [P] Create CConfigFileReader implementation stub in TCDirCore/ConfigFileReader.cpp — constructor accepts optional std::istream* override for unit testing
 - [ ] T004 Add ConfigFileReader.h and ConfigFileReader.cpp to TCDirCore/TCDirCore.vcxproj and .filters
 - [ ] T005 [P] Create UnitTest/ConfigFileReaderTests.cpp with test class stub and add to UnitTest project
 - [ ] T006 [P] Create UnitTest/ConfigFileTests.cpp with test class stub and add to UnitTest project
@@ -48,7 +48,7 @@
 - [ ] T017 Implement CConfig::LoadConfigFile in TCDirCore/Config.cpp — resolve path via USERPROFILE env var, call reader, strip comments, trim whitespace, pass entries to ProcessColorOverrideEntry with ConfigFile source, populate ErrorInfo.lineNumber and ErrorInfo.sourceFilePath for each error
 - [ ] T018 Insert LoadConfigFile call into CConfig::Initialize between default initialization and ApplyUserColorOverrides in TCDirCore/Config.cpp
 - [ ] T019 Write CTestConfigFileReader mock in UnitTest/ConfigFileReaderTests.cpp — in-memory lines, simulate not-found and I/O errors
-- [ ] T020 Write ConfigFileReader unit tests in UnitTest/ConfigFileReaderTests.cpp — UTF-8 read, BOM skip, UTF-16 BOM rejection, empty file, line splitting (CRLF, LF, CR)
+- [ ] T020 Write ConfigFileReader unit tests in UnitTest/ConfigFileReaderTests.cpp — inject std::istringstream via constructor override to test UTF-8 read, BOM skip, UTF-16 BOM rejection, empty file, line splitting (CRLF, LF, CR) without real file I/O
 - [ ] T021 Write config file loading unit tests in UnitTest/ConfigFileTests.cpp — switches applied, color overrides applied, icon overrides applied, parameterized values applied
 - [ ] T022 Write comment and blank line unit tests in UnitTest/ConfigFileTests.cpp — comment lines skipped, inline comments stripped, blank lines skipped, whitespace-only lines skipped
 - [ ] T023 Build and run all tests
@@ -139,11 +139,11 @@
 
 **Purpose**: Final validation and edge case hardening
 
-- [ ] T050 [P] Write edge case tests in UnitTest/ConfigFileTests.cpp — empty file, file with only comments, file with only blank lines, very long lines
+- [ ] T050 [P] Write edge case tests in UnitTest/ConfigFileTests.cpp — empty file, file with only comments, file with only blank lines, very long lines, 20+ settings file (SC-002 coverage), USERPROFILE not set (silent skip, same as file not found)
 - [ ] T051 [P] Write BOM edge case tests in UnitTest/ConfigFileReaderTests.cpp — UTF-16 LE BOM rejected with clear error, UTF-16 BE BOM rejected with clear error
 - [ ] T052 [P] Write BOM end-to-end test in UnitTest/ConfigFileTests.cpp — UTF-8 BOM file with settings parses correctly through LoadConfigFile
 - [ ] T053 Verify config file does not exist scenario — no error, no warning, defaults used. Already tested but validate end-to-end.
-- [ ] T054 Run quickstart.md validation — create config file, verify all commands work as documented
+- [ ] T054 Run quickstart.md validation — create config file, verify all commands work as documented; verify 50-setting config file adds < 1ms startup (SC-004)
 - [ ] T055 Full build (Debug + Release, x64 + ARM64) and run all tests on all configurations
 
 ---

@@ -63,7 +63,7 @@ Used in: `m_rgAttributeSources[]`, `m_mapExtensionSources`, `m_mapExtensionIconS
 
 | Method | Change |
 |--------|--------|
-| `ApplyUserColorOverrides` | Renamed to `ApplyOverridesFromEnvVar` for clarity (or keep name, add source parameter) |
+| `ApplyUserColorOverrides` | Keep existing name; add `EAttributeSource source` parameter so the same method handles both config file and env var entries |
 | `ProcessColorOverrideEntry` | Add `EAttributeSource source` parameter; all source-map writes use this parameter instead of hardcoded `Environment` |
 | All methods that write to source maps | Thread the `source` parameter through the call chain |
 
@@ -86,8 +86,8 @@ IConfigFileReader
 
 ### New: `CConfigFileReader` (class)
 
-Implements `IConfigFileReader`. Handles:
-- `std::ifstream` in binary mode (MSVC accepts `wstring` paths)
+Implements `IConfigFileReader`. Constructor accepts an optional `std::istream*` override for unit testing; when provided, reads from the given stream instead of opening a file. Production callers pass no override (uses `std::ifstream` internally). Handles:
+- `std::ifstream` in binary mode (MSVC accepts `wstring` paths) — or reads from injected `std::istream*` in tests
 - BOM detection (UTF-8 BOM skipped, UTF-16 BOM rejected with error)
 - Raw bytes → `MultiByteToWideChar` → wstring
 - Line splitting on `\r\n`, `\n`, `\r`
@@ -98,6 +98,8 @@ Implements `IConfigFileReader`. Handles:
 ### New: `CTestConfigFileReader` (test class)
 
 Implements `IConfigFileReader` for unit tests. Stores lines in-memory via a `Set()` method, returns them from `ReadLines()`. Can simulate file-not-found (`S_FALSE`) and I/O errors (`E_FAIL`).
+
+**Testability note**: The `std::istream*` injection in `CConfigFileReader` is for unit-testing the reader's own internals (BOM detection, line splitting, encoding conversion) without real file I/O. The `CTestConfigFileReader` mock is for testing `CConfig::LoadConfigFile` without any reader logic — it returns pre-built lines directly, bypassing the reader entirely. Both mechanisms coexist and serve different test layers.
 
 ---
 

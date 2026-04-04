@@ -35,7 +35,7 @@ Each line is one of:
 | Extension color | `.cpp = LightGreen` | Set color for file extension |
 | Display attribute | `D = LightBlue` | Set color for display item |
 | File attribute | `attr:h = DarkGrey` | Set color for file attribute |
-| Icon override | `.cpp = LightGreen, e795` | Set color + icon for extension |
+| Icon override | `.go = LightCyan, e627` | Set color + icon for extension |
 | Parameterized | `Depth = 3` | Set parameterized value |
 | Well-known dir | `dir:.git = DarkGrey` | Set color for known directory |
 

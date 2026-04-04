@@ -97,6 +97,7 @@ With two configuration sources (config file and env var), the existing diagnosti
 - What happens when the config file contains a BOM? (Handled gracefully — BOM is skipped.)
 - What happens when the config file contains very long lines or very large content? (Reasonable limits; degrade gracefully.)
 - What happens when the same setting appears multiple times in the config file? (Last occurrence wins, consistent with standard config file behavior.)
+- What happens when the USERPROFILE environment variable is not set? (Config file loading is silently skipped, same as file not found.)
 
 ## Config File Format *(mandatory)*
 
@@ -124,8 +125,8 @@ D = LightBlue
 attr:h = DarkGrey
 
 # Icon overrides
-.cpp = LightGreen, e795
-.py  = LightGreen, e73c
+.go = LightCyan, e627
+.py = LightGreen, e73c
 
 # Parameterized settings
 Depth = 3
@@ -154,24 +155,23 @@ Size = Auto
 - **FR-005**: System MUST ignore blank lines and whitespace-only lines.
 - **FR-006**: System MUST trim leading and trailing whitespace from each line before parsing.
 - **FR-007**: System MUST apply the TCDIR environment variable settings after config file settings, so that the env var overrides the config file for any conflicting keys.
-- **FR-008**: System MUST report config file parse errors with the file path, line number, and a description of the issue.
+- **FR-008**: System MUST report config file parse errors with the file path, line number, and a description of the issue. Each error message MUST include the line number.
 - **FR-009**: System MUST continue applying valid settings from the config file even when some lines contain errors.
 - **FR-010**: System MUST display config file errors on every run (same behavior as env var errors), not suppress them after the first display.
 - **FR-011**: System MUST display config file errors and env var errors in separate groups, each with its own header (e.g., "Config file errors:" and "Environment variable errors:"). Config file errors are shown first.
-- **FR-012**: System MUST include the line number in each config file error message.
-- **FR-013**: System MUST display file-level errors (cannot open, permission denied, encoding conversion failure) as a single error line identifying the file and the issue. The entire config file is skipped in this case.
-- **FR-014**: System MUST silently skip config file loading when no config file exists (no error, no warning).
-- **FR-015**: System MUST handle config files with a UTF-8 BOM by skipping the BOM before parsing.
-- **FR-016**: System MUST treat duplicate settings within the config file using last-occurrence-wins semantics.
+- **FR-012**: System MUST display file-level errors (cannot open, permission denied, encoding conversion failure) as a single error line identifying the file and the issue. The entire config file is skipped in this case.
+- **FR-013**: System MUST silently skip config file loading when no config file exists (no error, no warning).
+- **FR-014**: System MUST handle config files with a UTF-8 BOM by skipping the BOM before parsing. Config files with a UTF-16 LE or UTF-16 BE BOM MUST be rejected with a clear error message indicating the unsupported encoding.
+- **FR-015**: System MUST treat duplicate settings within the config file using last-occurrence-wins semantics.
 
 #### Diagnostic Commands
 
-- **FR-017**: The `/config` command MUST be repurposed as the config file diagnostic command (parallel to `/env` for the environment variable). It MUST show: config file syntax reference, the resolved config file path, whether the file was found/loaded, decoded settings from the config file grouped by type (switches, display items, file attributes, extensions, icons), and any config file parse errors.
-- **FR-018**: A new `/settings` command MUST be introduced to display the merged configuration tables — the output that `/config` produces today — showing all effective settings with their sources.
-- **FR-019**: The `/settings` source column MUST distinguish three sources: Default, Config file, and Environment.
-- **FR-020**: The `/settings` command MUST show icon status and any errors from both config file and env var.
-- **FR-021**: The `/env` command MUST remain unchanged — showing env var syntax help, current value decoded, and env var errors.
-- **FR-022**: The `/help` output MUST be updated to reflect the new command names and descriptions.
+- **FR-016**: The `/config` command MUST be repurposed as the config file diagnostic command (parallel to `/env` for the environment variable). It MUST show: config file syntax reference, the resolved config file path, whether the file was found/loaded, decoded settings from the config file grouped by type (switches, display items, file attributes, extensions, icons), and any config file parse errors.
+- **FR-017**: A new `/settings` command MUST be introduced to display the merged configuration tables — the output that `/config` produces today — showing all effective settings with their sources.
+- **FR-018**: The `/settings` source column MUST distinguish three sources: Default, Config file, and Environment.
+- **FR-019**: The `/settings` command MUST show icon status and any errors from both config file and env var.
+- **FR-020**: The `/env` command MUST remain unchanged — showing env var syntax help, current value decoded, and env var errors.
+- **FR-021**: The `/help` output MUST be updated to reflect the new command names and descriptions.
 
 ### Key Entities
 
@@ -186,7 +186,7 @@ Size = Auto
 - **SC-001**: Users can configure all settings currently supported by the TCDIR environment variable through the config file.
 - **SC-002**: Users can set up a config file with 20+ settings and have all of them applied correctly.
 - **SC-003**: Configuration errors are reported with sufficient detail (file, line number, issue description) that users can fix them on the first attempt.
-- **SC-004**: tcdir startup time with a config file containing 50 settings is indistinguishable from startup without a config file (no perceptible delay).
+- **SC-004**: tcdir startup time with a config file containing 50 settings is indistinguishable from startup without a config file (< 1ms additional startup, no perceptible delay).
 - **SC-005**: Existing users who rely solely on the TCDIR environment variable experience no change in behavior.
 - **SC-006**: Users can transition from env var configuration to config file configuration without learning new syntax for individual settings.
 
