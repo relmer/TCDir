@@ -245,9 +245,10 @@ int wmain (int argc, WCHAR * argv[])
     RunDirectoryListing (cmdlinePtr, consolePtr, configPtr);
 
     //
-    // Display any TCDIR environment variable issues at the end of the run
+    // Display any config file or TCDIR environment variable issues at the end of the run
     //
 
+    CUsage::DisplayConfigFileIssues (*consolePtr, cmdlinePtr->GetSwitchPrefix ());
     CUsage::DisplayEnvVarIssues (*consolePtr, cmdlinePtr->GetSwitchPrefix ());
 
     

@@ -23,6 +23,7 @@ public:
     static void    DisplayUsage                     (CConsole & console, wchar_t chPrefix = L'-', optional<bool> fIconsCli = nullopt);
     static void    DisplayEnvVarHelp                (CConsole & console, wchar_t chPrefix = L'-');
     static void    DisplayCurrentConfiguration      (CConsole & console, wchar_t chPrefix = L'-', optional<bool> fIconsCli = nullopt);
+    static void    DisplayConfigFileIssues          (CConsole & console, wchar_t chPrefix = L'-', bool fShowHint = true);
     static void    DisplayEnvVarIssues              (CConsole & console, wchar_t chPrefix = L'-', bool fShowHint = true);
 
 

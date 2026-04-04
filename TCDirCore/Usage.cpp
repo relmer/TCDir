@@ -485,6 +485,62 @@ void CUsage::DisplayUsage (CConsole & console, wchar_t chPrefix, optional<bool> 
 
 ////////////////////////////////////////////////////////////////////////////////
 //
+//  CUsage::DisplayConfigFileIssues
+//
+////////////////////////////////////////////////////////////////////////////////
+
+void CUsage::DisplayConfigFileIssues (CConsole & console, wchar_t chPrefix, bool fShowHint)
+{
+    CConfig::ValidationResult validationResult;
+
+    // Determine prefix strings for multi-char switches
+    LPCWSTR pszLong = (chPrefix == L'-') ? L"--" : L"/";
+
+
+
+    validationResult = console.m_configPtr->ValidateConfigFile();
+
+    if (!validationResult.hasIssues())
+    {
+        return;
+    }
+
+    console.ColorPrintf (L"{Default}\n{Error}There are some problems with your config file%s:\n",
+                         fShowHint ? format (L" (see {}config for help)", pszLong).c_str() : L"");
+
+    for (const auto & error : validationResult.errors)
+    {
+        //
+        // Format with line number if available
+        //
+
+        if (error.lineNumber > 0)
+        {
+            console.ColorPrintf (L"{Error}  Line %zu: %s in \"%s\"\n",
+                                 error.lineNumber, error.message.c_str(), error.entry.c_str());
+
+            size_t  prefixLen = 2 + 5 + std::to_wstring (error.lineNumber).length() + 2 +
+                                error.message.length() + 5 + error.invalidTextOffset;
+            wstring underline (error.invalidText.length(), UnicodeSymbols::Overline);
+
+            console.ColorPrintf (L"{Default}%*s{Error}%s\n\n",
+                                 static_cast<int>(prefixLen), L"", underline.c_str());
+        }
+        else
+        {
+            // File-level error (no line number)
+            console.ColorPrintf (L"{Error}  %s: %s\n\n",
+                                 error.entry.c_str(), error.message.c_str());
+        }
+    }
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
 //  CUsage::DisplayEnvVarIssues
 //
 ////////////////////////////////////////////////////////////////////////////////

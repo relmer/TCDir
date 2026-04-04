@@ -821,5 +821,133 @@ namespace UnitTest
             Assert::IsTrue (config.m_fWideListing.has_value());
             Assert::IsFalse (config.m_fWideListing.value());
         }
+
+        //
+        // T034: Invalid color name shows line number
+        //
+
+        TEST_METHOD (ErrorReporting_InvalidColorName_HasLineNumber)
+        {
+            ConfigFileProbe config;
+            config.SetConfigLines ({ L".cpp=InvalidColor" });
+            config.Initialize (FC_LightGrey);
+
+
+
+            auto result = config.ValidateConfigFile();
+            Assert::IsTrue (result.hasIssues());
+            Assert::AreEqual ((size_t) 1, result.errors.size());
+            Assert::AreEqual ((size_t) 1, result.errors[0].lineNumber);
+            Assert::AreEqual (wstring (L"C:\\Users\\TestUser\\.tcdirconfig"), result.errors[0].sourceFilePath);
+        }
+
+        TEST_METHOD (ErrorReporting_MalformedEntry_HasLineNumber)
+        {
+            ConfigFileProbe config;
+            config.SetConfigLines ({ L".cpp=Yellow", L"=NoKey", L".h=Red" });
+            config.Initialize (FC_LightGrey);
+
+
+
+            auto result = config.ValidateConfigFile();
+            Assert::IsTrue (result.hasIssues());
+            Assert::AreEqual ((size_t) 1, result.errors.size());
+            Assert::AreEqual ((size_t) 2, result.errors[0].lineNumber);
+        }
+
+        TEST_METHOD (ErrorReporting_ValidLinesStillApplyAlongsideErrors)
+        {
+            ConfigFileProbe config;
+            config.SetConfigLines ({ L".cpp=Yellow", L".h=BogusColor", L"w" });
+            config.Initialize (FC_LightGrey);
+
+
+
+            // Valid lines should be applied
+            Assert::AreEqual ((WORD) FC_Yellow, config.m_mapExtensionToTextAttr[L".cpp"]);
+            Assert::IsTrue (config.m_fWideListing.has_value());
+            Assert::IsTrue (config.m_fWideListing.value());
+
+            // Error should be recorded
+            auto result = config.ValidateConfigFile();
+            Assert::IsTrue (result.hasIssues());
+            Assert::AreEqual ((size_t) 1, result.errors.size());
+            Assert::AreEqual ((size_t) 2, result.errors[0].lineNumber);
+        }
+
+        TEST_METHOD (ErrorReporting_MultipleErrors_EachHasLineNumber)
+        {
+            ConfigFileProbe config;
+            config.SetConfigLines ({
+                L".cpp=Yellow",
+                L".h=BogusColor",
+                L"x=Green",
+                L".txt=Red"
+            });
+            config.Initialize (FC_LightGrey);
+
+
+
+            auto result = config.ValidateConfigFile();
+            Assert::AreEqual ((size_t) 2, result.errors.size());
+            Assert::AreEqual ((size_t) 2, result.errors[0].lineNumber);
+            Assert::AreEqual ((size_t) 3, result.errors[1].lineNumber);
+        }
+
+        //
+        // T035: Config file errors separate from env var errors
+        //
+
+        TEST_METHOD (ErrorGrouping_ConfigFileErrorsSeparateFromEnvVar)
+        {
+            ConfigFileProbe config;
+            config.SetConfigLines ({ L".cpp=BogusColor" });
+            config.SetEnvVar (L"TCDIR", L".h=AlsoBogus");
+            config.Initialize (FC_LightGrey);
+
+
+
+            auto configResult = config.ValidateConfigFile();
+            auto envResult = config.m_lastParseResult;
+
+            // Config file has its own errors
+            Assert::IsTrue (configResult.hasIssues());
+            Assert::AreEqual ((size_t) 1, configResult.errors.size());
+
+            // Env var has its own errors
+            Assert::IsTrue (envResult.hasIssues());
+            Assert::AreEqual ((size_t) 1, envResult.errors.size());
+        }
+
+        //
+        // T036: I/O error tests
+        //
+
+        TEST_METHOD (IOError_PermissionDenied_ProducesSingleError)
+        {
+            ConfigFileProbe config;
+            config.SetConfigError (L"Access denied");
+            config.Initialize (FC_LightGrey);
+
+
+
+            auto result = config.ValidateConfigFile();
+            Assert::IsTrue (result.hasIssues());
+            Assert::AreEqual ((size_t) 1, result.errors.size());
+            Assert::IsFalse (config.IsConfigFileLoaded());
+        }
+
+        TEST_METHOD (IOError_FileNotFound_SilentSkip)
+        {
+            ConfigFileProbe config;
+            config.SetConfigNotFound();
+            config.Initialize (FC_LightGrey);
+
+
+
+            auto result = config.ValidateConfigFile();
+            Assert::IsFalse (result.hasIssues());
+            Assert::IsFalse (config.IsConfigFileLoaded());
+        }
     };
 }
