@@ -9,13 +9,202 @@ using namespace Microsoft::VisualStudio::CppUnitTestFramework;
 
 
 
+namespace Microsoft { namespace VisualStudio { namespace CppUnitTestFramework
+{
+    template<> inline std::wstring ToString<CConfig::EAttributeSource> (const CConfig::EAttributeSource & value)
+    {
+        switch (value)
+        {
+            case CConfig::EAttributeSource::Default:     return L"Default";
+            case CConfig::EAttributeSource::ConfigFile:  return L"ConfigFile";
+            case CConfig::EAttributeSource::Environment: return L"Environment";
+            default:                                     return L"Unknown";
+        }
+    }
+
+    template<> inline std::wstring ToString<char32_t> (const char32_t & value)
+    {
+        wchar_t buf[16];
+        swprintf_s (buf, L"U+%05X", static_cast<unsigned>(value));
+        return buf;
+    }
+}}}
+
+
+
 
 
 namespace UnitTest
 {
     ////////////////////////////////////////////////////////////////////////////////
     //
-    //  ConfigFileTests — placeholder for Phase 3+
+    //  Mock environment provider for config file tests
+    //
+    ////////////////////////////////////////////////////////////////////////////////
+
+    class CConfigTestEnvironmentProvider : public IEnvironmentProvider
+    {
+    public:
+        void Set (LPCWSTR pszName, wstring value)
+        {
+            m_map[pszName] = std::move (value);
+        }
+
+        void Clear (LPCWSTR pszName)
+        {
+            m_map.erase (pszName);
+        }
+
+        virtual bool TryGetEnvironmentVariable (LPCWSTR pszName, wstring & value) const override
+        {
+            auto iter = m_map.find (pszName);
+            if (iter == m_map.end())
+            {
+                value.clear();
+                return false;
+            }
+
+            value = iter->second;
+            return true;
+        }
+
+    private:
+        unordered_map<wstring, wstring> m_map;
+    };
+
+
+
+
+    ////////////////////////////////////////////////////////////////////////////////
+    //
+    //  Mock config file reader for config file tests
+    //
+    ////////////////////////////////////////////////////////////////////////////////
+
+    class CTestConfigFileReader : public IConfigFileReader
+    {
+    public:
+        void Set (vector<wstring> lines)
+        {
+            m_lines      = std::move (lines);
+            m_hrResult   = S_OK;
+            m_fConfigured = true;
+        }
+
+        void SetNotFound (void)
+        {
+            m_hrResult   = S_FALSE;
+            m_fConfigured = true;
+        }
+
+        void SetError (wstring errorMessage)
+        {
+            m_hrResult      = E_FAIL;
+            m_errorMessage  = std::move (errorMessage);
+            m_fConfigured    = true;
+        }
+
+        HRESULT ReadLines (const wstring & /*path*/, vector<wstring> & lines, wstring & errorMessage) override
+        {
+            ASSERT (m_fConfigured);
+
+            if (m_hrResult == S_OK)
+            {
+                lines = m_lines;
+            }
+            else if (FAILED (m_hrResult))
+            {
+                errorMessage = m_errorMessage;
+            }
+
+            return m_hrResult;
+        }
+
+    private:
+        vector<wstring> m_lines;
+        wstring         m_errorMessage;
+        HRESULT         m_hrResult   = S_FALSE;
+        bool            m_fConfigured = false;
+    };
+
+
+
+
+    ////////////////////////////////////////////////////////////////////////////////
+    //
+    //  ConfigProbe for config file tests — sets up mock env provider and reader
+    //
+    ////////////////////////////////////////////////////////////////////////////////
+
+    struct ConfigFileProbe : public CConfig
+    {
+        ConfigFileProbe (void)
+        {
+            m_environmentProvider.Set (L"USERPROFILE", L"C:\\Users\\TestUser");
+            SetEnvironmentProvider (&m_environmentProvider);
+            SetConfigFileReader (&m_reader);
+        }
+
+        void SetEnvVar (LPCWSTR pszName, wstring value)
+        {
+            m_environmentProvider.Set (pszName, std::move (value));
+        }
+
+        void ClearEnvVar (LPCWSTR pszName)
+        {
+            m_environmentProvider.Clear (pszName);
+        }
+
+        void SetConfigLines (vector<wstring> lines)
+        {
+            m_reader.Set (std::move (lines));
+        }
+
+        void SetConfigNotFound (void)
+        {
+            m_reader.SetNotFound();
+        }
+
+        void SetConfigError (wstring errorMessage)
+        {
+            m_reader.SetError (std::move (errorMessage));
+        }
+
+        using CConfig::m_mapExtensionToTextAttr;
+        using CConfig::m_mapExtensionSources;
+        using CConfig::m_rgAttributes;
+        using CConfig::m_rgAttributeSources;
+        using CConfig::m_mapExtensionToIcon;
+        using CConfig::m_mapExtensionIconSources;
+        using CConfig::m_mapWellKnownDirToIcon;
+        using CConfig::m_mapWellKnownDirIconSources;
+        using CConfig::m_mapFileAttributesTextAttr;
+        using CConfig::m_fWideListing;
+        using CConfig::m_fBareListing;
+        using CConfig::m_fRecurse;
+        using CConfig::m_fPerfTimer;
+        using CConfig::m_fMultiThreaded;
+        using CConfig::m_fShowOwner;
+        using CConfig::m_fShowStreams;
+        using CConfig::m_fIcons;
+        using CConfig::m_fTree;
+        using CConfig::m_cMaxDepth;
+        using CConfig::m_cTreeIndent;
+        using CConfig::m_eSizeFormat;
+        using CConfig::m_lastParseResult;
+        using CConfig::m_configFileParseResult;
+
+    private:
+        CConfigTestEnvironmentProvider  m_environmentProvider;
+        CTestConfigFileReader           m_reader;
+    };
+
+
+
+
+    ////////////////////////////////////////////////////////////////////////////////
+    //
+    //  ConfigFileTests — Phase 3: T021 config file loading integration tests
     //
     ////////////////////////////////////////////////////////////////////////////////
 
@@ -23,9 +212,364 @@ namespace UnitTest
     {
     public:
 
-        TEST_METHOD (Placeholder_ConfigFileTestClassCompiles)
+        //
+        // T021: Switches applied from config file
+        //
+
+        TEST_METHOD (LoadConfigFile_SwitchW_SetsWideListing)
         {
-            Assert::IsTrue (true);
+            ConfigFileProbe config;
+            config.SetConfigLines ({ L"w" });
+            config.Initialize (FC_LightGrey);
+
+
+
+            Assert::IsTrue (config.m_fWideListing.has_value());
+            Assert::IsTrue (config.m_fWideListing.value());
+        }
+
+        TEST_METHOD (LoadConfigFile_SwitchB_SetsBare)
+        {
+            ConfigFileProbe config;
+            config.SetConfigLines ({ L"b" });
+            config.Initialize (FC_LightGrey);
+
+
+
+            Assert::IsTrue (config.m_fBareListing.has_value());
+            Assert::IsTrue (config.m_fBareListing.value());
+        }
+
+        TEST_METHOD (LoadConfigFile_SwitchS_SetsRecurse)
+        {
+            ConfigFileProbe config;
+            config.SetConfigLines ({ L"S" });
+            config.Initialize (FC_LightGrey);
+
+
+
+            Assert::IsTrue (config.m_fRecurse.has_value());
+            Assert::IsTrue (config.m_fRecurse.value());
+        }
+
+        TEST_METHOD (LoadConfigFile_SwitchP_SetsPerfTimer)
+        {
+            ConfigFileProbe config;
+            config.SetConfigLines ({ L"P" });
+            config.Initialize (FC_LightGrey);
+
+
+
+            Assert::IsTrue (config.m_fPerfTimer.has_value());
+            Assert::IsTrue (config.m_fPerfTimer.value());
+        }
+
+        TEST_METHOD (LoadConfigFile_SwitchOwner_SetsShowOwner)
+        {
+            ConfigFileProbe config;
+            config.SetConfigLines ({ L"Owner" });
+            config.Initialize (FC_LightGrey);
+
+
+
+            Assert::IsTrue (config.m_fShowOwner.has_value());
+            Assert::IsTrue (config.m_fShowOwner.value());
+        }
+
+        TEST_METHOD (LoadConfigFile_SwitchStreams_SetsShowStreams)
+        {
+            ConfigFileProbe config;
+            config.SetConfigLines ({ L"Streams" });
+            config.Initialize (FC_LightGrey);
+
+
+
+            Assert::IsTrue (config.m_fShowStreams.has_value());
+            Assert::IsTrue (config.m_fShowStreams.value());
+        }
+
+        TEST_METHOD (LoadConfigFile_MultipleSwitches_AllApplied)
+        {
+            ConfigFileProbe config;
+            config.SetConfigLines ({ L"w", L"S", L"Owner" });
+            config.Initialize (FC_LightGrey);
+
+
+
+            Assert::IsTrue (config.m_fWideListing.has_value());
+            Assert::IsTrue (config.m_fWideListing.value());
+            Assert::IsTrue (config.m_fRecurse.has_value());
+            Assert::IsTrue (config.m_fRecurse.value());
+            Assert::IsTrue (config.m_fShowOwner.has_value());
+            Assert::IsTrue (config.m_fShowOwner.value());
+        }
+
+        //
+        // T021: Color overrides applied from config file
+        //
+
+        TEST_METHOD (LoadConfigFile_ExtensionColor_Applied)
+        {
+            ConfigFileProbe config;
+            config.SetConfigLines ({ L".cpp=Yellow" });
+            config.Initialize (FC_LightGrey);
+
+
+
+            Assert::IsTrue (config.m_mapExtensionToTextAttr.contains (L".cpp"));
+            Assert::AreEqual ((WORD) FC_Yellow, config.m_mapExtensionToTextAttr[L".cpp"]);
+            Assert::AreEqual (CConfig::EAttributeSource::ConfigFile, config.m_mapExtensionSources[L".cpp"]);
+        }
+
+        TEST_METHOD (LoadConfigFile_MultipleExtensions_AllApplied)
+        {
+            ConfigFileProbe config;
+            config.SetConfigLines ({ L".cpp=LightGreen", L".h=LightBlue", L".txt=White" });
+            config.Initialize (FC_LightGrey);
+
+
+
+            Assert::IsTrue (config.m_mapExtensionToTextAttr.contains (L".cpp"));
+            Assert::AreEqual ((WORD) FC_LightGreen, config.m_mapExtensionToTextAttr[L".cpp"]);
+            Assert::IsTrue (config.m_mapExtensionToTextAttr.contains (L".h"));
+            Assert::AreEqual ((WORD) FC_LightBlue, config.m_mapExtensionToTextAttr[L".h"]);
+            Assert::IsTrue (config.m_mapExtensionToTextAttr.contains (L".txt"));
+            Assert::AreEqual ((WORD) FC_White, config.m_mapExtensionToTextAttr[L".txt"]);
+        }
+
+        TEST_METHOD (LoadConfigFile_DisplayAttribute_Applied)
+        {
+            ConfigFileProbe config;
+            config.SetConfigLines ({ L"D=Yellow" });
+            config.Initialize (FC_LightGrey);
+
+
+
+            Assert::AreEqual ((WORD) FC_Yellow, config.m_rgAttributes[CConfig::EAttribute::Date]);
+            Assert::AreEqual (CConfig::EAttributeSource::ConfigFile, config.m_rgAttributeSources[CConfig::EAttribute::Date]);
+        }
+
+        TEST_METHOD (LoadConfigFile_ColorWithBackground_Applied)
+        {
+            ConfigFileProbe config;
+            config.SetConfigLines ({ L".log=White on Blue" });
+            config.Initialize (FC_LightGrey);
+
+
+
+            WORD expected = FC_White | BC_Blue;
+            Assert::IsTrue (config.m_mapExtensionToTextAttr.contains (L".log"));
+            Assert::AreEqual (expected, config.m_mapExtensionToTextAttr[L".log"]);
+        }
+
+        //
+        // T021: Icon overrides applied from config file
+        //
+
+        TEST_METHOD (LoadConfigFile_IconOverride_Applied)
+        {
+            ConfigFileProbe config;
+            config.SetConfigLines ({ L".py=Green,U+E606" });
+            config.Initialize (FC_LightGrey);
+
+
+
+            Assert::IsTrue (config.m_mapExtensionToIcon.contains (L".py"));
+            Assert::AreEqual (static_cast<char32_t>(0xE606), config.m_mapExtensionToIcon[L".py"]);
+            Assert::AreEqual ((WORD) FC_Green, config.m_mapExtensionToTextAttr[L".py"]);
+        }
+
+        //
+        // T021: Parameterized values applied from config file
+        //
+
+        TEST_METHOD (LoadConfigFile_DepthValue_Applied)
+        {
+            ConfigFileProbe config;
+            config.SetConfigLines ({ L"Depth=3" });
+            config.Initialize (FC_LightGrey);
+
+
+
+            Assert::IsTrue (config.m_cMaxDepth.has_value());
+            Assert::AreEqual (3, config.m_cMaxDepth.value());
+        }
+
+        TEST_METHOD (LoadConfigFile_TreeIndentValue_Applied)
+        {
+            ConfigFileProbe config;
+            config.SetConfigLines ({ L"TreeIndent=4" });
+            config.Initialize (FC_LightGrey);
+
+
+
+            Assert::IsTrue (config.m_cTreeIndent.has_value());
+            Assert::AreEqual (4, config.m_cTreeIndent.value());
+        }
+
+        TEST_METHOD (LoadConfigFile_SizeAuto_Applied)
+        {
+            ConfigFileProbe config;
+            config.SetConfigLines ({ L"Size=Auto" });
+            config.Initialize (FC_LightGrey);
+
+
+
+            Assert::IsTrue (config.m_eSizeFormat.has_value());
+            Assert::AreEqual ((int) ESizeFormat::Auto, (int) config.m_eSizeFormat.value());
+        }
+
+        //
+        // T021: Config file path and load state
+        //
+
+        TEST_METHOD (LoadConfigFile_Loaded_IsConfigFileLoadedTrue)
+        {
+            ConfigFileProbe config;
+            config.SetConfigLines ({ L"w" });
+            config.Initialize (FC_LightGrey);
+
+
+
+            Assert::IsTrue (config.IsConfigFileLoaded());
+            Assert::AreEqual (wstring (L"C:\\Users\\TestUser\\.tcdirconfig"), config.GetConfigFilePath());
+        }
+
+        TEST_METHOD (LoadConfigFile_FileNotFound_IsConfigFileLoadedFalse)
+        {
+            ConfigFileProbe config;
+            config.SetConfigNotFound();
+            config.Initialize (FC_LightGrey);
+
+
+
+            Assert::IsFalse (config.IsConfigFileLoaded());
+        }
+
+        TEST_METHOD (LoadConfigFile_NoUserProfile_IsConfigFileLoadedFalse)
+        {
+            ConfigFileProbe config;
+            config.ClearEnvVar (L"USERPROFILE");
+            config.SetConfigLines ({ L"w" });
+            config.Initialize (FC_LightGrey);
+
+
+
+            Assert::IsFalse (config.IsConfigFileLoaded());
+        }
+
+        //
+        // T022: Comment lines skipped
+        //
+
+        TEST_METHOD (LoadConfigFile_CommentLine_Skipped)
+        {
+            ConfigFileProbe config;
+            config.SetConfigLines ({ L"# This is a comment", L".cpp=Yellow" });
+            config.Initialize (FC_LightGrey);
+
+
+
+            Assert::IsTrue (config.m_mapExtensionToTextAttr.contains (L".cpp"));
+            Assert::AreEqual ((WORD) FC_Yellow, config.m_mapExtensionToTextAttr[L".cpp"]);
+            Assert::AreEqual ((size_t) 0, config.m_configFileParseResult.errors.size());
+        }
+
+        TEST_METHOD (LoadConfigFile_MultipleComments_AllSkipped)
+        {
+            ConfigFileProbe config;
+            config.SetConfigLines ({
+                L"# Color section",
+                L"# ==============",
+                L".cpp=Yellow",
+                L"# Switch section",
+                L"w"
+            });
+            config.Initialize (FC_LightGrey);
+
+
+
+            Assert::IsTrue (config.m_mapExtensionToTextAttr.contains (L".cpp"));
+            Assert::IsTrue (config.m_fWideListing.has_value());
+            Assert::AreEqual ((size_t) 0, config.m_configFileParseResult.errors.size());
+        }
+
+        //
+        // T022: Inline comments stripped
+        //
+
+        TEST_METHOD (LoadConfigFile_InlineComment_Stripped)
+        {
+            ConfigFileProbe config;
+            config.SetConfigLines ({ L".cpp=Yellow  # C++ source files" });
+            config.Initialize (FC_LightGrey);
+
+
+
+            Assert::IsTrue (config.m_mapExtensionToTextAttr.contains (L".cpp"));
+            Assert::AreEqual ((WORD) FC_Yellow, config.m_mapExtensionToTextAttr[L".cpp"]);
+        }
+
+        //
+        // T022: Blank lines skipped
+        //
+
+        TEST_METHOD (LoadConfigFile_BlankLines_Skipped)
+        {
+            ConfigFileProbe config;
+            config.SetConfigLines ({
+                L"",
+                L".cpp=Yellow",
+                L"",
+                L"",
+                L".h=LightBlue",
+                L""
+            });
+            config.Initialize (FC_LightGrey);
+
+
+
+            Assert::IsTrue (config.m_mapExtensionToTextAttr.contains (L".cpp"));
+            Assert::IsTrue (config.m_mapExtensionToTextAttr.contains (L".h"));
+            Assert::AreEqual ((size_t) 0, config.m_configFileParseResult.errors.size());
+        }
+
+        //
+        // T022: Whitespace-only lines skipped
+        //
+
+        TEST_METHOD (LoadConfigFile_WhitespaceOnlyLines_Skipped)
+        {
+            ConfigFileProbe config;
+            config.SetConfigLines ({
+                L"   ",
+                L".cpp=Yellow",
+                L"      ",
+                L".h=LightBlue"
+            });
+            config.Initialize (FC_LightGrey);
+
+
+
+            Assert::IsTrue (config.m_mapExtensionToTextAttr.contains (L".cpp"));
+            Assert::IsTrue (config.m_mapExtensionToTextAttr.contains (L".h"));
+            Assert::AreEqual ((size_t) 0, config.m_configFileParseResult.errors.size());
+        }
+
+        //
+        // T022: Leading/trailing whitespace trimmed
+        //
+
+        TEST_METHOD (LoadConfigFile_LeadingTrailingWhitespace_Trimmed)
+        {
+            ConfigFileProbe config;
+            config.SetConfigLines ({ L"  .cpp=Yellow  " });
+            config.Initialize (FC_LightGrey);
+
+
+
+            Assert::IsTrue (config.m_mapExtensionToTextAttr.contains (L".cpp"));
+            Assert::AreEqual ((WORD) FC_Yellow, config.m_mapExtensionToTextAttr[L".cpp"]);
         }
     };
 }
