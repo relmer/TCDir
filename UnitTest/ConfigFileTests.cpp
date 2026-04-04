@@ -571,5 +571,131 @@ namespace UnitTest
             Assert::IsTrue (config.m_mapExtensionToTextAttr.contains (L".cpp"));
             Assert::AreEqual ((WORD) FC_Yellow, config.m_mapExtensionToTextAttr[L".cpp"]);
         }
+
+        //
+        // T024: Env var overrides config file color
+        //
+
+        TEST_METHOD (Precedence_EnvVarOverridesConfigFileColor)
+        {
+            ConfigFileProbe config;
+            config.SetConfigLines ({ L".cpp=LightGreen" });
+            config.SetEnvVar (L"TCDIR", L".cpp=Yellow");
+            config.Initialize (FC_LightGrey);
+
+
+
+            Assert::AreEqual ((WORD) FC_Yellow, config.m_mapExtensionToTextAttr[L".cpp"]);
+            Assert::AreEqual (CConfig::EAttributeSource::Environment, config.m_mapExtensionSources[L".cpp"]);
+        }
+
+        TEST_METHOD (Precedence_EnvVarOverridesConfigFileSwitch)
+        {
+            ConfigFileProbe config;
+            config.SetConfigLines ({ L"w" });
+            config.SetEnvVar (L"TCDIR", L"W-");
+            config.Initialize (FC_LightGrey);
+
+
+
+            // W- disables wide listing; env var should win
+            Assert::IsTrue (config.m_fWideListing.has_value());
+            Assert::IsFalse (config.m_fWideListing.value());
+        }
+
+        TEST_METHOD (Precedence_EnvVarOverridesConfigFileDisplayAttribute)
+        {
+            ConfigFileProbe config;
+            config.SetConfigLines ({ L"D=LightGreen" });
+            config.SetEnvVar (L"TCDIR", L"D=Yellow");
+            config.Initialize (FC_LightGrey);
+
+
+
+            Assert::AreEqual ((WORD) FC_Yellow, config.m_rgAttributes[CConfig::EAttribute::Date]);
+            Assert::AreEqual (CConfig::EAttributeSource::Environment, config.m_rgAttributeSources[CConfig::EAttribute::Date]);
+        }
+
+        //
+        // T024: Non-conflicting settings merge from both sources
+        //
+
+        TEST_METHOD (Precedence_NonConflictingSettingsMerge)
+        {
+            ConfigFileProbe config;
+            config.SetConfigLines ({ L".cpp=LightGreen", L"w" });
+            config.SetEnvVar (L"TCDIR", L".h=Yellow;S");
+            config.Initialize (FC_LightGrey);
+
+
+
+            // Config file settings
+            Assert::AreEqual ((WORD) FC_LightGreen, config.m_mapExtensionToTextAttr[L".cpp"]);
+            Assert::IsTrue (config.m_fWideListing.has_value());
+            Assert::IsTrue (config.m_fWideListing.value());
+
+            // Env var settings
+            Assert::AreEqual ((WORD) FC_Yellow, config.m_mapExtensionToTextAttr[L".h"]);
+            Assert::IsTrue (config.m_fRecurse.has_value());
+            Assert::IsTrue (config.m_fRecurse.value());
+        }
+
+        TEST_METHOD (Precedence_ConflictingColorEnvVarWins_NonConflictingConfigFilePreserved)
+        {
+            ConfigFileProbe config;
+            config.SetConfigLines ({ L".cpp=LightGreen", L".h=LightBlue" });
+            config.SetEnvVar (L"TCDIR", L".cpp=Yellow");
+            config.Initialize (FC_LightGrey);
+
+
+
+            // .cpp overridden by env var
+            Assert::AreEqual ((WORD) FC_Yellow, config.m_mapExtensionToTextAttr[L".cpp"]);
+            Assert::AreEqual (CConfig::EAttributeSource::Environment, config.m_mapExtensionSources[L".cpp"]);
+
+            // .h preserved from config file
+            Assert::AreEqual ((WORD) FC_LightBlue, config.m_mapExtensionToTextAttr[L".h"]);
+            Assert::AreEqual (CConfig::EAttributeSource::ConfigFile, config.m_mapExtensionSources[L".h"]);
+        }
+
+        //
+        // T025: Source tracking verification
+        //
+
+        TEST_METHOD (SourceTracking_ConfigOnlySettings_SourceIsConfigFile)
+        {
+            ConfigFileProbe config;
+            config.SetConfigLines ({ L".cpp=LightGreen", L"D=Cyan" });
+            config.Initialize (FC_LightGrey);
+
+
+
+            Assert::AreEqual (CConfig::EAttributeSource::ConfigFile, config.m_mapExtensionSources[L".cpp"]);
+            Assert::AreEqual (CConfig::EAttributeSource::ConfigFile, config.m_rgAttributeSources[CConfig::EAttribute::Date]);
+        }
+
+        TEST_METHOD (SourceTracking_EnvVarOverriddenSettings_SourceIsEnvironment)
+        {
+            ConfigFileProbe config;
+            config.SetConfigLines ({ L".cpp=LightGreen" });
+            config.SetEnvVar (L"TCDIR", L".cpp=Yellow");
+            config.Initialize (FC_LightGrey);
+
+
+
+            Assert::AreEqual (CConfig::EAttributeSource::Environment, config.m_mapExtensionSources[L".cpp"]);
+        }
+
+        TEST_METHOD (SourceTracking_DefaultsUnchanged_SourceIsDefault)
+        {
+            ConfigFileProbe config;
+            config.SetConfigLines ({ L"w" });
+            config.Initialize (FC_LightGrey);
+
+
+
+            // Date attribute was not overridden by config file or env var
+            Assert::AreEqual (CConfig::EAttributeSource::Default, config.m_rgAttributeSources[CConfig::EAttribute::Date]);
+        }
     };
 }
