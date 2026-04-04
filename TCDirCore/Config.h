@@ -144,7 +144,7 @@ public:
     CEnvironmentProvider                       m_environmentProviderDefault;
     const IEnvironmentProvider               * m_pEnvironmentProvider             = nullptr;
 
-    // Switch defaults from environment variable
+    // Switch defaults from environment variable or config file
     optional<bool>                             m_fWideListing;
     optional<bool>                             m_fBareListing;
     optional<bool>                             m_fRecurse;
@@ -157,6 +157,12 @@ public:
     optional<int>                              m_cMaxDepth;
     optional<int>                              m_cTreeIndent;
     optional<ESizeFormat>                      m_eSizeFormat;
+
+    // Switch and parameter source tracking
+    EAttributeSource                           m_rgSwitchSources[9]   = { EAttributeSource::Default };
+    EAttributeSource                           m_eMaxDepthSource      = EAttributeSource::Default;
+    EAttributeSource                           m_eTreeIndentSource    = EAttributeSource::Default;
+    EAttributeSource                           m_eSizeFormatSource    = EAttributeSource::Default;
 
     // Icon mapping tables (parallel to color tables)
     unordered_map<wstring, char32_t>           m_mapExtensionToIcon;
@@ -216,4 +222,8 @@ protected:
 
     static const STextAttr      s_rgTextAttrs[];
     static const SSwitchMapping s_switchMappings[];
+
+public:
+    static constexpr size_t     SWITCH_COUNT = 9;
+    static const optional<bool> CConfig::* s_switchMemberOrder[SWITCH_COUNT];
 };

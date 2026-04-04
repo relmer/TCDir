@@ -601,10 +601,149 @@ void CUsage::DisplayConfigurationTable (CConsole & console, bool fShowIcons)
 
     tableSeparator += wstring (COLUMN_WIDTH_ATTR + COLUMN_WIDTH_SOURCE + 2, UnicodeSymbols::LineHorizontal);
 
+    DisplaySwitchConfiguration        (console, COLUMN_WIDTH_ATTR, COLUMN_WIDTH_SOURCE);
     DisplayAttributeConfiguration     (console, COLUMN_WIDTH_ATTR, COLUMN_WIDTH_SOURCE, fShowIcons);
     DisplayFileAttributeConfiguration (console, COLUMN_WIDTH_ATTR, COLUMN_WIDTH_SOURCE);
     DisplayExtensionConfiguration     (console, COLUMN_WIDTH_ATTR, COLUMN_WIDTH_SOURCE, fShowIcons);
     DisplayWellKnownDirConfiguration  (console, fShowIcons);
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CUsage::DisplaySwitchConfiguration
+//
+//  Display switches and parameters set via config file or environment variable,
+//  with source tracking.
+//
+////////////////////////////////////////////////////////////////////////////////
+
+void CUsage::DisplaySwitchConfiguration (CConsole & console, int columnWidthAttr, int columnWidthSource)
+{
+    const CConfig & config = *console.m_configPtr;
+    WORD            bgAttr = config.m_rgAttributes[CConfig::EAttribute::Default] & BC_Mask;
+
+    const optional<bool> * switchValues[] =
+    {
+        &config.m_fWideListing,
+        &config.m_fRecurse,
+        &config.m_fPerfTimer,
+        &config.m_fMultiThreaded,
+        &config.m_fBareListing,
+        &config.m_fShowOwner,
+        &config.m_fShowStreams,
+        &config.m_fIcons,
+        &config.m_fTree,
+    };
+
+    static_assert (_countof (switchValues) == _countof (s_kSwitchInfos), "Switch arrays must match");
+
+    // Check if any switches or parameters are set
+    bool fHasSwitches = false;
+
+    for (size_t i = 0; i < _countof (switchValues); ++i)
+    {
+        if (switchValues[i]->has_value())
+        {
+            fHasSwitches = true;
+            break;
+        }
+    }
+
+    bool fHasParams = config.m_cMaxDepth.has_value() ||
+                      config.m_cTreeIndent.has_value() ||
+                      config.m_eSizeFormat.has_value();
+
+    if (!fHasSwitches && !fHasParams)
+    {
+        return;
+    }
+
+    console.Puts (CConfig::EAttribute::Information, L"\nSwitch and parameter overrides:\n");
+
+    WORD sourceAttr = static_cast<WORD> (bgAttr | FC_Cyan);
+
+    for (size_t i = 0; i < _countof (switchValues); ++i)
+    {
+        if (!switchValues[i]->has_value())
+        {
+            continue;
+        }
+
+        bool fValue = switchValues[i]->value();
+        CConfig::EAttributeSource source = config.m_rgSwitchSources[i];
+
+        LPCWSTR pszSource = L"Default";
+        if (source == CConfig::EAttributeSource::ConfigFile)
+            pszSource = L"Config file";
+        else if (source == CConfig::EAttributeSource::Environment)
+            pszSource = L"Environment";
+
+        wstring display = format (L"{:<8s}  {}", s_kSwitchInfos[i].name, fValue ? L"ON" : L"OFF");
+
+        int pad = max (0, columnWidthAttr - static_cast<int> (display.size()));
+
+        console.Printf (CConfig::EAttribute::Information, L"  ");
+        console.Printf (CConfig::EAttribute::Default,     L"%ls%*ls  ", display.c_str(), pad, L"");
+        console.Printf (sourceAttr,                        L"%-*ls", columnWidthSource, pszSource);
+        console.Puts   (CConfig::EAttribute::Default,     L"");
+    }
+
+    // Parameters
+    if (config.m_cMaxDepth.has_value())
+    {
+        LPCWSTR pszSource = L"Default";
+        if (config.m_eMaxDepthSource == CConfig::EAttributeSource::ConfigFile)
+            pszSource = L"Config file";
+        else if (config.m_eMaxDepthSource == CConfig::EAttributeSource::Environment)
+            pszSource = L"Environment";
+
+        wstring display = format (L"Depth     {}", config.m_cMaxDepth.value());
+        int pad = max (0, columnWidthAttr - static_cast<int> (display.size()));
+
+        console.Printf (CConfig::EAttribute::Information, L"  ");
+        console.Printf (CConfig::EAttribute::Default,     L"%ls%*ls  ", display.c_str(), pad, L"");
+        console.Printf (sourceAttr,                        L"%-*ls", columnWidthSource, pszSource);
+        console.Puts   (CConfig::EAttribute::Default,     L"");
+    }
+
+    if (config.m_cTreeIndent.has_value())
+    {
+        LPCWSTR pszSource = L"Default";
+        if (config.m_eTreeIndentSource == CConfig::EAttributeSource::ConfigFile)
+            pszSource = L"Config file";
+        else if (config.m_eTreeIndentSource == CConfig::EAttributeSource::Environment)
+            pszSource = L"Environment";
+
+        wstring display = format (L"TreeIndent  {}", config.m_cTreeIndent.value());
+        int pad = max (0, columnWidthAttr - static_cast<int> (display.size()));
+
+        console.Printf (CConfig::EAttribute::Information, L"  ");
+        console.Printf (CConfig::EAttribute::Default,     L"%ls%*ls  ", display.c_str(), pad, L"");
+        console.Printf (sourceAttr,                        L"%-*ls", columnWidthSource, pszSource);
+        console.Puts   (CConfig::EAttribute::Default,     L"");
+    }
+
+    if (config.m_eSizeFormat.has_value())
+    {
+        LPCWSTR pszSource = L"Default";
+        if (config.m_eSizeFormatSource == CConfig::EAttributeSource::ConfigFile)
+            pszSource = L"Config file";
+        else if (config.m_eSizeFormatSource == CConfig::EAttributeSource::Environment)
+            pszSource = L"Environment";
+
+        LPCWSTR pszValue = (config.m_eSizeFormat.value() == ESizeFormat::Auto) ? L"Auto" : L"Bytes";
+        wstring display  = format (L"Size      {}", pszValue);
+        int pad = max (0, columnWidthAttr - static_cast<int> (display.size()));
+
+        console.Printf (CConfig::EAttribute::Information, L"  ");
+        console.Printf (CConfig::EAttribute::Default,     L"%ls%*ls  ", display.c_str(), pad, L"");
+        console.Printf (sourceAttr,                        L"%-*ls", columnWidthSource, pszSource);
+        console.Puts   (CConfig::EAttribute::Default,     L"");
+    }
 }
 
 
@@ -763,7 +902,7 @@ void CUsage::DisplayItemAndSource (CConsole & console, wstring_view item, WORD a
     switch (source)
     {
         case CConfig::EAttributeSource::ConfigFile:
-            sourceAttr = static_cast<WORD> (bgAttr | FC_Green);
+            sourceAttr = static_cast<WORD> (bgAttr | FC_Cyan);
             sourceName = L"Config file";
             break;
 
@@ -1793,48 +1932,66 @@ static bool DisplayIconStatus (CConsole & console, optional<bool> fIconsCli = nu
 {
     const CConfig & config = *console.m_configPtr;
 
-    console.Puts (CConfig::EAttribute::Information, L"\nIcon status:");
+    // Nerd Font detection (always shown)
+    CNerdFontDetector  detector;
+    EDetectionResult   detResult = EDetectionResult::NotDetected;
+    HANDLE             hOut      = GetStdHandle (STD_OUTPUT_HANDLE);
 
-    // Determine source and state
-    // Priority: CLI flag (/Icons, /Icons-) → env var (TCDIR=Icons) → auto-detection
-    LPCWSTR  pszReason = L"";
+    if (SUCCEEDED (detector.Detect (hOut, *config.m_pEnvironmentProvider, detResult)))
+    {
+        // detection succeeded
+    }
+
+    bool fNerdFont = (detResult == EDetectionResult::Detected);
+    WORD bgAttr    = config.m_rgAttributes[CConfig::EAttribute::Default] & BC_Mask;
+    WORD fontAttr  = static_cast<WORD> (bgAttr | (fNerdFont ? FC_Green : FC_DarkGrey));
+
+    console.Puts (CConfig::EAttribute::Information, L"\nNerd Font:");
+    console.Printf (CConfig::EAttribute::Default, L"  ");
+    console.Printf (fontAttr, L"%ls", fNerdFont ? L"Detected" : L"Not detected");
+    console.Puts   (CConfig::EAttribute::Default, L"");
+
+    // Icon status (from CLI, env var, config file, or auto-detection)
+    LPCWSTR  pszSource = L"";
     bool     fActive   = false;
 
     if (fIconsCli.has_value())
     {
-        fActive   = fIconsCli.value();
-        pszReason = fActive ? L"Enabled via /Icons" : L"Disabled via /Icons-";
+        fActive  = fIconsCli.value();
+        pszSource = fActive ? L"/Icons" : L"/Icons-";
     }
     else if (config.m_fIcons.has_value())
     {
-        fActive  = config.m_fIcons.value();
-        pszReason = fActive ? L"Enabled via TCDIR=Icons" : L"Disabled via TCDIR=Icons-";
+        fActive = config.m_fIcons.value();
+
+        // Find the source of the Icons switch
+        CConfig::EAttributeSource iconSource = CConfig::EAttributeSource::Default;
+        for (size_t i = 0; i < _countof (CConfig::s_switchMemberOrder); ++i)
+        {
+            if (CConfig::s_switchMemberOrder[i] == &CConfig::m_fIcons)
+            {
+                iconSource = config.m_rgSwitchSources[i];
+                break;
+            }
+        }
+
+        if (iconSource == CConfig::EAttributeSource::ConfigFile)
+            pszSource = fActive ? L"Config file" : L"Config file (Icons-)";
+        else
+            pszSource = fActive ? L"TCDIR=Icons" : L"TCDIR=Icons-";
     }
     else
     {
-        // Auto-detection
-        CNerdFontDetector  detector;
-        EDetectionResult   result = EDetectionResult::NotDetected;
-        HANDLE             hOut   = GetStdHandle (STD_OUTPUT_HANDLE);
-
-        if (SUCCEEDED (detector.Detect (hOut, *config.m_pEnvironmentProvider, result)))
-        {
-            fActive = (result == EDetectionResult::Detected);
-        }
-
-        if (fActive)
-            pszReason = L"Nerd Font detected, icons enabled";
-        else
-            pszReason = L"Nerd Font not detected, icons disabled";
+        fActive   = fNerdFont;
+        pszSource = L"Auto-detection";
     }
 
-    WORD stateAttr = static_cast<WORD> (
-        (console.m_configPtr->m_rgAttributes[CConfig::EAttribute::Default] & BC_Mask) |
-        (fActive ? FC_Green : FC_DarkGrey));
+    WORD stateAttr = static_cast<WORD> (bgAttr | (fActive ? FC_Green : FC_DarkGrey));
 
+    console.Puts (CConfig::EAttribute::Information, L"\nIcon status:");
     console.Printf (CConfig::EAttribute::Default, L"  ");
     console.Printf (stateAttr, L"%ls", fActive ? L"ON" : L"OFF");
-    console.Printf (CConfig::EAttribute::Default, L"  %ls\n", pszReason);
+    console.Printf (CConfig::EAttribute::Default, L"  %ls\n", pszSource);
 
     return fActive;
 }
@@ -1947,12 +2104,15 @@ void CUsage::DisplayConfigFileHelp (CConsole & console, wchar_t chPrefix)
 
     if (filePath.empty())
     {
-        console.ColorPuts (L"  {Information}Config file path: {Default}(not resolved \u2014 USERPROFILE not set)");
+        console.ColorPuts (L"  {Information}Config file: {Default}(not resolved \u2014 USERPROFILE not set)");
+    }
+    else if (fLoaded)
+    {
+        console.ColorPrintf (L"  {Information}Config file: {InformationHighlight}%s {Information}found\n", filePath.c_str());
     }
     else
     {
-        console.ColorPrintf (L"  {Information}Config file path: {InformationHighlight}%s\n", filePath.c_str());
-        console.ColorPrintf (L"  {Information}Load status:      {Default}%s\n", fLoaded ? L"Loaded" : L"Not found");
+        console.ColorPrintf (L"  {Information}Config file: {Default}%s {Information}not found\n", filePath.c_str());
     }
 
     DisplayConfigFileIssues (console, chPrefix, false);

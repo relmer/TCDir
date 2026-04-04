@@ -191,6 +191,10 @@ namespace UnitTest
         using CConfig::m_cMaxDepth;
         using CConfig::m_cTreeIndent;
         using CConfig::m_eSizeFormat;
+        using CConfig::m_rgSwitchSources;
+        using CConfig::m_eMaxDepthSource;
+        using CConfig::m_eTreeIndentSource;
+        using CConfig::m_eSizeFormatSource;
         using CConfig::m_lastParseResult;
         using CConfig::m_configFileParseResult;
 

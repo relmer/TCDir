@@ -288,6 +288,24 @@ constexpr CConfig::SSwitchMapping CConfig::s_switchMappings[] =
     { L"tree-"sv,   false, &CConfig::m_fTree          },
 };
 
+//
+// Switch member order — must match s_kSwitchInfos in Usage.cpp
+// W, S, P, M, B, Owner, Streams, Icons, Tree
+//
+
+const optional<bool> CConfig::* CConfig::s_switchMemberOrder[CConfig::SWITCH_COUNT] =
+{
+    &CConfig::m_fWideListing,
+    &CConfig::m_fRecurse,
+    &CConfig::m_fPerfTimer,
+    &CConfig::m_fMultiThreaded,
+    &CConfig::m_fBareListing,
+    &CConfig::m_fShowOwner,
+    &CConfig::m_fShowStreams,
+    &CConfig::m_fIcons,
+    &CConfig::m_fTree,
+};
+
 
 
 
@@ -1204,6 +1222,17 @@ void CConfig::ProcessSwitchOverride (wstring_view entry, EAttributeSource source
             _wcsnicmp (entry.data(), mapping.m_name.data(), mapping.m_name.length()) == 0)
         {
             this->*mapping.m_pMember = mapping.m_state;
+
+            // Track source — find the index of this member in s_switchMemberOrder
+            for (size_t i = 0; i < _countof (s_switchMemberOrder); ++i)
+            {
+                if (s_switchMemberOrder[i] == mapping.m_pMember)
+                {
+                    m_rgSwitchSources[i] = source;
+                    break;
+                }
+            }
+
             return;
         }
     }
@@ -1276,7 +1305,8 @@ bool CConfig::TryProcessIntSwitch (wstring_view entry, EAttributeSource source)
 
         if (value > 0)
         {
-            m_cMaxDepth = value;
+            m_cMaxDepth       = value;
+            m_eMaxDepthSource = source;
         }
         else
         {
@@ -1301,7 +1331,8 @@ bool CConfig::TryProcessIntSwitch (wstring_view entry, EAttributeSource source)
 
         if (value >= 1 && value <= 8)
         {
-            m_cTreeIndent = value;
+            m_cTreeIndent       = value;
+            m_eTreeIndentSource = source;
         }
         else
         {
@@ -1326,11 +1357,13 @@ bool CConfig::TryProcessIntSwitch (wstring_view entry, EAttributeSource source)
 
         if (_wcsnicmp (valueView.data(), L"Auto", valueView.length()) == 0 && valueView.length() == 4)
         {
-            m_eSizeFormat = ESizeFormat::Auto;
+            m_eSizeFormat       = ESizeFormat::Auto;
+            m_eSizeFormatSource = source;
         }
         else if (_wcsnicmp (valueView.data(), L"Bytes", valueView.length()) == 0 && valueView.length() == 5)
         {
-            m_eSizeFormat = ESizeFormat::Bytes;
+            m_eSizeFormat       = ESizeFormat::Bytes;
+            m_eSizeFormatSource = source;
         }
         else
         {
