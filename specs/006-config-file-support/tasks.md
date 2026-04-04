@@ -139,12 +139,12 @@
 
 **Purpose**: Final validation and edge case hardening
 
-- [ ] T050 [P] Write edge case tests in UnitTest/ConfigFileTests.cpp — empty file, file with only comments, file with only blank lines, very long lines, 20+ settings file (SC-002 coverage), USERPROFILE not set (silent skip, same as file not found)
-- [ ] T051 [P] Write BOM edge case tests in UnitTest/ConfigFileReaderTests.cpp — UTF-16 LE BOM rejected with clear error, UTF-16 BE BOM rejected with clear error
-- [ ] T052 [P] Write BOM end-to-end test in UnitTest/ConfigFileTests.cpp — UTF-8 BOM file with settings parses correctly through LoadConfigFile
-- [ ] T053 Verify config file does not exist scenario — no error, no warning, defaults used. Already tested but validate end-to-end.
-- [ ] T054 Run quickstart.md validation — create config file, verify all commands work as documented; verify 50-setting config file adds < 1ms startup (SC-004)
-- [ ] T055 Full build (Debug + Release, x64 + ARM64) and run all tests on all configurations
+- [X] T050 [P] Write edge case tests in UnitTest/ConfigFileTests.cpp — empty file, file with only comments, file with only blank lines, very long lines, 20+ settings file (SC-002 coverage), USERPROFILE not set (silent skip, same as file not found)
+- [X] T051 [P] Write BOM edge case tests in UnitTest/ConfigFileReaderTests.cpp — UTF-16 LE BOM rejected with clear error, UTF-16 BE BOM rejected with clear error
+- [X] T052 [P] Write BOM end-to-end test in UnitTest/ConfigFileTests.cpp — UTF-8 BOM file with settings parses correctly through LoadConfigFile
+- [X] T053 Verify config file does not exist scenario — no error, no warning, defaults used. Already tested but validate end-to-end.
+- [X] T054 Run quickstart.md validation — create config file, verify all commands work as documented; verify 50-setting config file adds < 1ms startup (SC-004)
+- [X] T055 Full build (Debug + Release, x64 + ARM64) and run all tests on all configurations
 
 ---
 

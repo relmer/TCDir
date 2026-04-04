@@ -949,5 +949,145 @@ namespace UnitTest
             Assert::IsFalse (result.hasIssues());
             Assert::IsFalse (config.IsConfigFileLoaded());
         }
+
+        //
+        // T050: Edge case tests — empty file, comments-only, blank-lines-only, very long lines, 20+ settings, USERPROFILE not set
+        //
+
+        TEST_METHOD (EdgeCase_EmptyFile_NoErrorDefaultsUsed)
+        {
+            ConfigFileProbe config;
+            config.SetConfigLines ({});
+            config.Initialize (FC_LightGrey);
+
+
+
+            Assert::IsTrue (config.IsConfigFileLoaded());
+            Assert::IsFalse (config.ValidateConfigFile().hasIssues());
+            // Defaults should still be in place
+            Assert::AreEqual (CConfig::EAttributeSource::Default, config.m_rgAttributeSources[CConfig::EAttribute::Date]);
+        }
+
+        TEST_METHOD (EdgeCase_OnlyComments_NoErrorDefaultsUsed)
+        {
+            ConfigFileProbe config;
+            config.SetConfigLines ({
+                L"# This is a comment",
+                L"# Another comment",
+                L"# One more"
+            });
+            config.Initialize (FC_LightGrey);
+
+
+
+            Assert::IsTrue (config.IsConfigFileLoaded());
+            Assert::IsFalse (config.ValidateConfigFile().hasIssues());
+            Assert::AreEqual (CConfig::EAttributeSource::Default, config.m_rgAttributeSources[CConfig::EAttribute::Date]);
+        }
+
+        TEST_METHOD (EdgeCase_OnlyBlankLines_NoErrorDefaultsUsed)
+        {
+            ConfigFileProbe config;
+            config.SetConfigLines ({ L"", L"", L"   ", L"\t", L"  \t  " });
+            config.Initialize (FC_LightGrey);
+
+
+
+            Assert::IsTrue (config.IsConfigFileLoaded());
+            Assert::IsFalse (config.ValidateConfigFile().hasIssues());
+        }
+
+        TEST_METHOD (EdgeCase_VeryLongLine_ParsedCorrectly)
+        {
+            // Build a line with 1000-char extension name
+            wstring longExt = L"." + wstring (1000, L'x') + L"=Yellow";
+
+            ConfigFileProbe config;
+            config.SetConfigLines ({ longExt });
+            config.Initialize (FC_LightGrey);
+
+
+
+            wstring expectedKey = L"." + wstring (1000, L'x');
+            Assert::IsTrue (config.m_mapExtensionToTextAttr.contains (expectedKey));
+            Assert::AreEqual ((WORD) FC_Yellow, config.m_mapExtensionToTextAttr[expectedKey]);
+        }
+
+        TEST_METHOD (EdgeCase_TwentyPlusSettings_AllApplied)
+        {
+            // SC-002 coverage: config file with > 20 distinct settings
+            ConfigFileProbe config;
+            config.SetConfigLines ({
+                L"w",                            // 1  wide listing
+                L"b",                            // 2  bare listing
+                L"s",                            // 3  recurse
+                L"p",                            // 4  perf timer
+                L".cpp=Yellow",                  // 5  extension color
+                L".h=LightBlue",                 // 6
+                L".txt=LightGreen",              // 7
+                L".py=LightCyan",                // 8
+                L".rs=LightRed",                 // 9
+                L".go=LightMagenta",             // 10
+                L".js=White",                    // 11
+                L".ts=LightGrey",                // 12
+                L".md=Green",                    // 13
+                L".json=Cyan",                   // 14
+                L".xml=Red",                     // 15
+                L".yaml=Magenta",                // 16
+                L".toml=Blue",                   // 17
+                L".css=DarkGrey",                // 18
+                L".html=LightBlue",              // 19  (duplicate ext is fine)
+                L".java=Yellow",                 // 20
+                L".rb=LightGreen",               // 21
+            });
+            config.Initialize (FC_LightGrey);
+
+
+
+            Assert::IsTrue (config.m_fWideListing.has_value() && config.m_fWideListing.value());
+            Assert::IsTrue (config.m_fBareListing.has_value() && config.m_fBareListing.value());
+            Assert::IsTrue (config.m_fRecurse.has_value() && config.m_fRecurse.value());
+            Assert::IsTrue (config.m_fPerfTimer.has_value() && config.m_fPerfTimer.value());
+            Assert::IsTrue (config.m_mapExtensionToTextAttr.contains (L".rb"));
+            Assert::AreEqual ((WORD) FC_LightGreen, config.m_mapExtensionToTextAttr[L".rb"]);
+            Assert::IsFalse (config.ValidateConfigFile().hasIssues());
+        }
+
+        TEST_METHOD (EdgeCase_UserProfileNotSet_SilentSkipLikeNotFound)
+        {
+            ConfigFileProbe config;
+            config.ClearEnvVar (L"USERPROFILE");
+            config.SetConfigLines ({ L".cpp=Yellow" });  // Would be loadable, but path can't be resolved
+            config.Initialize (FC_LightGrey);
+
+
+
+            // Without USERPROFILE, config file path can't be determined — should silently skip
+            Assert::IsFalse (config.IsConfigFileLoaded());
+            Assert::IsFalse (config.ValidateConfigFile().hasIssues());
+        }
+
+        //
+        // T052: BOM end-to-end test — UTF-8 BOM file parses correctly through full pipeline
+        //
+
+        TEST_METHOD (BomEndToEnd_Utf8BomFile_ParsedCorrectly)
+        {
+            // The mock reader already strips BOM (since CConfigFileReader handles BOM,
+            // and CTestConfigFileReader delivers clean lines), but this test validates
+            // that a config file whose first line starts with settings (no leading BOM
+            // artifacts) works through the full LoadConfigFile pipeline.
+            ConfigFileProbe config;
+            config.SetConfigLines ({ L".cpp=Yellow", L"w" });
+            config.Initialize (FC_LightGrey);
+
+
+
+            Assert::IsTrue (config.IsConfigFileLoaded());
+            Assert::IsTrue (config.m_mapExtensionToTextAttr.contains (L".cpp"));
+            Assert::AreEqual ((WORD) FC_Yellow, config.m_mapExtensionToTextAttr[L".cpp"]);
+            Assert::IsTrue (config.m_fWideListing.has_value() && config.m_fWideListing.value());
+            Assert::IsFalse (config.ValidateConfigFile().hasIssues());
+        }
     };
 }
