@@ -337,6 +337,55 @@ namespace UnitTest
 
 
 
+        TEST_METHOD(ParseSettingsSwitchSlash)
+        {
+            CCommandLine    cl;
+            const wchar_t * c1      = L"/Settings";
+            wchar_t       * argv1[] = { const_cast<wchar_t *>(c1) };
+            HRESULT         hr      = cl.Parse(1, argv1);
+
+
+
+            Assert::IsTrue (SUCCEEDED(hr));
+            Assert::IsTrue (cl.m_fSettings);
+            Assert::AreEqual (L'/', cl.GetSwitchPrefix());
+        }
+
+
+
+
+        TEST_METHOD(ParseSettingsSwitchDoubleDash)
+        {
+            CCommandLine    cl;
+            const wchar_t * c1      = L"--settings";
+            wchar_t       * argv1[] = { const_cast<wchar_t *>(c1) };
+            HRESULT         hr      = cl.Parse(1, argv1);
+
+
+
+            Assert::IsTrue (SUCCEEDED(hr));
+            Assert::IsTrue (cl.m_fSettings);
+            Assert::AreEqual (L'-', cl.GetSwitchPrefix());
+        }
+
+
+
+
+        TEST_METHOD(ParseSettingsSwitchSingleDashFails)
+        {
+            CCommandLine    cl;
+            const wchar_t * c1      = L"-settings";
+            wchar_t       * argv1[] = { const_cast<wchar_t *>(c1) };
+            HRESULT         hr      = cl.Parse(1, argv1);
+
+
+
+            Assert::IsTrue (FAILED(hr));
+        }
+
+
+
+
         TEST_METHOD(ParseHelpSwitchWithDash)
         {
             CCommandLine    cl;

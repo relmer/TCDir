@@ -378,7 +378,8 @@ void CUsage::DisplayUsage (CConsole & console, wchar_t chPrefix, optional<bool> 
         L"  {{InformationHighlight}}{0}P{{Information}}                Displays performance timing information.\n"
         L"  {{InformationHighlight}}{0}M{{Information}}                Enables multi-threaded enumeration (default). Use{{InformationHighlight}}{2}{{Information}} to disable.\n"
         L"  {{InformationHighlight}}{1}Env{{Information}}             {6}Displays " TCDIR_ENV_VAR_NAME L" help, syntax, and current value.\n"
-        L"  {{InformationHighlight}}{1}Config{{Information}}          {6}Displays current color configuration for all items and extensions.\n"
+        L"  {{InformationHighlight}}{1}Config{{Information}}          {6}Displays config file diagnostics, syntax reference, and parse errors.\n"
+        L"  {{InformationHighlight}}{1}Settings{{Information}}        {6}Displays current merged configuration for all items and extensions.\n"
         L"  {{InformationHighlight}}{1}Owner{{Information}}           {6}Displays the owner of each file and directory. Not allowed with {{InformationHighlight}}{1}Tree{{Information}}.\n"
         L"  {{InformationHighlight}}{1}Streams{{Information}}         {6}Displays alternate data streams (NTFS only).\n"
         L"  {{InformationHighlight}}{1}Icons{{Information}}           {6}Enables file-type icons (Nerd Font required). Use {{InformationHighlight}}{1}Icons-{{Information}} to disable.\n"
@@ -623,16 +624,16 @@ void CUsage::DisplayAttributeConfiguration (CConsole & console, int columnWidthA
     for (const auto & info : s_kDisplayItemInfos)
     {
         WORD attr  = console.m_configPtr->m_rgAttributes[info.attr];
-        bool isEnv = (console.m_configPtr->m_rgAttributeSources[info.attr] == CConfig::EAttributeSource::Environment);
+        CConfig::EAttributeSource source = console.m_configPtr->m_rgAttributeSources[info.attr];
 
-        DisplayItemAndSource (console, info.name, attr, isEnv, columnWidthAttr, columnWidthSource, 0, EItemDisplayMode::SingleColumn);
+        DisplayItemAndSource (console, info.name, attr, source, columnWidthAttr, columnWidthSource, 0, EItemDisplayMode::SingleColumn);
     }
 
     for (const auto & info : s_kCloudStatusInfos)
     {
         const CConfig & config = *console.m_configPtr;
         WORD            attr   = config.m_rgAttributes[info.attr];
-        bool            isEnv  = (config.m_rgAttributeSources[info.attr] == CConfig::EAttributeSource::Environment);
+        CConfig::EAttributeSource source = config.m_rgAttributeSources[info.attr];
 
         wstring symbol;
 
@@ -669,7 +670,7 @@ void CUsage::DisplayAttributeConfiguration (CConsole & console, int columnWidthA
         // for this item so the source label still aligns with non-surrogate rows.
         int cxSurrogateAdjust = max (0, static_cast<int> (symbol.size ()) - 1);
 
-        DisplayItemAndSource (console, display, attr, isEnv, columnWidthAttr + cxSurrogateAdjust, columnWidthSource, 0, EItemDisplayMode::SingleColumn);
+        DisplayItemAndSource (console, display, attr, source, columnWidthAttr + cxSurrogateAdjust, columnWidthSource, 0, EItemDisplayMode::SingleColumn);
     }
 }
 
@@ -696,10 +697,10 @@ void CUsage::DisplayFileAttributeConfiguration (CConsole & console, int columnWi
         }
 
         WORD    attr  = iter->second.m_wAttr;
-        bool    isEnv = (iter->second.m_source == CConfig::EAttributeSource::Environment);
+        CConfig::EAttributeSource source = iter->second.m_source;
         wstring label = format (L"{} {}", info.letter, info.name);
         
-        DisplayItemAndSource (console, label, attr, isEnv, columnWidthAttr, columnWidthSource, 0, EItemDisplayMode::SingleColumn);
+        DisplayItemAndSource (console, label, attr, source, columnWidthAttr, columnWidthSource, 0, EItemDisplayMode::SingleColumn);
     }
 }
 
@@ -720,8 +721,9 @@ void CUsage::DisplayExtensionConfigurationSingleColumn (CConsole & console, int 
     for (const auto & [ext, extAttr] : extensions)
     {
         auto    sourceIter = config.m_mapExtensionSources.find (ext);
-        bool    isEnv      = (sourceIter         != config.m_mapExtensionSources.end () &&
-                              sourceIter->second == CConfig::EAttributeSource::Environment);
+        CConfig::EAttributeSource source = (sourceIter != config.m_mapExtensionSources.end ())
+                                          ? sourceIter->second
+                                          : CConfig::EAttributeSource::Default;
 
         wstring iconPrefix;
         if (fShowIcons)
@@ -736,7 +738,7 @@ void CUsage::DisplayExtensionConfigurationSingleColumn (CConsole & console, int 
             }
         }
 
-        DisplayItemAndSource (console, ext, extAttr, isEnv, columnWidthAttr, columnWidthSource, 0, EItemDisplayMode::SingleColumn, iconPrefix, fShowIcons);
+        DisplayItemAndSource (console, ext, extAttr, source, columnWidthAttr, columnWidthSource, 0, EItemDisplayMode::SingleColumn, iconPrefix, fShowIcons);
     }
 }
 
@@ -750,13 +752,30 @@ void CUsage::DisplayExtensionConfigurationSingleColumn (CConsole & console, int 
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-void CUsage::DisplayItemAndSource (CConsole & console, wstring_view item, WORD attr, bool isEnv, size_t columnWidthItem, size_t columnWidthSource, size_t cxColumnWidth, EItemDisplayMode mode, wstring_view iconPrefix, bool fShowIcons)
+void CUsage::DisplayItemAndSource (CConsole & console, wstring_view item, WORD attr, CConfig::EAttributeSource source, size_t columnWidthItem, size_t columnWidthSource, size_t cxColumnWidth, EItemDisplayMode mode, wstring_view iconPrefix, bool fShowIcons)
 {
     static constexpr size_t CX_ICON_COLUMN = 3;  // 2 display cells (glyph) + 1 space
 
     WORD    bgAttr       = console.m_configPtr->m_rgAttributes[CConfig::EAttribute::Default] & BC_Mask;
-    WORD    sourceAttr   = static_cast<WORD> (bgAttr | (isEnv ? FC_Cyan : FC_DarkGrey));
-    LPCWSTR source       = isEnv ? L"Environment" : L"Default";
+    WORD    sourceAttr   = static_cast<WORD> (bgAttr | FC_DarkGrey);
+    LPCWSTR sourceName   = L"Default";
+
+    switch (source)
+    {
+        case CConfig::EAttributeSource::ConfigFile:
+            sourceAttr = static_cast<WORD> (bgAttr | FC_Green);
+            sourceName = L"Config file";
+            break;
+
+        case CConfig::EAttributeSource::Environment:
+            sourceAttr = static_cast<WORD> (bgAttr | FC_Cyan);
+            sourceName = L"Environment";
+            break;
+
+        default:
+            break;
+    }
+
     int     pad          = max (0, static_cast<int> (columnWidthItem) - static_cast<int> (item.size ()));
     size_t  cxIconWidth  = fShowIcons ? CX_ICON_COLUMN : 0;
     size_t  cxUsed       = cxIconWidth + columnWidthItem + 2 + columnWidthSource;
@@ -781,7 +800,7 @@ void CUsage::DisplayItemAndSource (CConsole & console, wstring_view item, WORD a
 
     console.Printf (visibleAttr,                      L"%.*ls", static_cast<int> (item.size ()), item.data ());
     console.Printf (CConfig::EAttribute::Information, L"%*ls  ", pad, L"");
-    console.Printf (sourceAttr,                       L"%-*ls", static_cast<int> (columnWidthSource), source);
+    console.Printf (sourceAttr,                       L"%-*ls", static_cast<int> (columnWidthSource), sourceName);
 
     if (mode == EItemDisplayMode::MultiColumn)
     {
@@ -844,8 +863,9 @@ void CUsage::DisplayExtensionConfigurationMultiColumn (CConsole & console, const
             const auto & ext        = extensions[idx].first;
             WORD         extAttr    = extensions[idx].second;
             auto         sourceIter = config.m_mapExtensionSources.find (ext);
-            bool         isEnv      = (sourceIter         != config.m_mapExtensionSources.end () &&
-                                       sourceIter->second == CConfig::EAttributeSource::Environment);
+            CConfig::EAttributeSource source = (sourceIter != config.m_mapExtensionSources.end ())
+                                              ? sourceIter->second
+                                              : CConfig::EAttributeSource::Default;
 
             wstring iconPrefix;
             if (fShowIcons)
@@ -860,7 +880,7 @@ void CUsage::DisplayExtensionConfigurationMultiColumn (CConsole & console, const
                 }
             }
 
-            DisplayItemAndSource (console, ext, extAttr, isEnv, maxExtLen, cxSourceWidth, cxColumnWidth, EItemDisplayMode::MultiColumn, iconPrefix, fShowIcons);
+            DisplayItemAndSource (console, ext, extAttr, source, maxExtLen, cxSourceWidth, cxColumnWidth, EItemDisplayMode::MultiColumn, iconPrefix, fShowIcons);
         }
 
         console.Puts (CConfig::EAttribute::Default, L"");
@@ -989,8 +1009,9 @@ void CUsage::DisplayWellKnownDirConfiguration (CConsole & console, bool fShowIco
         for (const auto & [name, cp] : dirs)
         {
             auto    sourceIter = config.m_mapWellKnownDirIconSources.find (name);
-            bool    isEnv      = (sourceIter         != config.m_mapWellKnownDirIconSources.end () &&
-                                  sourceIter->second == CConfig::EAttributeSource::Environment);
+            CConfig::EAttributeSource source = (sourceIter != config.m_mapWellKnownDirIconSources.end ())
+                                              ? sourceIter->second
+                                              : CConfig::EAttributeSource::Default;
 
             WideCharPair wcp = CodePointToWideChars (cp);
             wstring      iconPrefix;
@@ -998,7 +1019,7 @@ void CUsage::DisplayWellKnownDirConfiguration (CConsole & console, bool fShowIco
             if (wcp.chars[1] != L'\0')
                 iconPrefix += wcp.chars[1];
 
-            DisplayItemAndSource (console, name, dirAttr, isEnv, maxNameLen, cxSourceWidth, 0, EItemDisplayMode::SingleColumn, iconPrefix, true);
+            DisplayItemAndSource (console, name, dirAttr, source, maxNameLen, cxSourceWidth, 0, EItemDisplayMode::SingleColumn, iconPrefix, true);
         }
     }
     else
@@ -1038,8 +1059,9 @@ void CUsage::DisplayWellKnownDirConfiguration (CConsole & console, bool fShowIco
                 const auto & name       = dirs[idx].first;
                 char32_t     cp         = dirs[idx].second;
                 auto         sourceIter = config.m_mapWellKnownDirIconSources.find (name);
-                bool         isEnv      = (sourceIter         != config.m_mapWellKnownDirIconSources.end () &&
-                                           sourceIter->second == CConfig::EAttributeSource::Environment);
+                CConfig::EAttributeSource source = (sourceIter != config.m_mapWellKnownDirIconSources.end ())
+                                                  ? sourceIter->second
+                                                  : CConfig::EAttributeSource::Default;
 
                 WideCharPair wcp = CodePointToWideChars (cp);
                 wstring      iconPrefix;
@@ -1047,7 +1069,7 @@ void CUsage::DisplayWellKnownDirConfiguration (CConsole & console, bool fShowIco
                 if (wcp.chars[1] != L'\0')
                     iconPrefix += wcp.chars[1];
 
-                DisplayItemAndSource (console, name, dirAttr, isEnv, maxNameLen, cxSourceWidth, cxColumnWidth, EItemDisplayMode::MultiColumn, iconPrefix, true);
+                DisplayItemAndSource (console, name, dirAttr, source, maxNameLen, cxSourceWidth, cxColumnWidth, EItemDisplayMode::MultiColumn, iconPrefix, true);
             }
 
             console.Puts (CConfig::EAttribute::Default, L"");
@@ -1823,26 +1845,91 @@ static bool DisplayIconStatus (CConsole & console, optional<bool> fIconsCli = nu
 
 ////////////////////////////////////////////////////////////////////////////////
 //
-//  CUsage::DisplayCurrentConfiguration
+//  CUsage::DisplayConfigFileHelp
 //
-//  Display the current color configuration tables for display items,
-//  file attributes, and file extensions.
+//  Display config file syntax reference, file path, load status,
+//  and config file parse errors.
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-void CUsage::DisplayCurrentConfiguration (CConsole & console, wchar_t chPrefix, optional<bool> fIconsCli)
+void CUsage::DisplayConfigFileHelp (CConsole & console, wchar_t chPrefix)
 {
-    if (!IsTcdirEnvVarSet ())
+    const CConfig & config   = *console.m_configPtr;
+    wstring         filePath = config.GetConfigFilePath();
+    bool            fLoaded  = config.IsConfigFileLoaded();
+
+
+
+    console.ColorPuts (L"\n{InformationHighlight}Config File Support\n");
+    console.ColorPuts (L"{Default}");
+
+    //
+    // File path and load status
+    //
+
+    if (filePath.empty())
     {
-        console.ColorPuts (L"\n  {Information}" TCDIR_ENV_VAR_NAME L"{Default} environment variable is not set; showing default configuration.");
+        console.ColorPuts (L"  {Information}Config file path: {Default}(not resolved — USERPROFILE not set)");
+    }
+    else
+    {
+        console.ColorPrintf (L"  {Information}Config file path: {Default}%s\n", filePath.c_str());
+        console.ColorPrintf (L"  {Information}Load status:      {Default}%s\n", fLoaded ? L"Loaded" : L"Not found");
+    }
+
+    //
+    // Syntax reference
+    //
+
+    console.ColorPuts (L"\n  {InformationHighlight}Syntax:\n");
+    console.ColorPuts (L"  {Information}Lines are processed one per line. Comments begin with #.");
+    console.ColorPuts (L"  {Information}All settings from the " TCDIR_ENV_VAR_NAME L" environment variable are supported:");
+    console.ColorPuts (L"  {Default}");
+    console.ColorPuts (L"  {Information}  Switches:      {Default}w, b, S, P, M, Owner, Streams, Icons, Tree");
+    console.ColorPuts (L"  {Information}  Negation:       {Default}W-, M-, Icons-, Tree-");
+    console.ColorPuts (L"  {Information}  Parameters:     {Default}Depth=N, TreeIndent=N, Size=Auto|Bytes");
+    console.ColorPuts (L"  {Information}  Colors:         {Default}.ext=Color [on Background]");
+    console.ColorPuts (L"  {Information}  Display attrs:  {Default}D=Color, T=Color, S=Color, etc.");
+    console.ColorPuts (L"  {Information}  Icons:          {Default}.ext=Color,U+XXXX");
+    console.ColorPuts (L"  {Information}  File attrs:     {Default}attr:H=Color, attr:S=Color");
+    console.ColorPuts (L"  {Information}  Dir icons:      {Default}dir:name=Color,U+XXXX");
+    console.ColorPuts (L"  {Default}");
+    console.ColorPuts (L"  {Information}Environment variable settings override config file settings.");
+
+    //
+    // Show errors if any
+    //
+
+    DisplayConfigFileIssues (console, chPrefix, false);
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CUsage::DisplaySettings
+//
+//  Display the current color configuration tables for display items,
+//  file attributes, and file extensions, with three-source column.
+//
+////////////////////////////////////////////////////////////////////////////////
+
+void CUsage::DisplaySettings (CConsole & console, wchar_t chPrefix, optional<bool> fIconsCli)
+{
+    bool fHasConfig = console.m_configPtr->IsConfigFileLoaded();
+    bool fHasEnv    = IsTcdirEnvVarSet();
+
+    if (!fHasConfig && !fHasEnv)
+    {
+        console.ColorPuts (L"\n  {Information}No config file or " TCDIR_ENV_VAR_NAME L" environment variable set; showing defaults.");
     }
 
     bool fActive = DisplayIconStatus (console, fIconsCli);
 
     DisplayConfigurationTable (console, fActive);
 
-    if (IsTcdirEnvVarSet ())
-    {
-        DisplayEnvVarIssues (console, chPrefix);
-    }
+    DisplayConfigFileIssues (console, chPrefix, false);
+    DisplayEnvVarIssues (console, chPrefix, false);
 }

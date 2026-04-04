@@ -118,18 +118,18 @@
 
 ### Implementation
 
-- [ ] T038 [US5] Add m_fSettings bool to CCommandLine in TCDirCore/CommandLine.h
-- [ ] T039 [US5] Add "settings" to long switch table in CCommandLine::HandleLongSwitch in TCDirCore/CommandLine.cpp
-- [ ] T040 [US5] Add "settings" to informational switch list for mutual exclusion validation in TCDirCore/CommandLine.cpp
-- [ ] T041 [US5] Implement DisplayConfigFileHelp in TCDirCore/Usage.cpp — config file syntax reference, file path, load status, decoded settings grouped by type, config file parse errors
-- [ ] T042 [US5] Repurpose /config handler in TCDirCore/TCDir.cpp — call DisplayConfigFileHelp instead of DisplayCurrentConfiguration
-- [ ] T043 [US5] Rename DisplayCurrentConfiguration to DisplaySettings in TCDirCore/Usage.h and TCDirCore/Usage.cpp
-- [ ] T044 [US5] Update DisplaySettings source column to render three values: Default, Config file, Environment in TCDirCore/Usage.cpp
-- [ ] T045 [US5] Add /settings handler in TCDirCore/TCDir.cpp — call DisplaySettings when m_fSettings is set
-- [ ] T046 [US5] Update DisplaySettings to show both config file and env var errors at the bottom in TCDirCore/Usage.cpp
-- [ ] T047 [US5] Update /help text in DisplayUsage to reflect new /config description and new /settings command in TCDirCore/Usage.cpp
-- [ ] T048 [US5] Write /settings switch parsing test in UnitTest/CommandLineTests.cpp
-- [ ] T049 [US5] Build and run all tests
+- [X] T038 [US5] Add m_fSettings bool to CCommandLine in TCDirCore/CommandLine.h
+- [X] T039 [US5] Add "settings" to long switch table in CCommandLine::HandleLongSwitch in TCDirCore/CommandLine.cpp
+- [X] T040 [US5] Add "settings" to informational switch list for mutual exclusion validation in TCDirCore/CommandLine.cpp
+- [X] T041 [US5] Implement DisplayConfigFileHelp in TCDirCore/Usage.cpp — config file syntax reference, file path, load status, decoded settings grouped by type, config file parse errors
+- [X] T042 [US5] Repurpose /config handler in TCDirCore/TCDir.cpp — call DisplayConfigFileHelp instead of DisplayCurrentConfiguration
+- [X] T043 [US5] Rename DisplayCurrentConfiguration to DisplaySettings in TCDirCore/Usage.h and TCDirCore/Usage.cpp
+- [X] T044 [US5] Update DisplaySettings source column to render three values: Default, Config file, Environment in TCDirCore/Usage.cpp
+- [X] T045 [US5] Add /settings handler in TCDirCore/TCDir.cpp — call DisplaySettings when m_fSettings is set
+- [X] T046 [US5] Update DisplaySettings to show both config file and env var errors at the bottom in TCDirCore/Usage.cpp
+- [X] T047 [US5] Update /help text in DisplayUsage to reflect new /config description and new /settings command in TCDirCore/Usage.cpp
+- [X] T048 [US5] Write /settings switch parsing test in UnitTest/CommandLineTests.cpp
+- [X] T049 [US5] Build and run all tests
 
 **Checkpoint**: All three diagnostic commands work correctly.
 

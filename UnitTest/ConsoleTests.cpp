@@ -518,7 +518,8 @@ namespace UnitTest
             Assert::AreEqual (DESC_COL, FindColumnOfText (plain, L"/B ",             L"Displays bare file"),               L"/B description column");
             Assert::AreEqual (DESC_COL, FindColumnOfText (plain, L"/M ",             L"Enables multi-threaded"),           L"/M description column");
             Assert::AreEqual (DESC_COL, FindColumnOfText (plain, L"/Env ",           L"Displays TCDIR"),                   L"/Env description column");
-            Assert::AreEqual (DESC_COL, FindColumnOfText (plain, L"/Config ",        L"Displays current color"),           L"/Config description column");
+            Assert::AreEqual (DESC_COL, FindColumnOfText (plain, L"/Config ",        L"Displays config file diagnostics"), L"/Config description column");
+            Assert::AreEqual (DESC_COL, FindColumnOfText (plain, L"/Settings ",      L"Displays current merged"),          L"/Settings description column");
             Assert::AreEqual (DESC_COL, FindColumnOfText (plain, L"/Owner ",         L"Displays the owner"),             L"/Owner description column");
             Assert::AreEqual (DESC_COL, FindColumnOfText (plain, L"/Streams ",       L"Displays alternate data"),          L"/Streams description column");
             Assert::AreEqual (DESC_COL, FindColumnOfText (plain, L"/Icons ",         L"Enables file-type icons"),          L"/Icons description column");

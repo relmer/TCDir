@@ -72,7 +72,8 @@ public:
     bool               m_fPerfTimer                                        = false;    // Enable performance timer
     bool               m_fMultiThreaded                                    = true;     // Enable multi-threaded enumeration
     bool               m_fEnv                                              = false;    // Display environment variable help
-    bool               m_fConfig                                           = false;    // Display current configuration
+    bool               m_fConfig                                           = false;    // Display config file diagnostics
+    bool               m_fSettings                                         = false;    // Display current settings
     bool               m_fHelp                                             = false;    // Display usage
     wchar_t            m_chSwitchPrefix                                    = L'-';     // Switch prefix character (default: '-')
     ETimeField         m_timeField                                         = ETimeField::TF_WRITTEN;  // /T: time field selection
