@@ -26,6 +26,7 @@ namespace Microsoft { namespace VisualStudio { namespace CppUnitTestFramework
         switch (value)
         {
             case CConfig::EAttributeSource::Default:     return L"Default";
+            case CConfig::EAttributeSource::ConfigFile:  return L"ConfigFile";
             case CConfig::EAttributeSource::Environment: return L"Environment";
             default:                                     return L"Unknown";
         }

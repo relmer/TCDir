@@ -341,7 +341,8 @@ void CConfig::Initialize (WORD wDefaultAttr)
     PopulateIconMap (g_rgDefaultExtensionIcons,    g_cDefaultExtensionIcons,    m_mapExtensionToIcon,    m_mapExtensionIconSources);
     PopulateIconMap (g_rgDefaultWellKnownDirIcons, g_cDefaultWellKnownDirIcons, m_mapWellKnownDirToIcon, m_mapWellKnownDirIconSources);
   
-    ApplyUserColorOverrides();
+    LoadConfigFile();
+    ApplyUserColorOverrides (EAttributeSource::Environment);
 }
 
 
@@ -364,6 +365,189 @@ void CConfig::SetEnvironmentProvider (const IEnvironmentProvider * pProvider)
     {
         m_pEnvironmentProvider = pProvider;
     }
+}
+
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CConfig::SetConfigFileReader
+//
+////////////////////////////////////////////////////////////////////////////////
+
+void CConfig::SetConfigFileReader (IConfigFileReader * pReader)
+{
+    m_pConfigFileReader = pReader;
+}
+
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CConfig::LoadConfigFile
+//
+//  Read .tcdirconfig from %USERPROFILE%, parse lines, apply settings with
+//  ConfigFile source.  Silently skips if file not found or USERPROFILE
+//  is not set.
+//
+////////////////////////////////////////////////////////////////////////////////
+
+HRESULT CConfig::LoadConfigFile (void)
+{
+    HRESULT             hr           = S_OK;
+    wstring             envValue;
+    vector<wstring>     lines;
+    wstring             errorMessage;
+    IConfigFileReader * pReader      = nullptr;
+
+
+
+    m_configFileParseResult.errors.clear();
+    m_fConfigFileLoaded = false;
+    m_strConfigFilePath.clear();
+
+    //
+    // Resolve config file path from USERPROFILE
+    //
+
+    bool isSet = m_pEnvironmentProvider->TryGetEnvironmentVariable (L"USERPROFILE", envValue);
+    BAIL_OUT_IF (!isSet, S_OK);
+
+    m_strConfigFilePath = envValue + L"\\.tcdirconfig";
+
+    //
+    // Read file via injected reader or default
+    //
+
+    pReader = (m_pConfigFileReader != nullptr) ? m_pConfigFileReader : &m_configFileReaderDefault;
+
+    hr = pReader->ReadLines (m_strConfigFilePath, lines, errorMessage);
+
+    if (hr == S_FALSE)
+    {
+        // File not found — silent skip
+        BAIL_OUT_IF (TRUE, S_OK);
+    }
+
+    if (FAILED (hr))
+    {
+        // File-level I/O error — single ErrorInfo, skip entire file
+        m_configFileParseResult.errors.push_back ({
+            errorMessage,
+            m_strConfigFilePath,
+            L"",
+            0,
+            m_strConfigFilePath,
+            0
+        });
+        BAIL_OUT_IF (TRUE, S_OK);
+    }
+
+    m_fConfigFileLoaded = true;
+
+    //
+    // Process each line
+    //
+
+    for (size_t i = 0; i < lines.size(); i++)
+    {
+        wstring_view line (lines[i]);
+
+        line = TrimWhitespace (line);
+
+        // Skip empty and whitespace-only lines
+        if (line.empty())
+        {
+            continue;
+        }
+
+        // Skip comment lines
+        if (line[0] == L'#')
+        {
+            continue;
+        }
+
+        // Strip inline comment
+        size_t hashPos = line.find (L'#');
+        if (hashPos != wstring_view::npos)
+        {
+            line = TrimWhitespace (line.substr (0, hashPos));
+            if (line.empty())
+            {
+                continue;
+            }
+        }
+
+        // Track error count before processing to tag new errors with line number
+        size_t errorCountBefore = m_configFileParseResult.errors.size();
+
+        ProcessColorOverrideEntry (line, EAttributeSource::ConfigFile);
+
+        // Tag any new errors with config file source and line number
+        for (size_t e = errorCountBefore; e < m_configFileParseResult.errors.size(); e++)
+        {
+            m_configFileParseResult.errors[e].sourceFilePath = m_strConfigFilePath;
+            m_configFileParseResult.errors[e].lineNumber     = i + 1;  // 1-based
+        }
+    }
+
+
+Error:
+    return hr;
+}
+
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CConfig::ValidateConfigFile
+//
+////////////////////////////////////////////////////////////////////////////////
+
+CConfig::ValidationResult CConfig::ValidateConfigFile (void)
+{
+    return m_configFileParseResult;
+}
+
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CConfig::GetConfigFilePath
+//
+////////////////////////////////////////////////////////////////////////////////
+
+const wstring & CConfig::GetConfigFilePath (void) const
+{
+    return m_strConfigFilePath;
+}
+
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CConfig::IsConfigFileLoaded
+//
+////////////////////////////////////////////////////////////////////////////////
+
+bool CConfig::IsConfigFileLoaded (void) const
+{
+    return m_fConfigFileLoaded;
 }
 
 
@@ -464,7 +648,7 @@ void CConfig::PopulateIconMap (
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-void CConfig::ApplyUserColorOverrides (void)
+void CConfig::ApplyUserColorOverrides (EAttributeSource source)
 {
     HRESULT hr       = S_OK;
     wstring envValue;
@@ -484,7 +668,7 @@ void CConfig::ApplyUserColorOverrides (void)
     for (auto token : envValue | std::views::split (L';'))
     {
         wstring_view entry (token.begin(), token.end());
-        ProcessColorOverrideEntry (entry);
+        ProcessColorOverrideEntry (entry, source);
     }
 
 
@@ -511,12 +695,17 @@ Error:
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-void CConfig::ProcessColorOverrideEntry (wstring_view entry)
+void CConfig::ProcessColorOverrideEntry (wstring_view entry, EAttributeSource source)
 {
     HRESULT        hr = S_OK;
     wstring_view   keyView;
     wstring_view   valueView;
     SOverrideValue ov;
+
+    // Select the error list based on source
+    ValidationResult & parseResult = (source == EAttributeSource::ConfigFile)
+                                    ? m_configFileParseResult
+                                    : m_lastParseResult;
 
 
 
@@ -531,14 +720,14 @@ void CConfig::ProcessColorOverrideEntry (wstring_view entry)
 
     if (entry[0] == L'/' || entry[0] == L'-')
     {
-        m_lastParseResult.errors.push_back ( { L"Switch prefixes (/, -, --) are not allowed in env var",
+        parseResult.errors.push_back ( { L"Switch prefixes (/, -, --) are not allowed in env var",
                                                wstring (entry), wstring (entry.substr (0, entry.starts_with (L"--") ? 2 : 1)), 0 } );
         BAIL_OUT_IF (TRUE, S_OK);
     }
 
     if (IsSwitchName (entry))
     {
-        ProcessSwitchOverride (entry);
+        ProcessSwitchOverride (entry, source);
         BAIL_OUT_IF (TRUE, S_OK);
     }
 
@@ -546,7 +735,7 @@ void CConfig::ProcessColorOverrideEntry (wstring_view entry)
     // Check for parameterized config entries (Depth=N, TreeIndent=N, Size=Auto|Bytes)
     //
 
-    if (TryProcessIntSwitch (entry))
+    if (TryProcessIntSwitch (entry, source))
     {
         BAIL_OUT_IF (TRUE, S_OK);
     }
@@ -554,17 +743,17 @@ void CConfig::ProcessColorOverrideEntry (wstring_view entry)
     hr = ParseKeyAndValue (entry, keyView, valueView);
     if (FAILED (hr))
     {
-        m_lastParseResult.errors.push_back ( { L"Invalid entry format (expected key = value)", 
+        parseResult.errors.push_back ( { L"Invalid entry format (expected key = value)", 
                                                wstring (entry), wstring (entry), 0 } );
         CHR (hr);
     }
 
     CBR (!keyView.empty());
 
-    hr = ParseOverrideValue (entry, valueView, ov);
+    hr = ParseOverrideValue (entry, valueView, ov, source);
     CHR (hr);
 
-    ApplyOverrideByKeyType (entry, keyView, ov);
+    ApplyOverrideByKeyType (entry, keyView, ov, source);
 
 
 Error:
@@ -591,12 +780,18 @@ Error:
 HRESULT CConfig::ParseOverrideValue (
     wstring_view     entry,
     wstring_view     valueView,
-    SOverrideValue & ov)
+    SOverrideValue & ov,
+    EAttributeSource source)
 {
     HRESULT      hr        = S_OK;
     wstring_view colorView;
     wstring_view iconView;
     bool         fHasComma = false;
+
+    // Select the error list based on source
+    ValidationResult & parseResult = (source == EAttributeSource::ConfigFile)
+                                    ? m_configFileParseResult
+                                    : m_lastParseResult;
 
 
 
@@ -624,7 +819,7 @@ HRESULT CConfig::ParseOverrideValue (
 
     if (!colorView.empty())
     {
-        hr = ParseColorValue (entry, colorView, ov.m_colorAttr);
+        hr = ParseColorValue (entry, colorView, ov.m_colorAttr, source);
         CHR (hr);
         ov.m_fHasColor = true;
     }
@@ -644,7 +839,7 @@ HRESULT CConfig::ParseOverrideValue (
            
            
            
-            m_lastParseResult.errors.push_back ({
+            parseResult.errors.push_back ({
                 L"Invalid icon specification (expected U+XXXX, literal glyph, or empty)",
                 wstring (entry),
                 wstring (trimmedIcon),
@@ -682,10 +877,16 @@ Error:
 void CConfig::ApplyOverrideByKeyType (
     wstring_view           entry,
     wstring_view           keyView,
-    const SOverrideValue & ov)
+    const SOverrideValue & ov,
+    EAttributeSource       source)
 {
     bool         fIsDir = (keyView.length() > 4 && _wcsnicmp (keyView.data(), L"dir:", 4) == 0);
     wstring_view name   = fIsDir ? keyView.substr (4) : keyView;
+
+    // Select the error list based on source
+    ValidationResult & parseResult = (source == EAttributeSource::ConfigFile)
+                                    ? m_configFileParseResult
+                                    : m_lastParseResult;
 
 
 
@@ -697,30 +898,31 @@ void CConfig::ApplyOverrideByKeyType (
 
         if (ov.m_fHasColor)
         {
-            ProcessFileExtensionOverride (name, ov.m_colorAttr);
+            ProcessFileExtensionOverride (name, ov.m_colorAttr, source);
         }
 
         if (ov.m_fHasIcon)
         {
             ApplyIconOverride (name, ov.m_iconCP, ov.m_fSuppressed,
                                fIsDir ? m_mapWellKnownDirToIcon      : m_mapExtensionToIcon,
-                               fIsDir ? m_mapWellKnownDirIconSources : m_mapExtensionIconSources);
+                               fIsDir ? m_mapWellKnownDirIconSources : m_mapExtensionIconSources,
+                               source);
         }
     }
     else if (keyView.length() == 6 && _wcsnicmp (keyView.data(), L"attr:", 5) == 0)
     {
-        ProcessFileAttributeOverride (keyView, entry, ov);
+        ProcessFileAttributeOverride (keyView, entry, ov, source);
     }
     else if (keyView.length() == 1)
     {
         if (ov.m_fHasColor)
         {
-            ProcessDisplayAttributeOverride (keyView[0], ov.m_colorAttr, entry);
+            ProcessDisplayAttributeOverride (keyView[0], ov.m_colorAttr, entry, source);
         }
     }
     else
     {
-        m_lastParseResult.errors.push_back ( { L"Invalid key (expected single character, .extension, dir:name, or attr:x)",
+        parseResult.errors.push_back ( { L"Invalid key (expected single character, .extension, dir:name, or attr:x)",
                                                wstring (entry), wstring (keyView), entry.find (keyView) } );
     }
 }
@@ -739,7 +941,7 @@ void CConfig::ApplyOverrideByKeyType (
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-HRESULT CConfig::ParseColorValue (wstring_view entry, wstring_view valueView, WORD & colorAttr)
+HRESULT CConfig::ParseColorValue (wstring_view entry, wstring_view valueView, WORD & colorAttr, EAttributeSource source)
 {
     HRESULT      hr          = S_OK;
     WORD         foreColor   = 0;
@@ -748,6 +950,11 @@ HRESULT CConfig::ParseColorValue (wstring_view entry, wstring_view valueView, WO
     wstring_view backView;
     size_t       foreOffset  = 0;
     size_t       backOffset  = 0;
+
+    // Select the error list based on source
+    ValidationResult & parseResult = (source == EAttributeSource::ConfigFile)
+                                    ? m_configFileParseResult
+                                    : m_lastParseResult;
 
 
 
@@ -809,7 +1016,7 @@ HRESULT CConfig::ParseColorValue (wstring_view entry, wstring_view valueView, WO
     hr = ParseColorName (foreView, false, foreColor);
     if (FAILED (hr))
     {
-        m_lastParseResult.errors.push_back({
+        parseResult.errors.push_back({
             L"Invalid foreground color",
             wstring(entry),
             wstring(foreView),
@@ -827,7 +1034,7 @@ HRESULT CConfig::ParseColorValue (wstring_view entry, wstring_view valueView, WO
         HRESULT hrBack = ParseColorName (backView, true, backColor);
         if (FAILED (hrBack))
         {
-            m_lastParseResult.errors.push_back({
+            parseResult.errors.push_back({
                 L"Invalid background color",
                 wstring(entry),
                 wstring(backView),
@@ -843,7 +1050,7 @@ HRESULT CConfig::ParseColorValue (wstring_view entry, wstring_view valueView, WO
 
         if (foreColor == (backColor >> 4))
         {
-            m_lastParseResult.errors.push_back({
+            parseResult.errors.push_back({
                 L"Foreground and background colors are the same",
                 wstring(entry),
                 wstring(TrimWhitespace (valueView)),
@@ -989,7 +1196,7 @@ Error:
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-void CConfig::ProcessSwitchOverride (wstring_view entry)
+void CConfig::ProcessSwitchOverride (wstring_view entry, EAttributeSource source)
 {
     for (const SSwitchMapping & mapping : s_switchMappings)
     {
@@ -1001,7 +1208,11 @@ void CConfig::ProcessSwitchOverride (wstring_view entry)
         }
     }
 
-    m_lastParseResult.errors.push_back ({
+    ValidationResult & parseResult = (source == EAttributeSource::ConfigFile)
+                                    ? m_configFileParseResult
+                                    : m_lastParseResult;
+
+    parseResult.errors.push_back ({
         L"Invalid switch",
         wstring (entry),
         wstring (entry),
@@ -1049,8 +1260,12 @@ bool CConfig::IsSwitchName (wstring_view entry)
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-bool CConfig::TryProcessIntSwitch (wstring_view entry)
+bool CConfig::TryProcessIntSwitch (wstring_view entry, EAttributeSource source)
 {
+    ValidationResult & parseResult = (source == EAttributeSource::ConfigFile)
+                                    ? m_configFileParseResult
+                                    : m_lastParseResult;
+
     //
     // Depth=N
     //
@@ -1065,7 +1280,7 @@ bool CConfig::TryProcessIntSwitch (wstring_view entry)
         }
         else
         {
-            m_lastParseResult.errors.push_back ({
+            parseResult.errors.push_back ({
                 L"Depth value must be a positive integer",
                 wstring (entry),
                 wstring (entry.substr (6)),
@@ -1090,7 +1305,7 @@ bool CConfig::TryProcessIntSwitch (wstring_view entry)
         }
         else
         {
-            m_lastParseResult.errors.push_back ({
+            parseResult.errors.push_back ({
                 L"TreeIndent value must be between 1 and 8",
                 wstring (entry),
                 wstring (entry.substr (11)),
@@ -1119,7 +1334,7 @@ bool CConfig::TryProcessIntSwitch (wstring_view entry)
         }
         else
         {
-            m_lastParseResult.errors.push_back ({
+            parseResult.errors.push_back ({
                 L"Size value must be Auto or Bytes",
                 wstring (entry),
                 wstring (valueView),
@@ -1145,14 +1360,14 @@ bool CConfig::TryProcessIntSwitch (wstring_view entry)
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-void CConfig::ProcessFileExtensionOverride (wstring_view extension, WORD colorAttr)
+void CConfig::ProcessFileExtensionOverride (wstring_view extension, WORD colorAttr, EAttributeSource source)
 {
     wstring key (extension);
     
     std::ranges::transform (key, key.begin(), towlower);
 
     m_mapExtensionToTextAttr[key] = colorAttr;
-    m_mapExtensionSources[key]    = EAttributeSource::Environment;
+    m_mapExtensionSources[key]    = source;
 }
 
 
@@ -1174,7 +1389,8 @@ void CConfig::ApplyIconOverride (
     char32_t                                   iconCodePoint,
     bool                                       fSuppressed,
     unordered_map<wstring, char32_t>         & mapIcons,
-    unordered_map<wstring, EAttributeSource> & mapSources)
+    unordered_map<wstring, EAttributeSource> & mapSources,
+    EAttributeSource                           source)
 {
     wstring key (name);
 
@@ -1182,7 +1398,11 @@ void CConfig::ApplyIconOverride (
 
     if (mapSources.count (key) && mapSources[key] == EAttributeSource::Environment)
     {
-        m_lastParseResult.errors.push_back ({
+        ValidationResult & parseResult = (source == EAttributeSource::ConfigFile)
+                                        ? m_configFileParseResult
+                                        : m_lastParseResult;
+
+        parseResult.errors.push_back ({
             L"Duplicate icon override (first-write-wins)",
             wstring (name),
             wstring (name),
@@ -1192,7 +1412,7 @@ void CConfig::ApplyIconOverride (
     }
 
     mapIcons[key]   = fSuppressed ? U'\0' : iconCodePoint;
-    mapSources[key] = EAttributeSource::Environment;
+    mapSources[key] = source;
 }
 
 
@@ -1224,7 +1444,7 @@ void CConfig::ProcessFileAttributeIconOverride (DWORD dwAttribute, char32_t icon
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-void CConfig::ProcessDisplayAttributeOverride (wchar_t attrChar, WORD colorAttr, wstring_view entry)
+void CConfig::ProcessDisplayAttributeOverride (wchar_t attrChar, WORD colorAttr, wstring_view entry, EAttributeSource source)
 {
     struct AttrMapping
     {
@@ -1255,13 +1475,18 @@ void CConfig::ProcessDisplayAttributeOverride (wchar_t attrChar, WORD colorAttr,
     if (iter != std::ranges::end (s_attrMappings))
     {
         m_rgAttributes[iter->attr] = colorAttr;
-        m_rgAttributeSources[iter->attr] = EAttributeSource::Environment;
+        m_rgAttributeSources[iter->attr] = source;
     }
     else
     {
+        // Select the error list based on source
+        ValidationResult & parseResult = (source == EAttributeSource::ConfigFile)
+                                        ? m_configFileParseResult
+                                        : m_lastParseResult;
+
         // For single-char key, invalidText is the character, offset is 0 in entry
         wstring invalidChar(1, attrChar);
-        m_lastParseResult.errors.push_back({
+        parseResult.errors.push_back({
             L"Invalid display attribute character (valid: D,T,A,-,S,R,I,H,E,F,O)",
             wstring(entry),
             invalidChar,
@@ -1280,7 +1505,7 @@ void CConfig::ProcessDisplayAttributeOverride (wchar_t attrChar, WORD colorAttr,
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-void CConfig::ProcessFileAttributeOverride (wstring_view keyView, wstring_view entry, const SOverrideValue & ov)
+void CConfig::ProcessFileAttributeOverride (wstring_view keyView, wstring_view entry, const SOverrideValue & ov, EAttributeSource source)
 {
     DWORD   dwFileAttribute = 0;
     bool    found           = false;
@@ -1302,11 +1527,16 @@ void CConfig::ProcessFileAttributeOverride (wstring_view keyView, wstring_view e
 
     if (!found)
     {
+        // Select the error list based on source
+        ValidationResult & parseResult = (source == EAttributeSource::ConfigFile)
+                                        ? m_configFileParseResult
+                                        : m_lastParseResult;
+
         // The invalid character is at position 5 of the key (attr:X)
         wstring invalidChar(1, keyView[5]);
         size_t  keyPos = entry.find(keyView);
         size_t  charOffset = (keyPos != wstring_view::npos) ? keyPos + 5 : 5;
-        m_lastParseResult.errors.push_back({
+        parseResult.errors.push_back({
             L"Invalid file attribute character (expected R, H, S, A, T, E, C, P or 0)",
             wstring(entry),
             invalidChar,
@@ -1317,7 +1547,7 @@ void CConfig::ProcessFileAttributeOverride (wstring_view keyView, wstring_view e
 
     if (ov.m_fHasColor)
     {
-        m_mapFileAttributesTextAttr[dwFileAttribute] = { ov.m_colorAttr, EAttributeSource::Environment };
+        m_mapFileAttributesTextAttr[dwFileAttribute] = { ov.m_colorAttr, source };
     }
 
     if (ov.m_fHasIcon)

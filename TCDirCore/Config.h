@@ -2,6 +2,7 @@
 
 #include "EnvironmentProviderBase.h"
 #include "EnvironmentProvider.h"
+#include "ConfigFileReader.h"
 #include "IconMapping.h"
 #include "SizeFormat.h"
 
@@ -36,6 +37,7 @@ public:
     enum class EAttributeSource
     {
         Default,
+        ConfigFile,
         Environment
     };
 
@@ -97,6 +99,8 @@ public:
         wstring entry;              // Full "Key=Value" segment from TCDIR
         wstring invalidText;        // The specific invalid portion to underline
         size_t  invalidTextOffset;  // Position of invalidText within entry
+        wstring sourceFilePath;     // Config file path (empty for env var errors)
+        size_t  lineNumber = 0;     // 1-based line number (0 for env var errors)
     };
 
     struct ValidationResult
@@ -123,6 +127,11 @@ public:
     char32_t          GetCloudStatusIcon          (DWORD dwCloudStatus);
     ValidationResult  ValidateEnvironmentVariable (void);
     void              SetEnvironmentProvider      (const IEnvironmentProvider * pProvider);
+    void              SetConfigFileReader         (IConfigFileReader * pReader);
+    HRESULT           LoadConfigFile              (void);
+    ValidationResult  ValidateConfigFile          (void);
+    const wstring   & GetConfigFilePath           (void) const;
+    bool              IsConfigFileLoaded          (void) const;
     HRESULT           ParseColorName              (wstring_view colorName, bool isBackground, WORD & colorValue);
     HRESULT           ParseColorSpec              (wstring_view colorSpec, WORD & colorAttr);
     static WORD       EnsureVisibleColorAttr      (WORD colorAttr, WORD defaultAttr);
@@ -169,26 +178,30 @@ public:
     char32_t                                   m_iconLocallyAvailable = NfIcon::MdCloudCheck;
     char32_t                                   m_iconAlwaysLocal      = NfIcon::MdPin;
 
+    // Config file state
+    wstring                                    m_strConfigFilePath;
+    bool                                       m_fConfigFileLoaded    = false;
+
 
     
 protected:
     void         InitializeExtensionToTextAttrMap     (void);
     void         InitializeFileAttributeToTextAttrMap (void);
     void         PopulateIconMap                      (const SIconMappingEntry * rgEntries, size_t cEntries, unordered_map<wstring, char32_t> & mapIcons, unordered_map<wstring, EAttributeSource> & mapSources);
-    void         ApplyUserColorOverrides              (void);
-    void         ProcessColorOverrideEntry            (wstring_view entry);
-    HRESULT      ParseOverrideValue                   (wstring_view entry, wstring_view valueView, SOverrideValue & ov);
-    void         ApplyOverrideByKeyType               (wstring_view entry, wstring_view keyView, const SOverrideValue & ov);
-    void         ProcessSwitchOverride                (wstring_view entry);
+    void         ApplyUserColorOverrides              (EAttributeSource source = EAttributeSource::Environment);
+    void         ProcessColorOverrideEntry            (wstring_view entry, EAttributeSource source = EAttributeSource::Environment);
+    HRESULT      ParseOverrideValue                   (wstring_view entry, wstring_view valueView, SOverrideValue & ov, EAttributeSource source = EAttributeSource::Environment);
+    void         ApplyOverrideByKeyType               (wstring_view entry, wstring_view keyView, const SOverrideValue & ov, EAttributeSource source = EAttributeSource::Environment);
+    void         ProcessSwitchOverride                (wstring_view entry, EAttributeSource source = EAttributeSource::Environment);
     bool         IsSwitchName                         (wstring_view entry);
-    bool         TryProcessIntSwitch                  (wstring_view entry);
-    void         ProcessFileExtensionOverride         (wstring_view extension, WORD colorAttr);
-    void         ProcessDisplayAttributeOverride      (wchar_t attrChar, WORD colorAttr, wstring_view entry);
-    void         ProcessFileAttributeOverride         (wstring_view keyView, wstring_view entry, const SOverrideValue & ov);
+    bool         TryProcessIntSwitch                  (wstring_view entry, EAttributeSource source = EAttributeSource::Environment);
+    void         ProcessFileExtensionOverride         (wstring_view extension, WORD colorAttr, EAttributeSource source = EAttributeSource::Environment);
+    void         ProcessDisplayAttributeOverride      (wchar_t attrChar, WORD colorAttr, wstring_view entry, EAttributeSource source = EAttributeSource::Environment);
+    void         ProcessFileAttributeOverride         (wstring_view keyView, wstring_view entry, const SOverrideValue & ov, EAttributeSource source = EAttributeSource::Environment);
     HRESULT      ParseKeyAndValue                     (wstring_view entry, wstring_view & keyView, wstring_view & valueView);
-    HRESULT      ParseColorValue                      (wstring_view entry, wstring_view valueView, WORD & colorAttr);
+    HRESULT      ParseColorValue                      (wstring_view entry, wstring_view valueView, WORD & colorAttr, EAttributeSource source = EAttributeSource::Environment);
     HRESULT      ParseIconValue                       (wstring_view iconSpec, char32_t & codePoint, bool & fSuppressed);
-    void         ApplyIconOverride                    (wstring_view name, char32_t iconCodePoint, bool fSuppressed, unordered_map<wstring, char32_t> & mapIcons, unordered_map<wstring, EAttributeSource> & mapSources);
+    void         ApplyIconOverride                    (wstring_view name, char32_t iconCodePoint, bool fSuppressed, unordered_map<wstring, char32_t> & mapIcons, unordered_map<wstring, EAttributeSource> & mapSources, EAttributeSource source = EAttributeSource::Environment);
     void         ProcessFileAttributeIconOverride     (DWORD dwAttribute, char32_t iconCodePoint);
     void         ResolveFileAttributeStyle             (const WIN32_FIND_DATA & wfd, SFileDisplayStyle & style);
     void         ResolveDirectoryStyle                 (const WIN32_FIND_DATA & wfd, SFileDisplayStyle & style);
@@ -196,7 +209,10 @@ protected:
     void         ResolveFileFallbackIcon               (const WIN32_FIND_DATA & wfd, SFileDisplayStyle & style);
     wstring_view TrimWhitespace                       (wstring_view str);
 
-    ValidationResult m_lastParseResult;
+    ValidationResult  m_lastParseResult;
+    ValidationResult  m_configFileParseResult;
+    IConfigFileReader              * m_pConfigFileReader        = nullptr;
+    CConfigFileReader                m_configFileReaderDefault;
 
     static const STextAttr      s_rgTextAttrs[];
     static const SSwitchMapping s_switchMappings[];
