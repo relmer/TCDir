@@ -253,6 +253,8 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="ConfigTests.cpp" />
+    <ClCompile Include="ConfigFileReaderTests.cpp" />
+    <ClCompile Include="ConfigFileTests.cpp" />
     <ClCompile Include="DirectoryListerScenarioTests.cpp" />
     <ClCompile Include="IatHook\IatPatch.cpp" />
     <ClCompile Include="MaskGroupingTests.cpp" />

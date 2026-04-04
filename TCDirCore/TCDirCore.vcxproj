@@ -222,6 +222,7 @@
     <ClInclude Include="Color.h" />
     <ClInclude Include="CommandLine.h" />
     <ClInclude Include="Config.h" />
+    <ClInclude Include="ConfigFileReader.h" />
     <ClInclude Include="Console.h" />
     <ClInclude Include="DirectoryInfo.h" />
     <ClInclude Include="DirectoryLister.h" />
@@ -259,6 +260,7 @@
     <ClCompile Include="AliasManager.cpp" />
     <ClCompile Include="CommandLine.cpp" />
     <ClCompile Include="Config.cpp" />
+    <ClCompile Include="ConfigFileReader.cpp" />
     <ClCompile Include="Console.cpp" />
     <ClCompile Include="DirectoryLister.cpp" />
     <ClCompile Include="DriveInfo.cpp" />
