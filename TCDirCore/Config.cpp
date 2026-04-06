@@ -335,6 +335,10 @@ CConfig::CConfig (void)
 
 void CConfig::Initialize (WORD wDefaultAttr)
 {
+    HRESULT hr = S_OK;
+
+
+
     m_rgAttributes[EAttribute::Default]                           = wDefaultAttr;
     m_rgAttributes[EAttribute::Date]                              = FC_Red;
     m_rgAttributes[EAttribute::Time]                              = FC_Brown;
@@ -359,7 +363,10 @@ void CConfig::Initialize (WORD wDefaultAttr)
     PopulateIconMap (g_rgDefaultExtensionIcons,    g_cDefaultExtensionIcons,    m_mapExtensionToIcon,    m_mapExtensionIconSources);
     PopulateIconMap (g_rgDefaultWellKnownDirIcons, g_cDefaultWellKnownDirIcons, m_mapWellKnownDirToIcon, m_mapWellKnownDirIconSources);
   
-    LoadConfigFile();
+    // Config file errors are non-fatal — diagnostics captured in m_configFileParseResult
+    hr = LoadConfigFile();
+    IGNORE_RETURN_VALUE (hr, S_OK);
+
     ApplyUserColorOverrides (EAttributeSource::Environment);
 }
 
@@ -446,16 +453,11 @@ HRESULT CConfig::LoadConfigFile (void)
     pReader = (m_pConfigFileReader != nullptr) ? m_pConfigFileReader : &m_configFileReaderDefault;
 
     hr = pReader->ReadLines (m_strConfigFilePath, lines, errorMessage);
-
-    if (hr == S_FALSE)
-    {
-        // File not found — silent skip
-        BAIL_OUT_IF (TRUE, S_OK);
-    }
-
+    // File not found — silent skip
+    BAIL_OUT_IF (hr == S_FALSE, S_OK);
     if (FAILED (hr))
     {
-        // File-level I/O error — single ErrorInfo, skip entire file
+        // File-level I/O error — record diagnostic, return actual failure
         m_configFileParseResult.errors.push_back ({
             errorMessage,
             m_strConfigFilePath,
@@ -464,7 +466,7 @@ HRESULT CConfig::LoadConfigFile (void)
             m_strConfigFilePath,
             0
         });
-        BAIL_OUT_IF (TRUE, S_OK);
+        CHR (hr);
     }
 
     m_fConfigFileLoaded = true;

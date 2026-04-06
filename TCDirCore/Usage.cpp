@@ -2011,12 +2011,6 @@ static bool DisplayIconStatus (CConsole & console, optional<bool> fIconsCli = nu
 
 void CUsage::DisplayConfigFileHelp (CConsole & console, wchar_t chPrefix)
 {
-    const CConfig & config   = *console.m_configPtr;
-    wstring         filePath = config.GetConfigFilePath();
-    bool            fLoaded  = config.IsConfigFileLoaded();
-
-
-
     // Same body as k_wszEnvVarHelpBody but phrased for config file.
     // {0} = config file path
     // Color markers use {{EAttributeName}} which format() escapes to {EAttributeName}
@@ -2070,7 +2064,10 @@ void CUsage::DisplayConfigFileHelp (CConsole & console, wchar_t chPrefix)
         L"  {{InformationHighlight}}<Fore>{{Information}}      Foreground color\n"
         L"  {{InformationHighlight}}<Back>{{Information}}      Background color";
 
+    wstring filePath    = console.m_configPtr->GetConfigFilePath();
     wstring displayPath = filePath.empty() ? L"~\\.tcdirconfig" : filePath;
+
+
 
     console.ColorPuts (format (k_wszConfigFileHelpBody, displayPath).c_str());
 
@@ -2104,9 +2101,9 @@ void CUsage::DisplayConfigFileHelp (CConsole & console, wchar_t chPrefix)
 
     if (filePath.empty())
     {
-        console.ColorPuts (L"  {Information}Config file: {Default}(not resolved \u2014 USERPROFILE not set)");
+        console.ColorPrintf (L"  {Information}Config file: {Default}(not resolved %lc USERPROFILE not set)\n", UnicodeSymbols::EmDash);
     }
-    else if (fLoaded)
+    else if (console.m_configPtr->IsConfigFileLoaded())
     {
         console.ColorPrintf (L"  {Information}Config file: {InformationHighlight}%s {Information}found\n", filePath.c_str());
     }
