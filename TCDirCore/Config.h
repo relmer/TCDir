@@ -127,7 +127,6 @@ public:
     char32_t          GetCloudStatusIcon          (DWORD dwCloudStatus);
     ValidationResult  ValidateEnvironmentVariable (void);
     void              SetEnvironmentProvider      (const IEnvironmentProvider * pProvider);
-    void              SetConfigFileReader         (IConfigFileReader * pReader);
     HRESULT           LoadConfigFile              (void);
     ValidationResult  ValidateConfigFile          (void);
     const wstring   & GetConfigFilePath           (void) const;
@@ -209,16 +208,16 @@ protected:
     HRESULT      ParseIconValue                       (wstring_view iconSpec, char32_t & codePoint, bool & fSuppressed);
     void         ApplyIconOverride                    (wstring_view name, char32_t iconCodePoint, bool fSuppressed, unordered_map<wstring, char32_t> & mapIcons, unordered_map<wstring, EAttributeSource> & mapSources, EAttributeSource source = EAttributeSource::Environment);
     void         ProcessFileAttributeIconOverride     (DWORD dwAttribute, char32_t iconCodePoint);
-    void         ResolveFileAttributeStyle             (const WIN32_FIND_DATA & wfd, SFileDisplayStyle & style);
-    void         ResolveDirectoryStyle                 (const WIN32_FIND_DATA & wfd, SFileDisplayStyle & style);
-    void         ResolveExtensionStyle                 (const WIN32_FIND_DATA & wfd, SFileDisplayStyle & style);
-    void         ResolveFileFallbackIcon               (const WIN32_FIND_DATA & wfd, SFileDisplayStyle & style);
+    void         ResolveFileAttributeStyle            (const WIN32_FIND_DATA & wfd, SFileDisplayStyle & style);
+    void         ResolveDirectoryStyle                (const WIN32_FIND_DATA & wfd, SFileDisplayStyle & style);
+    void         ResolveExtensionStyle                (const WIN32_FIND_DATA & wfd, SFileDisplayStyle & style);
+    void         ResolveFileFallbackIcon              (const WIN32_FIND_DATA & wfd, SFileDisplayStyle & style);
     wstring_view TrimWhitespace                       (wstring_view str);
+    void         ProcessConfigLines                   (const vector<wstring> & lines);
 
     ValidationResult  m_lastParseResult;
     ValidationResult  m_configFileParseResult;
-    IConfigFileReader              * m_pConfigFileReader        = nullptr;
-    CConfigFileReader                m_configFileReaderDefault;
+    CConfigFileReader m_configFileReader;
 
     static const STextAttr      s_rgTextAttrs[];
     static const SSwitchMapping s_switchMappings[];

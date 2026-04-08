@@ -14,6 +14,8 @@ This document tracks which features have been ported and which are pending.
 | 003 | Nerd Font File Icons   | Shipped            | v5.0.1038     | Shipped            | v5.0          | Ported from TCDir's 9-phase implementation              |
 | 004 | Tree View Display Mode | Shipped            | v5.1.1106     | Shipped            | v5.1.1132     | 64 tasks, 314 tests — output-parity verified            |
 | Fix | Pure Mask Dir Fix      | Shipped            | v5.1.1149     | Shipped            | v5.1.TBD      | `tcdir x64` now lists dir contents like `tcdir .\x64`  |
+| 005 | PowerShell Aliases     | Shipped            | v5.2.1346     | Not started        |               | `--set-aliases`, `--get-aliases`, `--remove-aliases`   |
+| 006 | Config File Support    | In progress        | v5.3          | Not started        |               | `%USERPROFILE%\.tcdirconfig` persistent settings       |
 
 ## Workflow
 
@@ -27,5 +29,5 @@ This document tracks which features have been ported and which are pending.
 
 | Project | Latest Release | Date       |
 | ------- | -------------- | ---------- |
-| TCDir   | v5.1.1149      | 2026-03-05 |
+| TCDir   | v5.2.1346      | 2026-03-28 |
 | RCDir   | v5.1.1132      | 2026-02-28 |

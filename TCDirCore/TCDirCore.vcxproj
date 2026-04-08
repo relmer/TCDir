@@ -219,6 +219,7 @@
     <ClInclude Include="AliasBlockGenerator.h" />
     <ClInclude Include="AliasManager.h" />
     <ClInclude Include="AnsiCodes.h" />
+    <ClInclude Include="AutoHandle.h" />
     <ClInclude Include="Color.h" />
     <ClInclude Include="CommandLine.h" />
     <ClInclude Include="Config.h" />
@@ -249,7 +250,6 @@
     <ClInclude Include="ProfileFileManager.h" />
     <ClInclude Include="ProfilePathResolver.h" />
     <ClInclude Include="TuiWidgets.h" />
-    <ClInclude Include="UniqueFindHandle.h" />
     <ClInclude Include="Usage.h" />
     <ClInclude Include="Version.h" />
     <ClInclude Include="TreeConnectorState.h" />

@@ -1,6 +1,7 @@
 #include "pch.h"
 #include "MultiThreadedLister.h"
 
+#include "AutoHandle.h"
 #include "CommandLine.h"
 #include "Config.h"
 #include "Console.h"
@@ -8,7 +9,6 @@
 #include "FileComparator.h"
 #include "Flag.h"
 #include "ResultsDisplayerTree.h"
-#include "UniqueFindHandle.h"
 
 
 
@@ -279,7 +279,7 @@ HRESULT CMultiThreadedLister::EnumerateMatchingFiles (shared_ptr<CDirectoryInfo>
 {
     HRESULT                hr               = S_OK;
     filesystem::path       pathAndFileSpec;
-    UniqueFindHandle       hFind;
+    AutoFindHandle         hFind;
     WIN32_FIND_DATA        wfd              = { 0 };
     unordered_set<wstring> seenFilenames;
     DWORD                  dwError          = 0;
@@ -303,9 +303,8 @@ HRESULT CMultiThreadedLister::EnumerateMatchingFiles (shared_ptr<CDirectoryInfo>
             continue;  // Skip this spec on error
         }
 
-        hFind.reset (FindFirstFile (pathAndFileSpec.c_str(), &wfd));
-        
-        if (hFind.get() == INVALID_HANDLE_VALUE)
+        hFind = FindFirstFile (pathAndFileSpec.c_str(), &wfd);
+        if (hFind == INVALID_HANDLE_VALUE)
         {
             continue;  // No matches for this spec, try next
         }
@@ -344,7 +343,7 @@ HRESULT CMultiThreadedLister::EnumerateMatchingFiles (shared_ptr<CDirectoryInfo>
             }
 
         } 
-        while (FindNextFile (hFind.get(), &wfd));
+        while (FindNextFile (hFind, &wfd));
 
         // Check if loop ended due to error or naturally
         dwError = GetLastError();
@@ -379,7 +378,7 @@ HRESULT CMultiThreadedLister::EnumerateSubdirectories (shared_ptr<CDirectoryInfo
 {
     HRESULT          hr          = S_OK;
     filesystem::path pathForDirs;
-    UniqueFindHandle hFind;
+    AutoFindHandle   hFind;
     WIN32_FIND_DATA  wfd         = { 0 };
     DWORD            dwError     = 0;
 
@@ -408,8 +407,8 @@ HRESULT CMultiThreadedLister::EnumerateSubdirectories (shared_ptr<CDirectoryInfo
 
     // Search using "*" to find all directories
     pathForDirs = pDirInfo->m_dirPath / L"*";
-    hFind.reset (FindFirstFile (pathForDirs.c_str(), &wfd));
-    BAIL_OUT_IF (hFind.get() == INVALID_HANDLE_VALUE, S_OK);
+    hFind = FindFirstFile (pathForDirs.c_str(), &wfd);
+    BAIL_OUT_IF (hFind == INVALID_HANDLE_VALUE, S_OK);
 
     do
     {
@@ -449,7 +448,7 @@ HRESULT CMultiThreadedLister::EnumerateSubdirectories (shared_ptr<CDirectoryInfo
             }
         }
     }
-    while (FindNextFile (hFind.get(), &wfd));
+    while (FindNextFile (hFind, &wfd));
 
     // Check if loop ended due to error or naturally
     dwError = GetLastError();

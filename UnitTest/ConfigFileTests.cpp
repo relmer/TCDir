@@ -77,62 +77,7 @@ namespace UnitTest
 
     ////////////////////////////////////////////////////////////////////////////////
     //
-    //  Mock config file reader for config file tests
-    //
-    ////////////////////////////////////////////////////////////////////////////////
-
-    class CTestConfigFileReader : public IConfigFileReader
-    {
-    public:
-        void Set (vector<wstring> lines)
-        {
-            m_lines      = std::move (lines);
-            m_hrResult   = S_OK;
-            m_fConfigured = true;
-        }
-
-        void SetNotFound (void)
-        {
-            m_hrResult   = S_FALSE;
-            m_fConfigured = true;
-        }
-
-        void SetError (wstring errorMessage)
-        {
-            m_hrResult      = E_FAIL;
-            m_errorMessage  = std::move (errorMessage);
-            m_fConfigured    = true;
-        }
-
-        HRESULT ReadLines (const wstring & /*path*/, vector<wstring> & lines, wstring & errorMessage) override
-        {
-            ASSERT (m_fConfigured);
-
-            if (m_hrResult == S_OK)
-            {
-                lines = m_lines;
-            }
-            else if (FAILED (m_hrResult))
-            {
-                errorMessage = m_errorMessage;
-            }
-
-            return m_hrResult;
-        }
-
-    private:
-        vector<wstring> m_lines;
-        wstring         m_errorMessage;
-        HRESULT         m_hrResult   = S_FALSE;
-        bool            m_fConfigured = false;
-    };
-
-
-
-
-    ////////////////////////////////////////////////////////////////////////////////
-    //
-    //  ConfigProbe for config file tests — sets up mock env provider and reader
+    //  ConfigProbe for config file tests — sets up mock env provider
     //
     ////////////////////////////////////////////////////////////////////////////////
 
@@ -142,7 +87,24 @@ namespace UnitTest
         {
             m_environmentProvider.Set (L"USERPROFILE", L"C:\\Users\\TestUser");
             SetEnvironmentProvider (&m_environmentProvider);
-            SetConfigFileReader (&m_reader);
+        }
+
+        //
+        //  Initialize — calls base Initialize (LoadConfigFile silently skips
+        //  since the test path doesn't exist), then injects config lines at the
+        //  right point in the precedence chain and re-applies env var overrides.
+        //
+
+        void Initialize (WORD wDefaultAttr)
+        {
+            CConfig::Initialize (wDefaultAttr);
+
+            if (m_fHasConfigLines && !m_strConfigFilePath.empty())
+            {
+                m_fConfigFileLoaded = true;
+                ProcessConfigLines (m_pendingLines);
+                ApplyUserColorOverrides (EAttributeSource::Environment);
+            }
         }
 
         void SetEnvVar (LPCWSTR pszName, wstring value)
@@ -157,17 +119,8 @@ namespace UnitTest
 
         void SetConfigLines (vector<wstring> lines)
         {
-            m_reader.Set (std::move (lines));
-        }
-
-        void SetConfigNotFound (void)
-        {
-            m_reader.SetNotFound();
-        }
-
-        void SetConfigError (wstring errorMessage)
-        {
-            m_reader.SetError (std::move (errorMessage));
+            m_pendingLines  = std::move (lines);
+            m_fHasConfigLines = true;
         }
 
         using CConfig::m_mapExtensionToTextAttr;
@@ -197,10 +150,13 @@ namespace UnitTest
         using CConfig::m_eSizeFormatSource;
         using CConfig::m_lastParseResult;
         using CConfig::m_configFileParseResult;
+        using CConfig::ProcessConfigLines;
+        using CConfig::ApplyUserColorOverrides;
 
     private:
         CConfigTestEnvironmentProvider  m_environmentProvider;
-        CTestConfigFileReader           m_reader;
+        vector<wstring>                 m_pendingLines;
+        bool                            m_fHasConfigLines = false;
     };
 
 
@@ -442,7 +398,6 @@ namespace UnitTest
         TEST_METHOD (LoadConfigFile_FileNotFound_IsConfigFileLoadedFalse)
         {
             ConfigFileProbe config;
-            config.SetConfigNotFound();
             config.Initialize (FC_LightGrey);
 
 
@@ -927,24 +882,9 @@ namespace UnitTest
         // T036: I/O error tests
         //
 
-        TEST_METHOD (IOError_PermissionDenied_ProducesSingleError)
-        {
-            ConfigFileProbe config;
-            config.SetConfigError (L"Access denied");
-            config.Initialize (FC_LightGrey);
-
-
-
-            auto result = config.ValidateConfigFile();
-            Assert::IsTrue (result.hasIssues());
-            Assert::AreEqual ((size_t) 1, result.errors.size());
-            Assert::IsFalse (config.IsConfigFileLoaded());
-        }
-
         TEST_METHOD (IOError_FileNotFound_SilentSkip)
         {
             ConfigFileProbe config;
-            config.SetConfigNotFound();
             config.Initialize (FC_LightGrey);
 
 

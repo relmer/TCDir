@@ -84,7 +84,7 @@
     <ClInclude Include="ResultsDisplayerWide.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="UniqueFindHandle.h">
+    <ClInclude Include="AutoHandle.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="AnsiCodes.h">

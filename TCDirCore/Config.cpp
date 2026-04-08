@@ -1,6 +1,7 @@
 #include "pch.h"
 #include "Config.h"
 
+#include "AutoHandle.h"
 #include "Color.h"
 #include "FileAttributeMap.h"
 
@@ -399,37 +400,27 @@ void CConfig::SetEnvironmentProvider (const IEnvironmentProvider * pProvider)
 
 ////////////////////////////////////////////////////////////////////////////////
 //
-//  CConfig::SetConfigFileReader
-//
-////////////////////////////////////////////////////////////////////////////////
-
-void CConfig::SetConfigFileReader (IConfigFileReader * pReader)
-{
-    m_pConfigFileReader = pReader;
-}
-
-
-
-
-
-
-////////////////////////////////////////////////////////////////////////////////
-//
 //  CConfig::LoadConfigFile
 //
-//  Read .tcdirconfig from %USERPROFILE%, parse lines, apply settings with
-//  ConfigFile source.  Silently skips if file not found or USERPROFILE
-//  is not set.
+//  Resolve .tcdirconfig path from %USERPROFILE%, open the file, read lines
+//  via CConfigFileReader, then hand off to ProcessConfigLines.
+//  Silently skips if USERPROFILE is not set or file not found.
 //
 ////////////////////////////////////////////////////////////////////////////////
 
 HRESULT CConfig::LoadConfigFile (void)
 {
-    HRESULT             hr           = S_OK;
-    wstring             envValue;
-    vector<wstring>     lines;
-    wstring             errorMessage;
-    IConfigFileReader * pReader      = nullptr;
+    HRESULT         hr           = S_OK;
+    bool            isSet        = false;
+    DWORD           dwError      = 0;
+    wstring         envValue;
+    vector<wstring> lines;
+    wstring         errorMessage;
+    AutoHandle      hFile;
+    BOOL            fSuccess     = FALSE;
+    LARGE_INTEGER   liFileSize   = {};
+    DWORD           cbRead       = 0;
+    string          bytes;
 
 
 
@@ -441,23 +432,67 @@ HRESULT CConfig::LoadConfigFile (void)
     // Resolve config file path from USERPROFILE
     //
 
-    bool isSet = m_pEnvironmentProvider->TryGetEnvironmentVariable (L"USERPROFILE", envValue);
+    isSet = m_pEnvironmentProvider->TryGetEnvironmentVariable (L"USERPROFILE", envValue);
     BAIL_OUT_IF (!isSet, S_OK);
 
     m_strConfigFilePath = envValue + L"\\.tcdirconfig";
 
     //
-    // Read file via injected reader or default
+    // Open file
     //
 
-    pReader = (m_pConfigFileReader != nullptr) ? m_pConfigFileReader : &m_configFileReaderDefault;
+    hFile = CreateFileW (m_strConfigFilePath.c_str(),
+                         GENERIC_READ,
+                         FILE_SHARE_READ,
+                         nullptr,
+                         OPEN_EXISTING,
+                         FILE_ATTRIBUTE_NORMAL,
+                         nullptr);
 
-    hr = pReader->ReadLines (m_strConfigFilePath, lines, errorMessage);
-    // File not found — silent skip
-    BAIL_OUT_IF (hr == S_FALSE, S_OK);
+    if (hFile == INVALID_HANDLE_VALUE)
+    {
+        dwError = GetLastError();
+
+        if (dwError == ERROR_FILE_NOT_FOUND || dwError == ERROR_PATH_NOT_FOUND)
+        {
+            BAIL_OUT_IF (TRUE, S_OK);
+        }
+
+        errorMessage = L"Cannot open config file";
+        m_configFileParseResult.errors.push_back ({
+            errorMessage,
+            m_strConfigFilePath,
+            L"",
+            0,
+            m_strConfigFilePath,
+            0
+        });
+        
+        hr = HRESULT_FROM_WIN32 (dwError);
+        CHR (hr);
+    }
+
+    //
+    // Read all bytes
+    //
+
+    fSuccess = GetFileSizeEx (hFile, &liFileSize);
+    CWRA (fSuccess);
+
+    if (liFileSize.QuadPart > 0)
+    {
+        bytes.resize (static_cast<size_t>(liFileSize.QuadPart));
+        fSuccess = ReadFile (hFile, bytes.data(), static_cast<DWORD>(liFileSize.QuadPart), &cbRead, nullptr);
+        CWRA (fSuccess);
+    }
+
+    //
+    // Parse bytes into lines
+    //
+
+    hr = m_configFileReader.ReadLines (bytes, lines, errorMessage);
     if (FAILED (hr))
     {
-        // File-level I/O error — record diagnostic, return actual failure
         m_configFileParseResult.errors.push_back ({
             errorMessage,
             m_strConfigFilePath,
@@ -471,10 +506,29 @@ HRESULT CConfig::LoadConfigFile (void)
 
     m_fConfigFileLoaded = true;
 
-    //
-    // Process each line
-    //
+    ProcessConfigLines (lines);
 
+
+Error:
+    return hr;
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CConfig::ProcessConfigLines
+//
+//  Process parsed config file lines: skip blanks/comments, strip inline
+//  comments, apply settings with ConfigFile source, tag errors with line
+//  numbers.
+//
+////////////////////////////////////////////////////////////////////////////////
+
+void CConfig::ProcessConfigLines (const vector<wstring> & lines)
+{
     for (size_t i = 0; i < lines.size(); i++)
     {
         wstring_view line (lines[i]);
@@ -516,10 +570,6 @@ HRESULT CConfig::LoadConfigFile (void)
             m_configFileParseResult.errors[e].lineNumber     = i + 1;  // 1-based
         }
     }
-
-
-Error:
-    return hr;
 }
 
 

@@ -7,48 +7,25 @@
 
 ////////////////////////////////////////////////////////////////////////////////
 //
-//  CConfigFileReader::CConfigFileReader (istream *)
-//
-//  Constructor that accepts an optional stream override for unit testing.
-//
-////////////////////////////////////////////////////////////////////////////////
-
-CConfigFileReader::CConfigFileReader (istream * pStream) :
-    m_pStream (pStream)
-{
-}
-
-
-
-
-
-////////////////////////////////////////////////////////////////////////////////
-//
 //  CConfigFileReader::ReadLines
 //
-//  Read a UTF-8 text file, handle BOM, convert to wide string, split into
-//  lines.  Returns S_OK on success, S_FALSE if file not found, E_FAIL with
-//  errorMessage on I/O or encoding error.
+//  Handle BOM, convert UTF-8 bytes to wide string, split into lines.
 //
 ////////////////////////////////////////////////////////////////////////////////
 
 HRESULT CConfigFileReader::ReadLines (
-    const wstring   & path,
+    const string    & rawBytes,
     vector<wstring> & lines,
     wstring         & errorMessage)
 {
     HRESULT hr           = S_OK;
-    string  bytes;
+    string  bytes        (rawBytes);
     wstring wideContent;
 
 
 
     lines.clear();
     errorMessage.clear();
-
-    hr = ReadAllBytes (path, bytes, errorMessage);
-    BAIL_OUT_IF (hr == S_FALSE, S_FALSE);
-    CHR (hr);
 
     hr = CheckAndStripBom (bytes, errorMessage);
     CHR (hr);
@@ -62,76 +39,6 @@ HRESULT CConfigFileReader::ReadLines (
     CHR (hr);
 
     SplitLines (wideContent, lines);
-
-
-Error:
-    return hr;
-}
-
-
-
-
-
-////////////////////////////////////////////////////////////////////////////////
-//
-//  CConfigFileReader::ReadAllBytes
-//
-//  Read raw bytes from a file (or injected stream).  Returns S_FALSE if the
-//  file does not exist, E_FAIL on other I/O errors.
-//
-////////////////////////////////////////////////////////////////////////////////
-
-HRESULT CConfigFileReader::ReadAllBytes (
-    const wstring & path,
-    string        & bytes,
-    wstring       & errorMessage)
-{
-    HRESULT hr = S_OK;
-
-
-
-    if (m_pStream != nullptr)
-    {
-        //
-        // Test path: read from injected stream
-        //
-
-        ostringstream oss;
-        oss << m_pStream->rdbuf();
-        bytes = oss.str();
-
-        BAIL_OUT_IF (TRUE, S_OK);
-    }
-
-    //
-    // Production path: open file via ifstream
-    //
-
-    {
-        ifstream file (path, ios::binary);
-
-        if (!file.is_open())
-        {
-            //
-            // Distinguish not-found from other errors.
-            // Use std::filesystem::exists to check — _doserrno is unreliable.
-            //
-
-            if (!filesystem::exists (path))
-            {
-                BAIL_OUT_IF (TRUE, S_FALSE);
-            }
-
-            errorMessage = L"Cannot open file";
-            CBR (FALSE);
-        }
-
-        ostringstream oss;
-        oss << file.rdbuf();
-        bytes = oss.str();
-
-        CBR (file.good() || file.eof());
-    }
 
 
 Error:
