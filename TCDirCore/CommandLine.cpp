@@ -356,7 +356,7 @@ HRESULT CCommandLine::ValidateSwitchCombinations (void)
         if (cAliasFlags > 0)
         {
             bool fHasListingSwitch = m_fRecurse || m_fWideListing || m_fBareListing || m_fTree
-                                  || m_fShowOwner || m_fShowStreams || m_fEnv || m_fConfig;
+                                  || m_fShowOwner || m_fShowStreams || m_fEnv || m_fConfig || m_fSettings;
 
             if (fHasListingSwitch)
             {
@@ -491,6 +491,7 @@ HRESULT CCommandLine::HandleLongSwitch (LPCWSTR pszArg, int & cArg, WCHAR ** & p
     {
         {  L"env",            &CCommandLine::m_fEnv            },
         {  L"config",         &CCommandLine::m_fConfig         },
+        {  L"settings",       &CCommandLine::m_fSettings       },
         {  L"owner",          &CCommandLine::m_fShowOwner      },
         {  L"streams",        &CCommandLine::m_fShowStreams    },
         {  L"set-aliases",    &CCommandLine::m_fSetAliases     },

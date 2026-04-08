@@ -16,6 +16,22 @@ using namespace Microsoft::VisualStudio::CppUnitTestFramework;
 
 namespace UnitTest
 {
+    //
+    // No-op environment provider to prevent tests from loading the real
+    // .tcdirconfig file via CConfig::Initialize → LoadConfigFile.
+    //
+
+    class CNoOpEnvironmentProvider : public IEnvironmentProvider
+    {
+        bool TryGetEnvironmentVariable (LPCWSTR, wstring &) const override { return false; }
+    };
+
+    static CNoOpEnvironmentProvider s_noOpEnv;
+
+
+
+
+
     TEST_CLASS(CommandLineTests)
     {
     public:
@@ -326,6 +342,55 @@ namespace UnitTest
         {
             CCommandLine    cl;
             const wchar_t * c1      = L"-config";
+            wchar_t       * argv1[] = { const_cast<wchar_t *>(c1) };
+            HRESULT         hr      = cl.Parse(1, argv1);
+
+
+
+            Assert::IsTrue (FAILED(hr));
+        }
+
+
+
+
+        TEST_METHOD(ParseSettingsSwitchSlash)
+        {
+            CCommandLine    cl;
+            const wchar_t * c1      = L"/Settings";
+            wchar_t       * argv1[] = { const_cast<wchar_t *>(c1) };
+            HRESULT         hr      = cl.Parse(1, argv1);
+
+
+
+            Assert::IsTrue (SUCCEEDED(hr));
+            Assert::IsTrue (cl.m_fSettings);
+            Assert::AreEqual (L'/', cl.GetSwitchPrefix());
+        }
+
+
+
+
+        TEST_METHOD(ParseSettingsSwitchDoubleDash)
+        {
+            CCommandLine    cl;
+            const wchar_t * c1      = L"--settings";
+            wchar_t       * argv1[] = { const_cast<wchar_t *>(c1) };
+            HRESULT         hr      = cl.Parse(1, argv1);
+
+
+
+            Assert::IsTrue (SUCCEEDED(hr));
+            Assert::IsTrue (cl.m_fSettings);
+            Assert::AreEqual (L'-', cl.GetSwitchPrefix());
+        }
+
+
+
+
+        TEST_METHOD(ParseSettingsSwitchSingleDashFails)
+        {
+            CCommandLine    cl;
+            const wchar_t * c1      = L"-settings";
             wchar_t       * argv1[] = { const_cast<wchar_t *>(c1) };
             HRESULT         hr      = cl.Parse(1, argv1);
 
@@ -667,6 +732,7 @@ namespace UnitTest
             CConfig      config;
             CCommandLine cl;
 
+            config.SetEnvironmentProvider (&s_noOpEnv);
             config.Initialize (FC_LightGrey);
             config.m_fShowStreams = true;
 
@@ -683,6 +749,7 @@ namespace UnitTest
             CConfig      config;
             CCommandLine cl;
 
+            config.SetEnvironmentProvider (&s_noOpEnv);
             config.Initialize (FC_LightGrey);
             config.m_fShowOwner = true;
 
@@ -699,6 +766,7 @@ namespace UnitTest
             CConfig      config;
             CCommandLine cl;
 
+            config.SetEnvironmentProvider (&s_noOpEnv);
             config.Initialize (FC_LightGrey);
             config.m_fWideListing   = true;
             config.m_fBareListing   = true;
@@ -727,6 +795,7 @@ namespace UnitTest
             CConfig      config;
             CCommandLine cl;
 
+            config.SetEnvironmentProvider (&s_noOpEnv);
             config.Initialize (FC_LightGrey);
             // Don't set any switch values - they should remain as optional<> without value
 
@@ -1393,6 +1462,7 @@ namespace UnitTest
             CConfig      config;
             CCommandLine cl;
 
+            config.SetEnvironmentProvider (&s_noOpEnv);
             config.Initialize (FC_LightGrey);
             config.m_fTree = true;
 
@@ -1412,6 +1482,7 @@ namespace UnitTest
             CConfig      config;
             CCommandLine cl;
 
+            config.SetEnvironmentProvider (&s_noOpEnv);
             config.Initialize (FC_LightGrey);
             config.m_fTree     = true;
             config.m_cMaxDepth = 3;
@@ -1433,6 +1504,7 @@ namespace UnitTest
             CConfig      config;
             CCommandLine cl;
 
+            config.SetEnvironmentProvider (&s_noOpEnv);
             config.Initialize (FC_LightGrey);
             config.m_cMaxDepth = 3;   // Depth without Tree
 
@@ -1455,6 +1527,7 @@ namespace UnitTest
             CConfig      config;
             CCommandLine cl;
 
+            config.SetEnvironmentProvider (&s_noOpEnv);
             config.Initialize (FC_LightGrey);
             config.m_fTree = true;
 
@@ -1485,6 +1558,7 @@ namespace UnitTest
             CConfig      config;
             CCommandLine cl;
 
+            config.SetEnvironmentProvider (&s_noOpEnv);
             config.Initialize (FC_LightGrey);
             config.m_fTree     = true;
             config.m_cMaxDepth = 5;
@@ -1658,6 +1732,7 @@ namespace UnitTest
             CConfig      config;
             CCommandLine cl;
 
+            config.SetEnvironmentProvider (&s_noOpEnv);
             config.Initialize (FC_LightGrey);
             config.m_eSizeFormat = ESizeFormat::Auto;
 
@@ -1677,6 +1752,7 @@ namespace UnitTest
             CConfig      config;
             CCommandLine cl;
 
+            config.SetEnvironmentProvider (&s_noOpEnv);
             config.Initialize (FC_LightGrey);
             config.m_eSizeFormat = ESizeFormat::Auto;
 

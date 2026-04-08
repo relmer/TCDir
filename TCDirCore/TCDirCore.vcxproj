@@ -219,9 +219,11 @@
     <ClInclude Include="AliasBlockGenerator.h" />
     <ClInclude Include="AliasManager.h" />
     <ClInclude Include="AnsiCodes.h" />
+    <ClInclude Include="AutoHandle.h" />
     <ClInclude Include="Color.h" />
     <ClInclude Include="CommandLine.h" />
     <ClInclude Include="Config.h" />
+    <ClInclude Include="ConfigFileReader.h" />
     <ClInclude Include="Console.h" />
     <ClInclude Include="DirectoryInfo.h" />
     <ClInclude Include="DirectoryLister.h" />
@@ -248,7 +250,6 @@
     <ClInclude Include="ProfileFileManager.h" />
     <ClInclude Include="ProfilePathResolver.h" />
     <ClInclude Include="TuiWidgets.h" />
-    <ClInclude Include="UniqueFindHandle.h" />
     <ClInclude Include="Usage.h" />
     <ClInclude Include="Version.h" />
     <ClInclude Include="TreeConnectorState.h" />
@@ -259,6 +260,7 @@
     <ClCompile Include="AliasManager.cpp" />
     <ClCompile Include="CommandLine.cpp" />
     <ClCompile Include="Config.cpp" />
+    <ClCompile Include="ConfigFileReader.cpp" />
     <ClCompile Include="Console.cpp" />
     <ClCompile Include="DirectoryLister.cpp" />
     <ClCompile Include="DriveInfo.cpp" />

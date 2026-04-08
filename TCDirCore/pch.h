@@ -44,6 +44,7 @@
 #include <condition_variable>
 #include <filesystem>
 #include <format>
+#include <fstream>
 #include <functional>
 #include <list>
 #include <map>
@@ -53,6 +54,7 @@
 #include <ranges>
 #include <string>
 #include <string_view>
+#include <sstream>
 #include <thread>
 #include <unordered_map>
 #include <unordered_set>

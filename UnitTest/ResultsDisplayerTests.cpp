@@ -28,6 +28,21 @@ namespace Microsoft { namespace VisualStudio { namespace CppUnitTestFramework
 namespace UnitTest
 {
     //
+    // No-op environment provider to prevent tests from loading the real
+    // .tcdirconfig file via CConfig::Initialize → LoadConfigFile.
+    //
+
+    class CNoOpEnvironmentProvider : public IEnvironmentProvider
+    {
+        bool TryGetEnvironmentVariable (LPCWSTR, wstring &) const override { return false; }
+    };
+
+    static CNoOpEnvironmentProvider s_noOpEnv;
+
+
+
+
+    //
     // Probe class to access protected members of CResultsDisplayerNormal
     //
 
@@ -114,6 +129,7 @@ namespace UnitTest
             auto cmd = std::make_shared<CCommandLine>();
             auto con = std::make_shared<CTestConsole> ();
             auto cfg = std::make_shared<CConfig>();
+            cfg->SetEnvironmentProvider (&s_noOpEnv);
             con->Initialize(cfg);
             NormalDisplayerProbe probe(cmd, con, cfg);
 
@@ -144,6 +160,7 @@ namespace UnitTest
             auto cmd = std::make_shared<CCommandLine>();
             auto con = std::make_shared<CTestConsole> ();
             auto cfg = std::make_shared<CConfig>();
+            cfg->SetEnvironmentProvider (&s_noOpEnv);
             con->Initialize(cfg);
             WideProbe wp(cmd, con, cfg);
 
@@ -168,6 +185,7 @@ namespace UnitTest
             auto cmd = std::make_shared<CCommandLine>();
             auto con = std::make_shared<CTestConsole> ();
             auto cfg = std::make_shared<CConfig>();
+            cfg->SetEnvironmentProvider (&s_noOpEnv);
             con->Initialize(cfg);
             NormalDisplayerProbe probe(cmd, con, cfg);
 
@@ -190,6 +208,7 @@ namespace UnitTest
             auto cmd = std::make_shared<CCommandLine>();
             auto con = std::make_shared<CTestConsole> ();
             auto cfg = std::make_shared<CConfig>();
+            cfg->SetEnvironmentProvider (&s_noOpEnv);
             con->Initialize(cfg);
             NormalDisplayerProbe probe(cmd, con, cfg);
 
@@ -212,6 +231,7 @@ namespace UnitTest
             auto cmd = std::make_shared<CCommandLine>();
             auto con = std::make_shared<CTestConsole> ();
             auto cfg = std::make_shared<CConfig>();
+            cfg->SetEnvironmentProvider (&s_noOpEnv);
             con->Initialize(cfg);
             NormalDisplayerProbe probe(cmd, con, cfg);
 
@@ -232,6 +252,7 @@ namespace UnitTest
             auto cmd = std::make_shared<CCommandLine>();
             auto con = std::make_shared<CTestConsole> ();
             auto cfg = std::make_shared<CConfig>();
+            cfg->SetEnvironmentProvider (&s_noOpEnv);
             con->Initialize(cfg);
             NormalDisplayerProbe probe(cmd, con, cfg);
 
@@ -252,6 +273,7 @@ namespace UnitTest
             auto cmd = std::make_shared<CCommandLine>();
             auto con = std::make_shared<CTestConsole> ();
             auto cfg = std::make_shared<CConfig>();
+            cfg->SetEnvironmentProvider (&s_noOpEnv);
             con->Initialize(cfg);
             NormalDisplayerProbe probe(cmd, con, cfg);
 
@@ -272,6 +294,7 @@ namespace UnitTest
             auto cmd = std::make_shared<CCommandLine>();
             auto con = std::make_shared<CTestConsole> ();
             auto cfg = std::make_shared<CConfig>();
+            cfg->SetEnvironmentProvider (&s_noOpEnv);
             con->Initialize(cfg);
             NormalDisplayerProbe probe(cmd, con, cfg);
 
@@ -292,6 +315,7 @@ namespace UnitTest
             auto cmd = std::make_shared<CCommandLine>();
             auto con = std::make_shared<CTestConsole> ();
             auto cfg = std::make_shared<CConfig>();
+            cfg->SetEnvironmentProvider (&s_noOpEnv);
             con->Initialize(cfg);
             NormalDisplayerProbe probe(cmd, con, cfg);
 
@@ -312,6 +336,7 @@ namespace UnitTest
             auto cmd = std::make_shared<CCommandLine>();
             auto con = std::make_shared<CTestConsole> ();
             auto cfg = std::make_shared<CConfig>();
+            cfg->SetEnvironmentProvider (&s_noOpEnv);
             con->Initialize(cfg);
             NormalDisplayerProbe probe(cmd, con, cfg);
 
@@ -449,6 +474,7 @@ namespace UnitTest
             auto cmd = std::make_shared<CCommandLine>();
             auto con = std::make_shared<CTestConsole> ();
             auto cfg = std::make_shared<CConfig>();
+            cfg->SetEnvironmentProvider (&s_noOpEnv);
             con->Initialize(cfg);
             NormalDisplayerProbe probe(cmd, con, cfg);
 
@@ -505,6 +531,7 @@ namespace UnitTest
             auto cmd = std::make_shared<CCommandLine>();
             auto con = std::make_shared<CTestConsole> ();
             auto cfg = std::make_shared<CConfig>();
+            cfg->SetEnvironmentProvider (&s_noOpEnv);
             con->Initialize(cfg);
 
             WideDisplayerProbe probe (cmd, con, cfg, false /* icons off */);
@@ -525,6 +552,7 @@ namespace UnitTest
             auto cmd = std::make_shared<CCommandLine>();
             auto con = std::make_shared<CTestConsole> ();
             auto cfg = std::make_shared<CConfig>();
+            cfg->SetEnvironmentProvider (&s_noOpEnv);
             con->Initialize(cfg);
 
             WideDisplayerProbe probe (cmd, con, cfg, true /* icons on */);
@@ -545,6 +573,7 @@ namespace UnitTest
             auto cmd = std::make_shared<CCommandLine>();
             auto con = std::make_shared<CTestConsole> ();
             auto cfg = std::make_shared<CConfig>();
+            cfg->SetEnvironmentProvider (&s_noOpEnv);
             con->Initialize(cfg);
 
             WideDisplayerProbe probe (cmd, con, cfg, false);
@@ -565,6 +594,7 @@ namespace UnitTest
             auto cmd = std::make_shared<CCommandLine>();
             auto con = std::make_shared<CTestConsole> ();
             auto cfg = std::make_shared<CConfig>();
+            cfg->SetEnvironmentProvider (&s_noOpEnv);
             con->Initialize(cfg);
 
             WideDisplayerProbe probe (cmd, con, cfg, true);
@@ -589,6 +619,7 @@ namespace UnitTest
             auto cmd = std::make_shared<CCommandLine>();
             auto con = std::make_shared<CTestConsole> ();
             auto cfg = std::make_shared<CConfig>();
+            cfg->SetEnvironmentProvider (&s_noOpEnv);
             con->Initialize(cfg);
 
             WideDisplayerProbe probeOn  (cmd, con, cfg, true  /* icons on  */);
@@ -621,6 +652,7 @@ namespace UnitTest
             auto cmd = std::make_shared<CCommandLine>();
             auto con = std::make_shared<CTestConsole> ();
             auto cfg = std::make_shared<CConfig>();
+            cfg->SetEnvironmentProvider (&s_noOpEnv);
             con->Initialize(cfg);
 
             WideDisplayerProbe probeIcons   (cmd, con, cfg, true  /* icons on  */);
@@ -656,6 +688,7 @@ namespace UnitTest
             auto cmd = std::make_shared<CCommandLine>();
             auto con = std::make_shared<CTestConsole> ();
             auto cfg = std::make_shared<CConfig>();
+            cfg->SetEnvironmentProvider (&s_noOpEnv);
             con->Initialize(cfg);
 
             WIN32_FIND_DATA wfd = CreateMockFileData (L"main.cpp", FILE_ATTRIBUTE_ARCHIVE);
@@ -675,6 +708,7 @@ namespace UnitTest
             auto cmd = std::make_shared<CCommandLine>();
             auto con = std::make_shared<CTestConsole> ();
             auto cfg = std::make_shared<CConfig>();
+            cfg->SetEnvironmentProvider (&s_noOpEnv);
             con->Initialize(cfg);
 
             WIN32_FIND_DATA wfd = CreateMockFileData (L"mydir", FILE_ATTRIBUTE_DIRECTORY);
@@ -692,6 +726,7 @@ namespace UnitTest
             auto cmd = std::make_shared<CCommandLine>();
             auto con = std::make_shared<CTestConsole> ();
             auto cfg = std::make_shared<CConfig>();
+            cfg->SetEnvironmentProvider (&s_noOpEnv);
             con->Initialize(cfg);
 
             WIN32_FIND_DATA wfd = CreateMockFileData (L"data.xyz123", FILE_ATTRIBUTE_ARCHIVE);

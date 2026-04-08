@@ -2,6 +2,21 @@
 
 All notable changes to TCDir are documented in this file.
 
+## [5.3.1443] - 2026-04-07
+
+### Added
+- Config file support: `~\.tcdirconfig` for persistent settings
+  - One setting per line, same `Key=Value` syntax as the `TCDIR` environment variable
+  - Comments (`#` full-line and inline), blank lines, leading/trailing whitespace all handled
+  - Supports all switches, color overrides, icon overrides, `Depth=N`, `TreeIndent=N`, `Size=Auto|Bytes`
+  - UTF-8 encoding (with or without BOM); UTF-16 rejected with diagnostic
+  - Syntax errors reported with file path and line number via `--Settings`
+  - Precedence: defaults < config file < `TCDIR` env var < CLI switches
+- `CAutoHandleT<>` template class in `AutoHandle.h` — RAII Win32 handle wrapper with implicit `HANDLE` conversion
+
+### Changed
+- Minor version bump from 5.2 to 5.3
+
 ## [5.2.1346] - 2026-03-28
 
 ### Added

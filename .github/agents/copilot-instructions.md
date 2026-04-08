@@ -1,12 +1,14 @@
 # TCDir Development Guidelines
 
-Auto-generated from all feature plans. Last updated: 2026-02-14
+Auto-generated from all feature plans. Last updated: 2026-04-04
 
 ## Active Technologies
 - C++ (stdcpplatest / MSVC v145+) + Windows SDK, STL only (no third-party libraries) (004-tree-view)
 - N/A (filesystem enumeration, no persistent storage) (004-tree-view)
 - C++ /std:c++latest (MSVC v145+) + Windows SDK only (Console API, Shell API, Process API, TlHelp32) (005-powershell-aliases)
 - User's PowerShell profile files (text files on disk) (005-powershell-aliases)
+- C++ (stdcpplatest, MSVC v145+) + Windows SDK, STL only — no third-party libraries (006-config-file-support)
+- Single flat file (`%USERPROFILE%\.tcdirconfig`), UTF-8 with optional BOM (006-config-file-support)
 
 - stdcpplatest (MSVC v145+) + Windows SDK (+ `gdi32.lib` for font detection), STL only — no third-party libraries (003-file-icons)
 
@@ -33,10 +35,10 @@ All coding conventions are defined in [/.github/copilot-instructions.md](/.githu
 - Use VS Code build tasks, not direct msbuild
 
 ## Recent Changes
+- 006-config-file-support: Added C++ (stdcpplatest, MSVC v145+) + Windows SDK, STL only — no third-party libraries
 - 005-powershell-aliases: Added C++ /std:c++latest (MSVC v145+) + Windows SDK only (Console API, Shell API, Process API, TlHelp32)
 - 004-tree-view: Added C++ (stdcpplatest / MSVC v145+) + Windows SDK, STL only (no third-party libraries)
 
-- 003-file-icons: Added stdcpplatest (MSVC v145+) + Windows SDK (+ `gdi32.lib` for font detection), STL only — no third-party libraries
 
 <!-- MANUAL ADDITIONS START -->
 <!-- MANUAL ADDITIONS END -->

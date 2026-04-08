@@ -63,8 +63,14 @@ static HRESULT ProcessCommandLine (
 
     if (cmdline.m_fConfig)
     {
-        CUsage::DisplayCurrentConfiguration (console, cmdline.GetSwitchPrefix(), cmdline.m_fIcons);
+        CUsage::DisplayConfigFileHelp (console, cmdline.GetSwitchPrefix());
         BAIL_OUT_IF (cmdline.m_fConfig, S_FALSE);
+    }
+
+    if (cmdline.m_fSettings)
+    {
+        CUsage::DisplaySettings (console, cmdline.GetSwitchPrefix(), cmdline.m_fIcons);
+        BAIL_OUT_IF (cmdline.m_fSettings, S_FALSE);
     }
 
     //
@@ -245,9 +251,10 @@ int wmain (int argc, WCHAR * argv[])
     RunDirectoryListing (cmdlinePtr, consolePtr, configPtr);
 
     //
-    // Display any TCDIR environment variable issues at the end of the run
+    // Display any config file or TCDIR environment variable issues at the end of the run
     //
 
+    CUsage::DisplayConfigFileIssues (*consolePtr, cmdlinePtr->GetSwitchPrefix ());
     CUsage::DisplayEnvVarIssues (*consolePtr, cmdlinePtr->GetSwitchPrefix ());
 
     

@@ -41,6 +41,7 @@ All production code MUST have corresponding unit tests:
 - **Unit Test Framework**: Use Microsoft C++ Unit Test Framework (CppUnitTestFramework)
 - **Test Coverage**: Every public function and significant code path MUST be covered by tests
 - **Test Independence**: Each test MUST be independently runnable and MUST NOT depend on execution order
+- **Test Isolation (NON-NEGOTIABLE)**: Unit tests MUST NEVER rely on or alter real system state. ALL system services MUST be mocked or abstracted behind interfaces: file system (no reading/writing actual files on disk), registry (no accessing the Windows registry), network (no real HTTP/socket calls), process/environment (no inspecting real processes, environment variables, or console handles), system APIs (no calling `SHGetKnownFolderPath`, `CreateToolhelp32Snapshot`, `OpenProcessToken`, etc. directly in tests). If a module uses system APIs, inject its dependencies through an interface so tests can substitute mocks. Tests MUST be deterministic and repeatable regardless of the machine or user running them.
 - **Build Verification**: Tests MUST pass before any merge or release; use VS Code tasks (`Build + Test Debug/Release`)
 - **Test Organization**: Tests reside in the `UnitTest/` project, grouped by component (e.g., `CommandLineTests.cpp`, `ConfigTests.cpp`)
 
@@ -79,7 +80,7 @@ Complexity MUST be justified:
 - **Self-Documenting Code**: Prefer clear naming over comments; add comments only for non-obvious "why" explanations
 - **Minimal Dependencies**: Avoid external libraries unless they provide substantial value
 - **File Scope**: Modify only files explicitly required; ask before making "helpful" changes to unrelated files
-- **Function Size & Structure**: Keep functions focused and relatively short. Avoid excessive nesting by factoring out inner logic into separate helper functions rather than adding more indentation levels. If a function requires more than 2-3 levels of indentation beyond the EHM pattern, consider extracting that logic into its own function.
+- **Function Size & Structure (NON-NEGOTIABLE)**: Functions MUST be kept short — ideally under 50 lines, 100 lines at absolute maximum. Aggressively factor out helper functions that do just one thing. Avoid excessive nesting by extracting inner logic into separate helper functions rather than adding more indentation levels. If a function requires more than 2-3 levels of indentation beyond the EHM pattern, extract that logic into its own function.
 
 **Rationale**: Simple code is easier to understand, test, and maintain over time.
 

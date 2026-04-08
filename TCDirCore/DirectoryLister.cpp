@@ -1,13 +1,13 @@
 ﻿#include "pch.h"
 #include "DirectoryLister.h"
 
+#include "AutoHandle.h"
 #include "CommandLine.h"
 #include "Config.h"
 #include "Console.h"
 #include "FileComparator.h"
 #include "Flag.h"
 #include "MultiThreadedLister.h"
-#include "UniqueFindHandle.h"
 
 
 
@@ -220,37 +220,36 @@ HRESULT CDirectoryLister::CollectMatchingFilesAndDirectories (
     HRESULT          hr              = S_OK;
     filesystem::path pathAndFileSpec = dirPath / fileSpec;
     BOOL             fSuccess        = FALSE;
-    UniqueFindHandle hFind;
+    AutoFindHandle   hFind;
     WIN32_FIND_DATA  wfd             = { 0 };
 
 
 
-    hFind.reset (FindFirstFile (pathAndFileSpec.c_str(), &wfd));
-    if (hFind.get() != INVALID_HANDLE_VALUE)
+    hFind = FindFirstFile (pathAndFileSpec.c_str(), &wfd);
+    CWR (hFind != INVALID_HANDLE_VALUE);
+
+    do
     {
-        do
+        if (!IsDots (wfd.cFileName))
         {
-            if (!IsDots (wfd.cFileName))
+            //
+            // If the required attributes are present and the excluded attributes are not 
+            // then add the file to the list of matches for this directory
+            //
+
+            if (CFlag::IsSet (wfd.dwFileAttributes, m_cmdLinePtr->m_dwAttributesRequired) &&
+                CFlag::IsNotSet (wfd.dwFileAttributes, m_cmdLinePtr->m_dwAttributesExcluded))
             {
-                //
-                // If the required attributes are present and the excluded attributes are not 
-                // then add the file to the list of matches for this directory
-                //
-
-                if (CFlag::IsSet (wfd.dwFileAttributes, m_cmdLinePtr->m_dwAttributesRequired) &&
-                    CFlag::IsNotSet (wfd.dwFileAttributes, m_cmdLinePtr->m_dwAttributesExcluded))
-                {
-                    AddMatchToList (wfd, di, &m_totals);
-                }
+                AddMatchToList (wfd, di, &m_totals);
             }
-
-            fSuccess = FindNextFile (hFind.get(), &wfd);
         }
-        while (fSuccess);
+
+        fSuccess = FindNextFile (hFind, &wfd);
     }
+    while (fSuccess);
 
 
-    
+Error:
     return hr;
 }
 
@@ -315,7 +314,7 @@ HRESULT CDirectoryLister::RecurseIntoSubdirectories (
     HRESULT          hr              = S_OK;
     filesystem::path pathAndFileSpec = dirPath / L"*";    
     BOOL             fSuccess        = FALSE;                    
-    UniqueFindHandle hFind;
+    AutoFindHandle   hFind;
     WIN32_FIND_DATA  wfd             = { };                         
 
     
@@ -324,8 +323,8 @@ HRESULT CDirectoryLister::RecurseIntoSubdirectories (
     // Search for subdirectories to recurse into
     // 
     
-    hFind.reset (FindFirstFile (pathAndFileSpec.c_str(), &wfd));
-    CBR (hFind.get() != INVALID_HANDLE_VALUE);
+    hFind = FindFirstFile (pathAndFileSpec.c_str(), &wfd);
+    CBR (hFind != INVALID_HANDLE_VALUE);
 
     do 
     {
@@ -344,7 +343,7 @@ HRESULT CDirectoryLister::RecurseIntoSubdirectories (
             }
         }
             
-        fSuccess = FindNextFile (hFind.get(), &wfd);
+        fSuccess = FindNextFile (hFind, &wfd);
     }
     while (fSuccess);
 
@@ -495,13 +494,13 @@ HRESULT CDirectoryLister::HandleFileMatchStreams (const WIN32_FIND_DATA & wfd, F
 {
     HRESULT                hr         = S_OK;
     filesystem::path       fullPath   = di.m_dirPath / wfd.cFileName;
-    WIN32_FIND_STREAM_DATA streamData = {};
-    UniqueFindHandle       hFind;
+    WIN32_FIND_STREAM_DATA streamData = { };
+    AutoFindHandle         hFind;
 
 
 
-    hFind.reset (FindFirstStreamW (fullPath.c_str(), FindStreamInfoStandard, &streamData, 0));
-    CWR (hFind.get() != INVALID_HANDLE_VALUE);
+    hFind = FindFirstStreamW (fullPath.c_str(), FindStreamInfoStandard, &streamData, 0);
+    CWR (hFind != INVALID_HANDLE_VALUE);
 
     do
     {
@@ -542,7 +541,7 @@ HRESULT CDirectoryLister::HandleFileMatchStreams (const WIN32_FIND_DATA & wfd, F
 
         fileEntry.m_vStreams.push_back (move (si));
     }
-    while (FindNextStreamW (hFind.get(), &streamData));
+    while (FindNextStreamW (hFind, &streamData));
 
 
 

@@ -19,13 +19,15 @@ winget install relmer.TCDir
 
 TCDir ("Technicolor Directory") is a fast, colorized directory listing tool for Windows consoles.
 It's designed as a practical `dir`-style command with useful defaults (color by extension/attributes, Nerd Font file/folder icons, sorting, recursion, wide output, and a multi-threaded enumerator).
+Settings can be persisted in a config file (`~\.tcdirconfig`), overridden via the `TCDIR` environment variable, or specified on the command line.
 
 ![TCDir basic listing](Assets/TCDir.png)
 
 ## What's New
 
 | Version | Highlights |
-| :---: | :---: |
+| :---: | :--- |
+| **5.3** | Config file support (`.tcdirconfig`) — persistent settings without environment variables |
 | **5.2** | Interactive PowerShell alias configuration (`--set-aliases`, `--get-aliases`, `--remove-aliases`) |
 | **5.1** | `--Tree` hierarchical directory view with depth control |
 | **5.0** | Nerd Font file/folder icons (~200 extensions, ~65 directories) |
@@ -53,6 +55,7 @@ Hat tip to [Chris Kirmse](https://github.com/ckirmse) whose excellent [ZDir](htt
 | ARM64 native binary | ✅ | ✅ | — | — |
 | NTFS alternate data streams | ✅ | ✅ | — | — |
 | Configurable via environment variable | — | ✅ | — | — |
+| Persistent config file | — | ✅ | ✅ | ✅ |
 
 ## Manual installation
 
@@ -136,7 +139,7 @@ Show help:
 
 Basic syntax:
 
-- `TCDIR [drive:][path][filename] [-A[[:]attributes]] [-O[[:]sortorder]] [-T[[:]timefield]] [-S] [-W] [-B] [-P] [-M] [--Env] [--Config] [--Owner] [--Streams] [--Icons] [--Tree] [--Depth=N] [--TreeIndent=N] [--Size=Auto|Bytes]`
+- `TCDIR [drive:][path][filename] [-A[[:]attributes]] [-O[[:]sortorder]] [-T[[:]timefield]] [-S] [-W] [-B] [-P] [-M] [--Env] [--Config] [--Settings] [--Owner] [--Streams] [--Icons] [--Tree] [--Depth=N] [--TreeIndent=N] [--Size=Auto|Bytes]`
 
 Common switches:
 
@@ -153,7 +156,8 @@ Common switches:
 - `-P`: show performance timing information
 - `-M`: enable multi-threaded enumeration (default); use `-M-` to disable
 - `--Env`: show `TCDIR` environment variable help/syntax/current value
-- `--Config`: show current color configuration
+- `--Config`: show `.tcdirconfig` config file help/syntax and resolved file path
+- `--Settings`: show current color/switch configuration with source tracking (default, config file, or env var)
 - `--Owner`: display file owner (DOMAIN\User format); not allowed with `--Tree`
 - `--Streams`: display NTFS alternate data streams
 - `--Icons`: enable Nerd Font file/folder icons; use `--Icons-` to disable
@@ -235,9 +239,58 @@ Examples:
 - Wide listing: `TCDir.exe -w`
 ![TCDir wide listing](Assets/TCDir%20Wide.png)
 
+## Configuration file (`.tcdirconfig`)
+
+TCDir reads an optional config file at startup for persistent settings that don't require an environment variable.
+
+**Location:**
+
+- PowerShell: `$env:USERPROFILE\.tcdirconfig`
+- CMD: `%USERPROFILE%\.tcdirconfig`
+- Typically: `C:\Users\<you>\.tcdirconfig`
+
+The file uses the same `Key=Value` syntax as the `TCDIR` environment variable, with one setting per line. Comments start with `#`.
+
+**Example `.tcdirconfig`:**
+
+```ini
+# Default switches
+w
+Owner
+Icons
+
+# Colors
+.cpp=LightGreen
+.h=LightGreen
+.rs=LightRed
+D=Cyan
+
+# Icons
+.py=Green,U+E606
+
+# Tree defaults
+Depth=3
+TreeIndent=2
+Size=Auto
+```
+
+**Supported settings:** all the same keys as the `TCDIR` environment variable — switches, colors, icons, display attributes, `Depth=N`, `TreeIndent=N`, `Size=Auto|Bytes`.
+
+**Precedence (lowest to highest):**
+
+1. Built-in defaults
+2. Config file (`.tcdirconfig`)
+3. `TCDIR` environment variable
+4. Command-line switches
+
+Settings from higher-precedence sources override lower ones. Non-conflicting settings from all sources are merged.
+
+**Error handling:** syntax errors in the config file are reported with line numbers via `--Config`. A missing config file is silently ignored. UTF-8 encoding is required (with or without BOM); UTF-16 is rejected with a diagnostic.
+
 ## Configuration (TCDIR environment variable)
 
 TCDir supports customizing colors (and default switch behavior) via the `TCDIR` environment variable.
+The same syntax also works in the [config file](#configuration-file-tcdirconfig) (one setting per line, without semicolons).
 
 Syntax:
 
@@ -248,7 +301,7 @@ Syntax:
 
 ### Default switches
 
-Enable default switches by including the switch name:
+Enable default switches by including the switch name (in the `TCDIR` env var or `.tcdirconfig`):
 
 - `W` - enable wide listing by default
 - `S` - enable subdirectory recursion by default
@@ -298,17 +351,23 @@ File attribute colors (`Attr:<letter>`):
 - Here's an example of the default output, setting the TCDIR environment variable, then showing its effects:
 ![TCDir with TCDIR environment variable](Assets/TCDir%20Env%20Variable.png)
 
-To see the full list of supported colors and a nicely formatted explanation, use --Env.  
+To see the full list of supported colors and a nicely formatted explanation, use `--Env`.  
 
 - Any errors in the TCDIR variable are shown at the end.
 - `TCDir.exe --Env`:
 ![TCDir --Env help](Assets/TCDir%20Env.png)
 
-To see your current color configuration, use --Config:
+To see config file help and the resolved `.tcdirconfig` path, use `--Config`:
 
-- All configuration settings are displayed along with the source of that configuration.
 - `TCDir.exe --Config`:
 ![TCDir --Config output](Assets/TCDir%20Config.png)
+
+To see your current resolved configuration (all sources merged), use `--Settings`:
+
+- All configuration settings are displayed along with the source of each setting (default, config file, or env var).
+- Config file parse errors are shown with file path and line number.
+- `TCDir.exe --Settings`:
+![TCDir --Settings output](Assets/TCDir%20Config.png)
 
 ## Building
 
