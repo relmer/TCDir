@@ -7,13 +7,13 @@
 
 **Purpose**: Add `<fstream>` to pch.h, create new source files and add them to the build
 
-- [ ] T001 Add `<fstream>` to TCDirCore/pch.h
-- [ ] T002 [P] Create IConfigFileReader interface and CConfigFileReader class in TCDirCore/ConfigFileReader.h
-- [ ] T003 [P] Create CConfigFileReader implementation stub in TCDirCore/ConfigFileReader.cpp — constructor accepts optional std::istream* override for unit testing
-- [ ] T004 Add ConfigFileReader.h and ConfigFileReader.cpp to TCDirCore/TCDirCore.vcxproj and .filters
-- [ ] T005 [P] Create UnitTest/ConfigFileReaderTests.cpp with test class stub and add to UnitTest project
-- [ ] T006 [P] Create UnitTest/ConfigFileTests.cpp with test class stub and add to UnitTest project
-- [ ] T007 Build and verify no compilation errors
+- [X] T001 Add `<fstream>` to TCDirCore/pch.h
+- [X] T002 [P] Create IConfigFileReader interface and CConfigFileReader class in TCDirCore/ConfigFileReader.h
+- [X] T003 [P] Create CConfigFileReader implementation stub in TCDirCore/ConfigFileReader.cpp — constructor accepts optional std::istream* override for unit testing
+- [X] T004 Add ConfigFileReader.h and ConfigFileReader.cpp to TCDirCore/TCDirCore.vcxproj and .filters
+- [X] T005 [P] Create UnitTest/ConfigFileReaderTests.cpp with test class stub and add to UnitTest project
+- [X] T006 [P] Create UnitTest/ConfigFileTests.cpp with test class stub and add to UnitTest project
+- [X] T007 Build and verify no compilation errors
 
 ---
 
@@ -23,14 +23,14 @@
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete
 
-- [ ] T008 Extend CConfig::EAttributeSource enum with ConfigFile value in TCDirCore/Config.h
-- [ ] T009 Extend CConfig::ErrorInfo struct with sourceFilePath (wstring) and lineNumber (size_t) fields in TCDirCore/Config.h
-- [ ] T010 Add source parameter to ProcessColorOverrideEntry and thread through all downstream methods that write to source maps in TCDirCore/Config.cpp
-- [ ] T011 Update ApplyUserColorOverrides to pass EAttributeSource::Environment as source parameter in TCDirCore/Config.cpp
-- [ ] T012 Add config file members to CConfig: m_strConfigFilePath, m_fConfigFileLoaded, m_configFileParseResult, m_pConfigFileReader in TCDirCore/Config.h
-- [ ] T013 Add public methods to CConfig: LoadConfigFile, ValidateConfigFile, GetConfigFilePath, IsConfigFileLoaded, SetConfigFileReader in TCDirCore/Config.h
-- [ ] T014 Update existing ConfigTests.cpp to verify source parameter threading does not break current env var override tests in UnitTest/ConfigTests.cpp
-- [ ] T015 Build and run all existing tests to verify no regressions
+- [X] T008 Extend CConfig::EAttributeSource enum with ConfigFile value in TCDirCore/Config.h
+- [X] T009 Extend CConfig::ErrorInfo struct with sourceFilePath (wstring) and lineNumber (size_t) fields in TCDirCore/Config.h
+- [X] T010 Add source parameter to ProcessColorOverrideEntry and thread through all downstream methods that write to source maps in TCDirCore/Config.cpp
+- [X] T011 Update ApplyUserColorOverrides to pass EAttributeSource::Environment as source parameter in TCDirCore/Config.cpp
+- [X] T012 Add config file members to CConfig: m_strConfigFilePath, m_fConfigFileLoaded, m_configFileParseResult, m_pConfigFileReader in TCDirCore/Config.h
+- [X] T013 Add public methods to CConfig: LoadConfigFile, ValidateConfigFile, GetConfigFilePath, IsConfigFileLoaded, SetConfigFileReader in TCDirCore/Config.h
+- [X] T014 Update existing ConfigTests.cpp to verify source parameter threading does not break current env var override tests in UnitTest/ConfigTests.cpp
+- [X] T015 Build and run all existing tests to verify no regressions
 
 **Checkpoint**: Foundation ready — source tracking supports 3 values, ErrorInfo has line numbers, ProcessColorOverrideEntry accepts source parameter
 
@@ -44,14 +44,14 @@
 
 ### Implementation
 
-- [ ] T016 Implement CConfigFileReader::ReadLines in TCDirCore/ConfigFileReader.cpp — ifstream binary read, BOM detection, MultiByteToWideChar, line splitting
-- [ ] T017 Implement CConfig::LoadConfigFile in TCDirCore/Config.cpp — resolve path via USERPROFILE env var, call reader, strip comments, trim whitespace, pass entries to ProcessColorOverrideEntry with ConfigFile source, populate ErrorInfo.lineNumber and ErrorInfo.sourceFilePath for each error
-- [ ] T018 Insert LoadConfigFile call into CConfig::Initialize between default initialization and ApplyUserColorOverrides in TCDirCore/Config.cpp
-- [ ] T019 Write CTestConfigFileReader mock in UnitTest/ConfigFileReaderTests.cpp — in-memory lines, simulate not-found and I/O errors
-- [ ] T020 Write ConfigFileReader unit tests in UnitTest/ConfigFileReaderTests.cpp — inject std::istringstream via constructor override to test UTF-8 read, BOM skip, UTF-16 BOM rejection, empty file, line splitting (CRLF, LF, CR) without real file I/O
-- [ ] T021 Write config file loading unit tests in UnitTest/ConfigFileTests.cpp — switches applied, color overrides applied, icon overrides applied, parameterized values applied
-- [ ] T022 Write comment and blank line unit tests in UnitTest/ConfigFileTests.cpp — comment lines skipped, inline comments stripped, blank lines skipped, whitespace-only lines skipped
-- [ ] T023 Build and run all tests
+- [X] T016 Implement CConfigFileReader::ReadLines in TCDirCore/ConfigFileReader.cpp — ifstream binary read, BOM detection, MultiByteToWideChar, line splitting
+- [X] T017 Implement CConfig::LoadConfigFile in TCDirCore/Config.cpp — resolve path via USERPROFILE env var, call reader, strip comments, trim whitespace, pass entries to ProcessColorOverrideEntry with ConfigFile source, populate ErrorInfo.lineNumber and ErrorInfo.sourceFilePath for each error
+- [X] T018 Insert LoadConfigFile call into CConfig::Initialize between default initialization and ApplyUserColorOverrides in TCDirCore/Config.cpp
+- [X] T019 Write CTestConfigFileReader mock in UnitTest/ConfigFileReaderTests.cpp — in-memory lines, simulate not-found and I/O errors
+- [X] T020 Write ConfigFileReader unit tests in UnitTest/ConfigFileReaderTests.cpp — inject std::istringstream via constructor override to test UTF-8 read, BOM skip, UTF-16 BOM rejection, empty file, line splitting (CRLF, LF, CR) without real file I/O
+- [X] T021 Write config file loading unit tests in UnitTest/ConfigFileTests.cpp — switches applied, color overrides applied, icon overrides applied, parameterized values applied
+- [X] T022 Write comment and blank line unit tests in UnitTest/ConfigFileTests.cpp — comment lines skipped, inline comments stripped, blank lines skipped, whitespace-only lines skipped
+- [X] T023 Build and run all tests
 
 **Checkpoint**: Config file loads and applies settings. No env var interaction tested yet.
 
@@ -65,9 +65,9 @@
 
 ### Implementation
 
-- [ ] T024 [US2] Write precedence unit tests in UnitTest/ConfigFileTests.cpp — env var overrides config file color, env var overrides config file switch, non-conflicting settings merge from both sources
-- [ ] T025 [US2] Write source tracking unit tests in UnitTest/ConfigFileTests.cpp — verify EAttributeSource::ConfigFile for config-only settings, EAttributeSource::Environment for env-var-overridden settings
-- [ ] T026 [US2] Build and run all tests
+- [X] T024 [US2] Write precedence unit tests in UnitTest/ConfigFileTests.cpp — env var overrides config file color, env var overrides config file switch, non-conflicting settings merge from both sources
+- [X] T025 [US2] Write source tracking unit tests in UnitTest/ConfigFileTests.cpp — verify EAttributeSource::ConfigFile for config-only settings, EAttributeSource::Environment for env-var-overridden settings
+- [X] T026 [US2] Build and run all tests
 
 **Checkpoint**: Precedence model verified. Config file + env var merge correctly.
 
@@ -81,10 +81,10 @@
 
 ### Implementation
 
-- [ ] T027 [US3] Write inline comment edge case tests in UnitTest/ConfigFileTests.cpp — setting with inline comment, setting with multiple # characters, comment-only lines with leading whitespace
-- [ ] T028 [US3] Write whitespace handling tests in UnitTest/ConfigFileTests.cpp — leading/trailing whitespace trimmed, whitespace around = in key=value, tabs as whitespace
-- [ ] T029 [US3] Write duplicate setting tests in UnitTest/ConfigFileTests.cpp — last occurrence wins within config file
-- [ ] T030 [US3] Build and run all tests
+- [X] T027 [US3] Write inline comment edge case tests in UnitTest/ConfigFileTests.cpp — setting with inline comment, setting with multiple # characters, comment-only lines with leading whitespace
+- [X] T028 [US3] Write whitespace handling tests in UnitTest/ConfigFileTests.cpp — leading/trailing whitespace trimmed, whitespace around = in key=value, tabs as whitespace
+- [X] T029 [US3] Write duplicate setting tests in UnitTest/ConfigFileTests.cpp — last occurrence wins within config file
+- [X] T030 [US3] Build and run all tests
 
 **Checkpoint**: All format rules validated. Stories 1-3 form a complete, testable MVP.
 
@@ -98,13 +98,13 @@
 
 ### Implementation
 
-- [ ] T031 [US4] Implement DisplayConfigFileIssues in TCDirCore/Usage.cpp — render config file errors with line numbers, using existing underline pattern
-- [ ] T032 [US4] Update error display at end of normal runs in TCDirCore/TCDir.cpp — call DisplayConfigFileIssues before DisplayEnvVarIssues, skip group if no errors
-- [ ] T033 [US4] Implement file-level I/O error reporting in CConfig::LoadConfigFile — single ErrorInfo for open/read/encoding failures in TCDirCore/Config.cpp
-- [ ] T034 [US4] Write error reporting unit tests in UnitTest/ConfigFileTests.cpp — invalid color name shows line number, malformed entry shows line number, valid lines still apply alongside errors
-- [ ] T035 [US4] Write error grouping tests in UnitTest/ConfigFileTests.cpp — config file errors separate from env var errors, config file errors listed first
-- [ ] T036 [US4] Write I/O error tests in UnitTest/ConfigFileReaderTests.cpp — permission denied produces single error, file not found produces silent skip
-- [ ] T037 [US4] Build and run all tests
+- [X] T031 [US4] Implement DisplayConfigFileIssues in TCDirCore/Usage.cpp — render config file errors with line numbers, using existing underline pattern
+- [X] T032 [US4] Update error display at end of normal runs in TCDirCore/TCDir.cpp — call DisplayConfigFileIssues before DisplayEnvVarIssues, skip group if no errors
+- [X] T033 [US4] Implement file-level I/O error reporting in CConfig::LoadConfigFile — single ErrorInfo for open/read/encoding failures in TCDirCore/Config.cpp
+- [X] T034 [US4] Write error reporting unit tests in UnitTest/ConfigFileTests.cpp — invalid color name shows line number, malformed entry shows line number, valid lines still apply alongside errors
+- [X] T035 [US4] Write error grouping tests in UnitTest/ConfigFileTests.cpp — config file errors separate from env var errors, config file errors listed first
+- [X] T036 [US4] Write I/O error tests in UnitTest/ConfigFileReaderTests.cpp — permission denied produces single error, file not found produces silent skip
+- [X] T037 [US4] Build and run all tests
 
 **Checkpoint**: Error reporting complete with line numbers and grouped display.
 
