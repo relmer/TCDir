@@ -8,8 +8,8 @@
 **Purpose**: Add `<fstream>` to pch.h, create new source files and add them to the build
 
 - [X] T001 Add `<fstream>` to TCDirCore/pch.h
-- [X] T002 [P] Create IConfigFileReader interface and CConfigFileReader class in TCDirCore/ConfigFileReader.h
-- [X] T003 [P] Create CConfigFileReader implementation stub in TCDirCore/ConfigFileReader.cpp — constructor accepts optional std::istream* override for unit testing
+- [X] T002 [P] Create CConfigFileReader class in TCDirCore/ConfigFileReader.h (concrete class, no interface)
+- [X] T003 [P] Create CConfigFileReader implementation in TCDirCore/ConfigFileReader.cpp — ReadLines takes raw bytes, handles BOM/UTF-8/line splitting
 - [X] T004 Add ConfigFileReader.h and ConfigFileReader.cpp to TCDirCore/TCDirCore.vcxproj and .filters
 - [X] T005 [P] Create UnitTest/ConfigFileReaderTests.cpp with test class stub and add to UnitTest project
 - [X] T006 [P] Create UnitTest/ConfigFileTests.cpp with test class stub and add to UnitTest project
@@ -27,8 +27,8 @@
 - [X] T009 Extend CConfig::ErrorInfo struct with sourceFilePath (wstring) and lineNumber (size_t) fields in TCDirCore/Config.h
 - [X] T010 Add source parameter to ProcessColorOverrideEntry and thread through all downstream methods that write to source maps in TCDirCore/Config.cpp
 - [X] T011 Update ApplyUserColorOverrides to pass EAttributeSource::Environment as source parameter in TCDirCore/Config.cpp
-- [X] T012 Add config file members to CConfig: m_strConfigFilePath, m_fConfigFileLoaded, m_configFileParseResult, m_pConfigFileReader in TCDirCore/Config.h
-- [X] T013 Add public methods to CConfig: LoadConfigFile, ValidateConfigFile, GetConfigFilePath, IsConfigFileLoaded, SetConfigFileReader in TCDirCore/Config.h
+- [X] T012 Add config file members to CConfig: m_strConfigFilePath, m_fConfigFileLoaded, m_configFileParseResult, m_configFileReader in TCDirCore/Config.h
+- [X] T013 Add public methods to CConfig: LoadConfigFile, ValidateConfigFile, GetConfigFilePath, IsConfigFileLoaded in TCDirCore/Config.h
 - [X] T014 Update existing ConfigTests.cpp to verify source parameter threading does not break current env var override tests in UnitTest/ConfigTests.cpp
 - [X] T015 Build and run all existing tests to verify no regressions
 
@@ -44,11 +44,11 @@
 
 ### Implementation
 
-- [X] T016 Implement CConfigFileReader::ReadLines in TCDirCore/ConfigFileReader.cpp — ifstream binary read, BOM detection, MultiByteToWideChar, line splitting
-- [X] T017 Implement CConfig::LoadConfigFile in TCDirCore/Config.cpp — resolve path via USERPROFILE env var, call reader, strip comments, trim whitespace, pass entries to ProcessColorOverrideEntry with ConfigFile source, populate ErrorInfo.lineNumber and ErrorInfo.sourceFilePath for each error
+- [X] T016 Implement CConfigFileReader::ReadLines in TCDirCore/ConfigFileReader.cpp — BOM detection (CheckAndStripBom), MultiByteToWideChar (ConvertUtf8ToWide), line splitting (SplitLines)
+- [X] T017 Implement CConfig::LoadConfigFile in TCDirCore/Config.cpp — resolve path via USERPROFILE env var, open file via CreateFileW, read bytes via ReadFile, call m_configFileReader.ReadLines, then ProcessConfigLines. ProcessConfigLines strips comments, trims whitespace, passes entries to ProcessColorOverrideEntry with ConfigFile source, populates ErrorInfo.lineNumber and ErrorInfo.sourceFilePath for each error
 - [X] T018 Insert LoadConfigFile call into CConfig::Initialize between default initialization and ApplyUserColorOverrides in TCDirCore/Config.cpp
-- [X] T019 Write CTestConfigFileReader mock in UnitTest/ConfigFileReaderTests.cpp — in-memory lines, simulate not-found and I/O errors
-- [X] T020 Write ConfigFileReader unit tests in UnitTest/ConfigFileReaderTests.cpp — inject std::istringstream via constructor override to test UTF-8 read, BOM skip, UTF-16 BOM rejection, empty file, line splitting (CRLF, LF, CR) without real file I/O
+- [X] T019 Write ConfigFileReader unit tests in UnitTest/ConfigFileReaderTests.cpp — pass raw byte strings directly to ReadLines to test UTF-8 read, BOM skip, UTF-16 BOM rejection, empty file, line splitting (CRLF, LF, CR) without real file I/O
+- [X] T020 (merged into T019)
 - [X] T021 Write config file loading unit tests in UnitTest/ConfigFileTests.cpp — switches applied, color overrides applied, icon overrides applied, parameterized values applied
 - [X] T022 Write comment and blank line unit tests in UnitTest/ConfigFileTests.cpp — comment lines skipped, inline comments stripped, blank lines skipped, whitespace-only lines skipped
 - [X] T023 Build and run all tests
@@ -121,7 +121,7 @@
 - [X] T038 [US5] Add m_fSettings bool to CCommandLine in TCDirCore/CommandLine.h
 - [X] T039 [US5] Add "settings" to long switch table in CCommandLine::HandleLongSwitch in TCDirCore/CommandLine.cpp
 - [X] T040 [US5] Add "settings" to informational switch list for mutual exclusion validation in TCDirCore/CommandLine.cpp
-- [X] T041 [US5] Implement DisplayConfigFileHelp in TCDirCore/Usage.cpp — config file syntax reference, file path, load status, decoded settings grouped by type, config file parse errors
+- [X] T041 [US5] Implement DisplayConfigFileHelp in TCDirCore/Usage.cpp — config file syntax reference, color/icon format reference, example config file, env var override note, file path with load status, config file parse errors
 - [X] T042 [US5] Repurpose /config handler in TCDirCore/TCDir.cpp — call DisplayConfigFileHelp instead of DisplayCurrentConfiguration
 - [X] T043 [US5] Rename DisplayCurrentConfiguration to DisplaySettings in TCDirCore/Usage.h and TCDirCore/Usage.cpp
 - [X] T044 [US5] Update DisplaySettings source column to render three values: Default, Config file, Environment in TCDirCore/Usage.cpp

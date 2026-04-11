@@ -51,19 +51,20 @@ tcdir /settings
 
 | File | Purpose |
 |------|---------|
-| `TCDirCore/ConfigFileReader.h` | `IConfigFileReader` interface + `CConfigFileReader` |
-| `TCDirCore/ConfigFileReader.cpp` | File I/O: read, BOM, line split |
-| `TCDirCore/Config.h` | Extended: `LoadConfigFile`, source tracking |
-| `TCDirCore/Config.cpp` | Extended: config file parsing, 3-source model |
+| `TCDirCore/ConfigFileReader.h` | `CConfigFileReader` class (BOM, UTF-8 conversion, line splitting) |
+| `TCDirCore/ConfigFileReader.cpp` | Byte parsing: BOM check, MultiByteToWideChar, line split |
+| `TCDirCore/Config.h` | Extended: `LoadConfigFile`, source tracking, switch/param source arrays |
+| `TCDirCore/Config.cpp` | Extended: config file loading (Win32 I/O), `ProcessConfigLines`, 3-source model |
 | `TCDirCore/CommandLine.cpp` | Extended: `/settings` switch |
-| `TCDirCore/Usage.cpp` | Extended: `/config` repurposed, `/settings` new |
-| `UnitTest/ConfigFileReaderTests.cpp` | File reader tests |
-| `UnitTest/ConfigFileTests.cpp` | Config file parsing tests |
+| `TCDirCore/Usage.cpp` | Extended: `/config` repurposed, `/settings` new, error display with `fShowHint` |
+| `TCDirCore/TCDir.cpp` | Entry point: initialization flow, command dispatch, end-of-run error display |
+| `UnitTest/ConfigFileReaderTests.cpp` | Byte parsing tests (BOM, line splitting, UTF-8) |
+| `UnitTest/ConfigFileTests.cpp` | Config file parsing tests (loading, comments, precedence, errors) |
 
 ## Implementation Order
 
-1. `ConfigFileReader` + tests (file I/O layer)
-2. `CConfig::LoadConfigFile` + source tracking + tests (parsing layer)
+1. `CConfigFileReader` + tests (byte parsing layer — BOM, UTF-8, line splitting)
+2. `CConfig::LoadConfigFile` + `ProcessConfigLines` + source tracking + tests (file I/O + parsing layer)
 3. Error model extension (`ErrorInfo` line numbers) + tests
 4. `/settings` command + `/config` repurposing + tests
 5. Help text updates

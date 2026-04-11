@@ -9,16 +9,16 @@
 **New behavior**: Config file diagnostic command (parallel to `/env`).
 
 **Output sections** (in order):
-1. Config file syntax reference (format description, entry types, comment rules)
-2. Config file location: `%USERPROFILE%\.tcdirconfig`
-3. File status: "Loaded" / "Not found" / "Error: <message>"
-4. Decoded settings from config file, grouped by type:
-   - Switches
-   - Display items
-   - File attributes
-   - Extensions
-   - Icon overrides
-5. Config file parse errors (if any), with line numbers
+1. Config file syntax reference (format description, entry types, comment rules, switch list)
+2. Available color reference table
+3. Icon specification format (U+XXXX, literal glyph, or empty for suppression)
+4. Example `.tcdirconfig` file
+5. Note: "Environment variable settings override config file settings."
+6. Config file location and status:
+   - `Config file: <path> found` — file was loaded
+   - `Config file: <path> not found` — file does not exist
+   - `Config file: (not resolved — USERPROFILE not set)` — USERPROFILE env var is missing
+7. Config file parse errors (if any), with line numbers
 
 ### `/env` (unchanged)
 
@@ -31,14 +31,17 @@ No changes. Continues to show env var syntax help, current value decoded, and en
 **Behavior**: Display merged configuration tables — the output that `/config` produces today.
 
 **Output sections** (in order):
-1. Icon status (activation source and state)
-2. Merged configuration tables:
+1. "No config file or TCDIR environment variable set; showing defaults." (shown only when neither source is set)
+2. Icon status (Nerd Font detection state, icon activation ON/OFF, and source: CLI /Icons, TCDIR=Icons, Config file, or Auto-detection)
+3. Merged configuration tables:
+   - Switches & parameters (W, S, P, M, B, Owner, Streams, Icons, Tree, Depth, TreeIndent, Size)
    - Display attributes (with source column)
+   - Cloud status items (with symbols)
    - File attributes (with source column)
    - Extensions (with source column)
-   - Well-known directories (icons, if active)
-3. Config file errors (if any)
-4. Environment variable errors (if any)
+   - Well-known directory icons (when icons active)
+4. Config file errors (if any)
+5. Environment variable errors (if any)
 
 **Source column values**: `Default`, `Config file`, `Environment`
 
@@ -49,7 +52,9 @@ The help output must list `/settings` as a new command and update the `/config` 
 ## Error Display (on normal runs)
 
 After directory listing output, errors are displayed in this order:
-1. Config file errors (header: "Config file issues in <path>:") — each error includes line number
-2. Environment variable errors (header: "Environment variable issues:") — unchanged format
+1. Config file errors (header: "There are some problems with your config file (see /config for help):") — each error includes line number in format `Line N: <message> in "<entry>"` with underline indicator
+2. Environment variable errors (header: "There are some problems with your TCDIR environment variable (see /env for help):") — same underline format without line numbers
+
+When errors are displayed within `/settings`, the `(see ... for help)` hint is omitted from both headers.
 
 Either group is omitted if it has no errors.

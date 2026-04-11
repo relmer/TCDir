@@ -15,8 +15,8 @@ Each line is one of:
 
 ## Processing Rules
 
-1. File is read as raw bytes via `std::ifstream` (binary mode), BOM-checked, converted to UTF-16 via `MultiByteToWideChar`
-2. Split into lines on `\r\n`, `\n`, or `\r`
+1. File is opened via `CreateFileW` (GENERIC_READ, FILE_SHARE_READ, OPEN_EXISTING) and read entirely into a byte buffer via `ReadFile` / `GetFileSizeEx`. `AutoHandle` provides RAII for the file handle. File-not-found (`ERROR_FILE_NOT_FOUND`, `ERROR_PATH_NOT_FOUND`) silently skips; other errors are recorded as file-level errors.
+2. Raw bytes are passed to `CConfigFileReader::ReadLines`, which checks for BOM, converts UTF-8 to UTF-16 via `MultiByteToWideChar`, and splits into lines on `\r\n`, `\n`, or `\r`
 3. For each line:
    a. Trim leading/trailing whitespace
    b. Skip if empty

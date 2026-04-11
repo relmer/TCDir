@@ -16,7 +16,7 @@ Add config file support to tcdir so users can place settings in `%USERPROFILE%\.
 **Target Platform**: Windows 10/11, x64 and ARM64  
 **Project Type**: CLI tool (native Windows console application)  
 **Performance Goals**: Config file parsing adds no perceptible startup delay (50 settings < 1ms)  
-**Constraints**: Zero external dependencies; file I/O via STL `<fstream>`  
+**Constraints**: Zero external dependencies; file I/O via Win32 `CreateFileW` / `ReadFile`  
 **Scale/Scope**: Config files expected 20-150 lines max
 
 ## Constitution Check
@@ -50,24 +50,24 @@ specs/006-config-file-support/
 
 ```text
 TCDirCore/
-├── Config.h                 # Extended: config file loading methods, source tracking enum
-├── Config.cpp               # Extended: LoadConfigFile, line-oriented parsing, source tracking
-├── ConfigFileReader.h        # NEW: IConfigFileReader interface + CConfigFileReader implementation
-├── ConfigFileReader.cpp      # NEW: File I/O — read lines, BOM handling, error wrapping
+├── Config.h                 # Extended: config file loading methods, source tracking enum, switch/param source arrays
+├── Config.cpp               # Extended: LoadConfigFile (Win32 file I/O), ProcessConfigLines, source tracking
+├── ConfigFileReader.h        # NEW: CConfigFileReader class (BOM handling, UTF-8 conversion, line splitting)
+├── ConfigFileReader.cpp      # NEW: Byte parsing — BOM check, MultiByteToWideChar, line split
 ├── CommandLine.h            # Extended: m_fSettings switch
 ├── CommandLine.cpp          # Extended: /settings handling, switch table update
-├── Usage.h                  # Extended: DisplayConfigFileHelp, DisplaySettings declarations
-├── Usage.cpp                # Extended: /config repurposed, /settings new, error grouping
-├── TCDir.cpp                # Extended: config file loaded before env var in Initialize
+├── Usage.h                  # Extended: DisplayConfigFileHelp, DisplaySettings, DisplayConfigFileIssues declarations
+├── Usage.cpp                # Extended: /config repurposed, /settings new, error grouping with fShowHint
+├── TCDir.cpp                # Extended: config file loaded in Initialize; /config and /settings dispatch; error display at end of run
 
 UnitTest/
-├── ConfigFileReaderTests.cpp # NEW: file reading, BOM handling, I/O error tests
-├── ConfigFileTests.cpp       # NEW: line parsing, comments, blanks, precedence, errors
-├── ConfigTests.cpp           # Extended: source tracking in existing override tests
+├── ConfigFileReaderTests.cpp # NEW: byte parsing tests (BOM handling, line splitting, UTF-8 conversion)
+├── ConfigFileTests.cpp       # NEW: config file loading, parsing, comments, precedence, error tests
+├── ConfigTests.cpp           # Extended: source parameter threading in existing env var override tests
 ├── CommandLineTests.cpp      # Extended: /settings switch
 ```
 
-**Structure Decision**: No new projects. All changes are within the existing `TCDirCore` static library and `UnitTest` test project. The only new files are `ConfigFileReader.h/.cpp` (file I/O abstraction) and the corresponding test files.
+**Structure Decision**: No new projects. All changes are within the existing `TCDirCore` static library and `UnitTest` test project. The only new files are `ConfigFileReader.h/.cpp` (byte parsing — no file I/O) and the corresponding test files. File I/O is in `CConfig::LoadConfigFile` using Win32 APIs. No interface or mock class — `CConfigFileReader` is a concrete class; tests pass raw byte strings directly to `ReadLines`.
 
 ## Complexity Tracking
 

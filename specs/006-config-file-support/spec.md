@@ -83,9 +83,11 @@ With two configuration sources (config file and env var), the existing diagnosti
 
 **Acceptance Scenarios**:
 
-1. **Given** a config file exists with settings, **When** the user runs `/config`, **Then** the output shows config file syntax reference, the file path, decoded settings from the file, and any config file parse errors.
-2. **Given** no config file exists, **When** the user runs `/config`, **Then** the output shows the config file syntax reference and indicates no config file was found at the expected location.
+1. **Given** a config file exists with settings, **When** the user runs `/config`, **Then** the output shows config file syntax reference, color and icon format reference, an example config file, a note that env var overrides config file, the file path with "found" status, and any config file parse errors.
+2. **Given** no config file exists, **When** the user runs `/config`, **Then** the output shows the config file syntax reference and indicates the config file was "not found" at the expected location.
+2b. **Given** USERPROFILE is not set, **When** the user runs `/config`, **Then** the output shows the syntax reference and indicates the config file path could not be resolved because USERPROFILE is not set.
 3. **Given** both a config file and env var are set, **When** the user runs `/settings`, **Then** the merged configuration tables show each setting's source as Default, Config file, or Environment.
+3b. **Given** neither a config file nor the TCDIR env var is set, **When** the user runs `/settings`, **Then** the output shows a message indicating no config file or environment variable is set, and displays defaults.
 4. **Given** the user runs `/env`, **When** the env var is set, **Then** the output is unchanged from today — env var syntax help, current value decoded, and env var errors.
 
 ---
@@ -125,8 +127,8 @@ D = LightBlue
 attr:h = DarkGrey
 
 # Icon overrides
-.go = LightCyan, e627
-.py = LightGreen, e73c
+.go = LightCyan, U+e627
+.py = LightGreen, U+e73c
 
 # Parameterized settings
 Depth = 3
@@ -158,7 +160,7 @@ Size = Auto
 - **FR-008**: System MUST report config file parse errors with the file path, line number, and a description of the issue. Each error message MUST include the line number.
 - **FR-009**: System MUST continue applying valid settings from the config file even when some lines contain errors.
 - **FR-010**: System MUST display config file errors on every run (same behavior as env var errors), not suppress them after the first display.
-- **FR-011**: System MUST display config file errors and env var errors in separate groups, each with its own header (e.g., "Config file errors:" and "Environment variable errors:"). Config file errors are shown first.
+- **FR-011**: System MUST display config file errors and env var errors in separate groups, each with its own descriptive header. Config file errors are shown first. On normal listing runs, error headers include a hint to the relevant diagnostic command (e.g., `see /config for help`); when displayed within `/settings`, the hint is omitted.
 - **FR-012**: System MUST display file-level errors (cannot open, permission denied, encoding conversion failure) as a single error line identifying the file and the issue. The entire config file is skipped in this case.
 - **FR-013**: System MUST silently skip config file loading when no config file exists (no error, no warning).
 - **FR-014**: System MUST handle config files with a UTF-8 BOM by skipping the BOM before parsing. Config files with a UTF-16 LE or UTF-16 BE BOM MUST be rejected with a clear error message indicating the unsupported encoding.
@@ -166,7 +168,7 @@ Size = Auto
 
 #### Diagnostic Commands
 
-- **FR-016**: The `/config` command MUST be repurposed as the config file diagnostic command (parallel to `/env` for the environment variable). It MUST show: config file syntax reference, the resolved config file path, whether the file was found/loaded, decoded settings from the config file grouped by type (switches, display items, file attributes, extensions, icons), and any config file parse errors.
+- **FR-016**: The `/config` command MUST be repurposed as the config file diagnostic command (parallel to `/env` for the environment variable). It MUST show: config file syntax reference, available color and icon format reference, an example `.tcdirconfig` file, a note that environment variable settings override config file settings, the resolved config file path with load status (found / not found / USERPROFILE not resolved), and any config file parse errors.
 - **FR-017**: A new `/settings` command MUST be introduced to display the merged configuration tables — the output that `/config` produces today — showing all effective settings with their sources.
 - **FR-018**: The `/settings` source column MUST distinguish three sources: Default, Config file, and Environment.
 - **FR-019**: The `/settings` command MUST show icon status and any errors from both config file and env var.

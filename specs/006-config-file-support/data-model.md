@@ -42,19 +42,41 @@ Used in: `m_rgAttributeSources[]`, `m_mapExtensionSources`, `m_mapExtensionIconS
 
 ### Modified: `CConfig` (class)
 
-**New protected members**:
+**New public members**:
 
 | Member | Type | Description |
 |--------|------|-------------|
 | `m_strConfigFilePath` | `wstring` | Resolved path to `.tcdirconfig` (empty if not found) |
 | `m_fConfigFileLoaded` | `bool` | Whether config file was successfully loaded |
+
+**New protected members**:
+
+| Member | Type | Description |
+|--------|------|-------------|
 | `m_configFileParseResult` | `ValidationResult` | Errors from config file parsing (separate from env var errors) |
+| `m_configFileReader` | `CConfigFileReader` | Direct member instance for parsing file bytes into lines |
+
+**New source tracking members** (public):
+
+| Member | Type | Description |
+|--------|------|-------------|
+| `m_rgSwitchSources[9]` | `EAttributeSource[9]` | Source tracking for each of the 9 boolean switches (W, B, S, P, M, Owner, Streams, Icons, Tree) |
+| `m_eMaxDepthSource` | `EAttributeSource` | Source tracking for the Depth parameter |
+| `m_eTreeIndentSource` | `EAttributeSource` | Source tracking for the TreeIndent parameter |
+| `m_eSizeFormatSource` | `EAttributeSource` | Source tracking for the Size parameter |
+
+**New public constants**:
+
+| Member | Type | Description |
+|--------|------|-------------|
+| `SWITCH_COUNT` | `static constexpr size_t` | Value `9` — number of boolean switches |
+| `s_switchMemberOrder[SWITCH_COUNT]` | `static const optional<bool> CConfig::*` | Ordered member-pointers for switch-to-source-index mapping |
 
 **New public methods**:
 
 | Method | Signature | Description |
 |--------|-----------|-------------|
-| `LoadConfigFile` | `HRESULT LoadConfigFile()` | Read `.tcdirconfig`, parse lines, apply settings with `ConfigFile` source |
+| `LoadConfigFile` | `HRESULT LoadConfigFile()` | Resolve `.tcdirconfig` path from `%USERPROFILE%`, open file via `CreateFileW`, read bytes via `ReadFile`, pass to `m_configFileReader.ReadLines`, then call `ProcessConfigLines`. Silently skips if USERPROFILE not set or file not found. |
 | `ValidateConfigFile` | `ValidationResult ValidateConfigFile()` | Return config file parse errors |
 | `GetConfigFilePath` | `const wstring& GetConfigFilePath() const` | Return resolved config file path |
 | `IsConfigFileLoaded` | `bool IsConfigFileLoaded() const` | Whether config file was found and loaded |
@@ -63,43 +85,42 @@ Used in: `m_rgAttributeSources[]`, `m_mapExtensionSources`, `m_mapExtensionIconS
 
 | Method | Change |
 |--------|--------|
-| `ApplyUserColorOverrides` | Keep existing name; add `EAttributeSource source` parameter so the same method handles both config file and env var entries |
-| `ProcessColorOverrideEntry` | Add `EAttributeSource source` parameter; all source-map writes use this parameter instead of hardcoded `Environment` |
-| All methods that write to source maps | Thread the `source` parameter through the call chain |
+| `ApplyUserColorOverrides` | Keep existing name; add `EAttributeSource source` parameter with default `EAttributeSource::Environment` so the same method handles both config file and env var entries |
+| `ProcessColorOverrideEntry` | Add `EAttributeSource source` parameter with default `EAttributeSource::Environment`; all source-map writes use this parameter instead of hardcoded `Environment` |
+| All methods that write to source maps | Thread the `source` parameter through the call chain (all with default `EAttributeSource::Environment`) |
 
----
-
-### New: `IConfigFileReader` (interface)
-
-```
-IConfigFileReader
-├── ReadLines(path, lines, error) → HRESULT
-```
+**New protected methods**:
 
 | Method | Signature | Description |
 |--------|-----------|-------------|
-| `ReadLines` | `HRESULT ReadLines(const wstring& path, vector<wstring>& lines, wstring& errorMessage)` | Read file, handle BOM, split into lines. Returns `S_OK` on success, `S_FALSE` if file not found, `E_FAIL` with errorMessage on I/O error. |
-
-**Purpose**: Abstracts file I/O for unit testing. Production implementation uses `std::ifstream` (binary mode) / `MultiByteToWideChar`. Test mock returns in-memory lines.
+| `ProcessConfigLines` | `void ProcessConfigLines(const vector<wstring>& lines)` | Line-by-line processing loop: trim, skip blanks/comments, strip inline comments, pass entries to `ProcessColorOverrideEntry` with `ConfigFile` source, tag errors with line numbers |
 
 ---
 
 ### New: `CConfigFileReader` (class)
 
-Implements `IConfigFileReader`. Constructor accepts an optional `std::istream*` override for unit testing; when provided, reads from the given stream instead of opening a file. Production callers pass no override (uses `std::ifstream` internally). Handles:
-- `std::ifstream` in binary mode (MSVC accepts `wstring` paths) — or reads from injected `std::istream*` in tests
-- BOM detection (UTF-8 BOM skipped, UTF-16 BOM rejected with error)
-- Raw bytes → `MultiByteToWideChar` → wstring
+A concrete class (no interface) responsible for parsing raw file bytes into lines. File I/O (opening, reading) is handled by `CConfig::LoadConfigFile` using Win32 `CreateFileW` / `ReadFile` / `GetFileSizeEx` with `AutoHandle` for RAII. The reader receives the raw bytes and handles:
+- BOM detection (UTF-8 BOM skipped, UTF-16 LE/BE BOM rejected with error)
+- UTF-8 to wide conversion via `MultiByteToWideChar`
 - Line splitting on `\r\n`, `\n`, `\r`
-- `<fstream>` added to `pch.h`
+- `<fstream>` added to `pch.h` (available but not used for config file I/O)
 
----
+```
+CConfigFileReader
+├── ReadLines(bytes, lines, errorMessage) → HRESULT
+├── (private) CheckAndStripBom(bytes, errorMessage) → HRESULT
+├── (private) ConvertUtf8ToWide(bytes, wideContent, errorMessage) → HRESULT
+├── (private) SplitLines(content, lines) → void
+```
 
-### New: `CTestConfigFileReader` (test class)
+| Method | Signature | Description |
+|--------|-----------|-------------|
+| `ReadLines` | `HRESULT ReadLines(const string& bytes, vector<wstring>& lines, wstring& errorMessage)` | Parse raw bytes: check/strip BOM, convert UTF-8 to wide, split into lines. Returns `S_OK` on success, `E_FAIL` with errorMessage on encoding error. |
+| `CheckAndStripBom` | `HRESULT CheckAndStripBom(string& bytes, wstring& errorMessage)` | Detect and strip UTF-8 BOM; reject UTF-16 BOM with descriptive error message. |
+| `ConvertUtf8ToWide` | `HRESULT ConvertUtf8ToWide(const string& bytes, wstring& wideContent, wstring& errorMessage)` | Convert UTF-8 bytes to wide string via `MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, ...)`. |
+| `SplitLines` | `void SplitLines(const wstring& content, vector<wstring>& lines)` | Split wide string on `\r\n`, `\n`, or `\r` line endings. |
 
-Implements `IConfigFileReader` for unit tests. Stores lines in-memory via a `Set()` method, returns them from `ReadLines()`. Can simulate file-not-found (`S_FALSE`) and I/O errors (`E_FAIL`).
-
-**Testability note**: The `std::istream*` injection in `CConfigFileReader` is for unit-testing the reader's own internals (BOM detection, line splitting, encoding conversion) without real file I/O. The `CTestConfigFileReader` mock is for testing `CConfig::LoadConfigFile` without any reader logic — it returns pre-built lines directly, bypassing the reader entirely. Both mechanisms coexist and serve different test layers.
+**Testability**: Unit tests pass raw byte strings directly to `ReadLines` without any file I/O. No interface or mock class is needed — the reader has no file system dependency.
 
 ---
 
@@ -121,15 +142,16 @@ Implements `IConfigFileReader` for unit tests. Stores lines in-memory via a `Set
 
 | Method | Description |
 |--------|-------------|
-| `DisplayConfigFileHelp` | Config file syntax reference + status + decoded settings + errors (new `/config` output) |
-| `DisplayConfigFileIssues` | Render config file errors with line numbers (grouped separately) |
-| `DisplaySettings` | Merged configuration tables with 3-source column (new `/settings` output, replaces old `DisplayCurrentConfiguration`) |
+| `DisplayConfigFileHelp` | Config file syntax reference + color/icon format reference + example file + env var override note + file path and load status + errors (new `/config` output) |
+| `DisplayConfigFileIssues` | Render config file errors with line numbers (grouped separately). Accepts `fShowHint` parameter — when `true`, appends `(see /config for help)` to the error header |
+| `DisplaySettings` | Merged configuration tables with 3-source column (new `/settings` output, replaces old `DisplayCurrentConfiguration`). Shows "No config file or TCDIR..." message when neither source is set. |
 
 **Modified static methods**:
 
 | Method | Change |
 |--------|--------|
 | `DisplayCurrentConfiguration` | Renamed/repurposed → becomes `DisplaySettings` |
+| `DisplayEnvVarIssues` | Gains `fShowHint` parameter (same pattern as `DisplayConfigFileIssues`) |
 
 ---
 
@@ -145,8 +167,8 @@ Error Accumulation:
   ApplyEnvVarOverrides → m_lastParseResult.errors (lineNumber=0, sourceFilePath=empty)
 
 Display at end of run:
-  1. Config file errors (if any) — grouped with header "Config file issues in <path>:"
-  2. Env var errors (if any) — grouped with header "Environment variable issues:"
+  1. Config file errors (if any) — grouped with header "There are some problems with your config file (see /config for help):"
+  2. Env var errors (if any) — grouped with header "There are some problems with your TCDIR environment variable (see /env for help):"
 ```
 
 ## Validation Rules

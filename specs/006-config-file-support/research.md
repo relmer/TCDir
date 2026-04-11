@@ -2,15 +2,15 @@
 
 ## R-001: File I/O Approach
 
-**Decision**: Use C++ `std::ifstream` in binary mode for reading, then convert UTF-8 bytes to wide strings via `MultiByteToWideChar()`. Add `<fstream>` to `pch.h`. Use flag-checking (not exceptions) for error handling to integrate cleanly with EHM.
+**Decision**: Use Win32 `CreateFileW` / `ReadFile` / `GetFileSizeEx` for opening and reading the file, with `AutoHandle` for RAII. After reading raw bytes into a `std::string` buffer, pass them to `CConfigFileReader::ReadLines` which handles BOM detection, UTF-8 to wide conversion via `MultiByteToWideChar()`, and line splitting. `<fstream>` was added to `pch.h` but is not used for config file I/O.
 
-**Rationale**: C++ streams provide RAII file handling (auto-close on scope exit), are portable for a future Linux port, and are idiomatic modern C++. The existing `_wfopen_s` / `fread` pattern in `ProfileFileManager` is C-style and was not intentionally chosen over C++ I/O. There's no performance reason to prefer Win32 `CreateFileW` / `ReadFile` for a sub-1KB config file read at startup. MSVC's `std::ifstream` constructor accepts `wstring` paths natively.
+**Rationale**: Win32 file APIs provide direct access to `GetLastError()` for distinguishing file-not-found from other open errors, which integrates cleanly with the EHM pattern (no need for `_doserrno` workarounds or `std::filesystem::exists()` fallbacks). `AutoHandle` provides RAII for the file handle, matching existing code patterns. The separation of file I/O (in `LoadConfigFile`) from byte parsing (in `CConfigFileReader`) keeps the reader testable — unit tests pass raw byte strings directly to `ReadLines` without any file system interaction.
 
-**EHM integration**: `ifstream` does not throw by default — failed operations set internal state flags. Extract flag checks into local variables before passing to EHM macros (never call functions inside macros). Use `_doserrno` with `HRESULT_FROM_WIN32()` for specific error codes after open failure. Verify `_doserrno` reliability during implementation; fallback to `std::filesystem::exists()` to distinguish file-not-found from other open errors if needed. Exception mode (`file.exceptions(...)`) was considered but rejected because try/catch mixed with EHM goto-cleanup is awkward and inconsistent with the rest of the codebase.
+**EHM integration**: `CreateFileW` returns `INVALID_HANDLE_VALUE` on failure; `GetLastError()` provides the specific error code. `ReadFile` and `GetFileSizeEx` return `BOOL` results compatible with EHM `CWRA` macros. No try/catch or exception handling needed.
 
 **Alternatives considered**:
+- `std::ifstream` (binary mode): Originally planned, but `GetLastError()` integration is less clean — requires `_doserrno` after open failure, which was found unreliable for distinguishing error codes. Would need `std::filesystem::exists()` pre-check as fallback.
 - `_wfopen_s` / `fread` / `fclose`: C-style, no RAII, not portable. Exists in ProfileFileManager but not a deliberate pattern choice.
-- Windows `CreateFileW` / `ReadFile`: Over-engineered, not portable, no benefit for small files.
 - `ifstream` with exceptions: Cleaner failure detection but mixes try/catch with EHM goto-cleanup; not used anywhere in the project.
 
 ## R-002: BOM Handling
@@ -49,15 +49,15 @@
 
 **Rationale**: The spec requires identical syntax between config file entries and env var entries. The existing `ProcessColorOverrideEntry()` already handles all entry types (switches, colors, icons, parameterized values). Reusing it avoids duplicating parsing logic and guarantees syntax parity.
 
-**Line number tracking**: Wrap `ProcessColorOverrideEntry()` calls in a loop that tracks line numbers. Errors pushed to `m_lastParseResult.errors` need the `ErrorInfo` struct extended with an optional line number and source file path.
+**Line number tracking**: `ProcessConfigLines` (a separate protected method) iterates lines, tracks line numbers, and after each `ProcessColorOverrideEntry` call, tags any newly appended errors in `m_configFileParseResult.errors` with the config file path and 1-based line number.
 
 ## R-007: Error Model Extension
 
-**Decision**: Extend `ErrorInfo` with two optional fields: `configFilePath` (wstring, empty for env var errors) and `lineNumber` (size_t, 0 for env var errors). Grouping logic in `DisplayEnvVarIssues` / new `DisplayConfigFileIssues` checks these fields.
+**Decision**: Extend `ErrorInfo` with two fields: `sourceFilePath` (wstring, empty for env var errors) and `lineNumber` (size_t, 0 for env var errors). Config file errors go to `m_configFileParseResult` and env var errors go to `m_lastParseResult` — separate `ValidationResult` instances. Display functions `DisplayConfigFileIssues` and `DisplayEnvVarIssues` each query their respective result object.
 
-**Rationale**: Minimal change to existing struct. Env var errors continue working unchanged (new fields default to empty/0). Config file errors populate both fields. Display code groups by source presence.
+**Rationale**: Separate error containers for config file vs env var simplifies grouping in display code — each display function queries one result object. The `sourceFilePath` and `lineNumber` fields in `ErrorInfo` are still present for rendering purposes (line number display in config file errors). Display functions accept a `fShowHint` parameter: when `true` (normal listing runs), error headers include `(see /config for help)` or `(see /env for help)`; when `false` (inside `/settings`), the hint is omitted.
 
-**Alternative considered**: Separate error vectors for config file vs env var. Rejected because it would require splitting `m_lastParseResult` into two, complicating the validation API.
+**Alternative considered**: Single error vector for both sources with grouping by `sourceFilePath` presence. Rejected because it would require runtime filtering on every display and complicates the validation API.
 
 ## R-008: Initialization Order
 
