@@ -317,7 +317,8 @@ wstring ResolveReparseTarget (const filesystem::path & dirPath, const WIN32_FIND
 
 
 
-    // Read reparse data
+    // Read reparse data (16KB stack buffer — safe: non-recursive, shallow call stack)
+#pragma warning(suppress: 6262)  // C6262: stack exceeds 16KB analysis threshold
     BYTE  buffer[MAXIMUM_REPARSE_DATA_BUFFER_SIZE];
     DWORD dwBytesReturned = 0;
 
