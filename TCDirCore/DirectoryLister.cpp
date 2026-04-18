@@ -8,6 +8,7 @@
 #include "FileComparator.h"
 #include "Flag.h"
 #include "MultiThreadedLister.h"
+#include "ReparsePointResolver.h"
 
 
 
@@ -372,6 +373,8 @@ void CDirectoryLister::AddMatchToList (
 {
     size_t   cchFileName = 0; 
     FileInfo fileEntry     (wfd);
+
+    fileEntry.m_strReparseTarget = ResolveReparseTarget (di.m_dirPath, wfd);
 
     
 

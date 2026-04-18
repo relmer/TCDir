@@ -2070,6 +2070,36 @@ CConfig::SFileDisplayStyle CConfig::GetDisplayStyleForFile (const WIN32_FIND_DAT
 
 ////////////////////////////////////////////////////////////////////////////////
 //
+//  CConfig::GetTextAttrForExtension
+//
+//  Look up the color attribute for a file path based on its extension.
+//  Returns the default text attribute if the extension is not mapped.
+//
+////////////////////////////////////////////////////////////////////////////////
+
+WORD CConfig::GetTextAttrForExtension (const wstring & path)
+{
+    filesystem::path filePath (path);
+    wstring          strExtension = filePath.extension ().wstring ();
+
+    std::ranges::transform (strExtension, strExtension.begin (), towlower);
+
+    auto iter = m_mapExtensionToTextAttr.find (strExtension);
+
+    if (iter != m_mapExtensionToTextAttr.end ())
+    {
+        return iter->second;
+    }
+
+    return m_rgAttributes[EAttribute::Default];
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
 //  CConfig::EnsureVisibleColorAttr
 //
 //  Given a color attribute and a default attribute, returns a modified color

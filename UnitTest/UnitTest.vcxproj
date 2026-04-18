@@ -282,6 +282,7 @@
     <ClCompile Include="AliasManagerTests.cpp" />
     <ClCompile Include="ProfileFileManagerTests.cpp" />
     <ClCompile Include="ProfilePathResolverTests.cpp" />
+    <ClCompile Include="ReparsePointResolverTests.cpp" />
     <ClCompile Include="TuiWidgetsTests.cpp" />
   </ItemGroup>
   <ItemGroup>
