@@ -98,7 +98,19 @@ void CResultsDisplayerNormal::DisplayFileResults (const CDirectoryInfo & di)
             m_consolePtr->Printf (textAttr, L"%s ", szIcon);
         }
 
-        m_consolePtr->Printf (textAttr, L"%s\n", fileInfo.cFileName);
+        m_consolePtr->Printf (textAttr, L"%s", fileInfo.cFileName);
+
+        if (!fileInfo.m_strReparseTarget.empty ())
+        {
+            WORD targetAttr = (fileInfo.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
+                ? m_configPtr->m_rgAttributes[CConfig::EAttribute::Directory]
+                : m_configPtr->GetTextAttrForExtension (fileInfo.m_strReparseTarget);
+
+            m_consolePtr->Printf (CConfig::EAttribute::Information, L" %c ", UnicodeSymbols::RightArrow);
+            m_consolePtr->Printf (targetAttr, L"%s", fileInfo.m_strReparseTarget.c_str ());
+        }
+
+        m_consolePtr->Printf (textAttr, L"\n");
 
         //
         // If showing streams and this is a file (not a directory), display any alternate data streams
