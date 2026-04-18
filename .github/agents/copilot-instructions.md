@@ -1,6 +1,6 @@
 # TCDir Development Guidelines
 
-Auto-generated from all feature plans. Last updated: 2026-04-04
+Auto-generated from all feature plans. Last updated: 2026-04-18
 
 ## Active Technologies
 - C++ (stdcpplatest / MSVC v145+) + Windows SDK, STL only (no third-party libraries) (004-tree-view)
@@ -35,9 +35,9 @@ All coding conventions are defined in [/.github/copilot-instructions.md](/.githu
 - Use VS Code build tasks, not direct msbuild
 
 ## Recent Changes
+- 007-symlink-junction-targets: Added C++ (stdcpplatest, MSVC v145+) + Windows SDK, STL only
 - 006-config-file-support: Added C++ (stdcpplatest, MSVC v145+) + Windows SDK, STL only — no third-party libraries
 - 005-powershell-aliases: Added C++ /std:c++latest (MSVC v145+) + Windows SDK only (Console API, Shell API, Process API, TlHelp32)
-- 004-tree-view: Added C++ (stdcpplatest / MSVC v145+) + Windows SDK, STL only (no third-party libraries)
 
 
 <!-- MANUAL ADDITIONS START -->

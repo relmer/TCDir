@@ -16,6 +16,7 @@ This document tracks which features have been ported and which are pending.
 | Fix | Pure Mask Dir Fix      | Shipped            | v5.1.1149     | Shipped            | v5.1.TBD      | `tcdir x64` now lists dir contents like `tcdir .\x64`  |
 | 005 | PowerShell Aliases     | Shipped            | v5.2.1346     | Shipped            | v5.2          | `--set-aliases`, `--get-aliases`, `--remove-aliases`   |
 | 006 | Config File Support    | Shipped            | v5.3          | Spec created       |               | `%USERPROFILE%\.rcdirconfig` persistent settings       |
+| 007 | Symlink/Junction Targets | Shipped          | v5.4          | Not started        |               | `→ target` display for junctions, symlinks, AppExecLinks |
 
 ## Workflow
 
@@ -29,5 +30,5 @@ This document tracks which features have been ported and which are pending.
 
 | Project | Latest Release | Date       |
 | ------- | -------------- | ---------- |
-| TCDir   | v5.2.1346      | 2026-03-28 |
+| TCDir   | v5.4.1461      | 2026-04-18 |
 | RCDir   | v5.2.1399      | 2026-04-11 |

@@ -124,6 +124,7 @@ public:
    
     void              Initialize                  (WORD wDefaultAttr);
     SFileDisplayStyle GetDisplayStyleForFile      (const WIN32_FIND_DATA & wfd);
+    WORD              GetTextAttrForExtension     (const wstring & path);
     char32_t          GetCloudStatusIcon          (DWORD dwCloudStatus);
     ValidationResult  ValidateEnvironmentVariable (void);
     void              SetEnvironmentProvider      (const IEnvironmentProvider * pProvider);

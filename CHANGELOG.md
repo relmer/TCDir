@@ -2,6 +2,19 @@
 
 All notable changes to TCDir are documented in this file.
 
+## [5.4.1461] - 2026-04-18
+
+### Added
+- Symlink, junction, and AppExecLink target display: `→ target_path` shown after filenames in normal and tree modes
+  - Supports junctions, file/directory symlinks, and Windows Store app execution aliases
+  - Target paths displayed as-stored; `\??\` device prefix stripped automatically
+  - Wide and bare modes unaffected
+- `ReparsePointResolver` module for reading NTFS reparse data
+- 23 new unit tests (555 total, up from 532)
+
+### Changed
+- Minor version bump from 5.3 to 5.4
+
 ## [5.3.1443] - 2026-04-07
 
 ### Added

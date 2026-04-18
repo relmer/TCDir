@@ -49,6 +49,7 @@ struct FileInfo : public WIN32_FIND_DATA
 
     vector<SStreamInfo> m_vStreams;        // Alternate data streams (empty if none or not collected)
     wstring             m_strLowerName;   // Pre-computed lowercase filename for fast lookups
+    wstring             m_strReparseTarget;  // Resolved link target path (empty if not a supported reparse point)
 };
 
 typedef vector<FileInfo>         FileInfoVector;
