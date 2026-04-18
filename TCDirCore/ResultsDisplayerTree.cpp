@@ -5,6 +5,7 @@
 #include "Config.h"
 #include "Console.h"
 #include "IconMapping.h"
+#include "UnicodeSymbols.h"
 
 
 
@@ -182,7 +183,19 @@ void CResultsDisplayerTree::DisplaySingleEntry (const FileInfo & entry, STreeCon
     // Filename
     //
 
-    m_consolePtr->Printf (textAttr, L"%s\n", entry.cFileName);
+    m_consolePtr->Printf (textAttr, L"%s", entry.cFileName);
+
+    if (!entry.m_strReparseTarget.empty ())
+    {
+        WORD targetAttr = (entry.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
+            ? m_configPtr->m_rgAttributes[CConfig::EAttribute::Directory]
+            : m_configPtr->GetTextAttrForExtension (entry.m_strReparseTarget);
+
+        m_consolePtr->Printf (CConfig::EAttribute::Information, L" %c ", UnicodeSymbols::RightArrow);
+        m_consolePtr->Printf (targetAttr, L"%s", entry.m_strReparseTarget.c_str ());
+    }
+
+    m_consolePtr->Printf (textAttr, L"\n");
 
     //
     // Alternate data streams (when --Streams is active)
