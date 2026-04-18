@@ -18,8 +18,8 @@
 **Purpose**: Version bump and foundational data model changes
 
 - [x] T001 Bump minor version from 5.3 to 5.4 in TCDirCore/Version.h (pre-completed — already applied)
-- [ ] T002 [P] Add `RightArrow` constant (U+2192) to TCDirCore/UnicodeSymbols.h
-- [ ] T003 [P] Add `wstring m_strReparseTarget` field to `FileInfo` struct in TCDirCore/DirectoryInfo.h
+- [x] T002 [P] Add `RightArrow` constant (U+2192) to TCDirCore/UnicodeSymbols.h
+- [x] T003 [P] Add `wstring m_strReparseTarget` field to `FileInfo` struct in TCDirCore/DirectoryInfo.h
 
 ---
 
@@ -29,23 +29,23 @@
 
 **CRITICAL**: All user stories depend on the reparse resolver being complete
 
-- [ ] T004 Create TCDirCore/ReparsePointResolver.h — declare `REPARSE_DATA_BUFFER` struct, `ParseJunctionBuffer()`, `ParseSymlinkBuffer()`, `ParseAppExecLinkBuffer()`, `ResolveReparseTarget()`, and `StripDevicePrefix()` functions
-- [ ] T005 Implement `StripDevicePrefix()` pure function in TCDirCore/ReparsePointResolver.cpp — strip `\??\` prefix from paths
-- [ ] T006 Implement `ParseJunctionBuffer()` in TCDirCore/ReparsePointResolver.cpp — extract PrintName from MountPointReparseBuffer, fall back to SubstituteName with prefix stripped
-- [ ] T007 Implement `ParseSymlinkBuffer()` in TCDirCore/ReparsePointResolver.cpp — extract PrintName from SymbolicLinkReparseBuffer, fall back to SubstituteName with prefix stripped
-- [ ] T008 Implement `ParseAppExecLinkBuffer()` in TCDirCore/ReparsePointResolver.cpp — parse version + 3 NUL-terminated strings from GenericReparseBuffer, return third string (target exe path)
-- [ ] T009 Implement `ResolveReparseTarget()` in TCDirCore/ReparsePointResolver.cpp — CreateFileW + DeviceIoControl flow, dispatch to correct parser by reparse tag, return empty string on any failure
-- [ ] T010 Call `ResolveReparseTarget()` from `AddMatchToList()` in TCDirCore/DirectoryLister.cpp — resolve only when `FILE_ATTRIBUTE_REPARSE_POINT` is set and tag is supported
-- [ ] T011 [P] Add `GetTextAttrForExtension()` method to CConfig in TCDirCore/Config.h and TCDirCore/Config.cpp — extract extension from path, look up in `m_mapExtensionToTextAttr`, return default attr if not found
+- [x] T004 Create TCDirCore/ReparsePointResolver.h — declare `REPARSE_DATA_BUFFER` struct, `ParseJunctionBuffer()`, `ParseSymlinkBuffer()`, `ParseAppExecLinkBuffer()`, `ResolveReparseTarget()`, and `StripDevicePrefix()` functions
+- [x] T005 Implement `StripDevicePrefix()` pure function in TCDirCore/ReparsePointResolver.cpp — strip `\??\` prefix from paths
+- [x] T006 Implement `ParseJunctionBuffer()` in TCDirCore/ReparsePointResolver.cpp — extract PrintName from MountPointReparseBuffer, fall back to SubstituteName with prefix stripped
+- [x] T007 Implement `ParseSymlinkBuffer()` in TCDirCore/ReparsePointResolver.cpp — extract PrintName from SymbolicLinkReparseBuffer, fall back to SubstituteName with prefix stripped
+- [x] T008 Implement `ParseAppExecLinkBuffer()` in TCDirCore/ReparsePointResolver.cpp — parse version + 3 NUL-terminated strings from GenericReparseBuffer, return third string (target exe path)
+- [x] T009 Implement `ResolveReparseTarget()` in TCDirCore/ReparsePointResolver.cpp — CreateFileW + DeviceIoControl flow, dispatch to correct parser by reparse tag, return empty string on any failure
+- [x] T010 Call `ResolveReparseTarget()` from `AddMatchToList()` in TCDirCore/DirectoryLister.cpp — resolve only when `FILE_ATTRIBUTE_REPARSE_POINT` is set and tag is supported
+- [x] T011 [P] Add `GetTextAttrForExtension()` method to CConfig in TCDirCore/Config.h and TCDirCore/Config.cpp — extract extension from path, look up in `m_mapExtensionToTextAttr`, return default attr if not found
 
 ### Unit Tests for Foundational Phase
 
-- [ ] T012 [P] Create UnitTest/ReparsePointResolverTests.cpp — test `StripDevicePrefix()` with `\??\C:\path`, `\??\UNC\server\share`, empty string, and path without prefix
-- [ ] T013 [P] Extend UnitTest/ReparsePointResolverTests.cpp — test `ParseJunctionBuffer()` with synthetic REPARSE_DATA_BUFFER containing known PrintName and SubstituteName
-- [ ] T014 [P] Extend UnitTest/ReparsePointResolverTests.cpp — test `ParseSymlinkBuffer()` with both absolute (Flags=0) and relative (Flags=SYMLINK_FLAG_RELATIVE) synthetic buffers
-- [ ] T015 [P] Extend UnitTest/ReparsePointResolverTests.cpp — test `ParseAppExecLinkBuffer()` with synthetic version-3 buffer containing 3 NUL-terminated strings; test version mismatch returns empty
-- [ ] T016 [P] Extend UnitTest/ReparsePointResolverTests.cpp — test `ParseJunctionBuffer()` with empty PrintName falls back to SubstituteName with `\??\` stripped
-- [ ] T017 [P] Extend UnitTest/ReparsePointResolverTests.cpp — test `ParseAppExecLinkBuffer()` with truncated buffer (string extends past buffer bounds) returns empty
+- [x] T012 [P] Create UnitTest/ReparsePointResolverTests.cpp — test `StripDevicePrefix()` with `\??\C:\path`, `\??\UNC\server\share`, empty string, and path without prefix
+- [x] T013 [P] Extend UnitTest/ReparsePointResolverTests.cpp — test `ParseJunctionBuffer()` with synthetic REPARSE_DATA_BUFFER containing known PrintName and SubstituteName
+- [x] T014 [P] Extend UnitTest/ReparsePointResolverTests.cpp — test `ParseSymlinkBuffer()` with both absolute (Flags=0) and relative (Flags=SYMLINK_FLAG_RELATIVE) synthetic buffers
+- [x] T015 [P] Extend UnitTest/ReparsePointResolverTests.cpp — test `ParseAppExecLinkBuffer()` with synthetic version-3 buffer containing 3 NUL-terminated strings; test version mismatch returns empty
+- [x] T016 [P] Extend UnitTest/ReparsePointResolverTests.cpp — test `ParseJunctionBuffer()` with empty PrintName falls back to SubstituteName with `\??\` stripped
+- [x] T017 [P] Extend UnitTest/ReparsePointResolverTests.cpp — test `ParseAppExecLinkBuffer()` with truncated buffer (string extends past buffer bounds) returns empty
 
 **Checkpoint**: Reparse resolver compiles, all parser tests pass. Build with `Build + Test Debug (current arch)`.
 
@@ -59,14 +59,14 @@
 
 ### Implementation for User Story 1
 
-- [ ] T018 [US1] Modify filename rendering in TCDirCore/ResultsDisplayerNormal.cpp — split `Printf(textAttr, L"%s\n", cFileName)` into filename + conditional `→ target` + newline when `m_strReparseTarget` is non-empty
-- [ ] T019 [US1] Build and manually verify normal mode output with junctions and symlinks on the local filesystem
-- [ ] T019a [US1] Manually verify AppExecLink display: run `tcdir` in `%LOCALAPPDATA%\Microsoft\WindowsApps` and confirm `→ target_exe_path` appears for Store app aliases
+- [x] T018 [US1] Modify filename rendering in TCDirCore/ResultsDisplayerNormal.cpp — split `Printf(textAttr, L"%s\n", cFileName)` into filename + conditional `→ target` + newline when `m_strReparseTarget` is non-empty
+- [x] T019 [US1] Build and manually verify normal mode output with junctions and symlinks on the local filesystem
+- [x] T019a [US1] Manually verify AppExecLink display: run `tcdir` in `%LOCALAPPDATA%\Microsoft\WindowsApps` and confirm `→ target_exe_path` appears for Store app aliases
 
 ### Unit Tests for User Story 1
 
-- [ ] T020 [US1] Add display test in UnitTest/ResultsDisplayerTests.cpp — verify `FileInfo` with populated `m_strReparseTarget` renders `filename → target\n` in captured output
-- [ ] T021 [US1] Add display test in UnitTest/ResultsDisplayerTests.cpp — verify `FileInfo` with empty `m_strReparseTarget` renders `filename\n` only (no arrow, no change)
+- [x] T020 [US1] Add display test in UnitTest/ResultsDisplayerTests.cpp — verify `FileInfo` with populated `m_strReparseTarget` renders `filename → target\n` in captured output
+- [x] T021 [US1] Add display test in UnitTest/ResultsDisplayerTests.cpp — verify `FileInfo` with empty `m_strReparseTarget` renders `filename\n` only (no arrow, no change)
 
 **Checkpoint**: Normal mode shows targets for junctions/symlinks. All tests pass.
 
@@ -80,13 +80,13 @@
 
 ### Implementation for User Story 2
 
-- [ ] T022 [US2] Modify filename rendering in TCDirCore/ResultsDisplayerTree.cpp — same split pattern as Normal mode: filename + conditional `→ target` + newline when `m_strReparseTarget` is non-empty
-- [ ] T023 [US2] Build and manually verify tree mode output — confirm junctions show targets and are not recursed into
+- [x] T022 [US2] Modify filename rendering in TCDirCore/ResultsDisplayerTree.cpp — same split pattern as Normal mode: filename + conditional `→ target` + newline when `m_strReparseTarget` is non-empty
+- [x] T023 [US2] Build and manually verify tree mode output — confirm junctions show targets and are not recursed into
 
 ### Unit Tests for User Story 2
 
-- [ ] T024 [US2] Add tree display test in UnitTest/ResultsDisplayerTests.cpp — verify tree entry with `m_strReparseTarget` renders `filename → target\n` with tree connectors intact
-- [ ] T025 [US2] Add tree display test in UnitTest/ResultsDisplayerTests.cpp — verify tree entry without reparse target renders normally (no arrow)
+- [x] T024 [US2] Add tree display test in UnitTest/ResultsDisplayerTests.cpp — verify tree entry with `m_strReparseTarget` renders `filename → target\n` with tree connectors intact
+- [x] T025 [US2] Add tree display test in UnitTest/ResultsDisplayerTests.cpp — verify tree entry without reparse target renders normally (no arrow)
 
 **Checkpoint**: Tree mode shows targets. Normal mode still works. All tests pass.
 
@@ -100,13 +100,13 @@
 
 ### Implementation for User Story 3
 
-- [ ] T026 [US3] Update target rendering in TCDirCore/ResultsDisplayerNormal.cpp — use `CConfig::EAttribute::Information` for `→` arrow, `CConfig::EAttribute::Directory` for directory targets, `GetTextAttrForExtension()` for file targets
-- [ ] T027 [US3] Update target rendering in TCDirCore/ResultsDisplayerTree.cpp — same color logic as normal mode
-- [ ] T028 [US3] Build and manually verify colored output — arrow in Information color, targets in appropriate dir/extension colors
+- [x] T026 [US3] Update target rendering in TCDirCore/ResultsDisplayerNormal.cpp — use `CConfig::EAttribute::Information` for `→` arrow, `CConfig::EAttribute::Directory` for directory targets, `GetTextAttrForExtension()` for file targets
+- [x] T027 [US3] Update target rendering in TCDirCore/ResultsDisplayerTree.cpp — same color logic as normal mode
+- [x] T028 [US3] Build and manually verify colored output — arrow in Information color, targets in appropriate dir/extension colors
 
 ### Unit Tests for User Story 3
 
-- [ ] T029 [P] [US3] Add color test in UnitTest/ReparsePointResolverTests.cpp or UnitTest/ConfigTests.cpp — verify `GetTextAttrForExtension()` returns correct color for `.cpp`, `.py`, unknown extension, and extensionless path
+- [x] T029 [P] [US3] Add color test in UnitTest/ReparsePointResolverTests.cpp or UnitTest/ConfigTests.cpp — verify `GetTextAttrForExtension()` returns correct color for `.cpp`, `.py`, unknown extension, and extensionless path
 
 **Checkpoint**: Colors correct in both modes. All tests pass.
 
@@ -120,8 +120,8 @@
 
 ### Verification
 
-- [ ] T030 [US4] Verify end-to-end: create a junction, run `tcdir`, confirm target path does not show `\??\` prefix
-- [ ] T031 [US4] Verify `ParseJunctionBuffer()` fallback path: synthetic buffer with empty PrintName uses SubstituteName with `\??\` stripped (covered by T016)
+- [x] T030 [US4] Verify end-to-end: create a junction, run `tcdir`, confirm target path does not show `\??\` prefix
+- [x] T031 [US4] Verify `ParseJunctionBuffer()` fallback path: synthetic buffer with empty PrintName uses SubstituteName with `\??\` stripped (covered by T016)
 
 **Checkpoint**: All user stories complete and independently verified.
 
@@ -131,15 +131,15 @@
 
 **Purpose**: Release readiness, documentation, and validation
 
-- [ ] T032 Verify wide mode (`tcdir /W`) does NOT show `→ target` — FR-009 compliance
-- [ ] T033 Verify bare mode (`tcdir /B`) does NOT show `→ target` — FR-009 compliance
-- [ ] T034 Verify recursive mode (`tcdir -S`) shows targets but does not recurse into junctions/symlinks — FR-010 compliance
-- [ ] T035 Run full test suite: `Build + Test Debug (current arch)` and `Build + Test Release (current arch)` — SC-005 compliance
-- [ ] T036 Update CHANGELOG.md with v5.4 entry describing symlink/junction target display feature
-- [ ] T037 Update README.md "What's New" table with v5.4 row and feature comparison table with symlink target column
-- [ ] T038 Update specs/sync-status.md with spec 007 row (TCDir: Shipped, v5.4)
-- [ ] T039 Run quickstart.md validation — verify files listed in quickstart.md were all touched
-- [ ] T040 Final build: `Build All Release (x64 + ARM64)` — verify both architectures compile clean
+- [x] T032 Verify wide mode (`tcdir /W`) does NOT show `→ target` — FR-009 compliance
+- [x] T033 Verify bare mode (`tcdir /B`) does NOT show `→ target` — FR-009 compliance
+- [x] T034 Verify recursive mode (`tcdir -S`) shows targets but does not recurse into junctions/symlinks — FR-010 compliance
+- [x] T035 Run full test suite: `Build + Test Debug (current arch)` and `Build + Test Release (current arch)` — SC-005 compliance
+- [x] T036 Update CHANGELOG.md with v5.4 entry describing symlink/junction target display feature
+- [x] T037 Update README.md "What's New" table with v5.4 row and feature comparison table with symlink target column
+- [x] T038 Update specs/sync-status.md with spec 007 row (TCDir: Shipped, v5.4)
+- [x] T039 Run quickstart.md validation — verify files listed in quickstart.md were all touched
+- [x] T040 Final build: `Build All Release (x64 + ARM64)` — verify both architectures compile clean
 
 ---
 

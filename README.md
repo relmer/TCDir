@@ -27,6 +27,7 @@ Settings can be persisted in a config file (`~\.tcdirconfig`), overridden via th
 
 | Version | Highlights |
 | :---: | :--- |
+| **5.4** | Symlink, junction, and AppExecLink target display (`→ target`) in normal and tree modes |
 | **5.3** | Config file support (`.tcdirconfig`) — persistent settings without environment variables |
 | **5.2** | Interactive PowerShell alias configuration (`--set-aliases`, `--get-aliases`, `--remove-aliases`) |
 | **5.1** | `--Tree` hierarchical directory view with depth control |
@@ -54,6 +55,7 @@ Hat tip to [Chris Kirmse](https://github.com/ckirmse) whose excellent [ZDir](htt
 | Familiar `dir` switch syntax | ✅ | ✅ | — | — |
 | ARM64 native binary | ✅ | ✅ | — | — |
 | NTFS alternate data streams | ✅ | ✅ | — | — |
+| Symlink/junction target display | — | ✅ | ✅ | ✅ |
 | Configurable via environment variable | — | ✅ | — | — |
 | Persistent config file | — | ✅ | ✅ | ✅ |
 
