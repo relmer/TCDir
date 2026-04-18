@@ -5,17 +5,11 @@ All notable changes to TCDir are documented in this file.
 ## [5.4.1461] - 2026-04-18
 
 ### Added
-- Symlink, junction, and AppExecLink target display in normal and tree modes
-  - `→ target_path` shown after filename for junctions (`IO_REPARSE_TAG_MOUNT_POINT`), symlinks (`IO_REPARSE_TAG_SYMLINK`), and AppExecLink entries (`IO_REPARSE_TAG_APPEXECLINK`)
-  - Arrow uses Information color; target uses directory color (junctions/dir symlinks) or extension-based color (file symlinks/AppExecLinks)
-  - Target paths displayed as-stored (relative stays relative, absolute stays absolute)
-  - `\??\` device prefix automatically stripped from junction targets
-  - Graceful degradation: access-denied or unreadable reparse data shows filename without target
-  - Wide and bare modes unaffected (no target display)
-  - Reparse target resolution via `FSCTL_GET_REPARSE_POINT` with zero-access handle and stack-allocated buffer
-- `GetTextAttrForExtension()` helper on `CConfig` for extension-based color lookup
-- `ReparsePointResolver` module: reparse buffer parsing for junctions, symlinks, and AppExecLinks
-- `RightArrow` (U+2192) constant in `UnicodeSymbols.h`
+- Symlink, junction, and AppExecLink target display: `→ target_path` shown after filenames in normal and tree modes
+  - Supports junctions, file/directory symlinks, and Windows Store app execution aliases
+  - Target paths displayed as-stored; `\??\` device prefix stripped automatically
+  - Wide and bare modes unaffected
+- `ReparsePointResolver` module for reading NTFS reparse data
 - 23 new unit tests (555 total, up from 532)
 
 ### Changed
