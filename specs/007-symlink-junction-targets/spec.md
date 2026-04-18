@@ -61,6 +61,7 @@ Link target paths are color-coded so users can distinguish the arrow from the ta
 1. **Given** a junction `build → C:\Output\build`, **When** the user runs `tcdir`, **Then** the `→` arrow uses the `Information` color attribute and the target path `C:\Output\build` uses the directory color
 2. **Given** a file symlink `main.cpp → ..\src\main.cpp`, **When** the user runs `tcdir`, **Then** the `→` arrow uses the `Information` color attribute and the target path uses the color associated with the `.cpp` extension
 3. **Given** a file symlink to a file with no recognized extension, **When** the user runs `tcdir`, **Then** the target path uses the default file color
+4. **Given** an AppExecLink entry (e.g., `python.exe` in `WindowsApps`), **When** the user runs `tcdir`, **Then** the `→` arrow uses the `Information` color attribute and the target path uses the `.exe` extension color (AppExecLink targets follow the same extension-based color rule)
 
 ---
 
@@ -113,7 +114,7 @@ Junction target paths stored internally with the `\??\` device prefix are displa
 ### Key Entities
 
 - **Reparse Point**: A file system entry with the `FILE_ATTRIBUTE_REPARSE_POINT` attribute set and a reparse tag in `dwReserved0` indicating junction (`IO_REPARSE_TAG_MOUNT_POINT`), symlink (`IO_REPARSE_TAG_SYMLINK`), or AppExecLink (`IO_REPARSE_TAG_APPEXECLINK`)
-- **Target Path**: The destination path stored in the reparse data buffer — may be relative or absolute, may contain the `\?\` device prefix for junctions
+- **Target Path**: The destination path stored in the reparse data buffer — may be relative or absolute, may contain the `\??\` device prefix for junctions
 - **AppExecLink**: A Windows Store app execution alias — a 0-byte placeholder file that redirects execution to a Store app's real executable. The reparse buffer contains the target executable path, package family name, and app user model ID
 
 ## Success Criteria *(mandatory)*

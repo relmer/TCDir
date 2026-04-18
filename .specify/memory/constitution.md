@@ -41,7 +41,14 @@ All production code MUST have corresponding unit tests:
 - **Unit Test Framework**: Use Microsoft C++ Unit Test Framework (CppUnitTestFramework)
 - **Test Coverage**: Every public function and significant code path MUST be covered by tests
 - **Test Independence**: Each test MUST be independently runnable and MUST NOT depend on execution order
-- **Test Isolation (NON-NEGOTIABLE)**: Unit tests MUST NEVER rely on or alter real system state. ALL system services MUST be mocked or abstracted behind interfaces: file system (no reading/writing actual files on disk), registry (no accessing the Windows registry), network (no real HTTP/socket calls), process/environment (no inspecting real processes, environment variables, or console handles), system APIs (no calling `SHGetKnownFolderPath`, `CreateToolhelp32Snapshot`, `OpenProcessToken`, etc. directly in tests). If a module uses system APIs, inject its dependencies through an interface so tests can substitute mocks. Tests MUST be deterministic and repeatable regardless of the machine or user running them.
+- **Test Isolation (NON-NEGOTIABLE)**: Unit tests MUST NEVER read, write, or depend on any actual system state. ALL system services MUST be mocked or abstracted behind interfaces:
+  - **File system**: No reading or writing actual files on disk — use in-memory data, synthetic byte buffers, or mock I/O interfaces
+  - **Registry**: No accessing the Windows registry — mock all registry calls
+  - **Network**: No real HTTP/socket calls — mock network layers
+  - **Process/environment**: No inspecting real processes, environment variables, or console handles — inject mock providers
+  - **System APIs**: No calling `SHGetKnownFolderPath`, `CreateToolhelp32Snapshot`, `OpenProcessToken`, `CreateFileW`, `DeviceIoControl`, etc. directly in unit tests — inject dependencies through interfaces so tests can substitute mocks or use synthetic data
+  
+  If a module uses system APIs, the testable logic MUST be factored into pure functions that accept data (not handles or OS resources) so tests can supply synthetic inputs. Tests MUST be deterministic and repeatable regardless of the machine or user running them.
 - **Build Verification**: Tests MUST pass before any merge or release; use VS Code tasks (`Build + Test Debug/Release`)
 - **Test Organization**: Tests reside in the `UnitTest/` project, grouped by component (e.g., `CommandLineTests.cpp`, `ConfigTests.cpp`)
 
