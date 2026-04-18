@@ -58,10 +58,10 @@ Link target paths are color-coded so users can distinguish the arrow from the ta
 
 **Acceptance Scenarios**:
 
-1. **Given** a junction `build → C:\Output\build`, **When** the user runs `tcdir`, **Then** the `→` arrow uses the `Information` color attribute and the target path `C:\Output\build` uses the directory color
-2. **Given** a file symlink `main.cpp → ..\src\main.cpp`, **When** the user runs `tcdir`, **Then** the `→` arrow uses the `Information` color attribute and the target path uses the color associated with the `.cpp` extension
-3. **Given** a file symlink to a file with no recognized extension, **When** the user runs `tcdir`, **Then** the target path uses the default file color
-4. **Given** an AppExecLink entry (e.g., `python.exe` in `WindowsApps`), **When** the user runs `tcdir`, **Then** the `→` arrow uses the `Information` color attribute and the target path uses the `.exe` extension color (AppExecLink targets follow the same extension-based color rule)
+1. **Given** a junction `build → C:\Output\build`, **When** the user runs `tcdir`, **Then** the `→` arrow uses the `Information` color attribute and the target path `C:\Output\build` uses the same color as the junction entry name
+2. **Given** a file symlink `main.cpp → ..\src\main.cpp`, **When** the user runs `tcdir`, **Then** the `→` arrow uses the `Information` color attribute and the target path uses the same color as the symlink entry name
+3. **Given** a file symlink to a file with no recognized extension, **When** the user runs `tcdir`, **Then** the target path uses the same color as the symlink entry name
+4. **Given** an AppExecLink entry (e.g., `python.exe` in `WindowsApps`), **When** the user runs `tcdir`, **Then** the `→` arrow uses the `Information` color attribute and the target path uses the same color as the AppExecLink entry name
 
 ---
 
@@ -102,8 +102,8 @@ Junction target paths stored internally with the `\??\` device prefix are displa
 - **FR-004**: System MUST display target paths as-stored in the reparse data (relative paths stay relative, absolute paths stay absolute)
 - **FR-005**: System MUST strip the `\??\` device prefix from junction target paths before display
 - **FR-006**: System MUST render the `→` arrow using the existing `Information` color attribute
-- **FR-007**: System MUST render directory target paths (junctions and directory symlinks) using the existing directory color
-- **FR-008**: System MUST render file target paths (file symlinks) using the color associated with the target file's extension
+- **FR-007**: System MUST render the target path using the same color as the source filename (the link entry's resolved color attribute)
+- ~~**FR-008**: System MUST render file target paths (file symlinks) using the color associated with the target file's extension~~ — superseded by FR-007
 - **FR-009**: System MUST NOT display target paths in wide mode or bare mode
 - **FR-010**: System MUST NOT recurse into junctions or symlinks (preserve existing reparse-point cycle guard behavior)
 - **FR-011**: System MUST gracefully handle cases where reparse data cannot be read — display the filename without a target, no error message

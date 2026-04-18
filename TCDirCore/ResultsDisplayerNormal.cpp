@@ -102,12 +102,8 @@ void CResultsDisplayerNormal::DisplayFileResults (const CDirectoryInfo & di)
 
         if (!fileInfo.m_strReparseTarget.empty ())
         {
-            WORD targetAttr = (fileInfo.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
-                ? m_configPtr->m_rgAttributes[CConfig::EAttribute::Directory]
-                : m_configPtr->GetTextAttrForExtension (fileInfo.m_strReparseTarget);
-
             m_consolePtr->Printf (CConfig::EAttribute::Information, L" %c ", UnicodeSymbols::RightArrow);
-            m_consolePtr->Printf (targetAttr, L"%s", fileInfo.m_strReparseTarget.c_str ());
+            m_consolePtr->Printf (textAttr, L"%s", fileInfo.m_strReparseTarget.c_str ());
         }
 
         m_consolePtr->Printf (textAttr, L"\n");
