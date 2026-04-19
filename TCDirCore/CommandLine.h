@@ -82,6 +82,7 @@ public:
     bool               m_fDebug                                            = false;    // --debug switch (raw hex attributes)
     optional<bool>     m_fIcons;                                                        // /Icons (true), /Icons- (false), absent (nullopt)
     bool               m_fTree                                             = false;    // --Tree switch (tree view mode)
+    optional<bool>     m_fEllipsize;                                                    // --Ellipsize (true), --Ellipsize- (false), absent (nullopt = on)
     int                m_cMaxDepth                                         = 0;        // --Depth=N (0 = unlimited)
     int                m_cTreeIndent                                       = 4;        // --TreeIndent=N (1-8)
     ESizeFormat        m_eSizeFormat                                       = ESizeFormat::Default;  // --Size=Auto|Bytes

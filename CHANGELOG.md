@@ -2,6 +2,15 @@
 
 All notable changes to TCDir are documented in this file.
 
+## [5.4.1549] - 2026-04-19
+
+### Added
+- Ellipsize long link target paths: middle-truncate with `…` to prevent line wrapping in normal and tree modes
+  - Preserves drive/root prefix and leaf filename; intermediate directory components replaced with `…`
+  - `--Ellipsize` switch (default: on), `--Ellipsize-` to disable
+  - Configurable via `.tcdirconfig` and `TCDIR` environment variable
+- 17 new unit tests for path truncation logic (568 total)
+
 ## [5.4.1461] - 2026-04-18
 
 ### Added

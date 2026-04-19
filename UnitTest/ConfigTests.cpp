@@ -2228,6 +2228,62 @@ namespace UnitTest
             Assert::IsTrue (config.m_eSizeFormat.has_value());
             Assert::IsTrue (config.m_eSizeFormat.value() == ESizeFormat::Auto);
         }
+
+
+
+
+        //
+        //  Env var: Ellipsize / Ellipsize-
+        //
+
+        TEST_METHOD(EnvVar_Ellipsize_SetsEllipsizeTrue)
+        {
+            ConfigProbe config;
+            config.Initialize (FC_LightGrey);
+
+            config.SetEnvVar (TCDIR_ENV_VAR_NAME, L"Ellipsize");
+            config.ApplyUserColorOverrides();
+
+
+
+            Assert::IsTrue (config.m_fEllipsize.has_value());
+            Assert::IsTrue (config.m_fEllipsize.value());
+        }
+
+
+
+        TEST_METHOD(EnvVar_EllipsizeDisable_SetsEllipsizeFalse)
+        {
+            ConfigProbe config;
+            config.Initialize (FC_LightGrey);
+
+            config.SetEnvVar (TCDIR_ENV_VAR_NAME, L"Ellipsize-");
+            config.ApplyUserColorOverrides();
+
+
+
+            Assert::IsTrue  (config.m_fEllipsize.has_value());
+            Assert::IsFalse (config.m_fEllipsize.value());
+        }
+
+
+
+        TEST_METHOD(EnvVar_EllipsizeCaseInsensitive)
+        {
+            ConfigProbe config;
+            config.Initialize (FC_LightGrey);
+
+            config.SetEnvVar (TCDIR_ENV_VAR_NAME, L"ellipsize");
+            config.ApplyUserColorOverrides();
+
+
+
+            Assert::IsTrue (config.m_fEllipsize.has_value());
+            Assert::IsTrue (config.m_fEllipsize.value());
+
+            auto result = config.ValidateEnvironmentVariable();
+            Assert::IsFalse (result.hasIssues());
+        }
     };
 
 

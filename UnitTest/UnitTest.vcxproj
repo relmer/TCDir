@@ -272,6 +272,7 @@
     <ClCompile Include="FileComparatorTests.cpp" />
     <ClCompile Include="IconMappingTests.cpp" />
     <ClCompile Include="NerdFontDetectorTests.cpp" />
+    <ClCompile Include="PathEllipsisTests.cpp" />
     <ClCompile Include="CommandLineTests.cpp" />
     <ClCompile Include="ConsoleTests.cpp" />
     <ClCompile Include="DirectoryListerTests.cpp" />

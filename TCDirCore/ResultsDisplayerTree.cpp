@@ -5,6 +5,7 @@
 #include "Config.h"
 #include "Console.h"
 #include "IconMapping.h"
+#include "PathEllipsis.h"
 #include "UnicodeSymbols.h"
 
 
@@ -187,8 +188,44 @@ void CResultsDisplayerTree::DisplaySingleEntry (const FileInfo & entry, STreeCon
 
     if (!entry.m_strReparseTarget.empty ())
     {
+        bool fEllipsize = !m_cmdLinePtr->m_fEllipsize.has_value () || m_cmdLinePtr->m_fEllipsize.value ();
+
         m_consolePtr->Printf (CConfig::EAttribute::Information, L" %c ", UnicodeSymbols::RightArrow);
-        m_consolePtr->Printf (textAttr, L"%s", entry.m_strReparseTarget.c_str ());
+
+        if (fEllipsize)
+        {
+            // Compute available width for the target path (same as normal mode + tree prefix)
+            size_t cchUsed = 21                                                          // date+time
+                           + 9                                                            // attributes (9 flags)
+                           + 2 + max (m_cchStringLengthOfMaxFileSize, (size_t) 5)         // file size
+                           + (m_fIconsActive ? 4 : 3)                                     // cloud status (always present)
+                           + (m_cmdLinePtr->m_fDebug ? 14 : 0)                            // debug attrs
+                           + (m_cmdLinePtr->m_fShowOwner ? m_cchMaxOwnerLength + 1 : 0)   // owner
+                           + prefix.length ()                                             // tree connector prefix
+                           + (m_fIconsActive ? 3 : 0)                                     // icon glyph
+                           + wcslen (entry.cFileName)                                     // filename
+                           + 3;                                                            // " \u2192 "
+
+            size_t cxConsoleWidth = m_consolePtr->GetWidth ();
+            size_t availableWidth = (cchUsed < cxConsoleWidth) ? cxConsoleWidth - cchUsed : 0;
+
+            SEllipsizedPath ellipsized = EllipsizePath (entry.m_strReparseTarget, availableWidth);
+
+            if (ellipsized.fTruncated)
+            {
+                m_consolePtr->Printf (textAttr, L"%s", ellipsized.prefix.c_str ());
+                m_consolePtr->Printf (CConfig::EAttribute::Default, L"%c", UnicodeSymbols::Ellipsis);
+                m_consolePtr->Printf (textAttr, L"%s", ellipsized.suffix.c_str ());
+            }
+            else
+            {
+                m_consolePtr->Printf (textAttr, L"%s", ellipsized.prefix.c_str ());
+            }
+        }
+        else
+        {
+            m_consolePtr->Printf (textAttr, L"%s", entry.m_strReparseTarget.c_str ());
+        }
     }
 
     m_consolePtr->Printf (textAttr, L"\n");

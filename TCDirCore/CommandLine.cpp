@@ -72,6 +72,7 @@ void CCommandLine::ApplyConfigDefaults (const CConfig & config)
     if (config.m_fShowStreams.has_value())                     m_fShowStreams   = config.m_fShowStreams.value();
     if (config.m_fIcons.has_value() && !m_fIcons.has_value())  m_fIcons         = config.m_fIcons.value();
     if (config.m_fTree.has_value())                            m_fTree          = config.m_fTree.value();
+    if (config.m_fEllipsize.has_value() && !m_fEllipsize.has_value())  m_fEllipsize = config.m_fEllipsize.value();
 
     //
     // Only apply tree-specific config when tree mode is active.
@@ -565,6 +566,19 @@ HRESULT CCommandLine::HandleLongSwitch (LPCWSTR pszArg, int & cArg, WCHAR ** & p
     }
 
     //
+    //  Ellipsize switch — supports negation via --Ellipsize-
+    //
+
+    if (hr != S_OK)
+    {
+        if (_wcsicmp (strSwitch.c_str (), L"ellipsize") == 0)
+        {
+            m_fEllipsize = !fNegated;
+            hr = S_OK;
+        }
+    }
+
+    //
     //  Parameterized switches: --Depth=N, --TreeIndent=N
     //  Support both '=' separator and space separator
     //
@@ -678,6 +692,7 @@ bool CCommandLine::IsRecognizedLongSwitch (const wstring & strSwitch)
         L"debug",
         L"icons",
         L"tree",
+        L"ellipsize",
         L"depth",
         L"treeindent",
         L"size",
