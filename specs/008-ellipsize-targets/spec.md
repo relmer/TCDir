@@ -6,6 +6,14 @@
 **Status**: Draft
 **Input**: User description: "Middle-truncate long link target paths to prevent line wrapping"
 
+## Clarifications
+
+### Session 2026-04-19
+
+- Q: How should the middle-truncation algorithm select the split point? → A: Priority order: (1) keep first two dirs + …\ + leaf dir + filename, (2) first two dirs + …\ + filename, (3) first dir + …\ + filename. Always keep as much as fits at the highest priority level.
+- Q: What happens when even the minimum truncation form doesn't fit? → A: Show whatever fits, even if just the leaf filename with no path context (e.g., `→ Notepad.exe`)
+- Q: What color should the ellipsis character use? → A: Default attribute, NOT the source file color — must be visually distinct so it's obvious it's not part of the actual path
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 — Middle-Truncate Long Target Paths (Priority: P1)
@@ -64,14 +72,18 @@ A user who needs to see full target paths can disable middle-truncation using th
 - **Terminal width is very narrow** (< 80): Truncation still works; in extreme cases, even the leaf filename may be the only thing shown after `…`
 - **`…` would be longer than the truncated middle**: Don't truncate — show full path (truncation must actually save space)
 - **Wide mode (`/W`) and bare mode (`/B`)**: No target paths displayed in these modes, so ellipsize is not applicable
-- **Filename itself is very long**: Filename is never truncated; only the target path is subject to ellipsize. If the filename + metadata already exceeds the terminal width, the target is not displayed at all (or is shown as just `→ …`)
+- **Filename itself is very long**: Filename is never truncated; only the target path is subject to ellipsize. If even the leaf filename of the target doesn't fit, show as much of it as possible.
 
 ## Requirements *(mandatory)*
 
 ### Functional Requirements
 
 - **FR-001**: System MUST middle-truncate link target paths using `…` (U+2026) when the full line (metadata + filename + ` → ` + target) would exceed the terminal width
-- **FR-002**: Truncation MUST preserve the first path component(s) (drive/root) and the last path component (leaf filename), replacing intermediate directory components with `…`
+- **FR-002**: Truncation MUST follow this priority order for what to preserve:
+  1. First two directory components + `…\` + last directory component + leaf filename (e.g., `C:\Program Files\…\Notepad\Notepad.exe`)
+  2. First two directory components + `…\` + leaf filename (e.g., `C:\Program Files\…\Notepad.exe`)
+  3. First directory component + `…\` + leaf filename (e.g., `C:\…\Notepad.exe`)
+  The algorithm MUST use the highest-priority form that fits within the available width.
 - **FR-003**: System MUST NOT truncate target paths that fit within the terminal width
 - **FR-004**: System MUST NOT truncate the source filename — only the target path is subject to ellipsize
 - **FR-005**: System MUST apply ellipsize in both normal mode and tree mode
@@ -80,11 +92,12 @@ A user who needs to see full target paths can disable middle-truncation using th
 - **FR-008**: The `Ellipsize` switch MUST be configurable via `.tcdirconfig` and the `TCDIR` environment variable, following existing switch precedence (defaults < config file < env var < CLI)
 - **FR-009**: System MUST document the `--Ellipsize` switch in `-?` help output and `--Settings` display
 - **FR-010**: When truncation is disabled (`--Ellipsize-`), target paths MUST display in full, wrapping as before
+- **FR-011**: The `…` ellipsis character MUST be rendered using the `Default` color attribute, NOT the source file's color — it must be visually distinct from the surrounding path text to signal that path components were elided
 
 ### Key Entities
 
 - **Available Width**: The number of characters remaining on the current line after metadata columns, icon, filename, and ` → ` have been rendered. This is the maximum space the target path can occupy without wrapping.
-- **Ellipsis Character**: `…` (U+2026, HORIZONTAL ELLIPSIS) — a single character used to replace elided path components.
+- **Ellipsis Character**: `…` (U+2026, ELLIPSIS) — a single character used to replace elided path components.
 
 ## Success Criteria *(mandatory)*
 
