@@ -18,7 +18,7 @@ This document tracks which features have been ported and which are pending.
 | 006    | Config File Support      | #9       | Shipped            | v5.3          | Spec created       |               | `%USERPROFILE%\.rcdirconfig` persistent settings       |
 | 007    | Symlink/Junction Targets | #6       | Shipped            | v5.4          | Not started        |               | `→ target` display for junctions, symlinks, AppExecLinks |
 |        | Variable-width /W cols   | #10      | Open               |               |                    |               | Per-column variable widths like ls/eza                  |
-|        | Truncate long targets    | #11      | Open               |               |                    |               | Middle-truncate `→ target` to prevent line wrapping     |
+| 008    | Ellipsize Long Targets   | #11      | Shipped            | v5.5          | Not started        |               | Middle-truncate long target paths with `…`              |
 |        | Per-file git status      | #7       | Open               |               |                    |               |                                                         |
 |        | Cross-platform support   | #8       | Open               |               |                    |               | Linux + macOS                                           |
 
@@ -34,5 +34,5 @@ This document tracks which features have been ported and which are pending.
 
 | Project | Latest Release | Date       |
 | ------- | -------------- | ---------- |
-| TCDir   | v5.4.1461      | 2026-04-18 |
+| TCDir   | v5.5.1513      | 2026-04-19 |
 | RCDir   | v5.2.1399      | 2026-04-11 |
