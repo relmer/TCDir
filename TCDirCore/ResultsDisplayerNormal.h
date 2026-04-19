@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ResultsDisplayerWithHeaderAndFooter.h"
+#include "SizeFormat.h"
 
 
 
@@ -15,6 +16,7 @@ public:
     void DisplayFileResults (const CDirectoryInfo & di) override;
 
     static wstring   FormatAbbreviatedSize           (ULONGLONG cbSize);
+    static size_t    ComputeAvailableWidthForTarget  (size_t cxConsoleWidth, ESizeFormat eSizeFormat, size_t cchStringLengthOfMaxFileSize, bool fIconsActive, bool fDebug, bool fShowOwner, size_t cchMaxOwnerLength, size_t cchTreePrefix, size_t cchFileName);
 
 protected:
     const FILETIME & GetTimeFieldForDisplay          (const WIN32_FIND_DATA & wfd) const;

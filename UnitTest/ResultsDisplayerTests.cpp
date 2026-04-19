@@ -10,6 +10,7 @@
 #include "../TCDirCore/CommandLine.h"
 #include "../TCDirCore/DirectoryInfo.h"
 #include "../TCDirCore/IconMapping.h"
+#include "../TCDirCore/SizeFormat.h"
 
 
 
@@ -888,6 +889,130 @@ namespace UnitTest
             // 1 TB = 1099511627776 bytes
             wstring s = CResultsDisplayerNormal::FormatAbbreviatedSize (1099511627776ULL);
             Assert::AreEqual (L"1.00 TB", s.c_str());
+        }
+
+
+
+
+        //
+        // ComputeAvailableWidthForTarget tests
+        //
+
+        TEST_METHOD(AvailableWidth_NormalMode_AutoSize_IconsOn_ShortFilename)
+        {
+            // Normal mode, Auto size, icons on, 120-wide terminal, "python.exe" (10 chars)
+            // Expected: 21 (date) + 9 (attrs) + 9 (Auto size) + 4 (cloud w/icons) + 3 (icon) + 10 (filename) + 3 (arrow) = 59
+            // Available = 120 - 59 = 61
+
+            size_t avail = CResultsDisplayerNormal::ComputeAvailableWidthForTarget (
+                120, ESizeFormat::Auto, 1, true, false, false, 0, 0, 10);
+
+            Assert::AreEqual (size_t (61), avail);
+        }
+
+
+
+        TEST_METHOD(AvailableWidth_NormalMode_BytesSize_IconsOff_ShortFilename)
+        {
+            // Normal mode, Bytes size (max file size len = 1 → max(1,5) = 5 → 2+5 = 7), no icons, 120-wide
+            // Expected: 21 + 9 + 7 + 3 (cloud no icons) + 0 (no icon) + 10 + 3 = 53
+            // Available = 120 - 53 = 67
+
+            size_t avail = CResultsDisplayerNormal::ComputeAvailableWidthForTarget (
+                120, ESizeFormat::Bytes, 1, false, false, false, 0, 0, 10);
+
+            Assert::AreEqual (size_t (67), avail);
+        }
+
+
+
+        TEST_METHOD(AvailableWidth_NormalMode_AutoSize_IconsOn_LongFilename)
+        {
+            // 126-wide, icons on, Auto, "MicrosoftWindows.DesktopStickerEditorCentennial.exe" (51 chars)
+            // Expected: 21 + 9 + 9 + 4 + 3 + 51 + 3 = 100
+            // Available = 126 - 100 = 26
+
+            size_t avail = CResultsDisplayerNormal::ComputeAvailableWidthForTarget (
+                126, ESizeFormat::Auto, 1, true, false, false, 0, 0, 51);
+
+            Assert::AreEqual (size_t (26), avail);
+        }
+
+
+
+        TEST_METHOD(AvailableWidth_TreeMode_WithPrefix)
+        {
+            // Tree mode, depth 1, indent 4: prefix = "├── " = 4 chars
+            // 126-wide, icons on, Auto, "ActionsMcpHost.exe" (18 chars)
+            // Expected: 21 + 9 + 9 + 4 + 4 (prefix) + 3 (icon) + 18 + 3 = 71
+            // Available = 126 - 71 = 55
+
+            size_t avail = CResultsDisplayerNormal::ComputeAvailableWidthForTarget (
+                126, ESizeFormat::Auto, 1, true, false, false, 0, 4, 18);
+
+            Assert::AreEqual (size_t (55), avail);
+        }
+
+
+
+        TEST_METHOD(AvailableWidth_WithDebugAndOwner)
+        {
+            // 120-wide, icons on, Auto, debug on, owner on (max 15 chars), "test.exe" (8 chars)
+            // Expected: 21 + 9 + 9 + 4 + 14 (debug) + 16 (owner 15+1) + 3 (icon) + 8 + 3 = 87
+            // Available = 120 - 87 = 33
+
+            size_t avail = CResultsDisplayerNormal::ComputeAvailableWidthForTarget (
+                120, ESizeFormat::Auto, 1, true, true, true, 15, 0, 8);
+
+            Assert::AreEqual (size_t (33), avail);
+        }
+
+
+
+        TEST_METHOD(AvailableWidth_NarrowTerminal_ReturnsZero)
+        {
+            // Terminal narrower than metadata — available should be 0, not underflow
+            // 50-wide, icons on, "VeryLongFilenameExceedsEverything.exe" (36 chars)
+            // Expected: 21 + 9 + 9 + 4 + 3 + 36 + 3 = 85 > 50
+            // Available = 0
+
+            size_t avail = CResultsDisplayerNormal::ComputeAvailableWidthForTarget (
+                50, ESizeFormat::Auto, 1, true, false, false, 0, 0, 36);
+
+            Assert::AreEqual (size_t (0), avail);
+        }
+
+
+
+        TEST_METHOD(AvailableWidth_BytesMode_LargeFileSize)
+        {
+            // Bytes mode, largest file = "1,234,567,890" (13 chars), max(13,5) = 13, size col = 2+13 = 15
+            // 120-wide, no icons, "test.txt" (8 chars)
+            // Expected: 21 + 9 + 15 + 3 (cloud no icons) + 0 + 8 + 3 = 59
+            // Available = 120 - 59 = 61
+
+            size_t avail = CResultsDisplayerNormal::ComputeAvailableWidthForTarget (
+                120, ESizeFormat::Bytes, 13, false, false, false, 0, 0, 8);
+
+            Assert::AreEqual (size_t (61), avail);
+        }
+
+
+
+        TEST_METHOD(AvailableWidth_AttributeCount_Matches_FileAttributeMap)
+        {
+            // Verify the attribute count used in the calculation matches the actual map size
+            // This prevents the bug where we hardcoded 7 instead of 9
+
+            size_t avail126 = CResultsDisplayerNormal::ComputeAvailableWidthForTarget (
+                126, ESizeFormat::Auto, 1, true, false, false, 0, 0, 10);
+
+            // 21 + _countof(k_rgFileAttributeMap) + 9 + 4 + 3 + 10 + 3 = 50 + _countof
+            // At 9 attrs: 59 → avail 67. At 7 attrs: 57 → avail 69. Difference = 2.
+            // We expect 9 attrs (avail = 67 at 126-wide)
+            size_t expected = 126 - (21 + 9 + 9 + 4 + 3 + 10 + 3);
+
+            Assert::AreEqual (expected, avail126, L"Attribute count should match k_rgFileAttributeMap");
         }
 
 

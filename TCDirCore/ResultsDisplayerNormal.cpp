@@ -109,23 +109,16 @@ void CResultsDisplayerNormal::DisplayFileResults (const CDirectoryInfo & di)
 
             if (fEllipsize)
             {
-                // Compute available width for the target path
-                size_t cchSizeColumn = (m_cmdLinePtr->m_eSizeFormat == ESizeFormat::Auto)
-                                     ? 9                                            // Auto: "  %7s" = 9 fixed
-                                     : 2 + max (cchStringLengthOfMaxFileSize, (size_t) 5);  // Bytes: "  %*s"
-
-                size_t cchUsed = 21                                          // date+time
-                               + 9                                           // attributes (9 flags in k_rgFileAttributeMap)
-                               + cchSizeColumn                               // file size
-                               + (m_fIconsActive ? 4 : 3)                    // cloud status (always present)
-                               + (m_cmdLinePtr->m_fDebug ? 14 : 0)           // debug attrs
-                               + (m_cmdLinePtr->m_fShowOwner ? cchMaxOwnerLength + 1 : 0)
-                               + (m_fIconsActive ? 3 : 0)                    // icon glyph
-                               + wcslen (fileInfo.cFileName)                  // filename
-                               + 3;                                           // " \u2192 "
-
-                size_t cxConsoleWidth = m_consolePtr->GetWidth ();
-                size_t availableWidth = (cchUsed < cxConsoleWidth) ? cxConsoleWidth - cchUsed : 0;
+                size_t availableWidth = ComputeAvailableWidthForTarget (
+                    m_consolePtr->GetWidth (),
+                    m_cmdLinePtr->m_eSizeFormat,
+                    cchStringLengthOfMaxFileSize,
+                    m_fIconsActive,
+                    m_cmdLinePtr->m_fDebug,
+                    m_cmdLinePtr->m_fShowOwner,
+                    cchMaxOwnerLength,
+                    0,
+                    wcslen (fileInfo.cFileName));
 
                 SEllipsizedPath ellipsized = EllipsizePath (fileInfo.m_strReparseTarget, availableWidth);
 
@@ -162,6 +155,49 @@ void CResultsDisplayerNormal::DisplayFileResults (const CDirectoryInfo & di)
 
 Error:
     return;
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CResultsDisplayerNormal::ComputeAvailableWidthForTarget
+//
+//  Calculate the number of characters remaining for the reparse target path
+//  after all metadata columns, icon, filename, and arrow have been accounted
+//  for.  Shared by both Normal and Tree displayers.
+//
+////////////////////////////////////////////////////////////////////////////////
+
+size_t CResultsDisplayerNormal::ComputeAvailableWidthForTarget (
+    size_t     cxConsoleWidth,
+    ESizeFormat eSizeFormat,
+    size_t     cchStringLengthOfMaxFileSize,
+    bool       fIconsActive,
+    bool       fDebug,
+    bool       fShowOwner,
+    size_t     cchMaxOwnerLength,
+    size_t     cchTreePrefix,
+    size_t     cchFileName)
+{
+    size_t cchSizeColumn = (eSizeFormat == ESizeFormat::Auto)
+                         ? 9                                                    // Auto: "  %7s" = 9 fixed
+                         : 2 + max (cchStringLengthOfMaxFileSize, (size_t) 5);  // Bytes: "  %*s"
+
+    size_t cchUsed = 21                                          // date+time
+                   + _countof (k_rgFileAttributeMap)             // attributes
+                   + cchSizeColumn                               // file size
+                   + (fIconsActive ? 4 : 3)                      // cloud status (always present)
+                   + (fDebug ? 14 : 0)                           // debug attrs
+                   + (fShowOwner ? cchMaxOwnerLength + 1 : 0)    // owner
+                   + cchTreePrefix                               // tree connector prefix (0 for normal mode)
+                   + (fIconsActive ? 3 : 0)                      // icon glyph
+                   + cchFileName                                 // filename
+                   + 3;                                           // " → "
+
+    return (cchUsed < cxConsoleWidth) ? cxConsoleWidth - cchUsed : 0;
 }
 
 

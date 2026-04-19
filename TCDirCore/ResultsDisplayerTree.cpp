@@ -194,24 +194,16 @@ void CResultsDisplayerTree::DisplaySingleEntry (const FileInfo & entry, STreeCon
 
         if (fEllipsize)
         {
-            // Compute available width for the target path (same as normal mode + tree prefix)
-            size_t cchSizeColumn = (m_cmdLinePtr->m_eSizeFormat == ESizeFormat::Auto)
-                                 ? 9                                                        // Auto: "  %7s" = 9 fixed
-                                 : 2 + max (m_cchStringLengthOfMaxFileSize, (size_t) 5);    // Bytes: "  %*s"
-
-            size_t cchUsed = 21                                                          // date+time
-                           + 9                                                            // attributes (9 flags)
-                           + cchSizeColumn                                                // file size
-                           + (m_fIconsActive ? 4 : 3)                                     // cloud status (always present)
-                           + (m_cmdLinePtr->m_fDebug ? 14 : 0)                            // debug attrs
-                           + (m_cmdLinePtr->m_fShowOwner ? m_cchMaxOwnerLength + 1 : 0)   // owner
-                           + prefix.length ()                                             // tree connector prefix
-                           + (m_fIconsActive ? 3 : 0)                                     // icon glyph
-                           + wcslen (entry.cFileName)                                     // filename
-                           + 3;                                                            // " → "
-
-            size_t cxConsoleWidth = m_consolePtr->GetWidth ();
-            size_t availableWidth = (cchUsed < cxConsoleWidth) ? cxConsoleWidth - cchUsed : 0;
+            size_t availableWidth = ComputeAvailableWidthForTarget (
+                m_consolePtr->GetWidth (),
+                m_cmdLinePtr->m_eSizeFormat,
+                m_cchStringLengthOfMaxFileSize,
+                m_fIconsActive,
+                m_cmdLinePtr->m_fDebug,
+                m_cmdLinePtr->m_fShowOwner,
+                m_cchMaxOwnerLength,
+                prefix.length (),
+                wcslen (entry.cFileName));
 
             SEllipsizedPath ellipsized = EllipsizePath (entry.m_strReparseTarget, availableWidth);
 
