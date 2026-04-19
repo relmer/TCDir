@@ -11,7 +11,7 @@
 ### Session 2026-04-19
 
 - Q: How should the middle-truncation algorithm select the split point? → A: Priority order: (1) keep first two dirs + …\ + leaf dir + filename, (2) first two dirs + …\ + filename, (3) first dir + …\ + filename. Always keep as much as fits at the highest priority level.
-- Q: What happens when even the minimum truncation form doesn't fit? → A: Show whatever fits, even if just the leaf filename with no path context (e.g., `→ Notepad.exe`)
+- Q: What happens when even the minimum truncation form doesn't fit? → A: Show the leaf filename truncated with a trailing `…` to indicate cutoff (e.g., `→ DesktopStickerEdito…`)
 - Q: What color should the ellipsis character use? → A: Default attribute, NOT the source file color — must be visually distinct so it's obvious it's not part of the actual path
 
 ## User Scenarios & Testing *(mandatory)*
@@ -72,7 +72,7 @@ A user who needs to see full target paths can disable middle-truncation using th
 - **Terminal width is very narrow** (< 80): Truncation still works; in extreme cases, even the leaf filename may be the only thing shown after `…`
 - **`…` would be longer than the truncated middle**: Don't truncate — show full path (truncation must actually save space)
 - **Wide mode (`/W`) and bare mode (`/B`)**: No target paths displayed in these modes, so ellipsize is not applicable
-- **Filename itself is very long**: Filename is never truncated; only the target path is subject to ellipsize. If even the leaf filename of the target doesn't fit, show as much of it as possible.
+- **Filename itself is very long**: Filename is never truncated; only the target path is subject to ellipsize. If even the leaf filename of the target doesn't fit, truncate it with a trailing `…` to indicate cutoff.
 
 ## Requirements *(mandatory)*
 

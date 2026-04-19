@@ -103,11 +103,12 @@ namespace UnitTest
             wstring target = L"C:\\Program Files\\WindowsApps\\Microsoft.WindowsPackageManagerManifestCreator_1.12.8.0_x64__8wekyb3d8bbwe\\WingetCreateCLI\\WingetCreateCLI.exe";
 
             // Too narrow for even priority 3: "C:\" + "…" + "\WingetCreateCLI.exe" = 3 + 1 + 21 = 25
-            // But wide enough for the leaf filename itself (21 chars)
-            SEllipsizedPath result = EllipsizePath (target, 22);
+            // But wide enough for leaf with trailing ellipsis
+            SEllipsizedPath result = EllipsizePath (target, 15);
 
-            Assert::IsFalse (result.fTruncated, L"Leaf-only fallback is not flagged as truncated");
-            Assert::AreEqual (L"WingetCreateCLI.exe", result.prefix.c_str ());
+            Assert::IsTrue (result.fTruncated, L"Truncated leaf should be flagged as truncated");
+            Assert::AreEqual (size_t (14), result.prefix.length (), L"Prefix should be availableWidth - 1 for trailing ellipsis");
+            Assert::IsTrue (result.suffix.empty (), L"Suffix should be empty for trailing ellipsis");
         }
 
 
@@ -128,16 +129,15 @@ namespace UnitTest
 
 
 
-        TEST_METHOD(EllipsizePath_TwoComponents_NarrowWidth_LeafOnly)
+        TEST_METHOD(EllipsizePath_TwoComponents_NarrowWidth_LeafWithTrailingEllipsis)
         {
             wstring target = L"C:\\file.exe";
 
-            // At width 5, only the leaf fits partially — falls through to leaf substr
+            // At width 5, leaf "file.exe" (8 chars) > 5, so trailing ellipsis: 4 chars + …
             SEllipsizedPath result = EllipsizePath (target, 5);
 
-            Assert::IsFalse (result.fTruncated);
-            // "file." = 5 chars (truncated leaf)
-            Assert::AreEqual (size_t (5), result.prefix.length ());
+            Assert::IsTrue (result.fTruncated, L"Truncated leaf should be flagged");
+            Assert::AreEqual (size_t (4), result.prefix.length ());
         }
 
 

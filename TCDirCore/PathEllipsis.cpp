@@ -140,11 +140,17 @@ SEllipsizedPath EllipsizePath (const wstring & path, size_t availableWidth)
     // (need at least: root + middle + leaf)
     if (dirs.size () < 2)
     {
-        // Fallback: just show the leaf, truncated if needed
+        // Fallback: just show the leaf, with trailing ellipsis if truncated
         if (leaf.length () <= availableWidth)
         {
             result.prefix     = leaf;
             result.fTruncated = false;
+        }
+        else if (availableWidth >= 2)
+        {
+            result.prefix     = leaf.substr (0, availableWidth - 1);
+            result.suffix     = L"";
+            result.fTruncated = true;
         }
         else
         {
@@ -190,11 +196,18 @@ SEllipsizedPath EllipsizePath (const wstring & path, size_t availableWidth)
         }
     }
 
-    // Priority 4: Just the leaf filename
+    // Priority 4: Just the leaf filename (with trailing … if truncated)
     if (leaf.length () <= availableWidth)
     {
         result.prefix     = leaf;
         result.fTruncated = false;
+    }
+    else if (availableWidth >= 2)
+    {
+        // Truncate leaf with trailing ellipsis: "DesktopStickerEdito…"
+        result.prefix     = leaf.substr (0, availableWidth - 1);
+        result.suffix     = L"";
+        result.fTruncated = true;
     }
     else
     {
