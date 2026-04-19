@@ -65,16 +65,20 @@ static bool TryBuildTruncated (
     size_t                  availableWidth,
     SEllipsizedPath       & result)
 {
-    // Build prefix: "dir1\dir2\"
+    // Build prefix: "dir1\dir2\" (skip trailing \ if dir already ends with one)
     wstring prefix;
 
     for (const auto & dir : prefixDirs)
     {
         prefix += dir;
-        prefix += L'\\';
+
+        if (!prefix.ends_with (L'\\'))
+        {
+            prefix += L'\\';
+        }
     }
 
-    // Build suffix: "\dir\leaf" or "\leaf"
+    // Build suffix: "\dir\leaf" or "\leaf" (skip leading \ if prefix already provides one)
     wstring suffix;
 
     for (const auto & dir : suffixDirs)
