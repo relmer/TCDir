@@ -18,7 +18,7 @@ struct SEllipsizedPath
 {
     wstring prefix;       // Path text before the ellipsis (or full path if not truncated)
     wstring suffix;       // Path text after the ellipsis (empty if not truncated)
-    bool    fTruncated;   // true if the path was middle-truncated
+    bool    fTruncated = false;   // true if the path was middle-truncated
 };
 
 

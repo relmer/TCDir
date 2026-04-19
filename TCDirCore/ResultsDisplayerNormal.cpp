@@ -110,9 +110,13 @@ void CResultsDisplayerNormal::DisplayFileResults (const CDirectoryInfo & di)
             if (fEllipsize)
             {
                 // Compute available width for the target path
+                size_t cchSizeColumn = (m_cmdLinePtr->m_eSizeFormat == ESizeFormat::Auto)
+                                     ? 9                                            // Auto: "  %7s" = 9 fixed
+                                     : 2 + max (cchStringLengthOfMaxFileSize, (size_t) 5);  // Bytes: "  %*s"
+
                 size_t cchUsed = 21                                          // date+time
                                + 9                                           // attributes (9 flags in k_rgFileAttributeMap)
-                               + 2 + max (cchStringLengthOfMaxFileSize, (size_t) 5)  // file size
+                               + cchSizeColumn                               // file size
                                + (m_fIconsActive ? 4 : 3)                    // cloud status (always present)
                                + (m_cmdLinePtr->m_fDebug ? 14 : 0)           // debug attrs
                                + (m_cmdLinePtr->m_fShowOwner ? cchMaxOwnerLength + 1 : 0)
