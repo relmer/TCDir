@@ -27,8 +27,7 @@ Settings can be persisted in a config file (`~\.tcdirconfig`), overridden via th
 
 | Version | Highlights |
 | :---: | :--- |
-| **5.5** | Ellipsize long link target paths (`…`) to prevent line wrapping; `--Ellipsize` switch |
-| **5.4** | Symlink, junction, and AppExecLink target display (`→ target`) in normal and tree modes |
+| **5.4** | Symlink, junction, and AppExecLink target display (`→ target`); ellipsize long target paths (`…`) |
 | **5.3** | Config file support (`.tcdirconfig`) — persistent settings without environment variables |
 | **5.2** | Interactive PowerShell alias configuration (`--set-aliases`, `--get-aliases`, `--remove-aliases`) |
 | **5.1** | `--Tree` hierarchical directory view with depth control |
