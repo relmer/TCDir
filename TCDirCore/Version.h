@@ -4,7 +4,7 @@
 // The build number and year are automatically updated by the pre-build script
 
 #define VERSION_MAJOR 5
-#define VERSION_MINOR 4
+#define VERSION_MINOR 5
 #define VERSION_BUILD 1499
 #define VERSION_YEAR 2026
 
