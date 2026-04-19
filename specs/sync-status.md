@@ -7,16 +7,20 @@ This document tracks which features have been ported and which are pending.
 
 ## Sync Table
 
-| Spec #   | Feature                | TCDir Status       | TCDir Version | RCDir Status       | RCDir Version | Notes                                                  |
-| --- | ---------------------- | ------------------ | ------------- | ------------------ | ------------- | ------------------------------------------------------ |
-| 001 | Cloud File Status      | Shipped            | v4.2          | Shipped            | v5.0          | Folded into RCDir's 002 port spec (no separate 001)    |
-| 002 | Full Application Spec  | Shipped            | v4.2          | Shipped            | v5.0          | Complete port — 100% output-parity target               |
-| 003 | Nerd Font File Icons   | Shipped            | v5.0.1038     | Shipped            | v5.0          | Ported from TCDir's 9-phase implementation              |
-| 004 | Tree View Display Mode | Shipped            | v5.1.1106     | Shipped            | v5.1.1132     | 64 tasks, 314 tests — output-parity verified            |
-| Fix | Pure Mask Dir Fix      | Shipped            | v5.1.1149     | Shipped            | v5.1.TBD      | `tcdir x64` now lists dir contents like `tcdir .\x64`  |
-| 005 | PowerShell Aliases     | Shipped            | v5.2.1346     | Shipped            | v5.2          | `--set-aliases`, `--get-aliases`, `--remove-aliases`   |
-| 006 | Config File Support    | Shipped            | v5.3          | Spec created       |               | `%USERPROFILE%\.rcdirconfig` persistent settings       |
-| 007 | Symlink/Junction Targets | Shipped          | v5.4          | Not started        |               | `→ target` display for junctions, symlinks, AppExecLinks |
+| Spec # | Feature                  | GH Issue | TCDir Status       | TCDir Version | RCDir Status       | RCDir Version | Notes                                                  |
+| ---    | ----------------------   | -------- | ------------------ | ------------- | ------------------ | ------------- | ------------------------------------------------------ |
+| 001    | Cloud File Status        |          | Shipped            | v4.2          | Shipped            | v5.0          | Folded into RCDir's 002 port spec (no separate 001)    |
+| 002    | Full Application Spec    |          | Shipped            | v4.2          | Shipped            | v5.0          | Complete port — 100% output-parity target               |
+| 003    | Nerd Font File Icons     |          | Shipped            | v5.0.1038     | Shipped            | v5.0          | Ported from TCDir's 9-phase implementation              |
+| 004    | Tree View Display Mode   |          | Shipped            | v5.1.1106     | Shipped            | v5.1.1132     | 64 tasks, 314 tests — output-parity verified            |
+| Fix    | Pure Mask Dir Fix        |          | Shipped            | v5.1.1149     | Shipped            | v5.1.TBD      | `tcdir x64` now lists dir contents like `tcdir .\x64`  |
+| 005    | PowerShell Aliases       |          | Shipped            | v5.2.1346     | Shipped            | v5.2          | `--set-aliases`, `--get-aliases`, `--remove-aliases`   |
+| 006    | Config File Support      | #9       | Shipped            | v5.3          | Spec created       |               | `%USERPROFILE%\.rcdirconfig` persistent settings       |
+| 007    | Symlink/Junction Targets | #6       | Shipped            | v5.4          | Not started        |               | `→ target` display for junctions, symlinks, AppExecLinks |
+|        | Variable-width /W cols   | #10      | Open               |               |                    |               | Per-column variable widths like ls/eza                  |
+|        | Truncate long targets    | #11      | Open               |               |                    |               | Middle-truncate `→ target` to prevent line wrapping     |
+|        | Per-file git status      | #7       | Open               |               |                    |               |                                                         |
+|        | Cross-platform support   | #8       | Open               |               |                    |               | Linux + macOS                                           |
 
 ## Workflow
 

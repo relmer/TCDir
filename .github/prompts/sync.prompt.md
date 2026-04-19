@@ -33,6 +33,22 @@ Read `TCDir/specs/sync-status.md`. Look for any row where:
 
 Select the **first** such item. Before proceeding, **verify it's actually unsynced** (see Validation below). If it turns out to be already done, update sync-status.md to reflect reality and move to the next item.
 
+### Priority A.5: Reconcile GitHub issues with sync table
+
+Run `gh issue list --state all --json number,title,state,labels` in the TCDir workspace. For each issue:
+1. Check whether a row with that issue number exists in the `GH Issue` column of `sync-status.md`
+2. If an issue is missing from the table, add a new row:
+   - Spec # blank (unless a spec directory exists for it)
+   - Feature = issue title (shortened if needed)
+   - GH Issue = `#N`
+   - TCDir Status = "Shipped" if issue is closed, "Open" if still open
+   - RCDir Status = blank (to be determined by Validation)
+3. For issues already in the table, verify the TCDir Status matches the issue state (open vs closed). Update if stale.
+4. After reconciliation, if any newly added rows have TCDir Status = "Shipped" and RCDir Status is blank, run the Validation check on each and proceed with the first genuinely unsynced item.
+
+**Filter out issues that do NOT need porting** (same criteria as Priority C):
+- CI/workflow issues, TCDir-specific build tooling, C++-only bugs that can't exist in Rust
+
 ### Validation: Confirm the item is truly unsynced
 
 sync-status.md may be stale. Before starting work on any item, verify it hasn't already been ported:
