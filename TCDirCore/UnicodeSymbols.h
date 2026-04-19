@@ -41,7 +41,9 @@ namespace UnicodeSymbols
     static constexpr WCHAR Copyright        = L'\u00A9';  // © - Copyright symbol
     static constexpr WCHAR Overline         = L'\u203E';  // ‾ - Overline for underlining text above
     static constexpr WCHAR EmDash           = L'\u2014';  // — - Em dash
-    static constexpr WCHAR RightArrow       = L'\u2192';  // → - Rightwards arrow for link targets    static constexpr WCHAR Ellipsis         = L'\\u2026';  // … - Ellipsis for truncated paths
+    static constexpr WCHAR RightArrow       = L'\u2192';  // → - Rightwards arrow for link targets
+    static constexpr WCHAR Ellipsis         = L'\u2026';  // … - Ellipsis for truncated paths
+    
     //
     // Interactive menu symbols
     //
