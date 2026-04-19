@@ -153,12 +153,13 @@ public:
     optional<bool>                             m_fShowStreams;
     optional<bool>                             m_fIcons;
     optional<bool>                             m_fTree;
+    optional<bool>                             m_fEllipsize;
     optional<int>                              m_cMaxDepth;
     optional<int>                              m_cTreeIndent;
     optional<ESizeFormat>                      m_eSizeFormat;
 
     // Switch and parameter source tracking
-    EAttributeSource                           m_rgSwitchSources[9]   = { EAttributeSource::Default };
+    EAttributeSource                           m_rgSwitchSources[10]  = { EAttributeSource::Default };
     EAttributeSource                           m_eMaxDepthSource      = EAttributeSource::Default;
     EAttributeSource                           m_eTreeIndentSource    = EAttributeSource::Default;
     EAttributeSource                           m_eSizeFormatSource    = EAttributeSource::Default;
@@ -223,6 +224,6 @@ protected:
     static const SSwitchMapping s_switchMappings[];
 
 public:
-    static constexpr size_t     SWITCH_COUNT = 9;
+    static constexpr size_t     SWITCH_COUNT = 10;
     static const optional<bool> CConfig::* s_switchMemberOrder[SWITCH_COUNT];
 };

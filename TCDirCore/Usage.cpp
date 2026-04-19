@@ -116,8 +116,9 @@ static constexpr SSwitchInfo s_kSwitchInfos[] =
     { L"B",       L"Bare listing format"            },
     { L"Owner",   L"Display file ownership"         },
     { L"Streams", L"Display alternate data streams" },
-    { L"Icons",   L"Enable file-type icons"         },
-    { L"Tree",    L"Display directory tree view"    },
+    { L"Icons",      L"Enable file-type icons"         },
+    { L"Tree",       L"Display directory tree view"    },
+    { L"Ellipsize",  L"Truncate long link target paths" },
 };
 
 
@@ -266,6 +267,7 @@ void CUsage::DisplaySynopsis (CConsole & console, wchar_t chPrefix)
         format (L"[{{InformationHighlight}}{0}Streams{{Information}}] ", pszLong),
         format (L"[{{InformationHighlight}}{0}Icons{{Information}}] ", pszLong),
         format (L"[{{InformationHighlight}}{0}Tree{{Information}}] ",  pszLong),
+        format (L"[{{InformationHighlight}}{0}Ellipsize{{Information}}] ",  pszLong),
         format (L"[{{InformationHighlight}}{0}Depth{{Information}}={{InformationHighlight}}N{{Information}}] ", pszLong),
         format (L"[{{InformationHighlight}}{0}TreeIndent{{Information}}={{InformationHighlight}}N{{Information}}] ", pszLong),
         format (L"[{{InformationHighlight}}{0}Size{{Information}}={{InformationHighlight}}Auto{{Information}}|{{InformationHighlight}}Bytes{{Information}}]", pszLong),
@@ -384,6 +386,7 @@ void CUsage::DisplayUsage (CConsole & console, wchar_t chPrefix, optional<bool> 
         L"  {{InformationHighlight}}{1}Streams{{Information}}         {6}Displays alternate data streams (NTFS only).\n"
         L"  {{InformationHighlight}}{1}Icons{{Information}}           {6}Enables file-type icons (Nerd Font required). Use {{InformationHighlight}}{1}Icons-{{Information}} to disable.\n"
         L"  {{InformationHighlight}}{1}Tree{{Information}}            {6}Displays a hierarchical directory tree view. Use {{InformationHighlight}}{1}Tree-{{Information}} to disable.\n"
+        L"  {{InformationHighlight}}{1}Ellipsize{{Information}}        {6}Truncates long link target paths with \u2026 to prevent line wrapping. Default: on. Use {{InformationHighlight}}{1}Ellipsize-{{Information}} to disable.\n"
         L"  {{InformationHighlight}}{1}Depth{{Information}}={{InformationHighlight}}N{{Information}}         {6}Limits tree depth to N levels (requires {{InformationHighlight}}{1}Tree{{Information}}).\n"
         L"  {{InformationHighlight}}{1}TreeIndent{{Information}}={{InformationHighlight}}N{{Information}}    {6}Sets tree indent width (1-8, default 4; requires {{InformationHighlight}}{1}Tree{{Information}}).\n"
         L"  {{InformationHighlight}}{1}Size{{Information}}={{InformationHighlight}}Auto{{Information}}|{{InformationHighlight}}Bytes{{Information}} {6}File size format: {{InformationHighlight}}Auto{{Information}} = abbreviated (KB/MB/GB), {{InformationHighlight}}Bytes{{Information}} = exact with commas.\n"
@@ -637,6 +640,7 @@ void CUsage::DisplaySwitchConfiguration (CConsole & console, int columnWidthAttr
         &config.m_fShowStreams,
         &config.m_fIcons,
         &config.m_fTree,
+        &config.m_fEllipsize,
     };
 
     static_assert (_countof (switchValues) == _countof (s_kSwitchInfos), "Switch arrays must match");
@@ -1560,6 +1564,7 @@ static void DisplayEnvVarSwitchesSection (CConsole & console, const CConfig & co
         &config.m_fShowStreams,
         &config.m_fIcons,
         &config.m_fTree,
+        &config.m_fEllipsize,
     };
 
     static_assert (_countof (switchValues) == _countof (s_kSwitchInfos), "Switch arrays must match");
