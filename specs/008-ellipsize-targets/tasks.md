@@ -33,7 +33,7 @@
 - [ ] T007 Add `Ellipsize` and `Ellipsize-` entries to `s_switchMappings[]` in TCDirCore/Config.cpp; add to `s_switchMemberOrder[]`; bump `SWITCH_COUNT` from 9 to 10
 - [ ] T008 Add `optional<bool> m_fEllipsize` to CCommandLine in TCDirCore/CommandLine.h
 - [ ] T009 Parse `--Ellipsize` / `--Ellipsize-` in `HandleLongSwitch()` in TCDirCore/CommandLine.cpp; add to `IsRecognizedLongSwitch()` list; add to `ApplyConfigDefaults()`
-- [ ] T010 [P] Add `--Ellipsize` synopsis entry, detail entry, and `s_kSwitchInfos[]` entry in TCDirCore/Usage.cpp
+- [ ] T010 [P] Add `--Ellipsize` synopsis entry, detail entry, and `s_kSwitchInfos[]` entry in TCDirCore/Usage.cpp (note: `--Settings` display is auto-covered by adding to `s_switchMemberOrder` in T007)
 
 **Checkpoint**: Build compiles, `--Ellipsize` recognized by CLI, shows in `-?` help. No display effect yet.
 
@@ -46,13 +46,14 @@
 - [ ] T011 Create UnitTest/PathEllipsisTests.cpp — test short path passthrough: `AzureVpn.exe` target `C:\Windows\system32\SystemUWPLauncher.exe` at width 80 returns full path, `fTruncated = false`
 - [ ] T012 [P] Extend PathEllipsisTests.cpp — test priority 1 truncation (two dirs + leaf dir + filename): `notepad.exe` target at width 60, verify `C:\Program Files\…\Notepad\Notepad.exe`
 - [ ] T013 [P] Extend PathEllipsisTests.cpp — test priority 2 truncation (two dirs + filename): `wingetcreate.exe` target at width 40, verify `C:\Program Files\…\WingetCreateCLI.exe`
-- [ ] T014 [P] Extend PathEllipsisTests.cpp — test priority 3 truncation (one dir + filename): target at width 25, verify `C:\…\WingetCreateCLI.exe`
+- [ ] T014 [P] Extend PathEllipsisTests.cpp — test priority 3 truncation (one dir + filename): use crafted path `C:\LongDirName\SubDir1\SubDir2\target.exe` at a width that forces exactly priority 3 (first dir + `…\` + filename fits, but first two dirs do not)
 - [ ] T015 [P] Extend PathEllipsisTests.cpp — test priority 4 fallback (leaf only): target at very narrow width, verify just `WingetCreateCLI.exe`
 - [ ] T016 [P] Extend PathEllipsisTests.cpp — test two-component path `C:\file.exe` at narrow width: never truncated (nothing to elide)
 - [ ] T017 [P] Extend PathEllipsisTests.cpp — test relative path `..\..\shared\config.yml`: passthrough (short paths not truncated)
 - [ ] T018 [P] Extend PathEllipsisTests.cpp — test `MicrosoftWindows.DesktopStickerEditorCentennial.exe` target at width 50 (long filename + long target — most aggressive truncation)
 - [ ] T019 [P] Extend PathEllipsisTests.cpp — test `GameBarElevatedFT_Alias.exe` target at 120-wide to verify correct priority level selected
 - [ ] T020 Add PathEllipsisTests.cpp to UnitTest/UnitTest.vcxproj
+- [ ] T020a [P] Add unit test(s) validating the available-width calculation formula in ResultsDisplayerNormal — use known metadata column widths (date=21, attrs=7, size=9, cloud=3, icon=3) and verify the computed available width matches expectations for a given console width and filename length
 
 **Checkpoint**: All EllipsizePath tests pass. Build with `Build + Test Debug (current arch)`.
 

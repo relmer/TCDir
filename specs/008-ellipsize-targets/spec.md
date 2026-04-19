@@ -84,7 +84,7 @@ A user who needs to see full target paths can disable middle-truncation using th
   2. First two directory components + `…\` + leaf filename (e.g., `C:\Program Files\…\Notepad.exe`)
   3. First directory component + `…\` + leaf filename (e.g., `C:\…\Notepad.exe`)
   The algorithm MUST use the highest-priority form that fits within the available width.
-- **FR-003**: System MUST NOT truncate target paths that fit within the terminal width
+- **FR-003**: System MUST NOT truncate target paths that fit within the terminal width. Paths with fewer than 3 components (e.g., `C:\file.exe`) are never truncated — there are no intermediate directories to elide.
 - **FR-004**: System MUST NOT truncate the source filename — only the target path is subject to ellipsize
 - **FR-005**: System MUST apply ellipsize in both normal mode and tree mode
 - **FR-006**: In tree mode, the available width calculation MUST account for tree connector prefix width and indentation depth
