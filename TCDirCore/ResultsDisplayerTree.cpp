@@ -196,9 +196,9 @@ void CResultsDisplayerTree::DisplaySingleEntry (const FileInfo & entry, STreeCon
         {
             // Compute available width for the target path (same as normal mode + tree prefix)
             size_t cchUsed = 21                                                          // date+time
-                           + 7                                                            // attributes
+                           + 9                                                            // attributes (9 flags)
                            + 2 + max (m_cchStringLengthOfMaxFileSize, (size_t) 5)         // file size
-                           + (m_fInSyncRoot ? 3 : 0)                                      // cloud status
+                           + (m_fIconsActive ? 4 : 3)                                     // cloud status (always present)
                            + (m_cmdLinePtr->m_fDebug ? 14 : 0)                            // debug attrs
                            + (m_cmdLinePtr->m_fShowOwner ? m_cchMaxOwnerLength + 1 : 0)   // owner
                            + prefix.length ()                                             // tree connector prefix

@@ -111,9 +111,9 @@ void CResultsDisplayerNormal::DisplayFileResults (const CDirectoryInfo & di)
             {
                 // Compute available width for the target path
                 size_t cchUsed = 21                                          // date+time
-                               + 7                                           // attributes
+                               + 9                                           // attributes (9 flags in k_rgFileAttributeMap)
                                + 2 + max (cchStringLengthOfMaxFileSize, (size_t) 5)  // file size
-                               + (fInSyncRoot ? 3 : 0)                       // cloud status
+                               + (m_fIconsActive ? 4 : 3)                    // cloud status (always present)
                                + (m_cmdLinePtr->m_fDebug ? 14 : 0)           // debug attrs
                                + (m_cmdLinePtr->m_fShowOwner ? cchMaxOwnerLength + 1 : 0)
                                + (m_fIconsActive ? 3 : 0)                    // icon glyph
