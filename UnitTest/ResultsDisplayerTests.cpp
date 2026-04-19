@@ -74,6 +74,12 @@ namespace UnitTest
         fd.nFileSizeLow      = static_cast<DWORD>(ullSize & 0xFFFFFFFF);
         fd.nFileSizeHigh     = static_cast<DWORD>(ullSize >> 32);
 
+        // Set a valid timestamp (2026-01-01 00:00:00 UTC) to avoid EHM assertion in date rendering
+        SYSTEMTIME st = { 2026, 1, 0, 1, 0, 0, 0, 0 };
+        SystemTimeToFileTime (&st, &fd.ftLastWriteTime);
+        fd.ftCreationTime    = fd.ftLastWriteTime;
+        fd.ftLastAccessTime  = fd.ftLastWriteTime;
+
         wcscpy_s (fd.cFileName, pszName);
 
         return fd;
@@ -882,6 +888,128 @@ namespace UnitTest
             // 1 TB = 1099511627776 bytes
             wstring s = CResultsDisplayerNormal::FormatAbbreviatedSize (1099511627776ULL);
             Assert::AreEqual (L"1.00 TB", s.c_str());
+        }
+
+
+
+
+        //
+        // Ellipsize integration tests — verify normal mode rendering with mocked data
+        //
+
+        TEST_METHOD(Ellipsize_NormalMode_LongTarget_ContainsEllipsis)
+        {
+            auto cmd = std::make_shared<CCommandLine>();
+            auto con = std::make_shared<CCapturingConsole> ();
+            auto cfg = std::make_shared<CConfig>();
+            cfg->SetEnvironmentProvider (&s_noOpEnv);
+            con->Initialize (cfg);
+
+
+
+            // Build a directory info with one file that has a long reparse target
+            CDirectoryInfo di (L"C:\\Test", L"*");
+
+            WIN32_FIND_DATA wfd = CreateMockFileData (L"python.exe", FILE_ATTRIBUTE_ARCHIVE | FILE_ATTRIBUTE_REPARSE_POINT, 0);
+            wfd.dwReserved0 = 0x8000001B;  // IO_REPARSE_TAG_APPEXECLINK
+
+            FileInfo fi (wfd);
+            fi.m_strReparseTarget = L"C:\\Program Files\\WindowsApps\\Microsoft.DesktopAppInstaller_1.29.30.0_arm64__8wekyb3d8bbwe\\winget.exe";
+
+            di.m_vMatches.push_back (move (fi));
+
+            // Render using real CResultsDisplayerNormal (console defaults to 80-wide)
+            // At 80-wide, metadata+filename+arrow ~ 51 chars, available ~ 29.
+            // Target is 95 chars. Priority 3: "C:\" + ellipsis + "\winget.exe" = 15 chars — fits.
+            CResultsDisplayerNormal displayer (cmd, con, cfg, false);
+            displayer.DisplayFileResults (di);
+            con->Flush ();
+
+            wstring captured = con->m_strCaptured;
+            bool hasEllipsis = captured.find (L'\u2026') != wstring::npos;
+
+            Assert::IsTrue (hasEllipsis,
+                           L"Ellipsis character should appear in truncated target path");
+
+            // Verify the leaf filename is preserved
+            Assert::IsTrue (captured.find (L"winget.exe") != wstring::npos,
+                           L"Leaf filename should be preserved");
+
+            // Verify the full middle segment was elided
+            Assert::IsTrue (captured.find (L"Microsoft.DesktopAppInstaller") == wstring::npos,
+                           L"Middle path segment should be elided");
+        }
+
+
+
+        TEST_METHOD(Ellipsize_NormalMode_ShortTarget_NoEllipsis)
+        {
+            auto cmd = std::make_shared<CCommandLine>();
+            auto con = std::make_shared<CCapturingConsole> ();
+            auto cfg = std::make_shared<CConfig>();
+            cfg->SetEnvironmentProvider (&s_noOpEnv);
+            con->Initialize (cfg);
+
+
+
+            CDirectoryInfo di (L"C:\\Test", L"*");
+
+            WIN32_FIND_DATA wfd = CreateMockFileData (L"AzureVpn.exe", FILE_ATTRIBUTE_ARCHIVE | FILE_ATTRIBUTE_REPARSE_POINT, 0);
+            wfd.dwReserved0 = 0x8000001B;
+
+            FileInfo fi (wfd);
+            fi.m_strReparseTarget = L"C:\\Windows\\sysuwp.exe";  // Short enough to fit at 80-width
+
+            di.m_vMatches.push_back (move (fi));
+
+            CResultsDisplayerNormal displayer (cmd, con, cfg, false);
+            displayer.DisplayFileResults (di);
+            con->Flush ();
+
+            // Short target should NOT be truncated
+            Assert::IsTrue (con->m_strCaptured.find (L'\u2026') == wstring::npos,
+                           L"Ellipsis should NOT appear for short target");
+
+            // Full target path should be present
+            Assert::IsTrue (con->m_strCaptured.find (L"sysuwp.exe") != wstring::npos,
+                           L"Full target path should be present");
+        }
+
+
+
+        TEST_METHOD(Ellipsize_Disabled_LongTarget_NoEllipsis)
+        {
+            auto cmd = std::make_shared<CCommandLine>();
+            cmd->m_fEllipsize = false;  // --Ellipsize-
+
+            auto con = std::make_shared<CCapturingConsole> ();
+            auto cfg = std::make_shared<CConfig>();
+            cfg->SetEnvironmentProvider (&s_noOpEnv);
+            con->Initialize (cfg);
+
+
+
+            CDirectoryInfo di (L"C:\\Test", L"*");
+
+            WIN32_FIND_DATA wfd = CreateMockFileData (L"python.exe", FILE_ATTRIBUTE_ARCHIVE | FILE_ATTRIBUTE_REPARSE_POINT, 0);
+            wfd.dwReserved0 = 0x8000001B;
+
+            FileInfo fi (wfd);
+            fi.m_strReparseTarget = L"C:\\Program Files\\WindowsApps\\Microsoft.DesktopAppInstaller_1.29.30.0_arm64__8wekyb3d8bbwe\\AppInstallerPythonRedirector.exe";
+
+            di.m_vMatches.push_back (move (fi));
+
+            CResultsDisplayerNormal displayer (cmd, con, cfg, false);
+            displayer.DisplayFileResults (di);
+            con->Flush ();
+
+            // With --Ellipsize-, no truncation should occur
+            Assert::IsTrue (con->m_strCaptured.find (L'\u2026') == wstring::npos,
+                           L"Ellipsis should NOT appear when --Ellipsize- is set");
+
+            // Full untruncated target path should be present
+            Assert::IsTrue (con->m_strCaptured.find (L"Microsoft.DesktopAppInstaller_1.29.30.0_arm64__8wekyb3d8bbwe") != wstring::npos,
+                           L"Full path (including middle components) should be present when ellipsize is disabled");
         }
 
     };
