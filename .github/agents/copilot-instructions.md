@@ -35,9 +35,9 @@ All coding conventions are defined in [/.github/copilot-instructions.md](/.githu
 - Use VS Code build tasks, not direct msbuild
 
 ## Recent Changes
+- 009-variable-width-columns: Added C++ (stdcpplatest, MSVC v145+) + Windows SDK, STL only
 - 008-ellipsize-targets: Added C++ (stdcpplatest, MSVC v145+) + Windows SDK, STL only
 - 007-symlink-junction-targets: Added C++ (stdcpplatest, MSVC v145+) + Windows SDK, STL only
-- 006-config-file-support: Added C++ (stdcpplatest, MSVC v145+) + Windows SDK, STL only — no third-party libraries
 
 
 <!-- MANUAL ADDITIONS START -->

@@ -278,6 +278,7 @@
     <ClCompile Include="DirectoryListerTests.cpp" />
     <ClCompile Include="ResultsDisplayerBaseTests.cpp" />
     <ClCompile Include="ResultsDisplayerTests.cpp" />
+    <ClCompile Include="ResultsDisplayerWideTests.cpp" />
     <ClCompile Include="TreeConnectorStateTests.cpp" />
     <ClCompile Include="AliasBlockGeneratorTests.cpp" />
     <ClCompile Include="AliasManagerTests.cpp" />
