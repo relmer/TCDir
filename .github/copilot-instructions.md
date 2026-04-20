@@ -183,8 +183,10 @@ g_pConsole->Printf (CConfig::Error, L"Error: %s\n", msg);
   - **Network**: No real HTTP/socket calls — mock network layers
   - **Process/environment**: No inspecting real processes, environment variables, or console handles
   - **System APIs**: No calling `SHGetKnownFolderPath`, `CreateToolhelp32Snapshot`, `OpenProcessToken`, etc. directly in tests
+  - **Current directory**: No depending on the current working directory — use explicit test paths
 - Tests must be **deterministic** and **repeatable** regardless of the machine or user running them
 - If a module uses system APIs, inject its dependencies through an interface so tests can substitute mocks
+- **No test may run the real `tcdir` binary** — test the library functions directly with mocked dependencies
 - Temp files are acceptable **only** in integration tests, never in unit tests
 
 ---
@@ -218,6 +220,16 @@ g_pConsole->Printf (CConfig::Error, L"Error: %s\n", msg);
 - Fix compilation errors before considering task complete
 - Check for both errors (C-codes) and warnings
 
+### Pre-Commit Gates
+- **ALL** tests MUST pass before committing
+- Code analysis MUST be clean (zero warnings) before committing
+- Build MUST succeed with no errors before committing
+
+### Commit Frequency
+- During spec implementation, commit **at least once per completed phase**
+- Each commit must leave the codebase in a compilable, tests-passing state
+- Do not batch an entire feature into a single commit
+
 ### Performance
 - Prefer Windows Console API (`WriteConsoleW`) over C++ streams for console output
 - Use large internal buffers to minimize system calls
@@ -242,6 +254,10 @@ g_pConsole->Printf (CConfig::Error, L"Error: %s\n", msg);
 - **Scope is always required** — never omit it
 - Types: `feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `chore`, `ci`, `build`
 - Use bullet list in the body for multiple changes OR additional details about the changes
+- Use lowercase for type and scope
+- Use imperative mood in description ("add" not "added")
+- Keep first line under 72 characters
+- Add body for complex changes (blank line after subject)
 - Examples:
   - `refactor(config): table-driven switches and override pipeline`
   - `fix(display): correct column alignment for wide filenames`
@@ -257,5 +273,5 @@ g_pConsole->Printf (CConfig::Error, L"Error: %s\n", msg);
 
 ---
 
-*Last Updated: 2026-02-16*
+*Last Updated: 2026-04-20*
 *These rules apply globally to all projects and conversations*
