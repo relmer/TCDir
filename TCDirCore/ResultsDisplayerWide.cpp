@@ -499,7 +499,9 @@ HRESULT CResultsDisplayerWide::DisplayFile (const WIN32_FIND_DATA & wfd, size_t 
     }
 
     //
-    // Truncate outlier names with ellipsis when they exceed the truncation cap
+    // Truncate outlier names with ellipsis when they exceed the truncation cap.
+    // Remove cchOver + 1 chars from the name: cchOver to reach the cap, plus 1
+    // to make room for the single-char ellipsis (…).
     //
 
     if (cchTruncCap > 0 && cchName > cchTruncCap)
@@ -507,9 +509,9 @@ HRESULT CResultsDisplayerWide::DisplayFile (const WIN32_FIND_DATA & wfd, size_t 
         size_t cchPrefix = name.length();
         size_t cchOver   = cchName - cchTruncCap;
 
-        if (cchOver < cchPrefix)
+        if (cchOver + 1 < cchPrefix)
         {
-            strTruncated.assign (name.data(), cchPrefix - cchOver);
+            strTruncated.assign (name.data(), cchPrefix - cchOver - 1);
             strTruncated += UnicodeSymbols::Ellipsis;
             name    = strTruncated;
             cchName = cchTruncCap;
