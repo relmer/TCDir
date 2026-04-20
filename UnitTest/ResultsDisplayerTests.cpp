@@ -107,11 +107,6 @@ namespace UnitTest
         {
             return GetWideFormattedName (wfd, pszBuffer, cchBuffer);
         }
-
-        void WrapGetColumnInfo (const CDirectoryInfo & di, bool fInSyncRoot, size_t & cColumns, size_t & cxColumnWidth)
-        {
-            GetColumnInfo (di, fInSyncRoot, cColumns, cxColumnWidth);
-        }
     };
 
 
@@ -623,32 +618,17 @@ namespace UnitTest
 
         TEST_METHOD(GetColumnInfo_IconsActive_WidthIncreasedByTwo)
         {
-            auto cmd = std::make_shared<CCommandLine>();
-            auto con = std::make_shared<CTestConsole> ();
-            auto cfg = std::make_shared<CConfig>();
-            cfg->SetEnvironmentProvider (&s_noOpEnv);
-            con->Initialize(cfg);
+            //
+            // Verify that ComputeDisplayWidth adds +2 for icons
+            //
 
-            WideDisplayerProbe probeOn  (cmd, con, cfg, true  /* icons on  */);
-            WideDisplayerProbe probeOff (cmd, con, cfg, false /* icons off */);
+            WIN32_FIND_DATA wfd = {};
+            wcscpy_s (wfd.cFileName, L"testfile.txt");
 
-            CDirectoryInfo di (L"C:\\Test", L"*");
-            di.m_cchLargestFileName = 10;
+            size_t widthOff = CResultsDisplayerWide::ComputeDisplayWidth (wfd, false, false, false);
+            size_t widthOn  = CResultsDisplayerWide::ComputeDisplayWidth (wfd, true,  false, false);
 
-            size_t colsOn = 0, widthOn = 0;
-            size_t colsOff = 0, widthOff = 0;
-
-            probeOn.WrapGetColumnInfo  (di, false, colsOn,  widthOn);
-            probeOff.WrapGetColumnInfo (di, false, colsOff, widthOff);
-
-            // Icons add +2 to column width, so columns should be wider or columns fewer
-            Assert::IsTrue (widthOn >= widthOff, L"Icon column width should be >= non-icon width");
-
-            // With same console, icons-on should have wider columns (or fewer columns)
-            if (colsOn == colsOff)
-                Assert::IsTrue (widthOn > widthOff, L"Same columns: icon width should be wider");
-            else
-                Assert::IsTrue (colsOn < colsOff, L"Different counts: icon mode should have fewer columns");
+            Assert::AreEqual (widthOff + 2, widthOn, L"Icons should add +2 to display width");
         }
 
 
@@ -656,31 +636,19 @@ namespace UnitTest
 
         TEST_METHOD(GetColumnInfo_SyncRootWithIcons_WidthAccountsForBoth)
         {
-            auto cmd = std::make_shared<CCommandLine>();
-            auto con = std::make_shared<CTestConsole> ();
-            auto cfg = std::make_shared<CConfig>();
-            cfg->SetEnvironmentProvider (&s_noOpEnv);
-            con->Initialize(cfg);
+            //
+            // Verify that ComputeDisplayWidth adds +2 for icons and +2 for sync root
+            //
 
-            WideDisplayerProbe probeIcons   (cmd, con, cfg, true  /* icons on  */);
-            WideDisplayerProbe probeNoIcons (cmd, con, cfg, false /* icons off */);
+            WIN32_FIND_DATA wfd = {};
+            wcscpy_s (wfd.cFileName, L"testfile.txt");
 
-            CDirectoryInfo di (L"C:\\Test", L"*");
-            di.m_cchLargestFileName = 10;
+            size_t widthPlain    = CResultsDisplayerWide::ComputeDisplayWidth (wfd, false, false, false);
+            size_t widthSync     = CResultsDisplayerWide::ComputeDisplayWidth (wfd, false, false, true);
+            size_t widthIconSync = CResultsDisplayerWide::ComputeDisplayWidth (wfd, true,  false, true);
 
-            size_t colsIconSync = 0, widthIconSync = 0;
-            size_t colsPlainSync = 0, widthPlainSync = 0;
-            size_t colsPlainNoSync = 0, widthPlainNoSync = 0;
-
-            probeIcons.WrapGetColumnInfo   (di, true,  colsIconSync,   widthIconSync);
-            probeNoIcons.WrapGetColumnInfo (di, true,  colsPlainSync,  widthPlainSync);
-            probeNoIcons.WrapGetColumnInfo (di, false, colsPlainNoSync, widthPlainNoSync);
-
-            // Sync root adds +2 for cloud symbol
-            Assert::IsTrue (widthPlainSync >= widthPlainNoSync, L"Sync root should widen or reduce columns");
-
-            // Icons + sync root together add even more
-            Assert::IsTrue (widthIconSync >= widthPlainSync, L"Icons + sync should be widest");
+            Assert::AreEqual (widthPlain + 2, widthSync, L"Sync root should add +2");
+            Assert::AreEqual (widthPlain + 4, widthIconSync, L"Icons + sync should add +4");
         }
 
 

@@ -120,6 +120,14 @@ When automation tooling exists, prefer it over raw terminal commands:
 2. **Build Verification**: Run `Build + Test` task to ensure all tests pass before considering work complete
 3. **Error Checking**: Use `get_errors` tool to verify specific files after modifications
 4. **Architecture Coverage**: Verify changes work on both x64 and ARM64 when touching platform-sensitive code
+5. **Code Analysis**: Run Code Analysis (`process: Run Code Analysis (current arch)`) before pushing; MUST pass with zero warnings
+
+### Commit Discipline
+
+- **Commit per phase**: During speckit implementation, commit after each completed phase (Setup, Foundational, each User Story, Polish). Do NOT accumulate all phases into a single commit.
+- **Conventional Commits**: Use `type(scope): description` format with required scope. See CONTRIBUTING.md for type list.
+- **Version.h**: Always include `Version.h` in commits after building — it reflects the actual build number.
+- **Refs/Closes**: Reference the GitHub issue in commit messages (`Refs #N` or `Closes #N`).
 
 ### Change Process
 
@@ -146,4 +154,4 @@ This constitution supersedes all ad-hoc practices. All code changes MUST verify 
 
 **Guidance Reference**: See `.github/copilot-instructions.md` for detailed runtime development guidance and code style rules.
 
-**Version**: 1.2.0 | **Ratified**: 2026-01-24 | **Last Amended**: 2026-01-24
+**Version**: 1.3.0 | **Ratified**: 2026-01-24 | **Last Amended**: 2026-04-19

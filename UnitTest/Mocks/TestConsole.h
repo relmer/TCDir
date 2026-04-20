@@ -68,6 +68,11 @@ public:
         return S_OK;
     }
 
+    void SetWidth (UINT cx)
+    {
+        m_cxConsoleWidth = cx;
+    }
+
 
 
     wstring m_strCaptured;
