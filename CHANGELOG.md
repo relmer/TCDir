@@ -2,6 +2,20 @@
 
 All notable changes to TCDir are documented in this file.
 
+## [5.5.1619] - 2026-04-19
+
+### Added
+- Variable-width columns in wide mode (`/W`): per-column widths based on actual entry display widths instead of uniform width
+  - GNU ls-style column-fitting algorithm maximizes column count
+  - Outlier filenames > 2× median display width auto-truncated with `…` (only when it improves layout)
+  - Truncation respects `--Ellipsize-` opt-out
+  - Leftover horizontal space distributed evenly across inter-column gaps
+  - Column-major ordering preserved
+- 34 new unit tests including end-to-end scenario tests with mocked console (618 total)
+
+### Changed
+- Minor version bump from 5.4 to 5.5
+
 ## [5.4.1549] - 2026-04-19
 
 ### Added
