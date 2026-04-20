@@ -15,9 +15,9 @@ This document tracks which features have been ported and which are pending.
 | 004    | Tree View Display Mode   |          | Shipped            | v5.1.1106     | Shipped            | v5.1.1132     | 64 tasks, 314 tests — output-parity verified            |
 | Fix    | Pure Mask Dir Fix        |          | Shipped            | v5.1.1149     | Shipped            | v5.1.TBD      | `tcdir x64` now lists dir contents like `tcdir .\x64`  |
 | 005    | PowerShell Aliases       |          | Shipped            | v5.2.1346     | Shipped            | v5.2          | `--set-aliases`, `--get-aliases`, `--remove-aliases`   |
-| 006    | Config File Support      | #9       | Shipped            | v5.3          | Spec created       |               | `%USERPROFILE%\.rcdirconfig` persistent settings       |
-| 007    | Symlink/Junction Targets | #6       | Shipped            | v5.4          | Not started        |               | `→ target` display for junctions, symlinks, AppExecLinks |
-|        | Variable-width /W cols   | #10      | Open               |               |                    |               | Per-column variable widths like ls/eza                  |
+| 006    | Config File Support      | #9       | Shipped            | v5.3          | Shipped            | v5.3          | `%USERPROFILE%\.rcdirconfig` persistent settings       |
+| 007    | Symlink/Junction Targets | #6       | Shipped            | v5.4          | Spec created       |               | `→ target` display for junctions, symlinks, AppExecLinks |
+| 009    | Variable-width /W cols   | #10      | Shipped            | v5.5          | Not started        |               | Per-column variable widths like ls/eza                  |
 | 008    | Ellipsize Long Targets   | #11      | Shipped            | v5.4          | Not started        |               | Middle-truncate long target paths with `…`              |
 |        | Per-file git status      | #7       | Open               |               |                    |               |                                                         |
 |        | Cross-platform support   | #8       | Open               |               |                    |               | Linux + macOS                                           |
@@ -34,5 +34,5 @@ This document tracks which features have been ported and which are pending.
 
 | Project | Latest Release | Date       |
 | ------- | -------------- | ---------- |
-| TCDir   | v5.4.1549      | 2026-04-19 |
-| RCDir   | v5.2.1399      | 2026-04-11 |
+| TCDir   | v5.5.1628      | 2026-04-19 |
+| RCDir   | v5.3.1403      | 2026-04-11 |
