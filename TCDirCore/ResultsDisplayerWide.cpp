@@ -141,7 +141,7 @@ SColumnLayout CResultsDisplayerWide::ComputeColumnLayout (const vector<size_t> &
     if (fEllipsize)
     {
         size_t median = ComputeMedianDisplayWidth (vDisplayWidths);
-        size_t cap    = max (2 * median, static_cast<size_t>(20));
+        size_t cap    = max (2 * median, static_cast<size_t>(40));
 
         bool fHasOutliers = false;
 

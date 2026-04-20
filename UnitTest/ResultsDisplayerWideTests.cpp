@@ -392,27 +392,25 @@ namespace UnitTest
         }
 
         //
-        // Minimum truncCap floor of 20
+        // Minimum truncCap floor of 40
         //
 
-        TEST_METHOD (Ellipsize_SmallMedian_FloorAt20)
+        TEST_METHOD (Ellipsize_SmallMedian_FloorAt40)
         {
-            // 30 entries of width 5 + 1 entry of width 25 in a 30-char terminal
-            // median = 5, 2×median = 10, but floor = 20
-            // Without truncation: 25+1 = 26 in one col, only 1 col of width 26 fits
-            //   → max feasible = 30/2 = 15, but 25+1+5+1 = 32 > 30 for 2 cols
-            //   so the outlier forces wider columns and fewer fit
-            // With truncation (cap 20): 20+1 + 5 = 26 < 30, 2 cols fit
+            // 30 entries of width 10 + 1 entry of width 50 in a 55-char terminal
+            // median = 10, 2×median = 20, but floor = 40
+            // Without truncation: outlier at 50 forces 1 col
+            // With truncation (cap 40): 40+1 + 10 = 51 < 55, 2 cols fit
 
-            vector<size_t> widths (30, 5);
-            widths.push_back (25);
+            vector<size_t> widths (30, 10);
+            widths.push_back (50);
 
-            SColumnLayout noEllipsis = CResultsDisplayerWide::ComputeColumnLayout (widths, 30, false);
-            SColumnLayout ellipsis   = CResultsDisplayerWide::ComputeColumnLayout (widths, 30, true);
+            SColumnLayout noEllipsis = CResultsDisplayerWide::ComputeColumnLayout (widths, 55, false);
+            SColumnLayout ellipsis   = CResultsDisplayerWide::ComputeColumnLayout (widths, 55, true);
 
             Assert::IsTrue (ellipsis.cColumns > noEllipsis.cColumns,
                 L"Truncation should gain columns in a tight terminal");
-            Assert::AreEqual (static_cast<size_t>(20), ellipsis.cchTruncCap);
+            Assert::AreEqual (static_cast<size_t>(40), ellipsis.cchTruncCap);
         }
 
         //
