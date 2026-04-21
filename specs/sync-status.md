@@ -16,7 +16,7 @@ This document tracks which features have been ported and which are pending.
 | Fix    | Pure Mask Dir Fix        |          | Shipped            | v5.1.1149     | Shipped            | v5.1.TBD      | `tcdir x64` now lists dir contents like `tcdir .\x64`  |
 | 005    | PowerShell Aliases       |          | Shipped            | v5.2.1346     | Shipped            | v5.2          | `--set-aliases`, `--get-aliases`, `--remove-aliases`   |
 | 006    | Config File Support      | #9       | Shipped            | v5.3          | Shipped            | v5.3          | `%USERPROFILE%\.rcdirconfig` persistent settings       |
-| 007    | Symlink/Junction Targets | #6       | Shipped            | v5.4          | Spec created       |               | `→ target` display for junctions, symlinks, AppExecLinks |
+| 007    | Symlink/Junction Targets | #6       | Shipped            | v5.4          | Shipped            | v5.4          | `→ target` display for junctions, symlinks, AppExecLinks |
 | 009    | Variable-width /W cols   | #10      | Shipped            | v5.5          | Not started        |               | Per-column variable widths like ls/eza                  |
 | 008    | Ellipsize Long Targets   | #11      | Shipped            | v5.4          | Not started        |               | Middle-truncate long target paths with `…`              |
 |        | Per-file git status      | #7       | Open               |               |                    |               |                                                         |
