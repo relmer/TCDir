@@ -3,7 +3,7 @@
 **Feature Branch**: `003-file-icons`  
 **Created**: 2026-02-13  
 **Updated**: 2026-02-14  
-**Status**: Draft  
+**Status**: Shipped  
 **Input**: User description: "Add Nerd Font file and folder icons to directory listings similar to Terminal-Icons PowerShell module"
 
 ## Clarifications

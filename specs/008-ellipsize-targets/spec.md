@@ -3,7 +3,7 @@
 **Feature Branch**: `008-ellipsize-targets`
 **GitHub Issue**: [#11](https://github.com/relmer/TCDir/issues/11)
 **Created**: 2026-04-19
-**Status**: Draft
+**Status**: Shipped
 **Input**: User description: "Middle-truncate long link target paths to prevent line wrapping"
 
 ## Clarifications

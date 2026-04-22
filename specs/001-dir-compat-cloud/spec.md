@@ -2,7 +2,7 @@
 
 **Feature Branch**: `001-dir-compat-cloud`  
 **Created**: 2026-01-24  
-**Status**: Draft  
+**Status**: Shipped  
 **Input**: User description: "Add CMD dir compatibility features and cloud file visualization to TCDir"
 
 ## User Scenarios & Testing *(mandatory)*

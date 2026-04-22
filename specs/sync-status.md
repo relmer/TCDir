@@ -17,8 +17,8 @@ This document tracks which features have been ported and which are pending.
 | 005    | PowerShell Aliases       |          | Shipped            | v5.2.1346     | Shipped            | v5.2          | `--set-aliases`, `--get-aliases`, `--remove-aliases`   |
 | 006    | Config File Support      | #9       | Shipped            | v5.3          | Shipped            | v5.3          | `%USERPROFILE%\.rcdirconfig` persistent settings       |
 | 007    | Symlink/Junction Targets | #6       | Shipped            | v5.4          | Shipped            | v5.4          | `→ target` display for junctions, symlinks, AppExecLinks |
-| 009    | Variable-width /W cols   | #10      | Shipped            | v5.5          | Not started        |               | Per-column variable widths like ls/eza                  |
-| 008    | Ellipsize Long Targets   | #11      | Shipped            | v5.4          | Not started        |               | Middle-truncate long target paths with `…`              |
+| 008    | Ellipsize Long Targets   | #11      | Shipped            | v5.4          | Shipped            | v5.5          | Middle-truncate long target paths with `…`              |
+| 009    | Variable-width /W cols   | #10      | Shipped            | v5.5          | Shipped            | v5.5          | Per-column variable widths like ls/eza                  |
 |        | Per-file git status      | #7       | Open               |               |                    |               |                                                         |
 |        | Cross-platform support   | #8       | Open               |               |                    |               | Linux + macOS                                           |
 
@@ -35,4 +35,4 @@ This document tracks which features have been ported and which are pending.
 | Project | Latest Release | Date       |
 | ------- | -------------- | ---------- |
 | TCDir   | v5.5.1628      | 2026-04-19 |
-| RCDir   | v5.3.1403      | 2026-04-11 |
+| RCDir   | v5.5.1408      | 2026-04-20 |

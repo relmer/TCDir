@@ -1,8 +1,8 @@
-te# Feature Specification: Variable-Width Columns in Wide Mode
+# Feature Specification: Variable-Width Columns in Wide Mode
 
 **Feature Branch**: `009-variable-width-columns`  
 **Created**: 2026-04-19  
-**Status**: Draft  
+**Status**: Shipped  
 **Input**: User description: "Implement variable-width columns for wide mode (/W) to improve space utilization when a directory contains a mix of short and long filenames. (GH Issue #10)"
 
 ## Clarifications
@@ -12,8 +12,8 @@ te# Feature Specification: Variable-Width Columns in Wide Mode
 - Q: How should leftover horizontal space be distributed after variable-width columns are computed? → A: Distribute leftover space evenly across inter-column gaps for a balanced appearance; no trailing whitespace on the last column.
 - Q: Should per-column width calculation use per-entry display width (including directory brackets when icons are off)? → A: Yes, use per-entry display width including brackets.
 - Q: Should outlier-length filenames be truncated to allow more columns? → A: Yes, truncate outliers with ellipsis by default; disable truncation when `--Ellipsize-` is specified.
-- Q: What threshold triggers outlier truncation in wide mode? → A: `max(2× median display width, 20)`; filenames exceeding this are truncated with ellipsis. The floor of 20 prevents aggressive truncation in directories of very short names.
-- Q: Should there be a minimum column count gate before truncation kicks in? → A: No; always truncate outliers exceeding 2× median regardless of column count.
+- Q: What threshold triggers outlier truncation in wide mode? → A: `max(2× median display width, 40)`; filenames exceeding this are truncated with ellipsis. The floor of 40 prevents aggressive truncation in directories of short names.
+- Q: Should truncation always be applied when outliers exist? → A: No; the algorithm computes layouts both with and without truncation, and only uses the truncated layout if it produces more columns. If truncation doesn't improve column count, the original untruncated layout is used.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -82,7 +82,7 @@ As a user with file icons or cloud status indicators enabled, I want the column 
 - **FR-005**: The system MUST distribute leftover horizontal space evenly across inter-column gaps (after computing each column's minimum required width). The last column MUST NOT emit trailing whitespace.
 - **FR-006**: The system MUST fall back to single-column output when no multi-column layout fits within the terminal width.
 - **FR-007**: The system MUST produce output identical to the current uniform-width behavior when all filenames have the same display width.
-- **FR-008**: By default (ellipsis enabled), the system MUST truncate filenames whose display width exceeds the outlier threshold, replacing the truncated portion with an ellipsis character (…), to allow more columns. The outlier threshold is `max(2 × median display width, 20)` — the floor of 20 prevents aggressive truncation in directories of very short filenames. When `--Ellipsize-` is specified, no truncation occurs and the algorithm accepts whatever column count fits.
+- **FR-008**: By default (ellipsis enabled), the system MUST compute the outlier threshold as `max(2 × median display width, 40)` — the floor of 40 prevents aggressive truncation in directories of short filenames. When outliers exist (entries exceeding this threshold), the system MUST compute layouts both with and without truncation, and MUST only apply the truncated layout if it produces more columns than the untruncated layout. Truncated filenames have the truncated portion replaced with an ellipsis character (…). When `--Ellipsize-` is specified, no truncation occurs and the algorithm accepts whatever column count fits.
 
 ## Success Criteria *(mandatory)*
 

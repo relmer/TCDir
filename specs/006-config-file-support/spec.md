@@ -2,7 +2,7 @@
 
 **Feature Branch**: `006-config-file-support`  
 **Created**: 2026-03-29  
-**Status**: Draft  
+**Status**: Shipped  
 **Input**: User description: "Using the environment variable to configure more than a few items is cumbersome. A config file would make that much easier." (GitHub issue #9)
 
 ## User Scenarios & Testing *(mandatory)*

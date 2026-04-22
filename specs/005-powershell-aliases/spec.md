@@ -2,7 +2,7 @@
 
 **Feature Branch**: `005-powershell-aliases`
 **Created**: 2026-03-25
-**Status**: Draft
+**Status**: Shipped
 **Input**: User description: "Interactive PowerShell alias configuration: tcdir --set-aliases, --get-aliases, --remove-aliases with TUI for configuring root alias, sub-aliases, and profile storage location"
 
 ## Clarifications

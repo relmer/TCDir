@@ -3,7 +3,7 @@
 **Feature Branch**: `007-symlink-junction-targets`
 **GitHub Issue**: [#6](https://github.com/relmer/TCDir/issues/6)
 **Created**: 2026-04-18
-**Status**: Draft
+**Status**: Shipped
 **Input**: User description: "Display symlink and junction targets in directory listings"
 
 ## Clarifications

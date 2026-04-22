@@ -2,7 +2,7 @@
 
 **Spec Branch**: `002-full-app-spec`  
 **Created**: 2026-02-07  
-**Status**: Reverse-Engineered from Source  
+**Status**: Shipped  
 **Version**: 4.2.x  
 **Input**: Comprehensive specification reverse-engineered from TCDir source code
 

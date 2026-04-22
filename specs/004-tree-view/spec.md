@@ -2,7 +2,7 @@
 
 **Feature Branch**: `004-tree-view`  
 **Created**: 2026-02-19  
-**Status**: Draft  
+**Status**: Shipped  
 **Input**: User description: "Add tree view display mode with hierarchical directory listing, depth control, and tree connectors for subdirectory contents"
 
 ## Clarifications
