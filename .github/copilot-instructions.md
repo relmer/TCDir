@@ -271,3 +271,8 @@ g_pConsole->Printf (CConfig::Error, L"Error: %s\n", msg);
 
 *Last Updated: 2026-04-20*
 *These rules apply globally to all projects and conversations*
+
+<!-- SPECKIT START -->
+For additional context about technologies to be used, project structure,
+shell commands, and other important information, read the current plan
+<!-- SPECKIT END -->
