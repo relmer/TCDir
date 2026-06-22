@@ -15,7 +15,7 @@ permissions:
   id-token: write
 
 env:
-  MSBUILD_FLAGS: -p:PlatformToolset=v143 -p:PreBuildEventUseInBuild=false -p:PostBuildEventUseInBuild=false
+  MSBUILD_FLAGS: -p:PreBuildEventUseInBuild=false -p:PostBuildEventUseInBuild=false
   WINGET_PAT: ${{ secrets.WINGET_PAT }}
 
 jobs:
