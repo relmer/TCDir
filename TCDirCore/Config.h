@@ -11,6 +11,25 @@
 
 
 
+//
+// Transparent hash for wstring-keyed maps, enabling heterogeneous lookup with a
+// wstring_view (or const wchar_t *) without constructing a wstring key.  All
+// overloads route through std::hash<wstring_view> so a stored wstring key and a
+// wstring_view probe of equal content hash identically.
+//
+
+struct STransparentWStringHash
+{
+    using is_transparent = void;
+
+    size_t operator() (wstring_view sv)      const noexcept { return std::hash<wstring_view>{} (sv); }
+    size_t operator() (const wstring & s)    const noexcept { return std::hash<wstring_view>{} (s); }
+    size_t operator() (const wchar_t * psz)  const noexcept { return std::hash<wstring_view>{} (psz); }
+};
+
+
+
+
 
 class CConfig
 {
@@ -28,7 +47,8 @@ protected:
         optional<bool> CConfig::* m_pMember;
     };
 
-    typedef unordered_map<wstring, WORD> TextAttrMap;
+    typedef unordered_map<wstring, WORD, STransparentWStringHash, std::equal_to<>>     TextAttrMap;
+    typedef unordered_map<wstring, char32_t, STransparentWStringHash, std::equal_to<>> IconMap;
     typedef TextAttrMap::const_iterator  TextAttrMapConstIter;
 
 
@@ -165,8 +185,8 @@ public:
     EAttributeSource                           m_eSizeFormatSource    = EAttributeSource::Default;
 
     // Icon mapping tables (parallel to color tables)
-    unordered_map<wstring, char32_t>           m_mapExtensionToIcon;
-    unordered_map<wstring, char32_t>           m_mapWellKnownDirToIcon;
+    IconMap                                    m_mapExtensionToIcon;
+    IconMap                                    m_mapWellKnownDirToIcon;
     unordered_map<DWORD, char32_t>             m_mapFileAttributeToIcon;
 
     // Icon source tracking (parallel to color source tracking)
@@ -193,7 +213,7 @@ public:
 protected:
     void         InitializeExtensionToTextAttrMap     (void);
     void         InitializeFileAttributeToTextAttrMap (void);
-    void         PopulateIconMap                      (const SIconMappingEntry * rgEntries, size_t cEntries, unordered_map<wstring, char32_t> & mapIcons, unordered_map<wstring, EAttributeSource> & mapSources);
+    void         PopulateIconMap                      (const SIconMappingEntry * rgEntries, size_t cEntries, IconMap & mapIcons, unordered_map<wstring, EAttributeSource> & mapSources);
     void         ApplyUserColorOverrides              (EAttributeSource source = EAttributeSource::Environment);
     void         ProcessColorOverrideEntry            (wstring_view entry, EAttributeSource source = EAttributeSource::Environment);
     HRESULT      ParseOverrideValue                   (wstring_view entry, wstring_view valueView, SOverrideValue & ov, EAttributeSource source = EAttributeSource::Environment);
@@ -207,7 +227,7 @@ protected:
     HRESULT      ParseKeyAndValue                     (wstring_view entry, wstring_view & keyView, wstring_view & valueView);
     HRESULT      ParseColorValue                      (wstring_view entry, wstring_view valueView, WORD & colorAttr, EAttributeSource source = EAttributeSource::Environment);
     HRESULT      ParseIconValue                       (wstring_view iconSpec, char32_t & codePoint, bool & fSuppressed);
-    void         ApplyIconOverride                    (wstring_view name, char32_t iconCodePoint, bool fSuppressed, unordered_map<wstring, char32_t> & mapIcons, unordered_map<wstring, EAttributeSource> & mapSources, EAttributeSource source = EAttributeSource::Environment);
+    void         ApplyIconOverride                    (wstring_view name, char32_t iconCodePoint, bool fSuppressed, IconMap & mapIcons, unordered_map<wstring, EAttributeSource> & mapSources, EAttributeSource source = EAttributeSource::Environment);
     void         ProcessFileAttributeIconOverride     (DWORD dwAttribute, char32_t iconCodePoint);
     void         ResolveFileAttributeStyle            (const WIN32_FIND_DATA & wfd, SFileDisplayStyle & style);
     void         ResolveDirectoryStyle                (const WIN32_FIND_DATA & wfd, SFileDisplayStyle & style);

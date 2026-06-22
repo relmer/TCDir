@@ -688,7 +688,7 @@ void CConfig::InitializeFileAttributeToTextAttrMap (void)
 void CConfig::PopulateIconMap (
     const SIconMappingEntry                  * prgEntries,
     size_t                                     cEntries,
-    unordered_map<wstring, char32_t>         & mapIcons,
+    IconMap                                  & mapIcons,
     unordered_map<wstring, EAttributeSource> & mapSources)
 {
     for (size_t i = 0; i < cEntries; i++)
@@ -1476,7 +1476,7 @@ void CConfig::ApplyIconOverride (
     wstring_view                               name,
     char32_t                                   iconCodePoint,
     bool                                       fSuppressed,
-    unordered_map<wstring, char32_t>         & mapIcons,
+    IconMap                                  & mapIcons,
     unordered_map<wstring, EAttributeSource> & mapSources,
     EAttributeSource                           source)
 {
@@ -1919,20 +1919,26 @@ void CConfig::ResolveFileAttributeStyle (const WIN32_FIND_DATA & wfd, SFileDispl
 
 void CConfig::ResolveDirectoryStyle (const WIN32_FIND_DATA & wfd, SFileDisplayStyle & style)
 {
-    filesystem::path filename      (wfd.cFileName);
-    wstring          strFilename = filename.filename().wstring();
+    wchar_t      szNameLower[MAX_PATH] = { };
+    size_t       cchName               = 0;
+    wstring_view nameView;
 
 
 
     style.m_wTextAttr = m_rgAttributes[EAttribute::Directory];
 
     //
-    // Check well-known directory names
+    // Check well-known directory names (lowercased into a stack buffer to avoid
+    // a per-entry heap allocation).
     //
 
-    std::ranges::transform (strFilename, strFilename.begin(), towlower);
+    for (const wchar_t * p = wfd.cFileName; *p != L'\0' && cchName < ARRAYSIZE (szNameLower) - 1; ++p)
+    {
+        szNameLower[cchName++] = (wchar_t) towlower (*p);
+    }
+    nameView = wstring_view (szNameLower, cchName);
 
-    auto dirIter = m_mapWellKnownDirToIcon.find (strFilename);
+    auto dirIter = m_mapWellKnownDirToIcon.find (nameView);
     if (dirIter != m_mapWellKnownDirToIcon.end())
     {
         style.m_iconCodePoint   = dirIter->second;
@@ -1974,20 +1980,36 @@ void CConfig::ResolveDirectoryStyle (const WIN32_FIND_DATA & wfd, SFileDisplaySt
 
 void CConfig::ResolveExtensionStyle (const WIN32_FIND_DATA & wfd, SFileDisplayStyle & style)
 {
-    filesystem::path filename (wfd.cFileName);
-    wstring          strExtension = filename.extension().wstring();
+    wchar_t         szExtLower[MAX_PATH] = { };
+    size_t          cchExt              = 0;
+    const wchar_t * pszDot              = wcsrchr (wfd.cFileName, L'.');
+    wstring_view    extView;
 
 
 
-    std::ranges::transform (strExtension, strExtension.begin(), towlower);
+    //
+    // Extract the extension (from the last '.', mirroring
+    // std::filesystem::path::extension): none if there is no dot or the dot is
+    // the first character (a dotfile).  Lowercase it into a stack buffer so the
+    // map lookups avoid a per-entry heap allocation.
+    //
 
-    auto colorIter = m_mapExtensionToTextAttr.find (strExtension);
+    if (pszDot != nullptr && pszDot != wfd.cFileName)
+    {
+        for (const wchar_t * p = pszDot; *p != L'\0' && cchExt < ARRAYSIZE (szExtLower) - 1; ++p)
+        {
+            szExtLower[cchExt++] = (wchar_t) towlower (*p);
+        }
+        extView = wstring_view (szExtLower, cchExt);
+    }
+
+    auto colorIter = m_mapExtensionToTextAttr.find (extView);
     if (colorIter != m_mapExtensionToTextAttr.end())
     {
         style.m_wTextAttr = colorIter->second;
     }
 
-    auto iconIter = m_mapExtensionToIcon.find (strExtension);
+    auto iconIter = m_mapExtensionToIcon.find (extView);
     if (iconIter != m_mapExtensionToIcon.end())
     {
         style.m_iconCodePoint   = iconIter->second;

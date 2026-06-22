@@ -635,8 +635,7 @@ void CMultiThreadedLister::SortResults (shared_ptr<CDirectoryInfo> pDirInfo)
 {
     lock_guard<mutex> lock (pDirInfo->m_mutex);
 
-    std::sort (pDirInfo->m_vMatches.begin(), pDirInfo->m_vMatches.end(), 
-               FileComparator (m_cmdLinePtr, m_cmdLinePtr->m_fTree));
+    SortMatches (pDirInfo->m_vMatches, FileComparator (m_cmdLinePtr, m_cmdLinePtr->m_fTree));
 }
 
 

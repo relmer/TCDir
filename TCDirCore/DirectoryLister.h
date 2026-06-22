@@ -12,6 +12,7 @@
 class CCommandLine;
 class CConfig;
 class CConsole;
+class FileComparator;
 
 
 
@@ -52,6 +53,12 @@ protected:
     void    HandleDirectoryMatch               (size_t & cchFileName, CDirectoryInfo & di);
     void    HandleFileMatch                    (const WIN32_FIND_DATA & wfd, FileInfo & fileEntry, CDirectoryInfo & di, SListingTotals * pTotals);
     HRESULT HandleFileMatchStreams             (const WIN32_FIND_DATA & wfd, FileInfo & fileEntry, CDirectoryInfo & di, SListingTotals * pTotals);
+
+    //
+    // Sort matches via a lightweight index permutation (cheap to move) then a
+    // single physical reorder, rather than an in-place value sort.
+    //
+    static void SortMatches                    (FileInfoVector & matches, const FileComparator & comparator);
 
 
 

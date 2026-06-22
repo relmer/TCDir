@@ -168,7 +168,7 @@ HRESULT CDirectoryLister::ProcessDirectory (
     // Sort the results using FileComparator
     //
 
-    std::sort (di.m_vMatches.begin(), di.m_vMatches.end(), FileComparator (m_cmdLinePtr));
+    SortMatches (di.m_vMatches, FileComparator (m_cmdLinePtr));
 
     //
     // Show the directory contents using the displayer
@@ -201,6 +201,47 @@ Error:
     return hr;
 }
 
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CDirectoryLister::SortMatches
+//
+//  Sorts a lightweight index permutation (cheap size_t moves) with the given
+//  comparator, then reorders the matches once into a reserved buffer. Each
+//  heavyweight FileInfo is moved exactly once instead of the N log N
+//  relocations an in-place value sort would perform.
+//
+////////////////////////////////////////////////////////////////////////////////
+
+void CDirectoryLister::SortMatches (
+    FileInfoVector       & matches,
+    const FileComparator & comparator)
+{
+    size_t           cMatches = matches.size();
+    vector<size_t>   order    (cMatches);
+    FileInfoVector   sorted;
+
+
+
+    for (size_t i = 0; i < cMatches; ++i)
+    {
+        order[i] = i;
+    }
+
+    std::sort (order.begin(), order.end(),
+               [&] (size_t a, size_t b) { return comparator (matches[a], matches[b]); });
+
+    sorted.reserve (cMatches);
+
+    for (size_t i : order)
+    {
+        sorted.push_back (std::move (matches[i]));
+    }
+
+    matches = std::move (sorted);
+}
 
 
 
