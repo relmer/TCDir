@@ -281,7 +281,7 @@ HRESULT CMultiThreadedLister::EnumerateMatchingFiles (shared_ptr<CDirectoryInfo>
     filesystem::path       pathAndFileSpec;
     AutoFindHandle         hFind;
     WIN32_FIND_DATA        wfd              = { 0 };
-    unordered_set<wstring> seenFilenames;
+    NameSet                seenFilenames;
     DWORD                  dwError          = 0;
 
 
@@ -323,15 +323,16 @@ HRESULT CMultiThreadedLister::EnumerateMatchingFiles (shared_ptr<CDirectoryInfo>
             }
 
             //
-            // Deduplicate: skip if we've already seen this filename
+            // Deduplicate across file specs: skip if we've already emitted this
+            // entry.  Names come from FindFirstFile on this one directory, so
+            // they are the canonical on-disk bytes and compare directly.
             //
 
-            wstring lowerName = ToLower (wfd.cFileName);
-            if (seenFilenames.contains (lowerName))
+            if (seenFilenames.contains (wfd.cFileName))
             {
                 continue;
             }
-            seenFilenames.insert (lowerName);
+            seenFilenames.insert (wfd.cFileName);
 
             // Check if this entry should be displayed based on attribute filters
             if (CFlag::IsSet    (wfd.dwFileAttributes, m_cmdLinePtr->m_dwAttributesRequired) &&
@@ -388,7 +389,7 @@ HRESULT CMultiThreadedLister::EnumerateSubdirectories (shared_ptr<CDirectoryInfo
     // already present (from EnumerateMatchingFiles) to avoid duplicates.
     //
 
-    unordered_set<wstring> seenDirs;
+    NameSet seenDirs;
 
 
 
@@ -400,7 +401,7 @@ HRESULT CMultiThreadedLister::EnumerateSubdirectories (shared_ptr<CDirectoryInfo
         {
             if (CFlag::IsSet (entry.dwFileAttributes, FILE_ATTRIBUTE_DIRECTORY))
             {
-                seenDirs.insert (entry.m_strLowerName);
+                seenDirs.insert (entry.cFileName);
             }
         }
     }
@@ -438,11 +439,9 @@ HRESULT CMultiThreadedLister::EnumerateSubdirectories (shared_ptr<CDirectoryInfo
 
             if (m_cmdLinePtr->m_fTree)
             {
-                wstring lowerName = ToLower (wfd.cFileName);
-
-                if (!seenDirs.contains (lowerName))
+                if (!seenDirs.contains (wfd.cFileName))
                 {
-                    seenDirs.insert (lowerName);
+                    seenDirs.insert (wfd.cFileName);
                     AddMatchToList (wfd, *pDirInfo, nullptr);
                 }
             }
@@ -946,14 +945,16 @@ HRESULT CMultiThreadedLister::DisplayTreeEntries (
 
 
     //
-    // Build lookup from lowercase filename → child CDirectoryInfo
+    // Build lookup from child directory name -> child CDirectoryInfo.  Both the
+    // keys here and the entry names probed below come from FindFirstFile on this
+    // directory, so they are the canonical on-disk bytes and compare directly.
     //
 
     ChildMap childMap;
 
     for (const auto & pChild : pDirInfo->m_vChildren)
     {
-        childMap[ToLower (pChild->m_dirPath.filename().wstring())] = pChild;
+        childMap[pChild->m_dirPath.filename().wstring()] = pChild;
     }
 
     size_t cEntries = pDirInfo->m_vMatches.size();
@@ -992,7 +993,7 @@ HRESULT CMultiThreadedLister::DisplayTreeEntries (
 
         if (fIsDir && m_fTreePruningActive)
         {
-            auto it = childMap.find (entry.m_strLowerName);
+            auto it = childMap.find (entry.cFileName);
 
             if (it != childMap.end() && !WaitForTreeVisibility (it->second))
             {
@@ -1017,7 +1018,7 @@ HRESULT CMultiThreadedLister::DisplayTreeEntries (
 
         if (fIsDir)
         {
-            auto it = childMap.find (entry.m_strLowerName);
+            auto it = childMap.find (entry.cFileName);
 
             if (it != childMap.end())
             {
@@ -1075,7 +1076,7 @@ bool CMultiThreadedLister::IsLastVisibleEntry (
             return false;
         }
 
-        auto itNext = childMap.find (nextEntry.m_strLowerName);
+        auto itNext = childMap.find (nextEntry.cFileName);
 
         if (itNext != childMap.end() && WaitForTreeVisibility (itNext->second))
         {

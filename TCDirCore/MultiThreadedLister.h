@@ -1,6 +1,7 @@
 #pragma once
 
 #include "DirectoryLister.h"
+#include "TransparentWStringHash.h"
 #include "TreeConnectorState.h"
 #include "WorkQueue.h"
 
@@ -53,18 +54,6 @@ protected:
 
 
 private:
-    static inline wstring ToLower (const wstring & s)
-    {
-        wstring lower = s;
-
-
-
-        transform (lower.begin(), lower.end(), lower.begin(), towlower);
-        return lower;
-    }
-
-
-
     HRESULT PerformEnumeration            (shared_ptr<CDirectoryInfo> pDirInfo);
     HRESULT EnumerateMatchingFiles        (shared_ptr<CDirectoryInfo> pDirInfo);
     HRESULT EnumerateSubdirectories       (shared_ptr<CDirectoryInfo> pDirInfo);
@@ -79,7 +68,8 @@ private:
                                            IResultsDisplayer & displayer,
                                            SListingTotals & totals);
 
-    using ChildMap = unordered_map<wstring, shared_ptr<CDirectoryInfo>>;
+    using ChildMap = unordered_map<wstring, shared_ptr<CDirectoryInfo>, STransparentWStringHash, std::equal_to<>>;
+    using NameSet  = unordered_set<wstring, STransparentWStringHash, std::equal_to<>>;
 
     HRESULT PrintDirectoryTreeMode        (shared_ptr<CDirectoryInfo>           pDirInfo,
                                            const CDriveInfo                   & driveInfo,

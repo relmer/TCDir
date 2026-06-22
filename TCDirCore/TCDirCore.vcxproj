@@ -251,6 +251,7 @@
     <ClInclude Include="Usage.h" />
     <ClInclude Include="Version.h" />
     <ClInclude Include="TreeConnectorState.h" />
+    <ClInclude Include="TransparentWStringHash.h" />
     <ClInclude Include="WorkQueue.h" />
   </ItemGroup>
   <ItemGroup>
