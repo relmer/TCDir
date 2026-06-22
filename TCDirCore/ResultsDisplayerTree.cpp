@@ -186,41 +186,41 @@ void CResultsDisplayerTree::DisplaySingleEntry (const FileInfo & entry, STreeCon
 
     m_consolePtr->Printf (textAttr, L"%s", entry.cFileName);
 
-    if (!entry.m_strReparseTarget.empty ())
+    if (!entry.m_strReparseTarget.empty())
     {
-        bool fEllipsize = !m_cmdLinePtr->m_fEllipsize.has_value () || m_cmdLinePtr->m_fEllipsize.value ();
+        bool fEllipsize = !m_cmdLinePtr->m_fEllipsize.has_value() || m_cmdLinePtr->m_fEllipsize.value();
 
         m_consolePtr->Printf (CConfig::EAttribute::Information, L" %c ", UnicodeSymbols::RightArrow);
 
         if (fEllipsize)
         {
             size_t availableWidth = ComputeAvailableWidthForTarget (
-                m_consolePtr->GetWidth (),
+                m_consolePtr->GetWidth(),
                 m_cmdLinePtr->m_eSizeFormat,
                 m_cchStringLengthOfMaxFileSize,
                 m_fIconsActive,
                 m_cmdLinePtr->m_fDebug,
                 m_cmdLinePtr->m_fShowOwner,
                 m_cchMaxOwnerLength,
-                prefix.length (),
+                prefix.length(),
                 wcslen (entry.cFileName));
 
             SEllipsizedPath ellipsized = EllipsizePath (entry.m_strReparseTarget, availableWidth);
 
             if (ellipsized.fTruncated)
             {
-                m_consolePtr->Printf (textAttr, L"%s", ellipsized.prefix.c_str ());
+                m_consolePtr->Printf (textAttr, L"%s", ellipsized.prefix.c_str());
                 m_consolePtr->Printf (CConfig::EAttribute::Default, L"%c", UnicodeSymbols::Ellipsis);
-                m_consolePtr->Printf (textAttr, L"%s", ellipsized.suffix.c_str ());
+                m_consolePtr->Printf (textAttr, L"%s", ellipsized.suffix.c_str());
             }
             else
             {
-                m_consolePtr->Printf (textAttr, L"%s", ellipsized.prefix.c_str ());
+                m_consolePtr->Printf (textAttr, L"%s", ellipsized.prefix.c_str());
             }
         }
         else
         {
-            m_consolePtr->Printf (textAttr, L"%s", entry.m_strReparseTarget.c_str ());
+            m_consolePtr->Printf (textAttr, L"%s", entry.m_strReparseTarget.c_str());
         }
     }
 
@@ -296,7 +296,7 @@ void CResultsDisplayerTree::DisplayFileStreamsWithTreePrefix (const FileInfo & e
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-CResultsDisplayerTree::SDirectoryDisplayState CResultsDisplayerTree::SaveDirectoryState () const
+CResultsDisplayerTree::SDirectoryDisplayState CResultsDisplayerTree::SaveDirectoryState() const
 {
     return SDirectoryDisplayState {
         m_cchStringLengthOfMaxFileSize,
@@ -342,7 +342,7 @@ void CResultsDisplayerTree::RestoreDirectoryState (SDirectoryDisplayState && sta
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-void CResultsDisplayerTree::DisplayTreeRootSummary ()
+void CResultsDisplayerTree::DisplayTreeRootSummary()
 {
     //
     // In tree mode we suppress the per-directory summary for the root

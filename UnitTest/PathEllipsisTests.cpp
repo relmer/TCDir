@@ -18,7 +18,7 @@ namespace UnitTest
 
         TEST_CLASS_INITIALIZE(ClassInitialize)
         {
-            SetupEhmForUnitTests ();
+            SetupEhmForUnitTests();
         }
 
 
@@ -33,8 +33,8 @@ namespace UnitTest
             SEllipsizedPath result = EllipsizePath (target, 80);
 
             Assert::IsFalse (result.fTruncated, L"Short path should not be truncated");
-            Assert::AreEqual (target.c_str (), result.prefix.c_str ());
-            Assert::IsTrue (result.suffix.empty ());
+            Assert::AreEqual (target.c_str(), result.prefix.c_str());
+            Assert::IsTrue (result.suffix.empty());
         }
 
 
@@ -51,8 +51,8 @@ namespace UnitTest
             SEllipsizedPath result = EllipsizePath (target, 45);
 
             Assert::IsTrue (result.fTruncated, L"Should be truncated");
-            Assert::AreEqual (L"C:\\Program Files\\", result.prefix.c_str ());
-            Assert::AreEqual (L"\\Notepad\\Notepad.exe", result.suffix.c_str ());
+            Assert::AreEqual (L"C:\\Program Files\\", result.prefix.c_str());
+            Assert::AreEqual (L"\\Notepad\\Notepad.exe", result.suffix.c_str());
         }
 
 
@@ -70,8 +70,8 @@ namespace UnitTest
             SEllipsizedPath result = EllipsizePath (target, 42);
 
             Assert::IsTrue (result.fTruncated, L"Should be truncated");
-            Assert::AreEqual (L"C:\\Program Files\\", result.prefix.c_str ());
-            Assert::AreEqual (L"\\WingetCreateCLI.exe", result.suffix.c_str ());
+            Assert::AreEqual (L"C:\\Program Files\\", result.prefix.c_str());
+            Assert::AreEqual (L"\\WingetCreateCLI.exe", result.suffix.c_str());
         }
 
 
@@ -89,8 +89,8 @@ namespace UnitTest
             SEllipsizedPath result = EllipsizePath (target, 20);
 
             Assert::IsTrue (result.fTruncated, L"Should be truncated");
-            Assert::AreEqual (L"C:\\", result.prefix.c_str ());
-            Assert::AreEqual (L"\\target.exe", result.suffix.c_str ());
+            Assert::AreEqual (L"C:\\", result.prefix.c_str());
+            Assert::AreEqual (L"\\target.exe", result.suffix.c_str());
         }
 
 
@@ -107,8 +107,8 @@ namespace UnitTest
             SEllipsizedPath result = EllipsizePath (target, 15);
 
             Assert::IsTrue (result.fTruncated, L"Truncated leaf should be flagged as truncated");
-            Assert::AreEqual (size_t (14), result.prefix.length (), L"Prefix should be availableWidth - 1 for trailing ellipsis");
-            Assert::IsTrue (result.suffix.empty (), L"Suffix should be empty for trailing ellipsis");
+            Assert::AreEqual (size_t (14), result.prefix.length(), L"Prefix should be availableWidth - 1 for trailing ellipsis");
+            Assert::IsTrue (result.suffix.empty(), L"Suffix should be empty for trailing ellipsis");
         }
 
 
@@ -124,7 +124,7 @@ namespace UnitTest
             SEllipsizedPath result = EllipsizePath (target, 15);
 
             Assert::IsFalse (result.fTruncated);
-            Assert::AreEqual (target.c_str (), result.prefix.c_str ());
+            Assert::AreEqual (target.c_str(), result.prefix.c_str());
         }
 
 
@@ -137,7 +137,7 @@ namespace UnitTest
             SEllipsizedPath result = EllipsizePath (target, 5);
 
             Assert::IsTrue (result.fTruncated, L"Truncated leaf should be flagged");
-            Assert::AreEqual (size_t (4), result.prefix.length ());
+            Assert::AreEqual (size_t (4), result.prefix.length());
         }
 
 
@@ -152,7 +152,7 @@ namespace UnitTest
             SEllipsizedPath result = EllipsizePath (target, 80);
 
             Assert::IsFalse (result.fTruncated);
-            Assert::AreEqual (target.c_str (), result.prefix.c_str ());
+            Assert::AreEqual (target.c_str(), result.prefix.c_str());
         }
 
 
@@ -170,7 +170,7 @@ namespace UnitTest
             Assert::IsTrue (result.fTruncated, L"Should be truncated at width 50");
 
             // Verify total display length fits
-            size_t totalLen = result.prefix.length () + 1 + result.suffix.length ();
+            size_t totalLen = result.prefix.length() + 1 + result.suffix.length();
             Assert::IsTrue (totalLen <= 50, L"Truncated result should fit within available width");
 
             // Verify leaf filename is preserved in suffix
@@ -191,7 +191,7 @@ namespace UnitTest
             SEllipsizedPath result = EllipsizePath (target, 120);
 
             Assert::IsFalse (result.fTruncated, L"Should fit at 120 chars");
-            Assert::AreEqual (target.c_str (), result.prefix.c_str ());
+            Assert::AreEqual (target.c_str(), result.prefix.c_str());
         }
 
 
@@ -205,7 +205,7 @@ namespace UnitTest
 
             Assert::IsTrue (result.fTruncated, L"Should be truncated at 60 chars");
 
-            size_t totalLen = result.prefix.length () + 1 + result.suffix.length ();
+            size_t totalLen = result.prefix.length() + 1 + result.suffix.length();
             Assert::IsTrue (totalLen <= 60, L"Should fit within 60 chars");
         }
 
@@ -221,7 +221,7 @@ namespace UnitTest
             SEllipsizedPath result = EllipsizePath (target, 120);
 
             Assert::IsFalse (result.fTruncated, L"winget target should fit at 120");
-            Assert::AreEqual (target.c_str (), result.prefix.c_str ());
+            Assert::AreEqual (target.c_str(), result.prefix.c_str());
         }
 
 
@@ -234,7 +234,7 @@ namespace UnitTest
             SEllipsizedPath result = EllipsizePath (L"", 80);
 
             Assert::IsFalse (result.fTruncated);
-            Assert::IsTrue (result.prefix.empty ());
+            Assert::IsTrue (result.prefix.empty());
         }
 
 

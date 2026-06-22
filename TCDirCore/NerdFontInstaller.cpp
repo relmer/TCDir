@@ -262,6 +262,7 @@ HRESULT CNerdFontInstaller::DownloadAndInstallFonts (CConsole & console, const w
     wchar_t         szTempDir[MAX_PATH]    = { };
     wchar_t         szExtractDir[MAX_PATH] = { };
     DWORD           dwRet                  = 0;
+    BOOL            fCreated               = FALSE;
     std::error_code ec;
     wstring         strZipPath;
 
@@ -282,7 +283,9 @@ HRESULT CNerdFontInstaller::DownloadAndInstallFonts (CConsole & console, const w
     CHRA (hr);
 
     std::filesystem::remove_all (szExtractDir, ec);
-    CBREx (CreateDirectoryW (szExtractDir, NULL) || GetLastError() == ERROR_ALREADY_EXISTS, E_FAIL);
+
+    fCreated = CreateDirectoryW (szExtractDir, NULL);
+    CBREx (fCreated || GetLastError() == ERROR_ALREADY_EXISTS, E_FAIL);
 
     PrintInstallStepStatus (console, iStatusColumn, L"done.");
 

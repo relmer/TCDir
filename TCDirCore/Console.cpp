@@ -165,7 +165,7 @@ void CConsole::Putchar (WORD attr, WCHAR ch)
 {
     SetColor (attr);
     m_strBuffer.push_back (ch);
-    FlushIfAuto ();
+    FlushIfAuto();
 }
 
 
@@ -187,7 +187,7 @@ void CConsole::Puts (int attributeIndex, LPCWSTR psz)
     // Reset to default color before final newline to prevent color bleeding
     SetColor (m_configPtr->m_rgAttributes[CConfig::EAttribute::Default]);
     m_strBuffer.append (L"\n");
-    FlushIfAuto ();
+    FlushIfAuto();
 }
 
 
@@ -220,7 +220,7 @@ int CConsole::Printf (CConfig::EAttribute attributeIndex, LPCWSTR pszFormat, ...
 
     ProcessMultiLineStringWithAttribute (s_szBuf, m_configPtr->m_rgAttributes[attributeIndex]);
 
-    FlushIfAuto ();
+    FlushIfAuto();
 
 Error:
     va_end (vaArgs);
@@ -260,7 +260,7 @@ int CConsole::Printf (WORD attr, LPCWSTR pszFormat, ...)
 
 
 
-    FlushIfAuto ();
+    FlushIfAuto();
 
 Error:
     va_end (vaArgs);
@@ -303,7 +303,7 @@ bool CConsole::ParseColorMarker (wstring_view text, size_t pos, CConfig::EAttrib
 
 
     // Must start with '{'
-    CBRAEx (pos < text.size () && text[pos] == L'{', E_UNEXPECTED);
+    CBRAEx (pos < text.size() && text[pos] == L'{', E_UNEXPECTED);
 
     // Find the closing '}'
     endPos = text.find (L'}', pos + 1);
@@ -415,7 +415,7 @@ void CConsole::ColorPuts (LPCWSTR psz)
     // Reset to default color before newline to prevent color bleeding
     SetColor (m_configPtr->m_rgAttributes[CConfig::EAttribute::Default]);
     m_strBuffer.append (L"\n");
-    FlushIfAuto ();
+    FlushIfAuto();
 }
 
 
@@ -449,7 +449,7 @@ void CConsole::ColorPrintf (LPCWSTR pszFormat, ...)
     if (SUCCEEDED (hr))
     {
         ColorPrint (s_szBuf);
-        FlushIfAuto ();
+        FlushIfAuto();
     }
 }
 
@@ -663,7 +663,7 @@ void CConsole::FlushIfAuto (void)
 {
     if (m_fAutoFlush)
     {
-        Flush ();
+        Flush();
     }
 }
 

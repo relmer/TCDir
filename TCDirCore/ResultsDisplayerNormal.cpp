@@ -101,16 +101,16 @@ void CResultsDisplayerNormal::DisplayFileResults (const CDirectoryInfo & di)
 
         m_consolePtr->Printf (textAttr, L"%s", fileInfo.cFileName);
 
-        if (!fileInfo.m_strReparseTarget.empty ())
+        if (!fileInfo.m_strReparseTarget.empty())
         {
-            bool fEllipsize = !m_cmdLinePtr->m_fEllipsize.has_value () || m_cmdLinePtr->m_fEllipsize.value ();
+            bool fEllipsize = !m_cmdLinePtr->m_fEllipsize.has_value() || m_cmdLinePtr->m_fEllipsize.value();
 
             m_consolePtr->Printf (CConfig::EAttribute::Information, L" %c ", UnicodeSymbols::RightArrow);
 
             if (fEllipsize)
             {
                 size_t availableWidth = ComputeAvailableWidthForTarget (
-                    m_consolePtr->GetWidth (),
+                    m_consolePtr->GetWidth(),
                     m_cmdLinePtr->m_eSizeFormat,
                     cchStringLengthOfMaxFileSize,
                     m_fIconsActive,
@@ -124,18 +124,18 @@ void CResultsDisplayerNormal::DisplayFileResults (const CDirectoryInfo & di)
 
                 if (ellipsized.fTruncated)
                 {
-                    m_consolePtr->Printf (textAttr, L"%s", ellipsized.prefix.c_str ());
+                    m_consolePtr->Printf (textAttr, L"%s", ellipsized.prefix.c_str());
                     m_consolePtr->Printf (CConfig::EAttribute::Default, L"%c", UnicodeSymbols::Ellipsis);
-                    m_consolePtr->Printf (textAttr, L"%s", ellipsized.suffix.c_str ());
+                    m_consolePtr->Printf (textAttr, L"%s", ellipsized.suffix.c_str());
                 }
                 else
                 {
-                    m_consolePtr->Printf (textAttr, L"%s", ellipsized.prefix.c_str ());
+                    m_consolePtr->Printf (textAttr, L"%s", ellipsized.prefix.c_str());
                 }
             }
             else
             {
-                m_consolePtr->Printf (textAttr, L"%s", fileInfo.m_strReparseTarget.c_str ());
+                m_consolePtr->Printf (textAttr, L"%s", fileInfo.m_strReparseTarget.c_str());
             }
         }
 
@@ -653,15 +653,15 @@ void CResultsDisplayerNormal::DisplayFileOwner (const wstring & owner, size_t cc
 
 void CResultsDisplayerNormal::GetFileOwners (const CDirectoryInfo & di, vector<wstring> & owners, size_t & cchMaxOwnerLength)
 {
-    owners.reserve (di.m_vMatches.size ());
+    owners.reserve (di.m_vMatches.size());
     cchMaxOwnerLength = 0;
 
     for (const auto & fileInfo : di.m_vMatches)
     {
         filesystem::path fullPath = di.m_dirPath / fileInfo.cFileName;
-        wstring          owner    = GetFileOwner (fullPath.c_str ());
+        wstring          owner    = GetFileOwner (fullPath.c_str());
         
-        cchMaxOwnerLength = max (cchMaxOwnerLength, owner.length ());
+        cchMaxOwnerLength = max (cchMaxOwnerLength, owner.length());
         owners.push_back (move (owner));
     }
 }

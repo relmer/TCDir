@@ -50,7 +50,7 @@ public:
     void BeginDirectory                 (const CDirectoryInfo & di);
     void DisplaySingleEntry             (const FileInfo & entry, STreeConnectorState & treeState, bool fIsLastEntry, size_t idxFile);
     void DisplayFileStreamsWithTreePrefix (const FileInfo & entry, const STreeConnectorState & treeState);
-    void DisplayTreeRootSummary         ();
+    void DisplayTreeRootSummary();
     void DisplayTreeEmptyRootMessage    (const CDirectoryInfo & di);
 
 
@@ -68,7 +68,7 @@ public:
         size_t          m_cchMaxOwnerLength            = 0;
     };
 
-    SDirectoryDisplayState SaveDirectoryState    () const;
+    SDirectoryDisplayState SaveDirectoryState() const;
     void                   RestoreDirectoryState (SDirectoryDisplayState && state);
 
 

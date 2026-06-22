@@ -242,7 +242,7 @@ namespace UnitTest
 
         TEST_METHOD(Snapshot_GitHubRelease_ParsesAndExtractsTag)
         {
-            string         strJson = GetGitHubReleaseSnapshot ();
+            string         strJson = GetGitHubReleaseSnapshot();
             JsonValue      root;
             JsonParseError err;
             string         strTag;
@@ -260,7 +260,7 @@ namespace UnitTest
 
         TEST_METHOD(Snapshot_GitHubRelease_WalksNestedAssets)
         {
-            string         strJson = GetGitHubReleaseSnapshot ();
+            string         strJson = GetGitHubReleaseSnapshot();
             JsonValue      root;
             JsonParseError err;
 
@@ -295,7 +295,7 @@ namespace UnitTest
             // A partial network read yields a truncated body.  Every prefix must
             // terminate (no infinite loop) and fail gracefully (no crash).
             //
-            string strFull = GetGitHubReleaseSnapshot ();
+            string strFull = GetGitHubReleaseSnapshot();
 
             for (size_t pct = 1; pct < 100; pct += 7)
             {

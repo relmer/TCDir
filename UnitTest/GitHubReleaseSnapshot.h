@@ -13,7 +13,7 @@
 
 
 
-inline string GetGitHubReleaseSnapshot ()
+inline string GetGitHubReleaseSnapshot()
 {
     static const char * const s_rgChunks[] =
     {

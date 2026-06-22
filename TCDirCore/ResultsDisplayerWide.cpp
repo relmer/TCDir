@@ -518,7 +518,7 @@ HRESULT CResultsDisplayerWide::DisplayFile (const WIN32_FIND_DATA & wfd, size_t 
         }
     }
 
-    m_consolePtr->Printf (textAttr, L"%s", name.data ());
+    m_consolePtr->Printf (textAttr, L"%s", name.data());
 
     if (cxColumnWidth > cchName)
     {

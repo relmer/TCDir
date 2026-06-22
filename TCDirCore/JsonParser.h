@@ -75,10 +75,10 @@ private:
     HRESULT ParseArray   (JsonValue & outValue);
     HRESULT ParseKeyword (const char * keyword, JsonValue & outValue);
 
-    void SkipWhitespace ();
-    char Peek           () const;
-    char Advance        ();
-    bool AtEnd          () const;
+    void SkipWhitespace();
+    char Peek() const;
+    char Advance();
+    bool AtEnd() const;
     void SetError       (const string & msg);
 
     // Maximum container nesting depth.  Bounds recursion so pathological deeply
@@ -119,8 +119,8 @@ public:
     HRESULT Parse      (string source, JsonParseError & outError) { return ParseImpl (move (source), outError, false); }
     HRESULT ParseJsonc (string source, JsonParseError & outError) { return ParseImpl (move (source), outError, true);  }
 
-    const JsonValue & Root   () const { return m_root; }
-    const string    & Source () const { return *m_source; }
+    const JsonValue & Root() const { return m_root; }
+    const string    & Source() const { return *m_source; }
 
 private:
     HRESULT ParseImpl (string source, JsonParseError & outError, bool fJsonc)

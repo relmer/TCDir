@@ -36,12 +36,12 @@ public:
     static bool AreFontFilesPresent (LPCWSTR pszFontDir);
 
     // True if any TCDir-installed Nerd Font remains in the system Fonts folder.
-    static bool HasSystemNerdFontFilesInstalled ();
+    static bool HasSystemNerdFontFilesInstalled();
 
     // Uninstall manifest (records the files TCDir installed) under HKCU.
     static HRESULT SaveManifest   (const vector<wstring> & rgFontFiles);
     static HRESULT LoadManifest   (vector<wstring> & rgFontFiles);
-    static void    ClearManifest ();
+    static void    ClearManifest();
 
 private:
     // Read the TrueType "full name" (name ID 4) from a font file's name table.

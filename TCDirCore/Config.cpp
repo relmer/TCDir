@@ -1356,7 +1356,7 @@ bool CConfig::TryProcessIntSwitch (wstring_view entry, EAttributeSource source)
 
     if (entry.length() > 6 && _wcsnicmp (entry.data(), L"Depth=", 6) == 0)
     {
-        int value = _wtoi (wstring (entry.substr (6)).c_str ());
+        int value = _wtoi (wstring (entry.substr (6)).c_str());
 
         if (value > 0)
         {
@@ -1382,7 +1382,7 @@ bool CConfig::TryProcessIntSwitch (wstring_view entry, EAttributeSource source)
 
     if (entry.length() > 11 && _wcsnicmp (entry.data(), L"TreeIndent=", 11) == 0)
     {
-        int value = _wtoi (wstring (entry.substr (11)).c_str ());
+        int value = _wtoi (wstring (entry.substr (11)).c_str());
 
         if (value >= 1 && value <= 8)
         {

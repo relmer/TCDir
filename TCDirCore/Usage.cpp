@@ -368,7 +368,7 @@ static void AppendThreeColumnRows (wstring                       & text,
                                    optional<int>                   col3OffsetFromCol2 = nullopt)
 {
     vector<wstring> col2Values;
-    col2Values.reserve (rows.size ());
+    col2Values.reserve (rows.size());
 
     for (const SThreeColumnRow & row : rows)
     {
@@ -390,7 +390,7 @@ static void AppendThreeColumnRows (wstring                       & text,
         text.append (pad1, L' ');
         text.append (row.col2);
 
-        if (!row.col3.empty ())
+        if (!row.col3.empty())
         {
             int col2End = col2 + MeasureVisibleWidth (row.col2);
             int pad2    = (std::max) (1, col3 - col2End);
@@ -424,7 +424,7 @@ static int AppendDetailGrid (wstring                       & usageBody,
                              const vector<SThreeColumnRow> & rows)
 {
     vector<wstring> labels;
-    labels.reserve (rows.size ());
+    labels.reserve (rows.size());
 
     for (const SThreeColumnRow & row : rows)
     {
@@ -453,14 +453,14 @@ static bool ResolveUsageIconState (CConsole & console, optional<bool> fIconsCli)
 {
     const CConfig & config = *console.m_configPtr;
 
-    if (fIconsCli.has_value ())
+    if (fIconsCli.has_value())
     {
-        return fIconsCli.value ();
+        return fIconsCli.value();
     }
 
-    if (config.m_fIcons.has_value ())
+    if (config.m_fIcons.has_value())
     {
-        return config.m_fIcons.value ();
+        return config.m_fIcons.value();
     }
 
     CNerdFontDetector detector;
@@ -496,7 +496,7 @@ static void PrintUsageHeader (CConsole & console)
     wstring buildTimestamp = VERSION_BUILD_TIMESTAMP;
 
     // Format build timestamp without seconds (drop last 3 chars ":SS" from __TIME__)
-    buildTimestamp.resize (buildTimestamp.length () - 3);
+    buildTimestamp.resize (buildTimestamp.length() - 3);
 
     // "Technicolor" is printed with special per-character color cycling
     console.Puts (CConfig::EAttribute::Default, L"");
@@ -507,7 +507,7 @@ static void PrintUsageHeader (CConsole & console)
                               GetArchitecture(),
                               buildTimestamp,
                               UnicodeSymbols::Copyright
-                       ).c_str ());
+                       ).c_str());
 }
 
 
@@ -639,7 +639,7 @@ static vector<SUsageOptionRow> BuildAliasRows (wstring_view pszLong)
 static vector<wstring> BuildSynopsisTokens (const vector<SUsageOptionRow> & primaryRows, const vector<SUsageOptionRow> & aliasRows, wstring_view szShort)
 {
     vector<wstring> synopsisTokens;
-    synopsisTokens.reserve (primaryRows.size () + aliasRows.size () + 4);
+    synopsisTokens.reserve (primaryRows.size() + aliasRows.size() + 4);
 
     synopsisTokens.push_back (
         L"[{InformationHighlight}drive:{Information}]"
@@ -649,7 +649,7 @@ static vector<wstring> BuildSynopsisTokens (const vector<SUsageOptionRow> & prim
     synopsisTokens.push_back (format (L"[{{InformationHighlight}}{0}O{{Information}}[[:]{{InformationHighlight}}sortorder{{Information}}]] ", szShort));
     synopsisTokens.push_back (format (L"[{{InformationHighlight}}{0}T{{Information}}[[:]{{InformationHighlight}}timefield{{Information}}]] ", szShort));
 
-    for (size_t i = 3; i < primaryRows.size (); ++i)
+    for (size_t i = 3; i < primaryRows.size(); ++i)
     {
         synopsisTokens.push_back (L"[" + primaryRows[i].label + L"] ");
     }
@@ -705,7 +705,7 @@ void CUsage::DisplayUsage (CConsole & console, wchar_t chPrefix, optional<bool> 
     DisplaySynopsis (console, synopsisTokens);
 
     vector<wstring> optionLabels;
-    optionLabels.reserve (primaryRows.size () + aliasRows.size ());
+    optionLabels.reserve (primaryRows.size() + aliasRows.size());
 
     for (const SUsageOptionRow & row : primaryRows)
     {
@@ -792,12 +792,12 @@ void CUsage::DisplayUsage (CConsole & console, wchar_t chPrefix, optional<bool> 
 
     usageBody.push_back (L'\n');
 
-    for (size_t i = 3; i < primaryRows.size (); ++i)
+    for (size_t i = 3; i < primaryRows.size(); ++i)
     {
         const SUsageOptionRow & row = primaryRows[i];
         AppendAlignedRow (usageBody, INDENT, optionDescCol, row.label, row.description);
 
-        if (!row.continuation.empty ())
+        if (!row.continuation.empty())
         {
             usageBody.append (continuationCol, L' ');
             usageBody.append (row.continuation);
@@ -812,7 +812,7 @@ void CUsage::DisplayUsage (CConsole & console, wchar_t chPrefix, optional<bool> 
         AppendAlignedRow (usageBody, INDENT, optionDescCol, row.label, row.description);
     }
 
-    console.ColorPuts (usageBody.c_str ());
+    console.ColorPuts (usageBody.c_str());
 }
 
 
@@ -1134,7 +1134,7 @@ void CUsage::DisplayAttributeConfiguration (CConsole & console, int columnWidthA
             }
         }
 
-        if (symbol.empty ())
+        if (symbol.empty())
         {
             symbol = info.symbol;
         }
@@ -1143,7 +1143,7 @@ void CUsage::DisplayAttributeConfiguration (CConsole & console, int columnWidthA
 
         // Surrogate pairs are 2 wchar_t but 1 display cell; widen the column
         // for this item so the source label still aligns with non-surrogate rows.
-        int cxSurrogateAdjust = max (0, static_cast<int> (symbol.size ()) - 1);
+        int cxSurrogateAdjust = max (0, static_cast<int> (symbol.size()) - 1);
 
         DisplayItemAndSource (console, display, attr, source, columnWidthAttr + cxSurrogateAdjust, columnWidthSource, 0, EItemDisplayMode::SingleColumn);
     }
@@ -1196,7 +1196,7 @@ void CUsage::DisplayExtensionConfigurationSingleColumn (CConsole & console, int 
     for (const auto & [ext, extAttr] : extensions)
     {
         auto    sourceIter = config.m_mapExtensionSources.find (ext);
-        CConfig::EAttributeSource source = (sourceIter != config.m_mapExtensionSources.end ())
+        CConfig::EAttributeSource source = (sourceIter != config.m_mapExtensionSources.end())
                                           ? sourceIter->second
                                           : CConfig::EAttributeSource::Default;
 
@@ -1204,7 +1204,7 @@ void CUsage::DisplayExtensionConfigurationSingleColumn (CConsole & console, int 
         if (fShowIcons)
         {
             auto iconIter = config.m_mapExtensionToIcon.find (ext);
-            if (iconIter != config.m_mapExtensionToIcon.end ())
+            if (iconIter != config.m_mapExtensionToIcon.end())
             {
                 WideCharPair wcp = CodePointToWideChars (iconIter->second);
                 iconPrefix += wcp.chars[0];
@@ -1251,7 +1251,7 @@ void CUsage::DisplayItemAndSource (CConsole & console, wstring_view item, WORD a
             break;
     }
 
-    int     pad          = max (0, static_cast<int> (columnWidthItem) - static_cast<int> (item.size ()));
+    int     pad          = max (0, static_cast<int> (columnWidthItem) - static_cast<int> (item.size()));
     size_t  cxIconWidth  = fShowIcons ? CX_ICON_COLUMN : 0;
     size_t  cxUsed       = cxIconWidth + columnWidthItem + 2 + columnWidthSource;
     WORD    defaultAttr  = console.m_configPtr->m_rgAttributes[CConfig::EAttribute::Default];
@@ -1264,16 +1264,16 @@ void CUsage::DisplayItemAndSource (CConsole & console, wstring_view item, WORD a
         console.Printf (CConfig::EAttribute::Information, L"  ");
     }
 
-    if (!iconPrefix.empty ())
+    if (!iconPrefix.empty())
     {
-        console.Printf (visibleAttr, L"%.*ls ", static_cast<int> (iconPrefix.size ()), iconPrefix.data ());
+        console.Printf (visibleAttr, L"%.*ls ", static_cast<int> (iconPrefix.size()), iconPrefix.data());
     }
     else if (fShowIcons)
     {
         console.Printf (CConfig::EAttribute::Information, L"   ");
     }
 
-    console.Printf (visibleAttr,                      L"%.*ls", static_cast<int> (item.size ()), item.data ());
+    console.Printf (visibleAttr,                      L"%.*ls", static_cast<int> (item.size()), item.data());
     console.Printf (CConfig::EAttribute::Information, L"%*ls  ", pad, L"");
     console.Printf (sourceAttr,                       L"%-*ls", static_cast<int> (columnWidthSource), sourceName);
 
@@ -1303,8 +1303,8 @@ void CUsage::DisplayItemAndSource (CConsole & console, wstring_view item, WORD a
 void CUsage::DisplayExtensionConfigurationMultiColumn (CConsole & console, const vector<pair<wstring, WORD>> & extensions, size_t maxExtLen, size_t cxSourceWidth, size_t cxAvailable, size_t cColumns, bool fShowIcons)
 {
     size_t          cxColumnWidth   = max (static_cast<size_t> (1), cxAvailable / cColumns);
-    size_t          cRows           = (extensions.size () + cColumns - 1) / cColumns;
-    size_t          cItemsInLastRow = extensions.size () % cColumns;
+    size_t          cRows           = (extensions.size() + cColumns - 1) / cColumns;
+    size_t          cItemsInLastRow = extensions.size() % cColumns;
     size_t          fullRows        = cItemsInLastRow ? cRows - 1 : cRows;
     const CConfig & config          = *console.m_configPtr;
 
@@ -1318,7 +1318,7 @@ void CUsage::DisplayExtensionConfigurationMultiColumn (CConsole & console, const
 
         for (size_t nCol = 0; nCol < cColumns; ++nCol)
         {
-            if ((nRow * cColumns + nCol) >= extensions.size ())
+            if ((nRow * cColumns + nCol) >= extensions.size())
             {
                 break;
             }
@@ -1338,7 +1338,7 @@ void CUsage::DisplayExtensionConfigurationMultiColumn (CConsole & console, const
             const auto & ext        = extensions[idx].first;
             WORD         extAttr    = extensions[idx].second;
             auto         sourceIter = config.m_mapExtensionSources.find (ext);
-            CConfig::EAttributeSource source = (sourceIter != config.m_mapExtensionSources.end ())
+            CConfig::EAttributeSource source = (sourceIter != config.m_mapExtensionSources.end())
                                               ? sourceIter->second
                                               : CConfig::EAttributeSource::Default;
 
@@ -1346,7 +1346,7 @@ void CUsage::DisplayExtensionConfigurationMultiColumn (CConsole & console, const
             if (fShowIcons)
             {
                 auto iconIter = config.m_mapExtensionToIcon.find (ext);
-                if (iconIter != config.m_mapExtensionToIcon.end ())
+                if (iconIter != config.m_mapExtensionToIcon.end())
                 {
                     WideCharPair wcp = CodePointToWideChars (iconIter->second);
                     iconPrefix += wcp.chars[0];
@@ -1375,7 +1375,7 @@ void CUsage::DisplayExtensionConfigurationMultiColumn (CConsole & console, const
 void CUsage::DisplayExtensionConfiguration (CConsole & console, int columnWidthAttr, int columnWidthSource, bool fShowIcons)
 {
     vector<pair<wstring, WORD>> extensions;
-    UINT                        cxConsoleWidth  = console.GetWidth ();
+    UINT                        cxConsoleWidth  = console.GetWidth();
     size_t                      maxExtLen       = 0;
     size_t                      cxIndent        = 2;
     size_t                      cxAvailable     = (cxConsoleWidth > cxIndent) ? (cxConsoleWidth - cxIndent) : cxConsoleWidth;
@@ -1398,7 +1398,7 @@ void CUsage::DisplayExtensionConfiguration (CConsole & console, int columnWidthA
 
     for (const auto & [ext, _] : extensions)
     {
-        maxExtLen = max (maxExtLen, ext.size ());
+        maxExtLen = max (maxExtLen, ext.size());
     }
 
     // Minimum width per column: [icon(2) + " "] + <extension> + "  " + <source> + padding
@@ -1444,7 +1444,7 @@ void CUsage::DisplayWellKnownDirConfiguration (CConsole & console, bool fShowIco
 
     const CConfig & config          = *console.m_configPtr;
     WORD            dirAttr         = config.m_rgAttributes[CConfig::EAttribute::Directory];
-    UINT            cxConsoleWidth  = console.GetWidth ();
+    UINT            cxConsoleWidth  = console.GetWidth();
     size_t          cxIndent        = 2;
     size_t          cxAvailable     = (cxConsoleWidth > cxIndent) ? (cxConsoleWidth - cxIndent) : cxConsoleWidth;
     size_t          cxSourceWidth   = wcslen (L"Environment");
@@ -1453,10 +1453,10 @@ void CUsage::DisplayWellKnownDirConfiguration (CConsole & console, bool fShowIco
 
 
 
-    vector<pair<wstring, char32_t>> dirs (config.m_mapWellKnownDirToIcon.begin (), config.m_mapWellKnownDirToIcon.end ());
+    vector<pair<wstring, char32_t>> dirs (config.m_mapWellKnownDirToIcon.begin(), config.m_mapWellKnownDirToIcon.end());
     ranges::sort (dirs, {}, &pair<wstring, char32_t>::first);
 
-    if (dirs.empty ())
+    if (dirs.empty())
     {
         return;
     }
@@ -1465,7 +1465,7 @@ void CUsage::DisplayWellKnownDirConfiguration (CConsole & console, bool fShowIco
 
     for (const auto & [name, _] : dirs)
     {
-        maxNameLen = max (maxNameLen, name.size ());
+        maxNameLen = max (maxNameLen, name.size());
     }
 
     // Minimum width per column: icon(2) + " " + <name> + "  " + <source> + padding
@@ -1484,7 +1484,7 @@ void CUsage::DisplayWellKnownDirConfiguration (CConsole & console, bool fShowIco
         for (const auto & [name, cp] : dirs)
         {
             auto    sourceIter = config.m_mapWellKnownDirIconSources.find (name);
-            CConfig::EAttributeSource source = (sourceIter != config.m_mapWellKnownDirIconSources.end ())
+            CConfig::EAttributeSource source = (sourceIter != config.m_mapWellKnownDirIconSources.end())
                                               ? sourceIter->second
                                               : CConfig::EAttributeSource::Default;
 
@@ -1500,8 +1500,8 @@ void CUsage::DisplayWellKnownDirConfiguration (CConsole & console, bool fShowIco
     else
     {
         size_t cxColumnWidth   = max (static_cast<size_t> (1), cxAvailable / cColumns);
-        size_t cRows           = (dirs.size () + cColumns - 1) / cColumns;
-        size_t cItemsInLastRow = dirs.size () % cColumns;
+        size_t cRows           = (dirs.size() + cColumns - 1) / cColumns;
+        size_t cItemsInLastRow = dirs.size() % cColumns;
         size_t fullRows        = cItemsInLastRow ? cRows - 1 : cRows;
 
 
@@ -1514,7 +1514,7 @@ void CUsage::DisplayWellKnownDirConfiguration (CConsole & console, bool fShowIco
 
             for (size_t nCol = 0; nCol < cColumns; ++nCol)
             {
-                if ((nRow * cColumns + nCol) >= dirs.size ())
+                if ((nRow * cColumns + nCol) >= dirs.size())
                 {
                     break;
                 }
@@ -1534,7 +1534,7 @@ void CUsage::DisplayWellKnownDirConfiguration (CConsole & console, bool fShowIco
                 const auto & name       = dirs[idx].first;
                 char32_t     cp         = dirs[idx].second;
                 auto         sourceIter = config.m_mapWellKnownDirIconSources.find (name);
-                CConfig::EAttributeSource source = (sourceIter != config.m_mapWellKnownDirIconSources.end ())
+                CConfig::EAttributeSource source = (sourceIter != config.m_mapWellKnownDirIconSources.end())
                                                   ? sourceIter->second
                                                   : CConfig::EAttributeSource::Default;
 
@@ -2230,9 +2230,9 @@ void CUsage::DisplayEnvVarHelp (CConsole & console, wchar_t chPrefix)
         L"                  {InformationHighlight}<glyph>{Information}  A literal Nerd Font glyph character\n"
         L"                  (empty)  Suppresses the icon for that entry\n");
 
-    console.ColorPrintf (L"{Default}%s\n", exampleCmd.data ());
+    console.ColorPrintf (L"{Default}%s\n", exampleCmd.data());
 
-    if (IsPowerShell ())
+    if (IsPowerShell())
     {
         console.ColorPuts (
             L"  {Information}Persist: {InformationHighlight}[Environment]::SetEnvironmentVariable(\"" TCDIR_ENV_VAR_NAME L"\", $env:" TCDIR_ENV_VAR_NAME L", \"User\"){Information}");
@@ -2240,7 +2240,7 @@ void CUsage::DisplayEnvVarHelp (CConsole & console, wchar_t chPrefix)
 
     console.Puts (CConfig::EAttribute::Default, L"");
 
-    if (IsTcdirEnvVarSet ())
+    if (IsTcdirEnvVarSet())
     {
         DisplayEnvVarCurrentValue    (console, TCDIR_ENV_VAR_NAME);
         DisplayEnvVarDecodedSettings (console);

@@ -106,7 +106,7 @@ struct STreeConnectorState
     // continuation (│ + padding).
     //
 
-    wstring GetStreamContinuation () const
+    wstring GetStreamContinuation() const
     {
         wstring prefix;
 
@@ -159,7 +159,7 @@ struct STreeConnectorState
     // Pop — leave a depth level (leaving a subdirectory's children)
     //
 
-    void Pop ()
+    void Pop()
     {
         if (!m_vAncestorHasSibling.empty())
         {
@@ -173,7 +173,7 @@ struct STreeConnectorState
     // Depth — current nesting depth
     //
 
-    size_t Depth () const
+    size_t Depth() const
     {
         return m_vAncestorHasSibling.size();
     }

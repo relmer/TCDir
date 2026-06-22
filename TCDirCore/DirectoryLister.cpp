@@ -536,10 +536,10 @@ HRESULT CDirectoryLister::HandleFileMatchStreams (const WIN32_FIND_DATA & wfd, F
         si.m_strName = streamData.cStreamName;
         si.m_liSize  = streamData.StreamSize;
 
-        if (si.m_strName.length () > 6 && 
-            _wcsicmp (si.m_strName.c_str () + si.m_strName.length () - 6, L":$DATA") == 0)
+        if (si.m_strName.length() > 6 && 
+            _wcsicmp (si.m_strName.c_str() + si.m_strName.length() - 6, L":$DATA") == 0)
         {
-            si.m_strName.resize (si.m_strName.length () - 6);
+            si.m_strName.resize (si.m_strName.length() - 6);
         }
 
         fileEntry.m_vStreams.push_back (move (si));

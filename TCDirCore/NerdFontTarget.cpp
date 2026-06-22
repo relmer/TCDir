@@ -29,7 +29,7 @@ static constexpr LPCWSTR s_kpszCmdProfileKey   = L"Console\\%SystemRoot%_System3
 
 void CNerdFontTargetCatalog::Build (vector<SNerdFontTargetState> & rgTargets)
 {
-    rgTargets.clear ();
+    rgTargets.clear();
 
     rgTargets.push_back ({ .kind = ENerdFontTarget::WindowsTerminal,
                            .pszDisplayName = L"Windows Terminal",

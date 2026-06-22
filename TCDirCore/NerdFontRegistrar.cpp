@@ -23,9 +23,9 @@ HRESULT CNerdFontRegistrar::SaveManifest (const vector<wstring> & rgFontFiles)
 
 
 
-    if (rgFontFiles.empty ())
+    if (rgFontFiles.empty())
     {
-        ClearManifest ();
+        ClearManifest();
         BAIL_OUT_IF (true, S_OK);
     }
 
@@ -34,14 +34,14 @@ HRESULT CNerdFontRegistrar::SaveManifest (const vector<wstring> & rgFontFiles)
 
     for (const wstring & strFile : rgFontFiles)
     {
-        rgData.insert (rgData.end (), strFile.begin (), strFile.end ());
+        rgData.insert (rgData.end(), strFile.begin(), strFile.end());
         rgData.push_back (L'\0');
     }
     rgData.push_back (L'\0');
 
     lResult = RegSetValueExW (hkey, NerdFontConst::kpszManifestRegValue, 0, REG_MULTI_SZ,
-                              reinterpret_cast<const BYTE *> (rgData.data ()),
-                              static_cast<DWORD> (rgData.size () * sizeof (wchar_t)));
+                              reinterpret_cast<const BYTE *> (rgData.data()),
+                              static_cast<DWORD> (rgData.size() * sizeof (wchar_t)));
     CBRAEx (lResult == ERROR_SUCCESS, HRESULT_FROM_WIN32 (lResult));
 
 Error:
@@ -70,7 +70,7 @@ HRESULT CNerdFontRegistrar::LoadManifest (vector<wstring> & rgFontFiles)
 
 
 
-    rgFontFiles.clear ();
+    rgFontFiles.clear();
 
     lResult = RegOpenKeyExW (HKEY_CURRENT_USER, NerdFontConst::kpszManifestRegKey, 0, KEY_QUERY_VALUE, hkey.GetRef());
     BAIL_OUT_IF (lResult == ERROR_FILE_NOT_FOUND, S_OK);
@@ -84,10 +84,10 @@ HRESULT CNerdFontRegistrar::LoadManifest (vector<wstring> & rgFontFiles)
     rgData.assign ((cbData / sizeof (wchar_t)) + 1, L'\0');
 
     lResult = RegQueryValueExW (hkey, NerdFontConst::kpszManifestRegValue, NULL, &dwType,
-                                reinterpret_cast<LPBYTE> (rgData.data ()), &cbData);
+                                reinterpret_cast<LPBYTE> (rgData.data()), &cbData);
     CBRAEx (lResult == ERROR_SUCCESS, HRESULT_FROM_WIN32 (lResult));
 
-    p = rgData.data ();
+    p = rgData.data();
     while (*p != L'\0')
     {
         rgFontFiles.push_back (p);
@@ -108,7 +108,7 @@ Error:
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-void CNerdFontRegistrar::ClearManifest ()
+void CNerdFontRegistrar::ClearManifest()
 {
     CAutoRegKey hkey;
 
@@ -184,7 +184,7 @@ Error:
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-bool CNerdFontRegistrar::HasSystemNerdFontFilesInstalled ()
+bool CNerdFontRegistrar::HasSystemNerdFontFilesInstalled()
 {
     HRESULT          hr                      = S_OK;
     wchar_t          szWinFontsDir[MAX_PATH] = { };
@@ -208,13 +208,13 @@ bool CNerdFontRegistrar::HasSystemNerdFontFilesInstalled ()
     // files whose names overlap pre-existing Windows fonts.
     //
 
-    if (SUCCEEDED (LoadManifest (rgManifest)) && !rgManifest.empty ())
+    if (SUCCEEDED (LoadManifest (rgManifest)) && !rgManifest.empty())
     {
         for (const wstring & strFile : rgManifest)
         {
             wchar_t szFontPath[MAX_PATH] = { };
 
-            hr = PathCchCombine (szFontPath, ARRAYSIZE (szFontPath), szWinFontsDir, strFile.c_str ());
+            hr = PathCchCombine (szFontPath, ARRAYSIZE (szFontPath), szWinFontsDir, strFile.c_str());
             CHRA (hr);
 
             if (PathFileExistsW (szFontPath))
@@ -375,17 +375,17 @@ HRESULT CNerdFontRegistrar::Remove (LPCWSTR pszFontDir, CConsole & console)
         }
     }
 
-    if (rgFontFiles.empty ())
+    if (rgFontFiles.empty())
     {
         hr = LoadManifest (rgFontFiles);
         if (FAILED (hr))
         {
-            rgFontFiles.clear ();
+            rgFontFiles.clear();
             hr = S_OK;
         }
     }
 
-    if (rgFontFiles.empty ())
+    if (rgFontFiles.empty())
     {
         wchar_t szFallbackPattern[MAX_PATH] = { };
 
@@ -404,7 +404,7 @@ HRESULT CNerdFontRegistrar::Remove (LPCWSTR pszFontDir, CConsole & console)
 
     for (const wstring & strFileName : rgFontFiles)
     {
-        hr = PathCchCombine (szDestPath, ARRAYSIZE (szDestPath), szWinFontsDir, strFileName.c_str ());
+        hr = PathCchCombine (szDestPath, ARRAYSIZE (szDestPath), szWinFontsDir, strFileName.c_str());
         CHRA (hr);
 
         if (PathFileExistsW (szDestPath))
@@ -412,7 +412,7 @@ HRESULT CNerdFontRegistrar::Remove (LPCWSTR pszFontDir, CConsole & console)
             RemoveFontResourceW (szDestPath);
             if (DeleteFileW (szDestPath))
             {
-                UnregisterFontFromSystem (strFileName.c_str ());
+                UnregisterFontFromSystem (strFileName.c_str());
                 ++cRemovedCount;
             }
         }
@@ -423,9 +423,9 @@ HRESULT CNerdFontRegistrar::Remove (LPCWSTR pszFontDir, CConsole & console)
         }
     }
 
-    if (rgRemaining.empty ())
+    if (rgRemaining.empty())
     {
-        ClearManifest ();
+        ClearManifest();
     }
     else
     {
@@ -477,9 +477,9 @@ bool CNerdFontRegistrar::GetTtfFullName (LPCWSTR pszPath, wstring & strFullName)
 
 
 
-            if (ReadFile (hFile, buf.data (), dwSize, &dwRead, NULL) && dwRead == dwSize)
+            if (ReadFile (hFile, buf.data(), dwSize, &dwRead, NULL) && dwRead == dwSize)
             {
-                const BYTE * p        = buf.data ();
+                const BYTE * p        = buf.data();
                 auto         ReadBE16 = [](const BYTE * q) -> UINT16 { return (UINT16)((q[0] << 8) | q[1]); };
                 auto         ReadBE32 = [](const BYTE * q) -> UINT32 { return (UINT32)((q[0] << 24) | (q[1] << 16) | (q[2] << 8) | q[3]); };
 
@@ -572,13 +572,13 @@ bool CNerdFontRegistrar::GetTtfFullName (LPCWSTR pszPath, wstring & strFullName)
                             break;
                         }
 
-                        if (!fHaveEnUs && strBest.empty ())
+                        if (!fHaveEnUs && strBest.empty())
                         {
                             strBest = strCandidate;
                         }
                     }
 
-                    if (!fSucceeded && !strBest.empty ())
+                    if (!fSucceeded && !strBest.empty())
                     {
                         strFullName = move (strBest);
                         fSucceeded  = true;
@@ -613,13 +613,13 @@ void CNerdFontRegistrar::RegisterFontInSystem (LPCWSTR pszDestPath, LPCWSTR pszF
 
 
     if (GetTtfFullName (pszDestPath, strFullName)
-        && !strFullName.empty ()
+        && !strFullName.empty()
         && RegOpenKeyExW (HKEY_LOCAL_MACHINE, NerdFontConst::kpszFontsRegKey, 0, KEY_SET_VALUE, hkey.GetRef()) == ERROR_SUCCESS)
     {
         strValueName = strFullName + NerdFontConst::kpszTrueTypeSuffix;
 
         RegSetValueExW (hkey,
-                        strValueName.c_str (),
+                        strValueName.c_str(),
                         0,
                         REG_SZ,
                         reinterpret_cast<const BYTE *> (pszFileName),
@@ -674,7 +674,7 @@ void CNerdFontRegistrar::UnregisterFontFromSystem (LPCWSTR pszFileName)
 
         for (const wstring & strName : rgToDelete)
         {
-            RegDeleteValueW (hkey, strName.c_str ());
+            RegDeleteValueW (hkey, strName.c_str());
         }
     }
 }

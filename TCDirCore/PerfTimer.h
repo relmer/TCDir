@@ -23,13 +23,13 @@ public:
 
 public:
     PerfTimer  (LPCWSTR pszName, TimerMode timerMode, ReportMode reportMode, std::function<void (const wchar_t *)> printFunc = RELEASEMSG);
-    ~PerfTimer ();
+    ~PerfTimer();
 
-    void Start ();
-    void Stop  ();
-    void Print ();
+    void Start();
+    void Stop();
+    void Print();
 
-    bool IsRunning () const { return m_fRunning; }
+    bool IsRunning() const { return m_fRunning; }
 
 
 protected:

@@ -59,13 +59,13 @@ enum class JsonType
 class JsonString
 {
 public:
-    JsonString () = default;
+    JsonString() = default;
     explicit JsonString (string_view view)  : m_view  (view)                          {}
     explicit JsonString (string &&   owned) : m_owned (move (owned)), m_ownsIt (true) {}
 
-    string_view View () const { return m_ownsIt ? string_view (m_owned) : m_view; }
+    string_view View() const { return m_ownsIt ? string_view (m_owned) : m_view; }
 
-    bool operator== (string_view rhs) const { return View () == rhs; }
+    bool operator== (string_view rhs) const { return View() == rhs; }
 
 private:
     string_view m_view;
@@ -97,10 +97,10 @@ public:
 
     JsonType GetType() const { return m_type; }
 
-    bool        GetBool   () const { return m_bool;   }
-    double      GetNumber () const { return m_number; }
-    int         GetInt    () const { return static_cast<int> (m_number); }
-    string_view GetString () const { return m_string.View (); }
+    bool        GetBool() const { return m_bool;   }
+    double      GetNumber() const { return m_number; }
+    int         GetInt() const { return static_cast<int> (m_number); }
+    string_view GetString() const { return m_string.View(); }
 
     //
     // Source span: half-open byte range [SpanBegin, SpanEnd) covering this
@@ -108,11 +108,11 @@ public:
     // surrounding quotes; for objects/arrays it includes the braces/brackets.
     //
 
-    size_t SpanBegin () const { return m_spanBegin; }
-    size_t SpanEnd   () const { return m_spanEnd;   }
+    size_t SpanBegin() const { return m_spanBegin; }
+    size_t SpanEnd() const { return m_spanEnd;   }
 
     // Array access
-    size_t            ArraySize () const             { return m_array.size(); }
+    size_t            ArraySize() const             { return m_array.size(); }
     const JsonValue & ArrayAt   (size_t index) const { return m_array[index]; }
 
     // Typed object accessors — key lookup + type check + value extraction
@@ -176,7 +176,7 @@ HRESULT JsonValue::GetValue (const string & key, JsonType expected, T & outValue
 
     if constexpr (is_same_v<T, string>)
     {
-        outValue = string (value->m_string.View ());
+        outValue = string (value->m_string.View());
     }
     else if constexpr (is_same_v<T, bool>)
     {

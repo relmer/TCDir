@@ -21,7 +21,7 @@ wstring StripDevicePrefix (const wstring & path)
 
     if (path.starts_with (prefix))
     {
-        return path.substr (prefix.size ());
+        return path.substr (prefix.size());
     }
 
     return path;
@@ -281,7 +281,7 @@ wstring ResolveReparseTarget (const filesystem::path & dirPath, const WIN32_FIND
     fullPath = dirPath / wfd.cFileName;
 
     hFile = CreateFileW (
-        fullPath.c_str (),
+        fullPath.c_str(),
         0,
         FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
         nullptr,

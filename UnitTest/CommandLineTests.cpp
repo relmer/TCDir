@@ -46,14 +46,14 @@ namespace UnitTest
         static HRESULT ParseArgs (CCommandLine & cl, const vector<LPCWSTR> & args)
         {
             vector<wchar_t *> argv;
-            argv.reserve (args.size ());
+            argv.reserve (args.size());
 
             for (LPCWSTR pszArg : args)
             {
                 argv.push_back (const_cast<wchar_t *> (pszArg));
             }
 
-            return cl.Parse (static_cast<int> (argv.size ()), argv.data ());
+            return cl.Parse (static_cast<int> (argv.size()), argv.data());
         }
 
 
@@ -838,8 +838,8 @@ namespace UnitTest
 
 
             Assert::IsTrue (SUCCEEDED(hr));
-            Assert::IsTrue (cl.m_fIcons.has_value ());
-            Assert::IsTrue (cl.m_fIcons.value ());
+            Assert::IsTrue (cl.m_fIcons.has_value());
+            Assert::IsTrue (cl.m_fIcons.value());
         }
 
 
@@ -858,8 +858,8 @@ namespace UnitTest
 
 
             Assert::IsTrue (SUCCEEDED(hr));
-            Assert::IsTrue (cl.m_fIcons.has_value ());
-            Assert::IsFalse (cl.m_fIcons.value ());
+            Assert::IsTrue (cl.m_fIcons.has_value());
+            Assert::IsFalse (cl.m_fIcons.value());
         }
 
 
@@ -878,8 +878,8 @@ namespace UnitTest
 
 
             Assert::IsTrue (SUCCEEDED(hr));
-            Assert::IsTrue (cl.m_fIcons.has_value ());
-            Assert::IsTrue (cl.m_fIcons.value ());
+            Assert::IsTrue (cl.m_fIcons.has_value());
+            Assert::IsTrue (cl.m_fIcons.value());
         }
 
 
@@ -898,7 +898,7 @@ namespace UnitTest
 
 
             Assert::IsTrue (SUCCEEDED(hr));
-            Assert::IsFalse (cl.m_fIcons.has_value ());
+            Assert::IsFalse (cl.m_fIcons.has_value());
         }
 
 
@@ -917,8 +917,8 @@ namespace UnitTest
 
 
             Assert::IsTrue (SUCCEEDED(hr));
-            Assert::IsTrue (cl.m_fIcons.has_value ());
-            Assert::IsTrue (cl.m_fIcons.value ());
+            Assert::IsTrue (cl.m_fIcons.has_value());
+            Assert::IsTrue (cl.m_fIcons.value());
         }
 
 
@@ -1084,7 +1084,7 @@ namespace UnitTest
                 HRESULT      hr = ParseArgs (cl, c.rgArgs);
 
                 Assert::IsTrue (SUCCEEDED (hr), c.pszName);
-                Assert::IsTrue (cl.m_strValidationError.empty (), c.pszName);
+                Assert::IsTrue (cl.m_strValidationError.empty(), c.pszName);
             }
         }
 

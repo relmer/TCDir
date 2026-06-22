@@ -34,7 +34,7 @@ struct SStreamInfo
 struct FileInfo : public WIN32_FIND_DATA
 {
     // Default constructor
-    FileInfo () : 
+    FileInfo() : 
         WIN32_FIND_DATA {} 
     {
     }

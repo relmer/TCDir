@@ -1016,7 +1016,7 @@ namespace UnitTest
             // Target is 95 chars. Priority 3: "C:\" + ellipsis + "\winget.exe" = 15 chars — fits.
             CResultsDisplayerNormal displayer (cmd, con, cfg, false);
             displayer.DisplayFileResults (di);
-            con->Flush ();
+            con->Flush();
 
             wstring captured = con->m_strCaptured;
             bool hasEllipsis = captured.find (L'\u2026') != wstring::npos;
@@ -1057,7 +1057,7 @@ namespace UnitTest
 
             CResultsDisplayerNormal displayer (cmd, con, cfg, false);
             displayer.DisplayFileResults (di);
-            con->Flush ();
+            con->Flush();
 
             // Short target should NOT be truncated
             Assert::IsTrue (con->m_strCaptured.find (L'\u2026') == wstring::npos,
@@ -1094,7 +1094,7 @@ namespace UnitTest
 
             CResultsDisplayerNormal displayer (cmd, con, cfg, false);
             displayer.DisplayFileResults (di);
-            con->Flush ();
+            con->Flush();
 
             // With --Ellipsize-, no truncation should occur
             Assert::IsTrue (con->m_strCaptured.find (L'\u2026') == wstring::npos,

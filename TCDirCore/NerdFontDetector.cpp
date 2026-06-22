@@ -117,6 +117,7 @@ HRESULT CNerdFontDetector::ProbeConsoleFontForGlyph (HANDLE hConsole, WCHAR wchC
     HFONT                hFontOld  = nullptr;
     WORD                 glyphIdx  = 0;
     DWORD                dwResult  = 0;
+    BOOL                 fSuccess  = FALSE;
 
 
 
@@ -127,7 +128,8 @@ HRESULT CNerdFontDetector::ProbeConsoleFontForGlyph (HANDLE hConsole, WCHAR wchC
     //
 
     fontInfo.cbSize = sizeof (fontInfo);
-    CBREx (GetCurrentConsoleFontEx (hConsole, FALSE, &fontInfo), HRESULT_FROM_WIN32 (GetLastError()));
+    fSuccess = GetCurrentConsoleFontEx (hConsole, FALSE, &fontInfo);
+    CBREx (fSuccess, HRESULT_FROM_WIN32 (GetLastError()));
 
     //
     // Create a memory DC and matching font

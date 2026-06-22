@@ -20,24 +20,24 @@ static void SplitPathComponents (const wstring & path, vector<wstring> & dirs, w
 {
     filesystem::path fsPath (path);
 
-    leaf = fsPath.filename ().wstring ();
+    leaf = fsPath.filename().wstring();
 
-    filesystem::path parentPath = fsPath.parent_path ();
+    filesystem::path parentPath = fsPath.parent_path();
 
-    dirs.clear ();
+    dirs.clear();
 
     // Walk up from the parent, collecting directory names
     // filesystem::path iterates root-name, root-dir, then each component
     for (auto && component : parentPath)
     {
-        wstring part = component.wstring ();
+        wstring part = component.wstring();
 
         // Merge root-name and root-dir (e.g., "C:" + "\\" → "C:\\")
-        if (!dirs.empty () && dirs.back ().ends_with (L':'))
+        if (!dirs.empty() && dirs.back().ends_with (L':'))
         {
-            dirs.back () += part;
+            dirs.back() += part;
         }
-        else if (!part.empty ())
+        else if (!part.empty())
         {
             dirs.push_back (part);
         }
@@ -91,7 +91,7 @@ static bool TryBuildTruncated (
     suffix += leaf;
 
     // Total: prefix + … + suffix = prefix.len + 1 + suffix.len
-    size_t totalLen = prefix.length () + 1 + suffix.length ();
+    size_t totalLen = prefix.length() + 1 + suffix.length();
 
     if (totalLen <= availableWidth)
     {
@@ -123,7 +123,7 @@ SEllipsizedPath EllipsizePath (const wstring & path, size_t availableWidth)
 
 
     // If the path already fits, return it unchanged
-    if (path.length () <= availableWidth)
+    if (path.length() <= availableWidth)
     {
         result.prefix     = path;
         result.fTruncated = false;
@@ -138,10 +138,10 @@ SEllipsizedPath EllipsizePath (const wstring & path, size_t availableWidth)
 
     // Paths with fewer than 3 components can't be meaningfully truncated
     // (need at least: root + middle + leaf)
-    if (dirs.size () < 2)
+    if (dirs.size() < 2)
     {
         // Fallback: just show the leaf, with trailing ellipsis if truncated
-        if (leaf.length () <= availableWidth)
+        if (leaf.length() <= availableWidth)
         {
             result.prefix     = leaf;
             result.fTruncated = false;
@@ -162,10 +162,10 @@ SEllipsizedPath EllipsizePath (const wstring & path, size_t availableWidth)
     }
 
     // Priority 1: First two dirs + … + leaf dir + filename
-    if (dirs.size () >= 3)
+    if (dirs.size() >= 3)
     {
         vector<wstring> prefixDirs = { dirs[0], dirs[1] };
-        vector<wstring> suffixDirs = { dirs.back () };
+        vector<wstring> suffixDirs = { dirs.back() };
 
         if (TryBuildTruncated (prefixDirs, suffixDirs, leaf, availableWidth, result))
         {
@@ -174,7 +174,7 @@ SEllipsizedPath EllipsizePath (const wstring & path, size_t availableWidth)
     }
 
     // Priority 2: First two dirs + … + filename
-    if (dirs.size () >= 2)
+    if (dirs.size() >= 2)
     {
         vector<wstring> prefixDirs = { dirs[0], dirs[1] };
         vector<wstring> suffixDirs;
@@ -197,7 +197,7 @@ SEllipsizedPath EllipsizePath (const wstring & path, size_t availableWidth)
     }
 
     // Priority 4: Just the leaf filename (with trailing … if truncated)
-    if (leaf.length () <= availableWidth)
+    if (leaf.length() <= availableWidth)
     {
         result.prefix     = leaf;
         result.fTruncated = false;

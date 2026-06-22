@@ -159,7 +159,7 @@ namespace UnitTest
             {
                 wstring key = g_rgDefaultExtensionIcons[i].m_pszKey;
                 Assert::IsTrue (seen.insert (key).second,
-                                (L"Duplicate extension key: " + key).c_str ());
+                                (L"Duplicate extension key: " + key).c_str());
             }
         }
 
@@ -190,7 +190,7 @@ namespace UnitTest
             {
                 wstring key = g_rgDefaultWellKnownDirIcons[i].m_pszKey;
                 Assert::IsTrue (seen.insert (key).second,
-                                (L"Duplicate dir name key: " + key).c_str ());
+                                (L"Duplicate dir name key: " + key).c_str());
             }
         }
 
@@ -225,7 +225,7 @@ namespace UnitTest
             for (const auto & [ext, attr] : config.m_mapExtensionToTextAttr)
             {
                 Assert::IsTrue (iconExtensions.count (ext) > 0,
-                                (L"Color table extension missing from icon table: " + ext).c_str ());
+                                (L"Color table extension missing from icon table: " + ext).c_str());
             }
         }
 

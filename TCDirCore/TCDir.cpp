@@ -288,8 +288,8 @@ int wmain (int argc, WCHAR * argv[])
     // Display any config file or TCDIR environment variable issues at the end of the run
     //
 
-    CUsage::DisplayConfigFileIssues (*consolePtr, cmdlinePtr->GetSwitchPrefix ());
-    CUsage::DisplayEnvVarIssues (*consolePtr, cmdlinePtr->GetSwitchPrefix ());
+    CUsage::DisplayConfigFileIssues (*consolePtr, cmdlinePtr->GetSwitchPrefix());
+    CUsage::DisplayEnvVarIssues (*consolePtr, cmdlinePtr->GetSwitchPrefix());
 
     
 

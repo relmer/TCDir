@@ -30,7 +30,7 @@ public:
     CMultiThreadedLister  (shared_ptr<CCommandLine> cmdLinePtr, 
                            shared_ptr<CConsole> consolePtr, 
                            shared_ptr<CConfig> configPtr);
-    ~CMultiThreadedLister ();
+    ~CMultiThreadedLister();
 
     HRESULT ProcessDirectoryMultiThreaded (const CDriveInfo & driveInfo, 
                                            const filesystem::path & dirPath, 
@@ -69,7 +69,7 @@ private:
     HRESULT EnumerateMatchingFiles        (shared_ptr<CDirectoryInfo> pDirInfo);
     HRESULT EnumerateSubdirectories       (shared_ptr<CDirectoryInfo> pDirInfo);
     void    EnqueueChildDirectory         (const WIN32_FIND_DATA & wfd, shared_ptr<CDirectoryInfo> pDirInfo);
-    void    StopWorkers                   ();
+    void    StopWorkers();
 
     HRESULT WaitForNodeCompletion         (shared_ptr<CDirectoryInfo> pDirInfo);
     void    SortResults                   (shared_ptr<CDirectoryInfo> pDirInfo);
@@ -107,7 +107,7 @@ private:
     void    TrySignalParentSubtreeComplete (shared_ptr<CDirectoryInfo> pParent);
     bool    WaitForTreeVisibility         (shared_ptr<CDirectoryInfo> pDirInfo);
 
-    bool    StopRequested                 () const { return m_stopSource.stop_requested(); }
+    bool    StopRequested() const { return m_stopSource.stop_requested(); }
 
     stop_source               m_stopSource;
     CWorkQueue<WorkItem>      m_workQueue;

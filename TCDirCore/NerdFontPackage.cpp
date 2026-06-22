@@ -135,6 +135,7 @@ HRESULT CNerdFontPackage::ResolveLatestTag (wstring & strTag, bool & fRateLimite
     DWORD              dwStatus         = 0;
     DWORD              dwStatusSize     = sizeof (dwStatus);
     DWORD              dwDownloaded     = 0;
+    BOOL               fSuccess         = FALSE;
     CHAR               szResponse[2048] = { };
     string             strResponse;
 
@@ -152,9 +153,11 @@ HRESULT CNerdFontPackage::ResolveLatestTag (wstring & strTag, bool & fRateLimite
     hRequest = HttpOpenRequestW (hConnect, L"GET", NerdFontConst::kpszLatestReleasePath, NULL, NULL, NULL, INTERNET_FLAG_SECURE | INTERNET_FLAG_NO_UI, 0);
     CBR (hRequest != NULL);
 
-    CWR (HttpSendRequestW (hRequest, NULL, 0, NULL, 0));
+    fSuccess = HttpSendRequestW (hRequest, NULL, 0, NULL, 0);
+    CWR (fSuccess);
 
-    CWR (HttpQueryInfoW (hRequest, HTTP_QUERY_STATUS_CODE | HTTP_QUERY_FLAG_NUMBER, &dwStatus, &dwStatusSize, NULL));
+    fSuccess = HttpQueryInfoW (hRequest, HTTP_QUERY_STATUS_CODE | HTTP_QUERY_FLAG_NUMBER, &dwStatus, &dwStatusSize, NULL);
+    CWR (fSuccess);
 
     fRateLimited = (dwStatus == s_kHttpForbidden || dwStatus == s_kHttpTooManyReqs);
     CBR (!fRateLimited);
@@ -229,6 +232,7 @@ HRESULT CNerdFontPackage::Extract (LPCWSTR pszZipPath, LPCWSTR pszDestDir)
     PROCESS_INFORMATION pi                   = { };
     AutoHandle          hProcess;
     AutoHandle          hThread;
+    BOOL                fSuccess             = FALSE;
     DWORD               dwWait               = 0;
     DWORD               dwExitCode           = 0;
     DWORD               dwLen                = 0;
@@ -247,7 +251,8 @@ HRESULT CNerdFontPackage::Extract (LPCWSTR pszZipPath, LPCWSTR pszDestDir)
     si.dwFlags     = STARTF_USESHOWWINDOW;
     si.wShowWindow = SW_HIDE;
 
-    CWR (CreateProcessW (NULL, strCmd.data(), NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi));
+    fSuccess = CreateProcessW (NULL, strCmd.data(), NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi);
+    CWR (fSuccess);
 
     hProcess = pi.hProcess;
     hThread  = pi.hThread;
@@ -255,7 +260,8 @@ HRESULT CNerdFontPackage::Extract (LPCWSTR pszZipPath, LPCWSTR pszDestDir)
     dwWait = WaitForSingleObject (hProcess, INFINITE);
     CBR (dwWait == WAIT_OBJECT_0);
 
-    CWR (GetExitCodeProcess (hProcess, &dwExitCode));
+    fSuccess = GetExitCodeProcess (hProcess, &dwExitCode);
+    CWR (fSuccess);
     CBR (dwExitCode == 0);
 
 Error:

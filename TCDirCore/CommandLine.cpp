@@ -147,7 +147,7 @@ HRESULT CCommandLine::Parse (int cArg, WCHAR ** ppszArg)
     // Post-parse validation: check switch conflicts
     //
 
-    hr = ValidateSwitchCombinations ();
+    hr = ValidateSwitchCombinations();
     CHR (hr);
 
 
@@ -252,9 +252,9 @@ HRESULT CCommandLine::RejectSingleDashLongSwitch (LPCWSTR pszSwitchArg)
 
     wstring strLookup = strSwitchName;
 
-    if (!strLookup.empty () && strLookup.back () == L'-')
+    if (!strLookup.empty() && strLookup.back() == L'-')
     {
-        strLookup.pop_back ();
+        strLookup.pop_back();
     }
 
     if (IsRecognizedLongSwitch (strLookup))
@@ -288,13 +288,13 @@ HRESULT CCommandLine::ValidateSwitchCombinations (void)
 
 
 
-    hr = ValidateTreeCombinations ();
+    hr = ValidateTreeCombinations();
     CHR (hr);
 
-    hr = ValidateAliasCombinations ();
+    hr = ValidateAliasCombinations();
     CHR (hr);
 
-    hr = ValidateNerdFontCombinations ();
+    hr = ValidateNerdFontCombinations();
     CHR (hr);
 
 Error:
@@ -487,7 +487,7 @@ HRESULT CCommandLine::ValidateNerdFontCombinations (void)
                 ? L"--install-nerd-fonts cannot be combined with other switches."
                 : L"--uninstall-nerd-fonts cannot be combined with other switches.");
 
-    CBRFEx (m_listMask.empty (), E_INVALIDARG,
+    CBRFEx (m_listMask.empty(), E_INVALIDARG,
             m_strValidationError = m_fInstallNerdFonts
                 ? L"--install-nerd-fonts does not accept file masks."
                 : L"--uninstall-nerd-fonts does not accept file masks.");
@@ -645,7 +645,7 @@ HRESULT CCommandLine::HandleLongSwitch (LPCWSTR pszArg, int & cArg, WCHAR ** & p
     {
         for (const LongSwitchEntry & entry : s_krgLongSwitches)
         {
-            if (_wcsicmp (strSwitch.c_str (), entry.m_pszSwitch) == 0)
+            if (_wcsicmp (strSwitch.c_str(), entry.m_pszSwitch) == 0)
             {
                 this->*(entry.m_pfValue) = true;
                 hr = S_OK;
@@ -660,7 +660,7 @@ HRESULT CCommandLine::HandleLongSwitch (LPCWSTR pszArg, int & cArg, WCHAR ** & p
 
     if (hr != S_OK)
     {
-        if (_wcsicmp (strSwitch.c_str (), L"icons") == 0)
+        if (_wcsicmp (strSwitch.c_str(), L"icons") == 0)
         {
             m_fIcons = !fNegated;
             hr = S_OK;
@@ -674,7 +674,7 @@ HRESULT CCommandLine::HandleLongSwitch (LPCWSTR pszArg, int & cArg, WCHAR ** & p
 
     if (hr != S_OK)
     {
-        if (_wcsicmp (strSwitch.c_str (), L"tree") == 0)
+        if (_wcsicmp (strSwitch.c_str(), L"tree") == 0)
         {
             m_fTree = !fNegated;
 
@@ -694,7 +694,7 @@ HRESULT CCommandLine::HandleLongSwitch (LPCWSTR pszArg, int & cArg, WCHAR ** & p
 
     if (hr != S_OK)
     {
-        if (_wcsicmp (strSwitch.c_str (), L"ellipsize") == 0)
+        if (_wcsicmp (strSwitch.c_str(), L"ellipsize") == 0)
         {
             m_fEllipsize = !fNegated;
             hr = S_OK;
@@ -735,11 +735,11 @@ HRESULT CCommandLine::HandleLongSwitch (LPCWSTR pszArg, int & cArg, WCHAR ** & p
             }
         }
 
-        if (_wcsicmp (switchName.c_str (), L"depth") == 0)
+        if (_wcsicmp (switchName.c_str(), L"depth") == 0)
         {
             CBREx (fHasValue, E_INVALIDARG);
 
-            int n = _wtoi (switchValue.c_str ());
+            int n = _wtoi (switchValue.c_str());
 
             if (n < 1)
             {
@@ -750,11 +750,11 @@ HRESULT CCommandLine::HandleLongSwitch (LPCWSTR pszArg, int & cArg, WCHAR ** & p
             m_cMaxDepth = n;
             hr = S_OK;
         }
-        else if (_wcsicmp (switchName.c_str (), L"treeindent") == 0)
+        else if (_wcsicmp (switchName.c_str(), L"treeindent") == 0)
         {
             CBREx (fHasValue, E_INVALIDARG);
 
-            int n = _wtoi (switchValue.c_str ());
+            int n = _wtoi (switchValue.c_str());
 
             if (n < 1 || n > 8)
             {
@@ -765,15 +765,15 @@ HRESULT CCommandLine::HandleLongSwitch (LPCWSTR pszArg, int & cArg, WCHAR ** & p
             m_cTreeIndent = n;
             hr = S_OK;
         }
-        else if (_wcsicmp (switchName.c_str (), L"size") == 0)
+        else if (_wcsicmp (switchName.c_str(), L"size") == 0)
         {
             CBREx (fHasValue, E_INVALIDARG);
 
-            if (_wcsicmp (switchValue.c_str (), L"auto") == 0)
+            if (_wcsicmp (switchValue.c_str(), L"auto") == 0)
             {
                 m_eSizeFormat = ESizeFormat::Auto;
             }
-            else if (_wcsicmp (switchValue.c_str (), L"bytes") == 0)
+            else if (_wcsicmp (switchValue.c_str(), L"bytes") == 0)
             {
                 m_eSizeFormat = ESizeFormat::Bytes;
             }
@@ -833,7 +833,7 @@ bool CCommandLine::IsRecognizedLongSwitch (const wstring & strSwitch)
 
     for (LPCWSTR pszName : s_krgRecognizedNames)
     {
-        if (_wcsicmp (strSwitch.c_str (), pszName) == 0)
+        if (_wcsicmp (strSwitch.c_str(), pszName) == 0)
         {
             return true;
         }
