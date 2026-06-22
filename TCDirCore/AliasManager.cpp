@@ -648,9 +648,9 @@ HRESULT CAliasManager::ConfirmAndApply (
         rgPreview.push_back (line);
     }
 
-    tuiResult = tui.Confirmation (L"Apply these changes?", rgPreview);
+    tuiResult = tui.PromptConfirmation (L"Apply these changes?", rgPreview);
 
-    if (tuiResult == ETuiResult::Cancelled)
+    if (tuiResult != ETuiResult::Confirmed)
     {
         console.Puts (CConfig::Information, L"\n  Cancelled.\n");
         console.Flush();
@@ -693,7 +693,7 @@ ETuiResult CAliasManager::PromptRootAlias (
 
     for (;;)
     {
-        ETuiResult result = tui.TextInput (L"Root alias name (1-4 chars)", strDefault, strRootAlias, 4);
+        ETuiResult result = tui.PromptText (L"Root alias name (1-4 chars)", strDefault, strRootAlias, 4);
 
         if (result != ETuiResult::Confirmed)
         {
@@ -761,7 +761,7 @@ ETuiResult CAliasManager::PromptSubAliases (
         }
     }
 
-    ETuiResult result = tui.CheckboxList (L"Select sub-aliases:", rgCheckItems, rgLocked);
+    ETuiResult result = tui.PromptCheckboxList (L"Select sub-aliases:", rgCheckItems, rgLocked, L"conflicts with PowerShell built-in");
 
     if (result == ETuiResult::Confirmed)
     {
@@ -807,7 +807,7 @@ ETuiResult CAliasManager::PromptProfileLocation (
                       ? L"Save aliases to: {Error}(Whatif: no changes will be written)"
                       : L"Save aliases to:";
 
-    return tui.RadioButtonList (pszPrompt, rgRadioItems, iSelected);
+    return tui.PromptRadioButtonList (pszPrompt, rgRadioItems, iSelected);
 }
 
 
@@ -846,13 +846,13 @@ HRESULT CAliasManager::SetAliases (CConsole & console, bool fWhatIf)
     PrintIntroduction (console, fWhatIf);
 
     tuiResult = PromptRootAlias (console, tui, existingBlock, strRootAlias);
-    BAIL_OUT_IF (tuiResult == ETuiResult::Cancelled, S_OK);
+    BAIL_OUT_IF (tuiResult != ETuiResult::Confirmed, S_OK);
 
     tuiResult = PromptSubAliases (console, tui, strRootAlias, rgSubAliases);
-    BAIL_OUT_IF (tuiResult == ETuiResult::Cancelled, S_OK);
+    BAIL_OUT_IF (tuiResult != ETuiResult::Confirmed, S_OK);
 
     tuiResult = PromptProfileLocation (console, tui, rgLocations, fWhatIf, iSelected);
-    BAIL_OUT_IF (tuiResult == ETuiResult::Cancelled, S_OK);
+    BAIL_OUT_IF (tuiResult != ETuiResult::Confirmed, S_OK);
 
     BuildConfigFromWizard (config, strRootAlias, rgSubAliases, rgLocations, iSelected, fWhatIf);
 
@@ -1179,8 +1179,8 @@ HRESULT CAliasManager::RemoveAliases (CConsole & console, bool fWhatIf)
 
     console.Puts (CConfig::Information, L"\n");
 
-    tuiResult = tui.CheckboxList (L"Remove aliases from:", rgCheckItems);
-    BAIL_OUT_IF (tuiResult == ETuiResult::Cancelled, S_OK);
+    tuiResult = tui.PromptCheckboxList (L"Remove aliases from:", rgCheckItems);
+    BAIL_OUT_IF (tuiResult != ETuiResult::Confirmed, S_OK);
 
     tui.Cleanup();
 

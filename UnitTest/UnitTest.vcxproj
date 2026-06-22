@@ -271,6 +271,8 @@
     <ClCompile Include="EhmIntegrationTest.cpp" />
     <ClCompile Include="FileComparatorTests.cpp" />
     <ClCompile Include="IconMappingTests.cpp" />
+    <ClCompile Include="NerdFontInstallerTests.cpp" />
+    <ClCompile Include="JsonParserTests.cpp" />
     <ClCompile Include="NerdFontDetectorTests.cpp" />
     <ClCompile Include="PathEllipsisTests.cpp" />
     <ClCompile Include="CommandLineTests.cpp" />
@@ -289,6 +291,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="EhmTestHelper.h" />
+    <ClInclude Include="GitHubReleaseSnapshot.h" />
     <ClInclude Include="IatHook\IatPatch.h" />
     <ClInclude Include="IatHook\ScopedIatPatch.h" />
     <ClInclude Include="Mocks\FileSystemMock.h" />

@@ -165,6 +165,7 @@ void CConsole::Putchar (WORD attr, WCHAR ch)
 {
     SetColor (attr);
     m_strBuffer.push_back (ch);
+    FlushIfAuto ();
 }
 
 
@@ -186,6 +187,7 @@ void CConsole::Puts (int attributeIndex, LPCWSTR psz)
     // Reset to default color before final newline to prevent color bleeding
     SetColor (m_configPtr->m_rgAttributes[CConfig::EAttribute::Default]);
     m_strBuffer.append (L"\n");
+    FlushIfAuto ();
 }
 
 
@@ -217,6 +219,8 @@ int CConsole::Printf (CConfig::EAttribute attributeIndex, LPCWSTR pszFormat, ...
     CHRA (hr);
 
     ProcessMultiLineStringWithAttribute (s_szBuf, m_configPtr->m_rgAttributes[attributeIndex]);
+
+    FlushIfAuto ();
 
 Error:
     va_end (vaArgs);
@@ -255,6 +259,8 @@ int CConsole::Printf (WORD attr, LPCWSTR pszFormat, ...)
     ProcessMultiLineStringWithAttribute (s_szBuf, attr);
 
 
+
+    FlushIfAuto ();
 
 Error:
     va_end (vaArgs);
@@ -409,6 +415,7 @@ void CConsole::ColorPuts (LPCWSTR psz)
     // Reset to default color before newline to prevent color bleeding
     SetColor (m_configPtr->m_rgAttributes[CConfig::EAttribute::Default]);
     m_strBuffer.append (L"\n");
+    FlushIfAuto ();
 }
 
 
@@ -442,6 +449,7 @@ void CConsole::ColorPrintf (LPCWSTR pszFormat, ...)
     if (SUCCEEDED (hr))
     {
         ColorPrint (s_szBuf);
+        FlushIfAuto ();
     }
 }
 
@@ -638,6 +646,25 @@ HRESULT CConsole::Flush (void)
 
 Error:
     return hr;
+}
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CConsole::FlushIfAuto
+//
+//  Flush immediately when auto-flush mode is enabled (see SetAutoFlush).
+//
+////////////////////////////////////////////////////////////////////////////////
+
+void CConsole::FlushIfAuto (void)
+{
+    if (m_fAutoFlush)
+    {
+        Flush ();
+    }
 }
 
 

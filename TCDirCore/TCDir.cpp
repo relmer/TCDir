@@ -10,6 +10,7 @@
 #include "DirectoryLister.h"
 #include "MaskGrouper.h"
 #include "NerdFontDetector.h"
+#include "NerdFontInstaller.h"
 #include "PerfTimer.h"
 #include "ResultsDisplayerBare.h"
 #include "ResultsDisplayerNormal.h"
@@ -71,6 +72,24 @@ static HRESULT ProcessCommandLine (
     {
         CUsage::DisplaySettings (console, cmdline.GetSwitchPrefix(), cmdline.m_fIcons);
         BAIL_OUT_IF (cmdline.m_fSettings, S_FALSE);
+    }
+
+    //
+    // Install-NerdFonts command — process and exit
+    //
+
+    if (cmdline.m_fInstallNerdFonts)
+    {
+        hr = CNerdFontInstaller::Install (console);
+        CHR (hr);
+        BAIL_OUT_IF (true, S_FALSE);
+    }
+
+    if (cmdline.m_fUninstallNerdFonts)
+    {
+        hr = CNerdFontInstaller::Uninstall (console);
+        CHR (hr);
+        BAIL_OUT_IF (true, S_FALSE);
     }
 
     //
@@ -211,19 +230,34 @@ int wmain (int argc, WCHAR * argv[])
     unique_ptr<PerfTimer>    perfTimerPtr;
     shared_ptr<CConfig>      configPtr    = make_shared<CConfig>();
     shared_ptr<CConsole>     consolePtr   = make_shared<CConsole>();
+    bool                     fWorkerHandled = false;
 
  
 
     //
-    // Initialize the debug heap
+    // Initialize the debug heap.
+    //
+    // _CRTDBG_CHECK_ALWAYS_DF runs a full _CrtCheckMemory on EVERY alloc/free, so
+    // its cost is O(operations x live-heap-blocks) — a global tax that does NOT
+    // shrink just because one hot path was de-allocated.  Measured: parsing the
+    // ~227 KB GitHub release with a realistic ~50K-block live heap takes ~31 ms
+    // with the check off, ~750 ms amortized every 1024 allocations, and MINUTES
+    // with CHECK_ALWAYS on.  So we run the amortized check: it still catches heap
+    // corruption (within a 1024-allocation window) without the cliff.  Swap in
+    // _CRTDBG_CHECK_ALWAYS_DF only for a focused corruption hunt, accepting that
+    // allocation-heavy work will crawl.
     //
 
 #ifdef _DEBUG
-    _CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF | _CRTDBG_CHECK_ALWAYS_DF);
+    _CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF | _CRTDBG_CHECK_EVERY_1024_DF);
 #endif
 
     hr = consolePtr->Initialize (configPtr);
     CHR (hr);
+
+    hr = CNerdFontInstaller::RunElevatedInstallIfRequested (argc, argv, *consolePtr, fWorkerHandled);
+    CHR (hr);
+    BAIL_OUT_IF (fWorkerHandled, S_FALSE);
 
     //
     // Apply switch defaults from TCDIR environment variable

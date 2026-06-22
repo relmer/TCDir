@@ -42,14 +42,14 @@ if (-not $Tag) {
     $content = Get-Content $versionFile -Raw
     $major = [regex]::Match($content, '#define VERSION_MAJOR\s+(\d+)').Groups[1].Value
     $minor = [regex]::Match($content, '#define VERSION_MINOR\s+(\d+)').Groups[1].Value
-    $build = [regex]::Match($content, '#define VERSION_BUILD\s+(\d+)').Groups[1].Value
+    $patch = [regex]::Match($content, '#define VERSION_PATCH\s+(\d+)').Groups[1].Value
 
-    if (-not $major -or -not $minor -or -not $build) {
+    if (-not $major -or -not $minor -or -not $patch) {
         Write-Error "Could not parse version from $versionFile"
         exit 1
     }
 
-    $version = "$major.$minor.$build"
+    $version = "$major.$minor.$patch"
     $Tag = "v$version"
 } else {
     if ($Tag -notmatch '^v(\d+\.\d+\.\d+)$') {

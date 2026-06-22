@@ -43,6 +43,20 @@ namespace UnitTest
         }
 
 
+        static HRESULT ParseArgs (CCommandLine & cl, const vector<LPCWSTR> & args)
+        {
+            vector<wchar_t *> argv;
+            argv.reserve (args.size ());
+
+            for (LPCWSTR pszArg : args)
+            {
+                argv.push_back (const_cast<wchar_t *> (pszArg));
+            }
+
+            return cl.Parse (static_cast<int> (argv.size ()), argv.data ());
+        }
+
+
 
 
 
@@ -1042,6 +1056,78 @@ namespace UnitTest
             Assert::IsTrue (SUCCEEDED(hr));
             Assert::IsTrue (cl.m_fSetAliases);
             Assert::IsTrue (cl.m_fWhatIf);
+        }
+
+
+
+
+        TEST_METHOD(ParseSwitchCombinations_ValidCases)
+        {
+            struct SCase
+            {
+                const wchar_t    * pszName;
+                vector<LPCWSTR>     rgArgs;
+            };
+
+            const SCase rgCases[] =
+            {
+                { L"TreeWithDepth",        { L"--Tree", L"--Depth=5" } },
+                { L"TreeWithIndent",       { L"--Tree", L"--TreeIndent=2" } },
+                { L"SetAliasesWhatIf",     { L"--set-aliases", L"--whatif" } },
+                { L"InstallNerdFonts",     { L"--install-nerd-fonts" } },
+                { L"UninstallNerdFonts",   { L"--uninstall-nerd-fonts" } },
+            };
+
+            for (const SCase & c : rgCases)
+            {
+                CCommandLine cl;
+                HRESULT      hr = ParseArgs (cl, c.rgArgs);
+
+                Assert::IsTrue (SUCCEEDED (hr), c.pszName);
+                Assert::IsTrue (cl.m_strValidationError.empty (), c.pszName);
+            }
+        }
+
+
+
+
+        TEST_METHOD(ParseSwitchCombinations_InvalidCases)
+        {
+            struct SCase
+            {
+                const wchar_t    * pszName;
+                vector<LPCWSTR>     rgArgs;
+                const wchar_t    * pszErrorToken;
+            };
+
+            const SCase rgCases[] =
+            {
+                { L"TreeWithWide",                { L"--Tree", L"/w" },                       L"--Tree" },
+                { L"TreeWithBare",                { L"--Tree", L"/b" },                       L"--Tree" },
+                { L"TreeWithRecurse",             { L"--Tree", L"/s" },                       L"--Tree" },
+                { L"TreeWithOwner",               { L"--Tree", L"--Owner" },                  L"--Tree" },
+                { L"TreeWithSizeBytes",           { L"--Tree", L"--Size=Bytes" },             L"--Size=Bytes" },
+                { L"DepthWithoutTree",            { L"--Depth=3" },                           L"--Depth" },
+                { L"TreeIndentWithoutTree",       { L"--TreeIndent=2" },                      L"--TreeIndent" },
+                { L"TreeIndentOutOfRange",        { L"--Tree", L"--TreeIndent=10" },          L"--TreeIndent" },
+                { L"AliasMutuallyExclusive",      { L"--set-aliases", L"--get-aliases" },     L"mutually exclusive" },
+                { L"WhatIfWithoutAlias",          { L"--whatif" },                            L"--whatif" },
+                { L"AliasWithListing",            { L"--set-aliases", L"/s" },                L"Alias switches" },
+                { L"NerdFontsInstallUninstall",   { L"--install-nerd-fonts", L"--uninstall-nerd-fonts" }, L"cannot be combined" },
+                { L"NerdFontsInstallAndListing",  { L"--install-nerd-fonts", L"/s" },         L"other switches" },
+                { L"NerdFontsInstallAndMask",     { L"--install-nerd-fonts", L"*.txt" },      L"file masks" },
+                { L"NerdFontsUninstallAndListing",{ L"--uninstall-nerd-fonts", L"/s" },       L"other switches" },
+                { L"NerdFontsUninstallAndMask",   { L"--uninstall-nerd-fonts", L"*.txt" },    L"file masks" },
+            };
+
+            for (const SCase & c : rgCases)
+            {
+                CCommandLine cl;
+                HRESULT      hr = ParseArgs (cl, c.rgArgs);
+
+                Assert::IsTrue (FAILED (hr), c.pszName);
+                Assert::IsTrue (cl.m_strValidationError.find (c.pszErrorToken) != wstring::npos, c.pszName);
+            }
         }
 
 

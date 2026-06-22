@@ -27,6 +27,7 @@ Settings can be persisted in a config file (`~\.tcdirconfig`), overridden via th
 
 | Version | Highlights |
 | :---: | :--- |
+| **5.6** | Install/uninstall Nerd Fonts system-wide (`--install-nerdfonts`, `--uninstall-nerdfonts`) with Windows Terminal profile configuration |
 | **5.5** | Variable-width columns in wide mode (`/W`) — GNU ls-style per-column fitting; outlier truncation with `…` |
 | **5.4** | Symlink, junction, and AppExecLink target display (`→ target`); ellipsize long target paths (`…`) |
 | **5.3** | Config file support (`.tcdirconfig`) — persistent settings without environment variables |
@@ -172,6 +173,8 @@ Common switches:
 - `--get-aliases`: display all configured tcdir aliases and their source profiles
 - `--remove-aliases`: interactive removal of tcdir aliases from profile files
 - `--whatif`: dry-run modifier for `--set-aliases` or `--remove-aliases` (preview only, no file changes)
+- `--install-nerdfonts`: download and install CaskaydiaCove Nerd Font system-wide, then optionally configure terminal profiles
+- `--uninstall-nerdfonts`: remove Nerd Font terminal configuration and optionally remove the installed font files
 
 ### Attribute filters (`/A:`)
 
@@ -402,7 +405,7 @@ Run unit tests:
 
 ## Versioning
 
-The build number is auto-incremented by a pre-build script. Details are in BUILD_VERSION.md.
+TCDir uses manual `MAJOR.MINOR.PATCH` semantic versioning, bumped by hand in `TCDirCore/Version.h`. Details are in [BUILD_VERSION.md](BUILD_VERSION.md).
 
 ## License
 

@@ -38,7 +38,7 @@ private:
     static bool    IsTcdirEnvVarSet                          (void);
 
     static void    DisplayConfigurationTable                 (CConsole & console, bool fShowIcons);
-    static void    DisplaySynopsis                              (CConsole & console, wchar_t chPrefix);
+    static void    DisplaySynopsis                           (CConsole & console, const vector<wstring> & tokens);
 
     static void    DisplaySwitchConfiguration                (CConsole & console, int columnWidthAttr, int columnWidthSource);
     static void    DisplayAttributeConfiguration             (CConsole & console, int columnWidthAttr, int columnWidthSource, bool fShowIcons);

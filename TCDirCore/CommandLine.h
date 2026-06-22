@@ -91,6 +91,8 @@ public:
     bool               m_fGetAliases                                       = false;    // --get-aliases switch
     bool               m_fRemoveAliases                                    = false;    // --remove-aliases switch
     bool               m_fWhatIf                                           = false;    // --whatif switch
+    bool               m_fInstallNerdFonts                                 = false;    // --Install-NerdFonts switch
+    bool               m_fUninstallNerdFonts                               = false;    // --Uninstall-NerdFonts switch
 
 
     //
@@ -119,6 +121,28 @@ protected:
     HRESULT ParseSwitch                   (LPCWSTR pszArg, int & cArg, WCHAR ** & ppszArg);
     HRESULT RejectSingleDashLongSwitch    (LPCWSTR pszSwitchArg);
     HRESULT ValidateSwitchCombinations    (void);
+    HRESULT ValidateTreeCombinations      (void);
+    HRESULT ValidateAliasCombinations     (void);
+    HRESULT ValidateNerdFontCombinations  (void);
+
+    //
+    // Returns true if any of the bool member flags in the array is set on this.
+    //
+
+    template <size_t N>
+    bool AnyMemberFlagSet (bool CCommandLine::* const (& rgFlags)[N]) const
+    {
+        for (bool CCommandLine::* pfFlag : rgFlags)
+        {
+            if (this->*pfFlag)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     HRESULT OrderByHandler                (LPCWSTR pszArg);
     HRESULT AttributeHandler              (LPCWSTR pszArg);
     HRESULT TimeFieldHandler              (LPCWSTR pszArg);

@@ -78,6 +78,7 @@ void RELEASEMSG (LPCWSTR pszFormat, ...)
 
 
 EHM_BREAKPOINT_FUNC g_pfnBreakpoint = nullptr;
+EHM_NOTIFY_FUNC     g_pfnNotify     = nullptr;
 
 
 
@@ -107,4 +108,53 @@ void SetBreakpointFunction (EHM_BREAKPOINT_FUNC func)
 void EhmBreakpoint (void)
 {
     g_pfnBreakpoint ? g_pfnBreakpoint() : __debugbreak();
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  SetNotifyFunction
+//
+////////////////////////////////////////////////////////////////////////////////
+
+void SetNotifyFunction (EHM_NOTIFY_FUNC func)
+{
+    g_pfnNotify = func;
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  EhmNotifyUser
+//
+////////////////////////////////////////////////////////////////////////////////
+
+void EhmNotifyUser (const wchar_t * message)
+{
+    HANDLE hConsole = NULL;
+
+
+
+    if (g_pfnNotify != nullptr)
+    {
+        g_pfnNotify (message);
+        return;
+    }
+
+    hConsole = GetStdHandle (STD_ERROR_HANDLE);
+
+    if (hConsole != NULL && hConsole != INVALID_HANDLE_VALUE)
+    {
+        fwprintf (stderr, L"Error: %s\n", message);
+    }
+    else
+    {
+        MessageBoxW (NULL, message, L"TCDir", MB_OK | MB_ICONERROR);
+    }
 }

@@ -88,6 +88,7 @@ Complexity MUST be justified:
 - **Minimal Dependencies**: Avoid external libraries unless they provide substantial value
 - **File Scope**: Modify only files explicitly required; ask before making "helpful" changes to unrelated files
 - **Function Size & Structure (NON-NEGOTIABLE)**: Functions MUST be kept short — ideally under 50 lines, 100 lines at absolute maximum. Aggressively factor out helper functions that do just one thing. Avoid excessive nesting by extracting inner logic into separate helper functions rather than adding more indentation levels. If a function requires more than 2-3 levels of indentation beyond the EHM pattern, extract that logic into its own function.
+- **Members over free functions (NON-NEGOTIABLE)**: Organize helpers as members (usually `private static`) of a cohesive class, NOT as free/global or file-local functions. A free/global function requires a *very convincing* justification (e.g. a genuine non-member `operator` or a required C-ABI / entry-point symbol). Never use anonymous namespaces.
 
 **Rationale**: Simple code is easier to understand, test, and maintain over time.
 

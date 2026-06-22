@@ -2,6 +2,18 @@
 
 All notable changes to TCDir are documented in this file.
 
+## [5.6.0] - 2026-06-21
+
+### Added
+- `--Install-NerdFonts`: download and install CaskaydiaCove Nerd Font system-wide, then optionally configure terminal profiles
+  - Fetches the latest release from the Nerd Fonts GitHub repository
+  - Installs the font files to the system Fonts folder and registers them with GDI and the system font registry, tracked via an uninstall manifest
+  - Interactive Windows Terminal profile selection; sets the profile font face and disables ligatures (`calt`/`liga`) by default
+- `--Uninstall-NerdFonts`: remove Nerd Font terminal configuration and optionally remove the installed font files
+
+### Changed
+- Adopted manual `MAJOR.MINOR.PATCH` semantic versioning; removed the auto-incrementing build counter and pre-build increment hook (minor bump 5.5 → 5.6)
+
 ## [5.5.1619] - 2026-04-19
 
 ### Added

@@ -1,51 +1,38 @@
-﻿# Automatic Build Version System
+﻿# Version System
 
 ## Overview
 
-TCDir uses an automatic build number incrementer that updates the version with each build.
+TCDir uses manual semantic versioning. The version is bumped by hand when cutting a release; there is no auto-incrementing build counter.
 
 ## Files
 
-- **`TCDirCore/Version.h`** - Contains version macros (MAJOR.MINOR.BUILD)
-- **`IncrementVersion.ps1`** - PowerShell script that increments the build number
+- **`TCDirCore/Version.h`** - Contains the version macros (`MAJOR.MINOR.PATCH`) and the copyright year.
 
 ## Version Format
 
-The version follows semantic versioning: `MAJOR.MINOR.BUILD`
+The version follows semantic versioning: `MAJOR.MINOR.PATCH`
 
-Example: `1.0.123`
+Example: `5.6.0`
 
-## How It Works
+- **MAJOR** - incompatible / milestone changes
+- **MINOR** - backward-compatible feature additions
+- **PATCH** - backward-compatible fixes
 
-1. Before each build, the pre-build event runs `IncrementVersion.ps1`
-2. The script reads `Version.h` and increments `VERSION_BUILD`
-3. The updated version is compiled into the application
-4. The version is displayed in the usage/help text
+`VERSION_BUILD_TIMESTAMP` (the compiler's `__DATE__ " " __TIME__`) identifies an individual compile when that granularity is needed.
 
-## Setting Up Pre-Build Event
-
-**Note:** This should already be configured in the project, but if you need to add it manually:
-
-1. Right-click the **TCDir** or **TCDirCore** project → **Properties**
-2. Navigate to **Build Events** → **Pre-Build Event**
-3. Add the following command:
-
-```cmd
-powershell -ExecutionPolicy Bypass -File "$(SolutionDir)IncrementVersion.ps1"
-```
-
-## Manual Version Control
-
-To manually set the version:
+## Bumping the Version
 
 1. Open `TCDirCore/Version.h`
-2. Edit the version numbers:
+2. Edit the relevant macro(s):
    ```cpp
-   #define VERSION_MAJOR 1
-   #define VERSION_MINOR 0
-   #define VERSION_BUILD 0
+   #define VERSION_MAJOR 5
+   #define VERSION_MINOR 6
+   #define VERSION_PATCH 0
+   #define VERSION_YEAR  2026
    ```
-3. Save and rebuild
+3. Save and rebuild.
+
+The version flows into the application (via `Version.h`) and the resource file (`TCDir/TCDir.rc`), and is shown in the `/?` usage/help text. The release workflow (`.github/workflows/release.yml`) validates that the git tag matches `Version.h`.
 
 ## Usage in Code
 
@@ -53,26 +40,5 @@ To manually set the version:
 #include "Version.h"
 
 // Use VERSION_WSTRING for wide string contexts
-static LPCWSTR s_usageLines[] = {
-    L"My Application",
-    VERSION_WSTRING,  // Expands to L"1.0.123"
-    // ...
-};
+console.ColorPuts (VERSION_WSTRING);  // Expands to L"5.6.0"
 ```
-
-## Troubleshooting
-
-### Script Execution Error
-If you see PowerShell execution policy errors:
-```powershell
-Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned
-```
-
-### Version Not Incrementing
-1. Check that the pre-build event is configured
-2. Verify `IncrementVersion.ps1` exists in the solution directory
-3. Check the Build Output window for script errors
-
-### Build Fails After Adding Version
-1. Ensure `#include "Version.h"` is added to files that use version macros
-2. Rebuild the entire solution (not just Build)

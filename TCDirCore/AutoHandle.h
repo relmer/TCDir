@@ -4,12 +4,12 @@
 
 
 
-template <auto CloseFunc>
+template <typename THandle, THandle InvalidValue, auto CloseFunc>
 class CAutoHandleT
 {
 public:
     CAutoHandleT (void)
-        : m_h (INVALID_HANDLE_VALUE)
+        : m_h (InvalidValue)
     {
     }
 
@@ -18,7 +18,7 @@ public:
     //    hFile = CreateFileW (...);
     //
 
-    CAutoHandleT (HANDLE h)
+    CAutoHandleT (THandle h)
         : m_h (h)
     {
     }
@@ -39,12 +39,12 @@ public:
     CAutoHandleT (CAutoHandleT && other) noexcept
         : m_h (other.m_h)
     {
-        other.m_h = INVALID_HANDLE_VALUE;
+        other.m_h = InvalidValue;
     }
 
     CAutoHandleT & operator= (CAutoHandleT && other) noexcept
     {
-        if (this != &other)
+        if (this != std::addressof (other))
         {
             if (IsValid())
             {
@@ -52,7 +52,7 @@ public:
             }
 
             m_h       = other.m_h;
-            other.m_h = INVALID_HANDLE_VALUE;
+            other.m_h = InvalidValue;
         }
 
         return *this;
@@ -66,27 +66,49 @@ public:
     CAutoHandleT & operator= (const CAutoHandleT &) = delete;
 
     //
-    //  Implicit conversion to HANDLE so the wrapper can be passed directly
-    //  to Win32 APIs without a .Get() accessor.
+    //  Implicit conversion to the underlying handle so the wrapper can be
+    //  passed directly to Win32 APIs without a .Get() accessor.
     //
 
-    operator HANDLE (void) const
+    operator THandle (void) const
     {
         return m_h;
+    }
+
+    //
+    //  Yields the address of the internal slot for out-parameter APIs such as
+    //  RegOpenKeyEx (..., key.GetRef()).  A named method rather than operator&
+    //  so that taking the wrapper's own address stays normal.  Asserts the
+    //  slot is empty first so an existing handle is never silently leaked.
+    //
+
+    THandle * GetRef (void)
+    {
+        ASSERT (!IsValid());
+        return &m_h;
     }
 
 private:
     bool IsValid (void) const
     {
-        return m_h != INVALID_HANDLE_VALUE && m_h != nullptr;
+        return m_h != InvalidValue && m_h != nullptr;
     }
 
-    HANDLE m_h;
+    THandle m_h;
 };
 
 
 
 
+using AutoHandle         = CAutoHandleT<HANDLE, INVALID_HANDLE_VALUE, CloseHandle>;
+using AutoFindHandle     = CAutoHandleT<HANDLE, INVALID_HANDLE_VALUE, FindClose>;
+using AutoInternetHandle = CAutoHandleT<HANDLE, INVALID_HANDLE_VALUE, InternetCloseHandle>;
 
-using AutoHandle     = CAutoHandleT<CloseHandle>;
-using AutoFindHandle = CAutoHandleT<FindClose>;
+//
+//  HKEY is a distinct pointer type from HANDLE and registry keys are invalid
+//  as nullptr (not INVALID_HANDLE_VALUE), so it instantiates the template with
+//  its own type and sentinel.  Use key.GetRef() with RegOpenKeyEx /
+//  RegCreateKeyEx.
+//
+
+using CAutoRegKey = CAutoHandleT<HKEY, nullptr, RegCloseKey>;

@@ -288,90 +288,209 @@ HRESULT CCommandLine::ValidateSwitchCombinations (void)
 
 
 
+    hr = ValidateTreeCombinations ();
+    CHR (hr);
+
+    hr = ValidateAliasCombinations ();
+    CHR (hr);
+
+    hr = ValidateNerdFontCombinations ();
+    CHR (hr);
+
+Error:
+    return hr;
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CCommandLine::ValidateTreeCombinations
+//
+//  Tree mode is incompatible with several listing switches, and the
+//  --Depth / --TreeIndent options require tree mode (and have ranges).
+//
+////////////////////////////////////////////////////////////////////////////////
+
+HRESULT CCommandLine::ValidateTreeCombinations (void)
+{
+    HRESULT hr = S_OK;
+
+    struct SBoolConflict
+    {
+        bool CCommandLine:: * pfSwitch;
+        LPCWSTR               pszError;
+    };
+
+    struct SIntRequirement
+    {
+        int CCommandLine:: * piValue;
+        int                  iDefaultValue;
+        LPCWSTR              pszRequiresTreeError;
+        bool                 fHasRange;
+        int                  iMinValue;
+        int                  iMaxValue;
+        LPCWSTR              pszRangeError;
+    };
+
+    static constexpr SBoolConflict s_krgTreeConflicts[] =
+    {
+        { &CCommandLine::m_fWideListing,  L"--Tree and -W (wide) cannot be used together." },
+        { &CCommandLine::m_fBareListing,  L"--Tree and -B (bare) cannot be used together." },
+        { &CCommandLine::m_fRecurse,      L"--Tree and -S (recurse) cannot be used together." },
+        { &CCommandLine::m_fShowOwner,    L"--Tree and --Owner cannot be used together." },
+    };
+
+    static constexpr SIntRequirement s_krgTreeRequirements[] =
+    {
+        { &CCommandLine::m_cMaxDepth,    0, L"--Depth requires --Tree.",       false, 0, 0, nullptr },
+        { &CCommandLine::m_cTreeIndent,  4, L"--TreeIndent requires --Tree.",  true,  1, 8, L"--TreeIndent must be between 1 and 8." },
+    };
+
+
+
     if (m_fTree)
     {
-        if (m_fWideListing)
+        for (const SBoolConflict & conflict : s_krgTreeConflicts)
         {
-            m_strValidationError = L"--Tree and -W (wide) cannot be used together.";
-            CHR (E_INVALIDARG);
+            CBRFEx (!(this->*(conflict.pfSwitch)), E_INVALIDARG, m_strValidationError = conflict.pszError);
         }
 
-        if (m_fBareListing)
-        {
-            m_strValidationError = L"--Tree and -B (bare) cannot be used together.";
-            CHR (E_INVALIDARG);
-        }
-
-        if (m_fRecurse)
-        {
-            m_strValidationError = L"--Tree and -S (recurse) cannot be used together.";
-            CHR (E_INVALIDARG);
-        }
-
-        if (m_fShowOwner)
-        {
-            m_strValidationError = L"--Tree and --Owner cannot be used together.";
-            CHR (E_INVALIDARG);
-        }
-
-        if (m_eSizeFormat == ESizeFormat::Bytes)
-        {
-            m_strValidationError = L"--Tree and --Size=Bytes cannot be used together.";
-            CHR (E_INVALIDARG);
-        }
+        CBRFEx (m_eSizeFormat != ESizeFormat::Bytes, E_INVALIDARG,
+                m_strValidationError = L"--Tree and --Size=Bytes cannot be used together.");
     }
 
-    if (m_cMaxDepth != 0 && !m_fTree)
+    for (const SIntRequirement & req : s_krgTreeRequirements)
     {
-        m_strValidationError = L"--Depth requires --Tree.";
-        CHR (E_INVALIDARG);
+        int iValue = this->*(req.piValue);
+
+        CBRFEx (m_fTree || iValue == req.iDefaultValue, E_INVALIDARG,
+                m_strValidationError = req.pszRequiresTreeError);
+
+        CBRFEx (!req.fHasRange || (iValue >= req.iMinValue && iValue <= req.iMaxValue), E_INVALIDARG,
+                m_strValidationError = req.pszRangeError);
     }
 
-    if (m_cTreeIndent != 4 && !m_fTree)
+Error:
+    return hr;
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CCommandLine::ValidateAliasCombinations
+//
+//  Alias switches are mutually exclusive with each other and with listing
+//  switches; --whatif is only valid alongside --set-aliases / --remove-aliases.
+//
+////////////////////////////////////////////////////////////////////////////////
+
+HRESULT CCommandLine::ValidateAliasCombinations (void)
+{
+    HRESULT hr = S_OK;
+
+    static constexpr bool CCommandLine::* s_krgAliasSwitches[] =
     {
-        m_strValidationError = L"--TreeIndent requires --Tree.";
-        CHR (E_INVALIDARG);
-    }
+        &CCommandLine::m_fSetAliases,
+        &CCommandLine::m_fGetAliases,
+        &CCommandLine::m_fRemoveAliases,
+    };
 
-    if (m_cTreeIndent < 1 || m_cTreeIndent > 8)
+    static constexpr bool CCommandLine::* s_krgListingSwitches[] =
     {
-        m_strValidationError = L"--TreeIndent must be between 1 and 8.";
-        CHR (E_INVALIDARG);
-    }
+        &CCommandLine::m_fRecurse,
+        &CCommandLine::m_fWideListing,
+        &CCommandLine::m_fBareListing,
+        &CCommandLine::m_fTree,
+        &CCommandLine::m_fShowOwner,
+        &CCommandLine::m_fShowStreams,
+        &CCommandLine::m_fEnv,
+        &CCommandLine::m_fConfig,
+        &CCommandLine::m_fSettings,
+    };
 
-    //
-    // Alias switches: mutually exclusive with each other and with listing switches
-    //
+    int  cAliasFlags        = 0;
+    bool fAliasWithListing  = false;
 
+
+
+    for (bool CCommandLine::* pfAliasSwitch : s_krgAliasSwitches)
     {
-        int cAliasFlags = (m_fSetAliases ? 1 : 0)
-                        + (m_fGetAliases ? 1 : 0)
-                        + (m_fRemoveAliases ? 1 : 0);
-
-        if (cAliasFlags > 1)
-        {
-            m_strValidationError = L"--set-aliases, --get-aliases, and --remove-aliases are mutually exclusive.";
-            CHR (E_INVALIDARG);
-        }
-
-        if (cAliasFlags > 0)
-        {
-            bool fHasListingSwitch = m_fRecurse || m_fWideListing || m_fBareListing || m_fTree
-                                  || m_fShowOwner || m_fShowStreams || m_fEnv || m_fConfig || m_fSettings;
-
-            if (fHasListingSwitch)
-            {
-                m_strValidationError = L"Alias switches cannot be combined with listing switches.";
-                CHR (E_INVALIDARG);
-            }
-        }
-
-        if (m_fWhatIf && !m_fSetAliases && !m_fRemoveAliases)
-        {
-            m_strValidationError = L"--whatif is only valid with --set-aliases or --remove-aliases.";
-            CHR (E_INVALIDARG);
-        }
+        cAliasFlags += (this->*pfAliasSwitch) ? 1 : 0;
     }
+
+    CBRFEx (cAliasFlags <= 1, E_INVALIDARG,
+            m_strValidationError = L"--set-aliases, --get-aliases, and --remove-aliases are mutually exclusive.");
+
+    fAliasWithListing = (cAliasFlags > 0) && AnyMemberFlagSet (s_krgListingSwitches);
+
+    CBRFEx (!fAliasWithListing, E_INVALIDARG,
+            m_strValidationError = L"Alias switches cannot be combined with listing switches.");
+
+    CBRFEx (!m_fWhatIf || m_fSetAliases || m_fRemoveAliases, E_INVALIDARG,
+            m_strValidationError = L"--whatif is only valid with --set-aliases or --remove-aliases.");
+
+Error:
+    return hr;
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CCommandLine::ValidateNerdFontCombinations
+//
+//  Nerd font install/uninstall are mutually exclusive and cannot be combined
+//  with any other switch or with file masks.
+//
+////////////////////////////////////////////////////////////////////////////////
+
+HRESULT CCommandLine::ValidateNerdFontCombinations (void)
+{
+    HRESULT hr             = S_OK;
+    bool    fNfHasConflict = false;
+
+    static constexpr bool CCommandLine::* s_krgNfConflictSwitches[] =
+    {
+        &CCommandLine::m_fRecurse,
+        &CCommandLine::m_fWideListing,
+        &CCommandLine::m_fBareListing,
+        &CCommandLine::m_fTree,
+        &CCommandLine::m_fShowOwner,
+        &CCommandLine::m_fShowStreams,
+        &CCommandLine::m_fEnv,
+        &CCommandLine::m_fConfig,
+        &CCommandLine::m_fSettings,
+        &CCommandLine::m_fSetAliases,
+        &CCommandLine::m_fGetAliases,
+        &CCommandLine::m_fRemoveAliases,
+    };
+
+
+
+    BAIL_OUT_IF (!m_fInstallNerdFonts && !m_fUninstallNerdFonts, S_OK);
+
+    CBRFEx (!(m_fInstallNerdFonts && m_fUninstallNerdFonts), E_INVALIDARG,
+            m_strValidationError = L"--install-nerd-fonts cannot be combined with --uninstall-nerd-fonts.");
+
+    fNfHasConflict = AnyMemberFlagSet (s_krgNfConflictSwitches);
+
+    CBRFEx (!fNfHasConflict, E_INVALIDARG,
+            m_strValidationError = m_fInstallNerdFonts
+                ? L"--install-nerd-fonts cannot be combined with other switches."
+                : L"--uninstall-nerd-fonts cannot be combined with other switches.");
+
+    CBRFEx (m_listMask.empty (), E_INVALIDARG,
+            m_strValidationError = m_fInstallNerdFonts
+                ? L"--install-nerd-fonts does not accept file masks."
+                : L"--uninstall-nerd-fonts does not accept file masks.");
 
 Error:
     return hr;
@@ -490,17 +609,21 @@ HRESULT CCommandLine::HandleLongSwitch (LPCWSTR pszArg, int & cArg, WCHAR ** & p
 
     static const LongSwitchEntry s_krgLongSwitches[] =
     {
-        {  L"env",            &CCommandLine::m_fEnv            },
-        {  L"config",         &CCommandLine::m_fConfig         },
-        {  L"settings",       &CCommandLine::m_fSettings       },
-        {  L"owner",          &CCommandLine::m_fShowOwner      },
-        {  L"streams",        &CCommandLine::m_fShowStreams    },
-        {  L"set-aliases",    &CCommandLine::m_fSetAliases     },
-        {  L"get-aliases",    &CCommandLine::m_fGetAliases     },
-        {  L"remove-aliases", &CCommandLine::m_fRemoveAliases  },
-        {  L"whatif",         &CCommandLine::m_fWhatIf         },
+        {  L"env",                  &CCommandLine::m_fEnv                },
+        {  L"config",               &CCommandLine::m_fConfig             },
+        {  L"settings",             &CCommandLine::m_fSettings           },
+        {  L"owner",                &CCommandLine::m_fShowOwner          },
+        {  L"streams",              &CCommandLine::m_fShowStreams        },
+        {  L"set-aliases",          &CCommandLine::m_fSetAliases         },
+        {  L"get-aliases",          &CCommandLine::m_fGetAliases         },
+        {  L"remove-aliases",       &CCommandLine::m_fRemoveAliases      },
+        {  L"whatif",               &CCommandLine::m_fWhatIf             },
+        {  L"install-nerdfonts",    &CCommandLine::m_fInstallNerdFonts   },
+        {  L"install-nerd-fonts",   &CCommandLine::m_fInstallNerdFonts   },
+        {  L"uninstall-nerdfonts",  &CCommandLine::m_fUninstallNerdFonts },
+        {  L"uninstall-nerd-fonts", &CCommandLine::m_fUninstallNerdFonts },
 #ifdef _DEBUG
-        {  L"debug",          &CCommandLine::m_fDebug          },
+        {  L"debug",                &CCommandLine::m_fDebug              },
 #endif
     };
 
@@ -700,6 +823,10 @@ bool CCommandLine::IsRecognizedLongSwitch (const wstring & strSwitch)
         L"get-aliases",
         L"remove-aliases",
         L"whatif",
+        L"install-nerdfonts",
+        L"install-nerd-fonts",
+        L"uninstall-nerdfonts",
+        L"uninstall-nerd-fonts",
     };
 
 

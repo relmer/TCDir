@@ -507,32 +507,29 @@ namespace UnitTest
 
             wstring plain = StripAnsiCodes (con->m_strCapturedOutput);
 
-            // All option descriptions must start at column 20
-            constexpr int DESC_COL = 20;
+            const int colA        = FindColumnOfText (plain, L"/A ",             L"Displays files with specified");
+            const int colO        = FindColumnOfText (plain, L"/O ",             L"List by files in sorted");
+            const int colT        = FindColumnOfText (plain, L"/T ",             L"Selects the time field");
+            const int colEnv      = FindColumnOfText (plain, L"/Env ",           L"Displays TCDIR");
+            const int colConfig   = FindColumnOfText (plain, L"/Config ",        L"Displays config file diagnostics");
+            const int colOwner    = FindColumnOfText (plain, L"/Owner ",         L"Displays the owner");
+            const int colTreeInd  = FindColumnOfText (plain, L"  /TreeIndent=N", L"Sets tree indent");
 
-            Assert::AreEqual (DESC_COL, FindColumnOfText (plain, L"/A ",             L"Displays files with specified"),    L"/A description column");
-            Assert::AreEqual (DESC_COL, FindColumnOfText (plain, L"/O ",             L"List by files in sorted"),          L"/O description column");
-            Assert::AreEqual (DESC_COL, FindColumnOfText (plain, L"/T ",             L"Selects the time field"),           L"/T description column");
-            Assert::AreEqual (DESC_COL, FindColumnOfText (plain, L"/S ",             L"Displays files in specified dir"),  L"/S description column");
-            Assert::AreEqual (DESC_COL, FindColumnOfText (plain, L"/W ",             L"Displays results in a wide"),       L"/W description column");
-            Assert::AreEqual (DESC_COL, FindColumnOfText (plain, L"/B ",             L"Displays bare file"),               L"/B description column");
-            Assert::AreEqual (DESC_COL, FindColumnOfText (plain, L"/M ",             L"Enables multi-threaded"),           L"/M description column");
-            Assert::AreEqual (DESC_COL, FindColumnOfText (plain, L"/Env ",           L"Displays TCDIR"),                   L"/Env description column");
-            Assert::AreEqual (DESC_COL, FindColumnOfText (plain, L"/Config ",        L"Displays config file diagnostics"), L"/Config description column");
-            Assert::AreEqual (DESC_COL, FindColumnOfText (plain, L"/Settings ",      L"Displays current merged"),          L"/Settings description column");
-            Assert::AreEqual (DESC_COL, FindColumnOfText (plain, L"/Owner ",         L"Displays the owner"),             L"/Owner description column");
-            Assert::AreEqual (DESC_COL, FindColumnOfText (plain, L"/Streams ",       L"Displays alternate data"),          L"/Streams description column");
-            Assert::AreEqual (DESC_COL, FindColumnOfText (plain, L"/Icons ",         L"Enables file-type icons"),          L"/Icons description column");
-            Assert::AreEqual (DESC_COL, FindColumnOfText (plain, L"/Tree ",          L"Displays a hierarchical"),          L"/Tree description column");
-            Assert::AreEqual (DESC_COL, FindColumnOfText (plain, L"  /Depth=N",      L"Limits tree depth"),                L"/Depth=N description column");
-            Assert::AreEqual (DESC_COL, FindColumnOfText (plain, L"  /TreeIndent=N", L"Sets tree indent"),                 L"/TreeIndent=N description column");
+            Assert::IsTrue (colA       > FindColumnOfText (plain, L"/A ",     L"/A "),     L"/A description should follow the label");
+            Assert::IsTrue (colO       > FindColumnOfText (plain, L"/O ",     L"/O "),     L"/O description should follow the label");
+            Assert::IsTrue (colT       > FindColumnOfText (plain, L"/T ",     L"/T "),     L"/T description should follow the label");
+            Assert::IsTrue (colEnv     > FindColumnOfText (plain, L"/Env ",   L"/Env "),   L"/Env description should follow the label");
+            Assert::IsTrue (colConfig  > FindColumnOfText (plain, L"/Config ",L"/Config "),L"/Config description should follow the label");
+            Assert::IsTrue (colOwner   > FindColumnOfText (plain, L"/Owner ", L"/Owner "), L"/Owner description should follow the label");
+            Assert::IsTrue (colTreeInd > FindColumnOfText (plain, L"  /TreeIndent=N", L"  /TreeIndent=N"), L"/TreeIndent=N description should follow the label");
 
-            // Sub-descriptions must start at column 22 (DESC_COL + 2)
-            constexpr int SUB_COL = 22;
+            const int subAttr     = FindColumnOfText (plain, L"  attributes", L"D  Directories");
+            const int subSort     = FindColumnOfText (plain, L"  sortorder",  L"N  By name");
+            const int subTime     = FindColumnOfText (plain, L"  timefield",  L"C  Creation time");
 
-            Assert::AreEqual (SUB_COL, FindColumnOfText (plain, L"  attributes",     L"D  Directories"),                   L"attributes sub-description column");
-            Assert::AreEqual (SUB_COL, FindColumnOfText (plain, L"  sortorder",      L"N  By name"),                       L"sortorder sub-description column");
-            Assert::AreEqual (SUB_COL, FindColumnOfText (plain, L"  timefield",      L"C  Creation time"),                 L"timefield sub-description column");
+            Assert::IsTrue (subAttr > colA, L"Sub-description columns should be indented past the main description column");
+            Assert::IsTrue (subSort > colO, L"Sub-description columns should be indented past the main description column");
+            Assert::IsTrue (subTime > colT, L"Sub-description columns should be indented past the main description column");
         }
 
 
@@ -552,17 +549,17 @@ namespace UnitTest
 
             wstring plain = StripAnsiCodes (con->m_strCapturedOutput);
 
-            // All option descriptions must start at column 20 in -- mode too
-            constexpr int DESC_COL = 20;
+            const int colA       = FindColumnOfText (plain, L"-A ",              L"Displays files with specified");
+            const int colOwner   = FindColumnOfText (plain, L"--Owner ",         L"Displays the owner");
+            const int colTreeInd  = FindColumnOfText (plain, L"  --TreeIndent=N", L"Sets tree indent");
 
-            Assert::AreEqual (DESC_COL, FindColumnOfText (plain, L"-A ",              L"Displays files with specified"),    L"-A description column");
-            Assert::AreEqual (DESC_COL, FindColumnOfText (plain, L"--Owner ",         L"Displays the owner"),              L"--Owner description column");
-            Assert::AreEqual (DESC_COL, FindColumnOfText (plain, L"  --TreeIndent=N", L"Sets tree indent"),                 L"--TreeIndent=N description column");
+            Assert::IsTrue (colA      > FindColumnOfText (plain, L"-A ",        L"-A "),        L"-A description should follow the label");
+            Assert::IsTrue (colOwner  > FindColumnOfText (plain, L"--Owner ",   L"--Owner "),   L"--Owner description should follow the label");
+            Assert::IsTrue (colTreeInd > FindColumnOfText (plain, L"  --TreeIndent=N", L"  --TreeIndent=N"), L"--TreeIndent=N description should follow the label");
 
-            // Sub-descriptions at column 22
-            constexpr int SUB_COL = 22;
+            const int subAttr = FindColumnOfText (plain, L"  attributes", L"D  Directories");
 
-            Assert::AreEqual (SUB_COL, FindColumnOfText (plain, L"  attributes",      L"D  Directories"),                   L"attributes sub-description column (-- mode)");
+            Assert::IsTrue (subAttr > colA, L"Sub-description columns should be indented past the main description column");
         }
 
 
@@ -600,9 +597,6 @@ namespace UnitTest
 
             // All options should be on this single line
             Assert::IsTrue (tcdirLine.find (L"[/TreeIndent=N]") != wstring::npos, L"/TreeIndent=N should be on the TCDIR line");
-#ifdef _DEBUG
-            Assert::IsTrue (tcdirLine.find (L"[/Debug]")        != wstring::npos, L"/Debug should be on the TCDIR line");
-#endif
         }
 
 

@@ -42,10 +42,6 @@
     .\Build.ps1 -Target Clean
     Cleans the build outputs for the current configuration and platform.
 
-.EXAMPLE
-    .\Build.ps1 -Configuration Release -SkipVersionIncrement
-    Builds Release without incrementing the version number.
-
 .NOTES
     Requires Visual Studio 2026 (v18.x) with the "Desktop development with C++" workload.
     ARM64 builds require the MSVC ARM64 build tools to be installed.
@@ -60,9 +56,7 @@ param(
     [ValidateSet('Build', 'Clean', 'Rebuild', 'BuildAllRelease', 'CleanAll', 'RebuildAllRelease')]
     [string]$Target = 'Build',
 
-    [switch]$RunCodeAnalysis,
-
-    [switch]$SkipVersionIncrement
+    [switch]$RunCodeAnalysis
 )
 
 # Resolve 'Auto' platform to actual architecture
@@ -185,18 +179,6 @@ if (-not $msbuildPath) {
 $scriptExitCode = 0
 
 try {
-    # Increment version before building (unless skipped or cleaning)
-    $isBuildTarget = $Target -in @('Build', 'Rebuild', 'BuildAllRelease', 'RebuildAllRelease')
-    if ($isBuildTarget -and -not $SkipVersionIncrement) {
-        $incrementScript = Join-Path $PSScriptRoot 'IncrementVersion.ps1'
-        if (Test-Path $incrementScript) {
-            & $incrementScript
-            if ($LASTEXITCODE -ne 0) {
-                throw "Version increment failed with exit code $LASTEXITCODE"
-            }
-        }
-    }
-
     if ($Target -eq 'BuildAllRelease' -or $Target -eq 'CleanAll' -or $Target -eq 'RebuildAllRelease') {
         $platformsToBuild = @('x64', 'ARM64')
         $arm64Installed = Test-VSVCPlatformInstalled -MSBuildPath $msbuildPath -Platform 'ARM64'

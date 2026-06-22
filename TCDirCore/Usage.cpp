@@ -5,6 +5,7 @@
 #include "Config.h"
 #include "Console.h"
 #include "IconMapping.h"
+#include "NerdFontConstants.h"
 #include "NerdFontDetector.h"
 #include "UnicodeSymbols.h"
 #include "Version.h"
@@ -109,15 +110,15 @@ struct SSwitchInfo
 
 static constexpr SSwitchInfo s_kSwitchInfos[] =
 {
-    { L"W",       L"Wide listing format"            },
-    { L"S",       L"Recurse into subdirectories"    },
-    { L"P",       L"Display performance timing"     },
-    { L"M",       L"Multi-threaded enumeration"     },
-    { L"B",       L"Bare listing format"            },
-    { L"Owner",   L"Display file ownership"         },
-    { L"Streams", L"Display alternate data streams" },
-    { L"Icons",      L"Enable file-type icons"         },
-    { L"Tree",       L"Display directory tree view"    },
+    { L"W",          L"Wide listing format"             },
+    { L"S",          L"Recurse into subdirectories"     },
+    { L"P",          L"Display performance timing"      },
+    { L"M",          L"Multi-threaded enumeration"      },
+    { L"B",          L"Bare listing format"             },
+    { L"Owner",      L"Display file ownership"          },
+    { L"Streams",    L"Display alternate data streams"  },
+    { L"Icons",      L"Enable file-type icons"          },
+    { L"Tree",       L"Display directory tree view"     },
     { L"Ellipsize",  L"Truncate long link target paths" },
 };
 
@@ -230,55 +231,9 @@ static int MeasureVisibleWidth (wstring_view text)
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-void CUsage::DisplaySynopsis (CConsole & console, wchar_t chPrefix)
+void CUsage::DisplaySynopsis (CConsole & console, const vector<wstring> & tokens)
 {
-    wstring_view szShort = (chPrefix == L'-') ? L"-"  : L"/";
-    wstring_view pszLong = (chPrefix == L'-') ? L"--" : L"/";
-
-    //
-    // "TCDIR " = 6 visible chars.  Continuation lines indent to column 6
-    // to align under [drive:].
-    //
-
     constexpr int INDENT = 6;
-
-    //
-    // Build the list of option tokens.  Each is a color-marked string
-    // (post-format, ready for ColorPuts) with a trailing space separator.
-    //
-
-    wstring tokens[] =
-    {
-        format (L"[{{InformationHighlight}}drive:{{Information}}]"
-                L"[{{InformationHighlight}}path{{Information}}]"
-                L"[{{InformationHighlight}}filename{{Information}}] "),
-
-        format (L"[{{InformationHighlight}}{0}A{{Information}}[[:]{{InformationHighlight}}attributes{{Information}}]] ",    szShort),
-        format (L"[{{InformationHighlight}}{0}O{{Information}}[[:]{{InformationHighlight}}sortorder{{Information}}]] ",     szShort),
-        format (L"[{{InformationHighlight}}{0}T{{Information}}[[:]{{InformationHighlight}}timefield{{Information}}]] ",     szShort),
-        format (L"[{{InformationHighlight}}{0}S{{Information}}] ",     szShort),
-        format (L"[{{InformationHighlight}}{0}W{{Information}}] ",     szShort),
-        format (L"[{{InformationHighlight}}{0}B{{Information}}] ",     szShort),
-        format (L"[{{InformationHighlight}}{0}P{{Information}}] ",     szShort),
-        format (L"[{{InformationHighlight}}{0}M{{Information}}] ",     szShort),
-        format (L"[{{InformationHighlight}}{0}Env{{Information}}] ",   pszLong),
-        format (L"[{{InformationHighlight}}{0}Config{{Information}}] ", pszLong),
-        format (L"[{{InformationHighlight}}{0}Owner{{Information}}] ", pszLong),
-        format (L"[{{InformationHighlight}}{0}Streams{{Information}}] ", pszLong),
-        format (L"[{{InformationHighlight}}{0}Icons{{Information}}] ", pszLong),
-        format (L"[{{InformationHighlight}}{0}Tree{{Information}}] ",  pszLong),
-        format (L"[{{InformationHighlight}}{0}Ellipsize{{Information}}] ",  pszLong),
-        format (L"[{{InformationHighlight}}{0}Depth{{Information}}={{InformationHighlight}}N{{Information}}] ", pszLong),
-        format (L"[{{InformationHighlight}}{0}TreeIndent{{Information}}={{InformationHighlight}}N{{Information}}] ", pszLong),
-        format (L"[{{InformationHighlight}}{0}Size{{Information}}={{InformationHighlight}}Auto{{Information}}|{{InformationHighlight}}Bytes{{Information}}]", pszLong),
-        format (L" [{{InformationHighlight}}{0}Set-Aliases{{Information}}]", pszLong),
-        format (L" [{{InformationHighlight}}{0}Get-Aliases{{Information}}]", pszLong),
-        format (L" [{{InformationHighlight}}{0}Remove-Aliases{{Information}}]", pszLong),
-        format (L" [{{InformationHighlight}}{0}WhatIf{{Information}}]", pszLong),
-#ifdef _DEBUG
-        format (L" [{{InformationHighlight}}{0}Debug{{Information}}]", pszLong),
-#endif
-    };
 
     int     cxConsole = static_cast<int>(console.GetWidth());
     int     col       = INDENT;
@@ -317,133 +272,228 @@ void CUsage::DisplaySynopsis (CConsole & console, wchar_t chPrefix)
 
 ////////////////////////////////////////////////////////////////////////////////
 //
-//  CUsage::DisplayUsage
-//
+//  Usage option row data
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-void CUsage::DisplayUsage (CConsole & console, wchar_t chPrefix, optional<bool> fIconsCli)
+struct SUsageOptionRow
 {
-    // Format strings with indexed placeholders:
-    // {0} = szShort (single-char switch prefix: "-" or "/")
-    // {1} = pszLong (long switch prefix: "--" or "/")
-    // {2} = pszMDisable (" -M-" or " /M-")
-    // {3} = Cloud-only symbol (Unicode circle or Nerd Font icon)
-    // {4} = Locally available symbol
-    // {5} = Always local symbol
-    // {6} = pszLongPad (extra padding for "/" mode to align descriptions)
-    // {7} = GetArchitecture()
-    // {8} = buildTimestamp
-    // {9} = Copyright symbol
-    //
-    // Color markers use {{EAttributeName}} which format() escapes to {EAttributeName}
-    // for ColorPuts to parse.
+    wstring label;
+    wstring description;
+    wstring continuation;
+};
 
+struct SThreeColumnRow
+{
+    wstring col1;
+    wstring col2;
+    wstring col3;
+};
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CodePointToWString
+//
+////////////////////////////////////////////////////////////////////////////////
+
+static wstring CodePointToWString (char32_t cp)
+{
+    WideCharPair pair = CodePointToWideChars (cp);
+    return wstring (pair.chars, pair.count);
+}
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  GetMaxVisibleWidth
+//
+////////////////////////////////////////////////////////////////////////////////
+
+static int GetMaxVisibleWidth (const vector<wstring> & values)
+{
+    int cchMax = 0;
+
+    for (const wstring & value : values)
+    {
+        cchMax = (std::max) (cchMax, MeasureVisibleWidth (value));
+    }
+
+    return cchMax;
+}
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  AppendAlignedRow
+//
+////////////////////////////////////////////////////////////////////////////////
+
+static void AppendAlignedRow (wstring    & text,
+                              int          indent,
+                              int          descCol,
+                              wstring_view label,
+                              wstring_view description)
+{
+    int labelEnd = indent + MeasureVisibleWidth (label);
+    int pad      = (std::max) (1, descCol - labelEnd);
+
+    text.append (indent, L' ');
+    text.append (label);
+    text.append (pad, L' ');
+    text.append (description);
+    text.push_back (L'\n');
+}
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  AppendThreeColumnRows
+//
+////////////////////////////////////////////////////////////////////////////////
+
+static void AppendThreeColumnRows (wstring                       & text,
+                                   int                             indent,
+                                   int                             col2,
+                                   int                             gap,
+                                   const vector<SThreeColumnRow> & rows,
+                                   optional<int>                   col3OffsetFromCol2 = nullopt)
+{
+    vector<wstring> col2Values;
+    col2Values.reserve (rows.size ());
+
+    for (const SThreeColumnRow & row : rows)
+    {
+        col2Values.push_back (row.col2);
+    }
+
+    int maxCol2Width = GetMaxVisibleWidth (col2Values);
+    int col3         = col3OffsetFromCol2.has_value() ? col2 + col3OffsetFromCol2.value()
+                                                      : col2 + maxCol2Width + gap;
+
+    for (const SThreeColumnRow & row : rows)
+    {
+        text.append (indent, L' ');
+        text.append (row.col1);
+
+        int col1End = indent + MeasureVisibleWidth (row.col1);
+        int pad1    = (std::max) (1, col2 - col1End);
+
+        text.append (pad1, L' ');
+        text.append (row.col2);
+
+        if (!row.col3.empty ())
+        {
+            int col2End = col2 + MeasureVisibleWidth (row.col2);
+            int pad2    = (std::max) (1, col3 - col2End);
+
+            text.append (pad2, L' ');
+            text.append (row.col3);
+        }
+
+        text.push_back (L'\n');
+    }
+}
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  AppendDetailGrid
+//
+//  Renders a sub-level three-column detail grid (e.g. attribute/sort/time
+//  legends), auto-sizing the second column.  Returns the computed col2 so a
+//  following grid can be aligned to it.
+//
+////////////////////////////////////////////////////////////////////////////////
+
+static int AppendDetailGrid (wstring                       & usageBody,
+                             int                             indent,
+                             int                             subLevelDetailCol,
+                             int                             columnGap,
+                             int                             secondColOffset,
+                             const vector<SThreeColumnRow> & rows)
+{
+    vector<wstring> labels;
+    labels.reserve (rows.size ());
+
+    for (const SThreeColumnRow & row : rows)
+    {
+        labels.push_back (row.col1);
+    }
+
+    int col2 = (std::max) (subLevelDetailCol, indent + GetMaxVisibleWidth (labels) + columnGap);
+
+    AppendThreeColumnRows (usageBody, indent, col2, columnGap, rows, secondColOffset);
+    return col2;
+}
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  ResolveUsageIconState
+//
+//  Resolves whether file-type icons are active: CLI flag > config/env var >
+//  Nerd Font auto-detection.
+//
+////////////////////////////////////////////////////////////////////////////////
+
+static bool ResolveUsageIconState (CConsole & console, optional<bool> fIconsCli)
+{
+    const CConfig & config = *console.m_configPtr;
+
+    if (fIconsCli.has_value ())
+    {
+        return fIconsCli.value ();
+    }
+
+    if (config.m_fIcons.has_value ())
+    {
+        return config.m_fIcons.value ();
+    }
+
+    CNerdFontDetector detector;
+    EDetectionResult  result = EDetectionResult::NotDetected;
+    HANDLE            hOut   = GetStdHandle (STD_OUTPUT_HANDLE);
+
+    if (SUCCEEDED (detector.Detect (hOut, *config.m_pEnvironmentProvider, result)))
+    {
+        return (result == EDetectionResult::Detected);
+    }
+
+    return false;
+}
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  PrintUsageHeader
+//
+//  Prints the "Technicolor" banner and the version/copyright header line.
+//
+////////////////////////////////////////////////////////////////////////////////
+
+static void PrintUsageHeader (CConsole & console)
+{
     // Header continuation after "Technicolor" (printed with PrintColorfulString)
     static constexpr wchar_t k_wszUsageHeader[] =
-        L"{{Information}} Directory version " VERSION_WSTRING L" {7} ({8})\n"
-        L"Copyright {9} 2004-" VERSION_YEAR_WSTRING L" by Robert Elmer\n";
+        L"{{Information}} Directory version " VERSION_WSTRING L" {0} ({1})\n"
+        L"Copyright {2} 2004-" VERSION_YEAR_WSTRING L" by Robert Elmer\n";
 
-    static constexpr wchar_t k_wszUsageBody[] =
-        L"{{Information}}\n"
-        L"  [drive:][path][filename]\n"
-        L"                    Specifies drive, directory, and/or files to list.\n"
-        L"\n"
-        L"  {{InformationHighlight}}{0}A{{Information}}                Displays files with specified attributes.\n"
-        L"  attributes          {{InformationHighlight}}D{{Information}}  Directories                {{InformationHighlight}}R{{Information}}  Read-only files\n"
-        L"                      {{InformationHighlight}}H{{Information}}  Hidden files               {{InformationHighlight}}A{{Information}}  Files ready for archiving\n"
-        L"                      {{InformationHighlight}}S{{Information}}  System files               {{InformationHighlight}}T{{Information}}  Temporary files\n"
-        L"                      {{InformationHighlight}}E{{Information}}  Encrypted files            {{InformationHighlight}}C{{Information}}  Compressed files\n"
-        L"                      {{InformationHighlight}}P{{Information}}  Reparse points             {{InformationHighlight}}0{{Information}}  Sparse files\n"
-        L"                      {{InformationHighlight}}X{{Information}}  Not content indexed        {{InformationHighlight}}I{{Information}}  Integrity stream (ReFS)\n"
-        L"                      {{InformationHighlight}}B{{Information}}  No scrub data (ReFS)       {{InformationHighlight}}O{{Information}}  Cloud-only (not local)\n"
-        L"                      {{InformationHighlight}}L{{Information}}  Locally available          {{InformationHighlight}}V{{Information}}  Always locally available\n"
-        L"                      {{InformationHighlight}}-{{Information}}  Prefix meaning not\n"
-        L"\n"
-        L"  Cloud status symbols shown between file size and name:\n"
-        L"                      {{CloudStatusCloudOnly}}{3}{{Information}}  Cloud-only (not locally available)\n"
-        L"                      {{CloudStatusLocallyAvailable}}{4}{{Information}}  Locally available (can be freed)\n"
-        L"                      {{CloudStatusAlwaysLocallyAvailable}}{5}{{Information}}  Always locally available (pinned)\n"
-        L"\n"
-        L"  {{InformationHighlight}}{0}O{{Information}}                List by files in sorted order.\n"
-        L"  sortorder           {{InformationHighlight}}N{{Information}}  By name (alphabetic)       {{InformationHighlight}}S{{Information}}  By size (smallest first)\n"
-        L"                      {{InformationHighlight}}E{{Information}}  By extension (alphabetic)  {{InformationHighlight}}D{{Information}}  By date/time (oldest first)\n"
-        L"                      {{InformationHighlight}}-{{Information}}  Prefix to reverse order\n"
-        L"\n"
-        L"  {{InformationHighlight}}{0}T{{Information}}                Selects the time field for display and sorting.\n"
-        L"  timefield           {{InformationHighlight}}C{{Information}}  Creation time              {{InformationHighlight}}A{{Information}}  Last access time\n"
-        L"                      {{InformationHighlight}}W{{Information}}  Last write time (default)\n"
-        L"\n"
-        L"  {{InformationHighlight}}{0}S{{Information}}                Displays files in specified directory and all subdirectories.\n"
-        L"  {{InformationHighlight}}{0}W{{Information}}                Displays results in a wide listing format.\n"
-        L"  {{InformationHighlight}}{0}B{{Information}}                Displays bare file names only (no headers, footers, or details).\n"
-        L"  {{InformationHighlight}}{0}P{{Information}}                Displays performance timing information.\n"
-        L"  {{InformationHighlight}}{0}M{{Information}}                Enables multi-threaded enumeration (default). Use{{InformationHighlight}}{2}{{Information}} to disable.\n"
-        L"  {{InformationHighlight}}{1}Env{{Information}}             {6}Displays " TCDIR_ENV_VAR_NAME L" help, syntax, and current value.\n"
-        L"  {{InformationHighlight}}{1}Config{{Information}}          {6}Displays config file diagnostics, syntax reference, and parse errors.\n"
-        L"  {{InformationHighlight}}{1}Settings{{Information}}        {6}Displays current merged configuration for all items and extensions.\n"
-        L"  {{InformationHighlight}}{1}Owner{{Information}}           {6}Displays the owner of each file and directory. Not allowed with {{InformationHighlight}}{1}Tree{{Information}}.\n"
-        L"  {{InformationHighlight}}{1}Streams{{Information}}         {6}Displays alternate data streams (NTFS only).\n"
-        L"  {{InformationHighlight}}{1}Icons{{Information}}           {6}Enables file-type icons (Nerd Font required). Use {{InformationHighlight}}{1}Icons-{{Information}} to disable.\n"
-        L"  {{InformationHighlight}}{1}Tree{{Information}}            {6}Displays a hierarchical directory tree view. Use {{InformationHighlight}}{1}Tree-{{Information}} to disable.\n"
-        L"  {{InformationHighlight}}{1}Ellipsize{{Information}}        {6}Truncates long link target paths with \u2026 to prevent line wrapping. Default: on. Use {{InformationHighlight}}{1}Ellipsize-{{Information}} to disable.\n"
-        L"  {{InformationHighlight}}{1}Depth{{Information}}={{InformationHighlight}}N{{Information}}         {6}Limits tree depth to N levels (requires {{InformationHighlight}}{1}Tree{{Information}}).\n"
-        L"  {{InformationHighlight}}{1}TreeIndent{{Information}}={{InformationHighlight}}N{{Information}}    {6}Sets tree indent width (1-8, default 4; requires {{InformationHighlight}}{1}Tree{{Information}}).\n"
-        L"  {{InformationHighlight}}{1}Size{{Information}}={{InformationHighlight}}Auto{{Information}}|{{InformationHighlight}}Bytes{{Information}} {6}File size format: {{InformationHighlight}}Auto{{Information}} = abbreviated (KB/MB/GB), {{InformationHighlight}}Bytes{{Information}} = exact with commas.\n"
-        L"  {6}                   Default: {{InformationHighlight}}Auto{{Information}} in tree mode, {{InformationHighlight}}Bytes{{Information}} otherwise.\n"
-        L"\n"
-        L"  {{InformationHighlight}}{1}Set-Aliases{{Information}}     {6}Interactive wizard to configure PowerShell aliases for tcdir.\n"
-        L"  {{InformationHighlight}}{1}Get-Aliases{{Information}}     {6}Display currently configured tcdir aliases and their source locations.\n"
-        L"  {{InformationHighlight}}{1}Remove-Aliases{{Information}}  {6}Interactive wizard to remove tcdir aliases from a profile.\n"
-        L"  {{InformationHighlight}}{1}WhatIf{{Information}}          {6}Preview changes without modifying files (use with {{InformationHighlight}}{1}Set-Aliases{{Information}} or {{InformationHighlight}}{1}Remove-Aliases{{Information}})."
-#ifdef _DEBUG
-        L"\n  {{InformationHighlight}}{1}Debug{{Information}}           {6}Displays raw file attributes in hex for diagnosing edge cases."
-#endif
-    ;
-
-    // Determine prefix strings for single-char and multi-char switches
-    wstring_view szShort        = (chPrefix == L'-') ? L"-"    : L"/";
-    wstring_view pszLong        = (chPrefix == L'-') ? L"--"   : L"/";
-    wstring_view pszMDisable    = (chPrefix == L'-') ? L" -M-" : L" /M-";
-    wstring_view pszLongPad     = (chPrefix == L'-') ? L""     : L" ";
-    wstring      buildTimestamp = VERSION_BUILD_TIMESTAMP;
-
-    // Resolve icon state: CLI flag > env var > auto-detection
-    const CConfig & config   = *console.m_configPtr;
-    bool            fIcons   = false;
-
-    if (fIconsCli.has_value())
-    {
-        fIcons = fIconsCli.value();
-    }
-    else if (config.m_fIcons.has_value())
-    {
-        fIcons = config.m_fIcons.value();
-    }
-    else
-    {
-        CNerdFontDetector  detector;
-        EDetectionResult   result = EDetectionResult::NotDetected;
-        HANDLE             hOut   = GetStdHandle (STD_OUTPUT_HANDLE);
-
-        if (SUCCEEDED (detector.Detect (hOut, *config.m_pEnvironmentProvider, result)))
-        {
-            fIcons = (result == EDetectionResult::Detected);
-        }
-    }
-
-    // Cloud status symbols: use Nerd Font icons when active, Unicode circles otherwise
-    auto ToWString = [] (char32_t cp) -> wstring
-    {
-        WideCharPair pair = CodePointToWideChars (cp);
-        return wstring (pair.chars, pair.count);
-    };
-
-    wstring szCloudOnly    = fIcons ? ToWString (config.m_iconCloudOnly)        : wstring (1, UnicodeSymbols::CircleHollow);
-    wstring szLocallyAvail = fIcons ? ToWString (config.m_iconLocallyAvailable) : wstring (1, UnicodeSymbols::CircleHalfFilled);
-    wstring szAlwaysLocal  = fIcons ? ToWString (config.m_iconAlwaysLocal)      : wstring (1, UnicodeSymbols::CircleFilled);
-
-
+    wstring buildTimestamp = VERSION_BUILD_TIMESTAMP;
 
     // Format build timestamp without seconds (drop last 3 chars ":SS" from __TIME__)
     buildTimestamp.resize (buildTimestamp.length () - 3);
@@ -452,35 +502,317 @@ void CUsage::DisplayUsage (CConsole & console, wchar_t chPrefix, optional<bool> 
     console.Puts (CConfig::EAttribute::Default, L"");
     console.PrintColorfulString (L"Technicolor");
 
-    // Print header and body using format() with indexed placeholders, then ColorPuts to parse color markers
+    // Print header using format() with indexed placeholders, then ColorPuts to parse color markers
     console.ColorPuts (format (k_wszUsageHeader,
-                               szShort, 
-                               pszLong, 
-                               pszMDisable,
-                               szCloudOnly, 
-                               szLocallyAvail, 
-                               szAlwaysLocal,
-                               pszLongPad, 
-                               GetArchitecture(), 
-                               buildTimestamp, 
-                               UnicodeSymbols::Copyright
+                              GetArchitecture(),
+                              buildTimestamp,
+                              UnicodeSymbols::Copyright
                        ).c_str ());
+}
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  BuildPrimaryOptionRows
+//
+////////////////////////////////////////////////////////////////////////////////
+
+static vector<SUsageOptionRow> BuildPrimaryOptionRows (wstring_view szShort, wstring_view pszLong, wstring_view pszMDisable)
+{
+    return
+    {
+        { format (L"{{InformationHighlight}}{0}A{{Information}}", szShort), 
+          L"Displays files with specified attributes.",
+          L"" },
+        { format (L"{{InformationHighlight}}{0}O{{Information}}", szShort),
+          L"List by files in sorted order.",
+          L"" },
+        { format (L"{{InformationHighlight}}{0}T{{Information}}", szShort),
+          L"Selects the time field for display and sorting.",
+          L"" },
+        { format (L"{{InformationHighlight}}{0}S{{Information}}", szShort),
+          L"Displays files in specified directory and all subdirectories.",
+          L"" },
+        { format (L"{{InformationHighlight}}{0}W{{Information}}", szShort),
+          L"Displays results in a wide listing format.",
+          L"" },
+        { format (L"{{InformationHighlight}}{0}B{{Information}}", szShort),
+          L"Displays bare file names only (no headers, footers, or details).",
+          L"" },
+        { format (L"{{InformationHighlight}}{0}P{{Information}}", szShort),
+          L"Displays performance timing information.",
+          L"" },
+        { format (L"{{InformationHighlight}}{0}M{{Information}}", szShort),
+          format (L"Enables multi-threaded enumeration (default). Use{{InformationHighlight}}{0}{{Information}} to disable.", pszMDisable),
+          L"" },
+        { format (L"{{InformationHighlight}}{0}Env{{Information}}", pszLong),
+          L"Displays " TCDIR_ENV_VAR_NAME L" help, syntax, and current value.",
+          L"" },
+        { format (L"{{InformationHighlight}}{0}Config{{Information}}", pszLong),
+          L"Displays config file diagnostics, syntax reference, and parse errors.",
+          L"" },
+        { format (L"{{InformationHighlight}}{0}Settings{{Information}}", pszLong),
+          L"Displays current merged configuration for all items and extensions.",
+          L"" },
+        { format (L"{{InformationHighlight}}{0}Owner{{Information}}", pszLong),
+          format (L"Displays the owner of each file and directory. Not allowed with {{InformationHighlight}}{0}Tree{{Information}}.", pszLong),
+          L"" },
+        { format (L"{{InformationHighlight}}{0}Streams{{Information}}", pszLong),
+          L"Displays alternate data streams (NTFS only).",
+          L"" },
+        { format (L"{{InformationHighlight}}{0}Icons{{Information}}", pszLong),
+          format (L"Enables file-type icons (Nerd Font required). Use {{InformationHighlight}}{0}Icons-{{Information}} to disable.", pszLong),
+          L"" },
+        { format (L"{{InformationHighlight}}{0}Tree{{Information}}", pszLong),
+          format (L"Displays a hierarchical directory tree view. Use {{InformationHighlight}}{0}Tree-{{Information}} to disable.", pszLong),
+          L"" },
+        { format (L"{{InformationHighlight}}{0}Ellipsize{{Information}}", pszLong),
+          format (L"Truncates long link target paths with \u2026 to prevent line wrapping. Default: on. Use {{InformationHighlight}}{0}Ellipsize-{{Information}} to disable.", pszLong),
+          L"" },
+        { format (L"{{InformationHighlight}}{0}Depth{{Information}}={{InformationHighlight}}N{{Information}}", pszLong),
+          format (L"Limits tree depth to N levels (requires {{InformationHighlight}}{0}Tree{{Information}}).", pszLong),
+          L"" },
+        { format (L"{{InformationHighlight}}{0}TreeIndent{{Information}}={{InformationHighlight}}N{{Information}}", pszLong),
+          format (L"Sets tree indent width (1-8, default 4; requires {{InformationHighlight}}{0}Tree{{Information}}).", pszLong),
+          L"" },
+        { format (L"{{InformationHighlight}}{0}Size{{Information}}={{InformationHighlight}}Auto{{Information}}|{{InformationHighlight}}Bytes{{Information}}", pszLong),
+          L"File size format: {InformationHighlight}Auto{Information} = abbreviated (KB/MB/GB), {InformationHighlight}Bytes{Information} = exact with commas.",
+          L"Default: {InformationHighlight}Auto{Information} in tree mode, {InformationHighlight}Bytes{Information} otherwise." },
+    };
+}
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  BuildAliasRows
+//
+////////////////////////////////////////////////////////////////////////////////
+
+static vector<SUsageOptionRow> BuildAliasRows (wstring_view pszLong)
+{
+    vector<SUsageOptionRow> aliasRows =
+    {
+        { format (L"{{InformationHighlight}}{0}Set-Aliases{{Information}}", pszLong),
+          L"Interactive wizard to configure PowerShell aliases for tcdir.",
+          L"" },
+        { format (L"{{InformationHighlight}}{0}Get-Aliases{{Information}}", pszLong),
+          L"Display currently configured tcdir aliases and their source locations.",
+          L"" },
+        { format (L"{{InformationHighlight}}{0}Remove-Aliases{{Information}}", pszLong),
+          L"Interactive wizard to remove tcdir aliases from a profile.",
+          L"" },
+        { format (L"{{InformationHighlight}}{0}WhatIf{{Information}}", pszLong),
+          format (L"Preview changes without modifying files (use with {{InformationHighlight}}{0}Set-Aliases{{Information}} or {{InformationHighlight}}{0}Remove-Aliases{{Information}}).", pszLong),
+          L"" },
+        { format (L"{{InformationHighlight}}{0}Install-NerdFonts{{Information}}", pszLong),
+          format (L"Download and install {} system-wide, then optionally configure terminal profiles.", NerdFontConst::kpszWtFontFace),
+          L"" },
+        { format (L"{{InformationHighlight}}{0}Uninstall-NerdFonts{{Information}}", pszLong),
+          L"Remove Nerd Font terminal configuration and optionally remove installed font files.",
+          L"" },
+    };
+
+#ifdef _DEBUG
+    aliasRows.push_back ({
+        format (L"{{InformationHighlight}}{0}Debug{{Information}}", pszLong),
+        L"Displays raw file attributes in hex for diagnosing edge cases.",
+        L""
+    });
+#endif
+
+    return aliasRows;
+}
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  BuildSynopsisTokens
+//
+////////////////////////////////////////////////////////////////////////////////
+
+static vector<wstring> BuildSynopsisTokens (const vector<SUsageOptionRow> & primaryRows, const vector<SUsageOptionRow> & aliasRows, wstring_view szShort)
+{
+    vector<wstring> synopsisTokens;
+    synopsisTokens.reserve (primaryRows.size () + aliasRows.size () + 4);
+
+    synopsisTokens.push_back (
+        L"[{InformationHighlight}drive:{Information}]"
+        L"[{InformationHighlight}path{Information}]"
+        L"[{InformationHighlight}filename{Information}] ");
+    synopsisTokens.push_back (format (L"[{{InformationHighlight}}{0}A{{Information}}[[:]{{InformationHighlight}}attributes{{Information}}]] ", szShort));
+    synopsisTokens.push_back (format (L"[{{InformationHighlight}}{0}O{{Information}}[[:]{{InformationHighlight}}sortorder{{Information}}]] ", szShort));
+    synopsisTokens.push_back (format (L"[{{InformationHighlight}}{0}T{{Information}}[[:]{{InformationHighlight}}timefield{{Information}}]] ", szShort));
+
+    for (size_t i = 3; i < primaryRows.size (); ++i)
+    {
+        synopsisTokens.push_back (L"[" + primaryRows[i].label + L"] ");
+    }
+
+    for (const SUsageOptionRow & row : aliasRows)
+    {
+        synopsisTokens.push_back (L"[" + row.label + L"] ");
+    }
+
+    return synopsisTokens;
+}
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CUsage::DisplayUsage
+//
+//
+////////////////////////////////////////////////////////////////////////////////
+
+void CUsage::DisplayUsage (CConsole & console, wchar_t chPrefix, optional<bool> fIconsCli)
+{
+    // Determine prefix strings for single-char and multi-char switches
+    wstring_view szShort     = (chPrefix == L'-') ? L"-"    : L"/";
+    wstring_view pszLong     = (chPrefix == L'-') ? L"--"   : L"/";
+    wstring_view pszMDisable = (chPrefix == L'-') ? L" -M-" : L" /M-";
+
+    // Resolve icon state, then pick cloud status symbols (Nerd Font icons or Unicode circles)
+    const CConfig & config = *console.m_configPtr;
+    bool            fIcons = ResolveUsageIconState (console, fIconsCli);
+
+    wstring szCloudOnly    = fIcons ? CodePointToWString (config.m_iconCloudOnly)        : wstring (1, UnicodeSymbols::CircleHollow);
+    wstring szLocallyAvail = fIcons ? CodePointToWString (config.m_iconLocallyAvailable) : wstring (1, UnicodeSymbols::CircleHalfFilled);
+    wstring szAlwaysLocal  = fIcons ? CodePointToWString (config.m_iconAlwaysLocal)      : wstring (1, UnicodeSymbols::CircleFilled);
+
+    PrintUsageHeader (console);
+
+    constexpr int  INDENT                     = 2;
+    constexpr int  COLUMN_GAP                 = 1;
+    constexpr int  SUBLEVEL_DETAIL_OFFSET     = 2;
+    constexpr int  SUBLEVEL_SECOND_COL_OFFSET = 30;
+    constexpr int  SIZE_CONTINUATION_OFFSET   = 2;
+    constexpr int  CLOUD_ICON_DESC_GAP        = 2;
+
+    vector<SUsageOptionRow> primaryRows = BuildPrimaryOptionRows (szShort, pszLong, pszMDisable);
+    vector<SUsageOptionRow> aliasRows   = BuildAliasRows (pszLong);
+
+    vector<wstring> synopsisTokens = BuildSynopsisTokens (primaryRows, aliasRows, szShort);
 
     // Print the synopsis line with dynamic word-wrapping
-    DisplaySynopsis (console, chPrefix);
+    DisplaySynopsis (console, synopsisTokens);
 
-    console.ColorPuts (format (k_wszUsageBody,
-                               szShort, 
-                               pszLong, 
-                               pszMDisable,
-                               szCloudOnly, 
-                               szLocallyAvail, 
-                               szAlwaysLocal,
-                               pszLongPad, 
-                               GetArchitecture(), 
-                               buildTimestamp, 
-                               UnicodeSymbols::Copyright
-                       ).c_str ());
+    vector<wstring> optionLabels;
+    optionLabels.reserve (primaryRows.size () + aliasRows.size ());
+
+    for (const SUsageOptionRow & row : primaryRows)
+    {
+        optionLabels.push_back (row.label);
+    }
+
+    for (const SUsageOptionRow & row : aliasRows)
+    {
+        optionLabels.push_back (row.label);
+    }
+
+    int optionDescCol      = INDENT + GetMaxVisibleWidth (optionLabels) + COLUMN_GAP;
+    int sectionDescCol     = optionDescCol - 1;
+    int subLevelDetailCol  = sectionDescCol + SUBLEVEL_DETAIL_OFFSET;
+    int continuationCol    = optionDescCol + SIZE_CONTINUATION_OFFSET;
+
+    wstring usageBody (L"{Information}\n");
+
+    AppendAlignedRow (usageBody, INDENT, optionDescCol,
+                      L"[drive:][path][filename]",
+                      L"Specifies drive, directory, and/or files to list.");
+
+    usageBody.push_back (L'\n');
+
+    AppendAlignedRow (usageBody, INDENT, sectionDescCol,
+                      primaryRows[0].label,
+                      primaryRows[0].description);
+
+    vector<SThreeColumnRow> attributeRows =
+    {
+        { L"attributes", L"{InformationHighlight}D{Information}  Directories",             L"{InformationHighlight}R{Information}  Read-only files" },
+        { L"",           L"{InformationHighlight}H{Information}  Hidden files",            L"{InformationHighlight}A{Information}  Files ready for archiving" },
+        { L"",           L"{InformationHighlight}S{Information}  System files",            L"{InformationHighlight}T{Information}  Temporary files" },
+        { L"",           L"{InformationHighlight}E{Information}  Encrypted files",         L"{InformationHighlight}C{Information}  Compressed files" },
+        { L"",           L"{InformationHighlight}P{Information}  Reparse points",          L"{InformationHighlight}0{Information}  Sparse files" },
+        { L"",           L"{InformationHighlight}X{Information}  Not content indexed",     L"{InformationHighlight}I{Information}  Integrity stream (ReFS)" },
+        { L"",           L"{InformationHighlight}B{Information}  No scrub data (ReFS)",    L"{InformationHighlight}O{Information}  Cloud-only (not local)" },
+        { L"",           L"{InformationHighlight}L{Information}  Locally available",       L"{InformationHighlight}V{Information}  Always locally available" },
+        { L"",           L"{InformationHighlight}-{Information}  Prefix meaning not",      L"" },
+    };
+
+    int attributeCol2 = AppendDetailGrid (usageBody, INDENT, subLevelDetailCol, COLUMN_GAP, SUBLEVEL_SECOND_COL_OFFSET, attributeRows);
+
+    usageBody.push_back (L'\n');
+    usageBody.append (L"  Cloud status symbols shown between file size and name:\n");
+
+    vector<SThreeColumnRow> cloudRows =
+    {
+        { L"", format (L"{{CloudStatusCloudOnly}}{0}{{Information}}", szCloudOnly),                L"Cloud-only (not locally available)" },
+        { L"", format (L"{{CloudStatusLocallyAvailable}}{0}{{Information}}", szLocallyAvail),      L"Locally available (can be freed)" },
+        { L"", format (L"{{CloudStatusAlwaysLocallyAvailable}}{0}{{Information}}", szAlwaysLocal), L"Always locally available (pinned)" },
+    };
+
+    AppendThreeColumnRows (usageBody, INDENT, attributeCol2, CLOUD_ICON_DESC_GAP, cloudRows);
+
+    usageBody.push_back (L'\n');
+
+    AppendAlignedRow (usageBody, INDENT, sectionDescCol,
+                      primaryRows[1].label,
+                      primaryRows[1].description);
+
+    vector<SThreeColumnRow> sortRows =
+    {
+        { L"sortorder", L"{InformationHighlight}N{Information}  By name (alphabetic)",      L"{InformationHighlight}S{Information}  By size (smallest first)" },
+        { L"",          L"{InformationHighlight}E{Information}  By extension (alphabetic)", L"{InformationHighlight}D{Information}  By date/time (oldest first)" },
+        { L"",          L"{InformationHighlight}-{Information}  Prefix to reverse order",   L"" },
+    };
+
+    AppendDetailGrid (usageBody, INDENT, subLevelDetailCol, COLUMN_GAP, SUBLEVEL_SECOND_COL_OFFSET, sortRows);
+
+    usageBody.push_back (L'\n');
+
+    AppendAlignedRow (usageBody, INDENT, sectionDescCol,
+                      primaryRows[2].label,
+                      primaryRows[2].description);
+
+    vector<SThreeColumnRow> timeRows =
+    {
+        { L"timefield", L"{InformationHighlight}C{Information}  Creation time",             L"{InformationHighlight}A{Information}  Last access time" },
+        { L"",          L"{InformationHighlight}W{Information}  Last write time (default)", L"" },
+    };
+
+    AppendDetailGrid (usageBody, INDENT, subLevelDetailCol, COLUMN_GAP, SUBLEVEL_SECOND_COL_OFFSET, timeRows);
+
+    usageBody.push_back (L'\n');
+
+    for (size_t i = 3; i < primaryRows.size (); ++i)
+    {
+        const SUsageOptionRow & row = primaryRows[i];
+        AppendAlignedRow (usageBody, INDENT, optionDescCol, row.label, row.description);
+
+        if (!row.continuation.empty ())
+        {
+            usageBody.append (continuationCol, L' ');
+            usageBody.append (row.continuation);
+            usageBody.push_back (L'\n');
+        }
+    }
+
+    usageBody.push_back (L'\n');
+
+    for (const SUsageOptionRow & row : aliasRows)
+    {
+        AppendAlignedRow (usageBody, INDENT, optionDescCol, row.label, row.description);
+    }
+
+    console.ColorPuts (usageBody.c_str ());
 }
 
 
@@ -1416,10 +1748,10 @@ void CUsage::DisplayEnvVarCurrentValue (CConsole & console, LPCWSTR pszEnvVarNam
     console.Printf (CConfig::EAttribute::Default, L"\"");
 
     // Split by semicolons and display each segment in its specified color
-    for (auto segment : std::views::split (wstring_view (envValue), L';'))
+    for (auto && segment : std::views::split (wstring_view (envValue), L';'))
     {
         wstring_view segView (segment.begin(), segment.end());
-        
+
         // Skip empty segments
         if (segView.empty())
         {

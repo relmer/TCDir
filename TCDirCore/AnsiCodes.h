@@ -37,10 +37,12 @@ namespace AnsiCodes
     // Cursor control sequences
     //
 
-    constexpr const wchar_t * CURSOR_HIDE        = CSI L"?25l";             // Hide cursor
-    constexpr const wchar_t * CURSOR_SHOW        = CSI L"?25h";             // Show cursor
-    constexpr const wchar_t * CURSOR_UP_FORMAT   = CSI L"{}A";              // Move cursor up N lines (use with format)
-    constexpr const wchar_t * ERASE_LINE         = L"\r" CSI L"2K";         // Move to column 0 and erase entire line
+    constexpr const wchar_t * CURSOR_HIDE             = CSI L"?25l";          // Hide cursor
+    constexpr const wchar_t * CURSOR_SHOW             = CSI L"?25h";          // Show cursor
+    constexpr const wchar_t * CURSOR_UP_FORMAT        = CSI L"{}A";           // Move cursor up N lines (use with format)
+    constexpr const wchar_t * CURSOR_TO_COLUMN_FORMAT = CSI L"{}G";           // Move cursor to 1-based column N (use with format)
+    constexpr const wchar_t * ERASE_LINE              = L"\r" CSI L"2K";      // Move to column 0 and erase entire line
+    constexpr const wchar_t * ERASE_ENTIRE_LINE       = CSI L"2K";            // Erase entire line, leaving the cursor in place
 
     //
     // SGR color shortcuts for TUI widgets

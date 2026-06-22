@@ -19,12 +19,22 @@
 #include <aclapi.h>
 #include <cfapi.h>
 #include <lmcons.h>
+#include <pathcch.h>
+#include <shellapi.h>
 #include <shlobj.h>
 #include <strsafe.h>
 #include <tlhelp32.h>
+#include <urlmon.h>
+#include <wininet.h>
 
 #pragma comment(lib, "cldapi.lib")
 #pragma comment(lib, "gdi32.lib")
+#pragma comment(lib, "ole32.lib")
+#pragma comment(lib, "oleaut32.lib")
+#pragma comment(lib, "pathcch.lib")
+#pragma comment(lib, "shell32.lib")
+#pragma comment(lib, "urlmon.lib")
+#pragma comment(lib, "wininet.lib")
 
 
 
