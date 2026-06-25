@@ -23,12 +23,16 @@ Design premise (decided in design discussion, see issue #8 thread):
 
 ### Disposition legend
 
-| Tag | Meaning |
-|-----|---------|
-| **PASS** | Windows: native passthrough. Linux: real implementation behind the seam. |
-| **SHIM** | Needs a Win32 *type/struct* definition on Linux + data mapping. |
-| **GATE** | Windows-only feature; compiled out / stubbed on Linux (no-op or "unsupported"). |
-| **PORT** | Already portable (std C++ / CRT); no backend work. |
+Two **orthogonal** axes. The first is the question "does this feature exist on
+Linux?"; the second "does it need a Win32 type defined?" A seam can be both
+(e.g. enumeration is PASS *and* SHIM).
+
+| Tag | Axis | Meaning |
+|-----|------|---------|
+| **PASS** | feature present | Operation needed on **both** platforms. Windows backend forwards to the native Win32 call (passthrough); Linux backend reimplements with POSIX. |
+| **GATE** | feature absent | Windows-only feature; compiled out / stubbed on Linux (no-op or "unsupported"). The opposite of PASS. |
+| **SHIM** | type need | Requires a Win32 *type/struct* defined on Linux (subset `windows.h`) + data mapping. Orthogonal to PASS/GATE; usually co-occurs with PASS. |
+| **PORT** | already done | Already portable (std C++ / CRT); no backend work. |
 
 ---
 
@@ -78,14 +82,54 @@ The Linux backend must populate a shimmed `WIN32_FIND_DATAW` from `readdir`/`lst
 | `dwReserved0` (reparse tag) | Config:1955/2036, ReparsePointResolver:265 | symlink → `IO_REPARSE_TAG_SYMLINK`; else 0 |
 | `cAlternateFileName` | — (not read) | leave empty |
 
-### Semantic mapping notes (Linux backend)
+### Recommended design — parameterize the entry over its native storage
 
-- **`FILETIME` epoch**: Windows ticks are 100 ns since **1601-01-01 UTC**; Unix
-  `timespec` is since **1970-01-01**. Convert: `ticks = (sec + 11644473600) *
-  10'000'000 + nsec/100`.
-- **`cFileName` width**: on Linux `wchar_t` is **32-bit** → `cFileName` holds
-  **UTF-32**. Boundary transcode is UTF-8 (`d_name`) ↔ UTF-32, lossless.
-- **`nFileSize{High,Low}`**: `(DWORD)(st_size >> 32)` / `(DWORD)(st_size & 0xFFFFFFFF)`.
+Rather than forcing POSIX data into a fake `WIN32_FIND_DATAW` (storing converted
+FILETIME ticks etc.), **parameterize `FileInfo` over its native storage and read
+through uniform accessors.** TCDirCore's ~40 direct field reads
+(`.dwFileAttributes`, `.ftLastWriteTime`, `.cFileName`, …) are replaced by
+accessor calls; the native blob stays native on each platform (zero conversion).
+
+```cpp
+#if defined(_WIN32)
+    using NativeEntry = WIN32_FIND_DATAW;        // name+attrs+times+size in one
+#else
+    struct NativeEntry { wstring name; struct stat st; uint32_t linkTag; };
+#endif
+
+struct FileInfo : NativeEntry {                  // (or template<TNative>)
+    bool          IsDirectory() const;
+    bool          IsSymlink()   const;
+    uint64_t      Size()        const;
+    int64_t       LastWriteNs() const;           // portable comparable time
+    const wchar_t* Name()       const;           // UTF-16 (Win) / UTF-32 (Linux)
+};
+```
+
+- **Windows**: accessors read `WIN32_FIND_DATAW` fields — free; `FILETIME` stays native.
+- **Linux**: accessors read `struct stat`/`timespec` — free; epoch/encoding handled
+  lazily in the accessor, not baked into stored data.
+- **FILETIME** follows the same rule: store native (`FILETIME` vs `timespec`),
+  compare via `LastWriteNs()` instead of `CompareFileTime`.
+
+**Cost**: rewrite the ~40 field-access sites to accessors (mechanical; also makes
+the comparator/displayers encoding- and epoch-agnostic).
+
+**Asymmetry to record**:
+1. Windows returns name+attrs+times+size from **one** `FindFirstFile`; POSIX needs
+   `readdir` (name + `d_type`) **plus a per-entry `lstat`** for size/times. That is
+   a real Linux per-entry cost (`d_type` covers only the dir/symlink check). Given
+   the listing path's allocation sensitivity, batch/stat carefully.
+2. "POSIX" (not just Linux): `readdir`/`lstat`/`readlink` also cover macOS/BSD.
+
+### Accessor conversion reference (Linux)
+
+- **Time**: Unix `timespec` (since 1970) → portable ns, or to Win ticks if ever
+  needed: `ticks = (sec + 11644473600) * 10'000'000 + nsec/100` (Win epoch 1601, 100 ns).
+- **Name width**: Linux `wchar_t` is **32-bit** → `Name()` yields **UTF-32**;
+  boundary transcode is UTF-8 (`d_name`) ↔ UTF-32, lossless.
+- **Size**: `Size()` returns `st_size` directly (no hi/lo split needed once the
+  comparator/displayers use the accessor instead of `nFileSize{High,Low}`).
 
 ---
 
@@ -171,6 +215,13 @@ Minimal `windows.h` subset (a purpose-built header, additive, Linux-only build):
 - `CfGetPlaceholderStateFromFindData` (cfapi) — ResultsDisplayerNormal.cpp:549.
 - Cloud attribute bits (`PINNED`/`UNPINNED`/`RECALL_ON_*`/`OFFLINE`) —
   ResultsDisplayerWithHeaderAndFooter.cpp:549-561. Gate off; bits never set on Linux.
+- **No portable substrate exists** (not merely "deferred"): Windows provides an
+  **OS-level** Cloud Filter API + standardized placeholder attributes that OneDrive
+  *and other providers* set through the OS hydration framework. Linux has no
+  equivalent in the VFS — providers full-sync or use FUSE mounts (Dropbox's
+  online-only is FUSE, not a standard attr); Box has no official Linux desktop
+  client. A future Linux story would be fragile per-provider heuristics (known FUSE
+  mount, provider xattrs, sparse-size guesses).
 
 ### 13. Nerd-Font detection (GDI) — GATE
 - `CreateFontW`, `EnumFontFamiliesExW` — NerdFontDetector.cpp:141-258.
@@ -185,9 +236,21 @@ Minimal `windows.h` subset (a purpose-built header, additive, Linux-only build):
 - Entire `/install-nerdfonts` flow is Windows-only. Gate; a Linux story (copy to
   `~/.local/share/fonts` + `fc-cache`) is a separate feature.
 
-### 15/16. Windows Terminal settings + PS aliases — GATE
-- `CreateFileW`/`WriteFile` over WT `settings.json`; alias-profile generation.
-  Windows-shell concepts; gate off (a bash/zsh alias story is future work).
+### 15/16. Windows Terminal settings + PS aliases — GATE (Linux analogs differ)
+- **WT settings**: surgical JSON edit of WT `settings.json`
+  (`%LOCALAPPDATA%\Packages\…\LocalState\`), setting `profiles.defaults.font.face`
+  (modern) or legacy `fontFace` to the Nerd Font, preserving the rest
+  (WindowsTerminalSettings.cpp:234-247). **No single Linux equivalent**: terminal
+  config is fragmented — gnome-terminal (dconf), Konsole (profile files), Alacritty
+  (`alacritty.toml`), kitty (`kitty.conf`), WezTerm (`wezterm.lua`), xterm (X
+  resources). A Linux story = per-terminal providers (own feature). Gate.
+- **PS aliases**: a managed, `DO NOT EDIT`-delimited block of PowerShell `function`
+  wrappers written into `$PROFILE`, re-runnable (AliasBlockGenerator.cpp:29-87).
+  **The pattern ports** ("managed block in an rc file") but is **per-shell**:
+  bash/zsh → `alias`/functions in `~/.bashrc`/`~/.zshrc`; fish →
+  `~/.config/fish/functions/`. Cheap first cut: **pwsh runs on Linux**, so the
+  existing generator could target PowerShell-on-Linux nearly unchanged. Gate for
+  now; revisit as a per-shell feature.
 
 ### 17. Path composition — PASS / prefer PORT
 - `PathCchAppend`/`PathCchCombine`/`PathCchRemoveFileSpec`/… — NerdFont*,
