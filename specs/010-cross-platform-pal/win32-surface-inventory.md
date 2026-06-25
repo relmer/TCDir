@@ -51,7 +51,7 @@ Linux?"; the second "does it need a Win32 type defined?" A seam can be both
 | 9 | Environment / known folders | PASS | EnvironmentProvider, ProfilePathResolver, Usage | `IEnvironment` |
 | 10 | Parent-shell detection | PASS | ProfilePathResolver | `IProcessInfo` |
 | 11 | NTFS alternate data streams | GATE | DirectoryLister | gated |
-| 12 | Cloud (OneDrive) status | GATE | ResultsDisplayerWithHeaderAndFooter, ResultsDisplayerNormal | gated |
+| 12 | Cloud (OneDrive) status | GATE (Linux) / future (macOS) | ResultsDisplayerWithHeaderAndFooter, ResultsDisplayerNormal | gated |
 | 13 | Nerd-Font detection (GDI) | GATE | NerdFontDetector | gated |
 | 14 | Nerd-Font install (registry/fonts) | GATE | NerdFontRegistrar, NerdFontSystemAccess, NerdFontInstaller, NerdFontPackage | gated |
 | 15 | Windows Terminal settings | GATE | WindowsTerminalSettings | gated |
@@ -211,17 +211,22 @@ Minimal `windows.h` subset (a purpose-built header, additive, Linux-only build):
 - `FindFirstStreamW`/`FindNextStreamW` — DirectoryLister.cpp:546-588. No POSIX
   equivalent → `/streams` becomes a no-op / "unsupported" on Linux.
 
-### 12. Cloud status — GATE
+### 12. Cloud status — GATE on Linux; possible provider on macOS
 - `CfGetPlaceholderStateFromFindData` (cfapi) — ResultsDisplayerNormal.cpp:549.
 - Cloud attribute bits (`PINNED`/`UNPINNED`/`RECALL_ON_*`/`OFFLINE`) —
-  ResultsDisplayerWithHeaderAndFooter.cpp:549-561. Gate off; bits never set on Linux.
-- **No portable substrate exists** (not merely "deferred"): Windows provides an
-  **OS-level** Cloud Filter API + standardized placeholder attributes that OneDrive
-  *and other providers* set through the OS hydration framework. Linux has no
-  equivalent in the VFS — providers full-sync or use FUSE mounts (Dropbox's
-  online-only is FUSE, not a standard attr); Box has no official Linux desktop
-  client. A future Linux story would be fragile per-provider heuristics (known FUSE
-  mount, provider xattrs, sparse-size guesses).
+  ResultsDisplayerWithHeaderAndFooter.cpp:549-561. Bits never set off-Windows.
+- **Placeholder support is per-OS, not "Windows-only":** each OS ships its own
+  framework.
+  - **Windows**: Cloud Filter API (`cfapi`) + the standardized attribute bits above.
+  - **macOS**: the **File Provider** framework. A not-yet-downloaded ("dataless")
+    file exposes a **stat-level signal** — `st_flags & SF_DATALESS` (via
+    `lstat`/`getattrlist`) — so a macOS provider is *tractable* and fits the entry
+    model (a flag check, not a heavy framework).
+  - **Linux**: **no standardized substrate** in the VFS. Providers full-sync or use
+    FUSE mounts (Dropbox's online-only is FUSE, not a standard attr); Box has no
+    official Linux desktop client. Only fragile per-provider heuristics are possible.
+- Disposition: **GATE on Linux** (no substrate); **future provider on macOS** via
+  `SF_DATALESS`. Do not assume "POSIX ⇒ no cloud status".
 
 ### 13. Nerd-Font detection (GDI) — GATE
 - `CreateFontW`, `EnumFontFamiliesExW` — NerdFontDetector.cpp:141-258.
@@ -312,14 +317,37 @@ So the Linux MVP (Phase 1: bare colorized listing) is bounded by seams **1, 2,
 
 ## 7. Open questions
 
-1. **Shim vs. clean PAL interfaces** at each seam — do we keep call sites calling
-   `FindFirstFileW` (pure `windows.h` shim) or refactor to `IFileEnumerator`
-   (interfaces)? Likely **hybrid**: interfaces for the few hot seams (enum/console/
-   owner), thin type-shim for the pervasive `HRESULT`/struct/attr surface.
-2. **File-mask matching** moves in-process on Linux (`fnmatch`) — confirm glob
+1. **Entry metadata: shim vs. accessor** (the central design fork). How does
+   TCDirCore read is-dir / size / mtime / name portably?
+   - **A — Win32 type shim**: leave the ~40 raw field reads
+     (`wfd.dwFileAttributes`, `wfd.ftLastWriteTime`, `CompareFileTime`, `lstrcmpiW`)
+     and define a fake `WIN32_FIND_DATAW`/`FILETIME`/constants on Linux, filling the
+     fake struct from `lstat`. Pro: ~zero TCDirCore edits, Windows untouched. Con:
+     emulates Win32 semantics, **eager per-entry conversion** (timespec→FILETIME,
+     hi/lo size, name transcode) in the hot path, must reimplement `CompareFileTime`
+     and a UTF-32 `lstrcmpiW`.
+   - **B — accessors**: replace the ~40 reads with `IsDirectory()`/`Size()`/
+     `LastWriteNs()`/`Name()` over native per-platform storage (no fake struct).
+     Pro: zero-conversion native storage, **lazy** (e.g. `IsDirectory()` uses
+     `d_type` only), epoch/encoding-agnostic, one portable name-fold helper. Con:
+     ~40 mechanical edits mirrored into RCDir; low-risk re-test of the Windows path.
+   - Two tips toward **B**: (i) A's eager fill is precisely the per-entry hot-path
+     work issue #12 just minimized; (ii) B makes TCDir read metadata via methods —
+     *converging* with idiomatic RCDir rather than diverging.
+   - **Leaning: hybrid** — accessors (B) for entry metadata (time/size/attr/name);
+     thin type-shim (A) for incidental surface (`HRESULT`, `FILE_ATTRIBUTE_*` bit
+     values, `DWORD`).
+2. **Seam style for the OS *calls*** (separate from #1) — keep call sites calling
+   `FindFirstFileW`, or refactor enum/console/owner to `IFileEnumerator`/`IConsole`
+   interfaces? Likely interfaces for the few hot seams, shim for the rest.
+3. **File-mask matching** moves in-process on Linux (`fnmatch`) — confirm glob
    semantics match Win32 (`*`/`?`, case-insensitivity policy).
-3. **Volume header** on Linux — suppress, or show mountpoint/fs-type?
-4. **`wchar_t` 32-bit audit** — enumerate any spot assuming 16-bit/surrogates
+4. **Volume header** on Linux — suppress, or show mountpoint/fs-type?
+5. **`wchar_t` 32-bit audit** — enumerate any spot assuming 16-bit/surrogates
    (display-width math is the main candidate; UTF-32 is arguably more correct).
-5. **Build system** — CMake alongside the `.vcxproj`, or migrate? (separate spec).
-6. **Birth time** — `statx(STATX_BTIME)` availability floor on target distros.
+6. **Build system** — CMake alongside the `.vcxproj`, or migrate? (separate spec).
+7. **Birth time** — `statx(STATX_BTIME)` availability floor on target distros.
+8. **GATE'd convenience features stay out of the core port** — terminal-font
+   auto-config (per-emulator) and shell aliases (per-shell: bash/zsh/fish/pwsh/…)
+   are future per-backend features, **not** Phase 1. macOS cloud status
+   (`SF_DATALESS`) is likewise a later provider, not core.
