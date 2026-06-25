@@ -5,6 +5,15 @@
 **Status**: Draft
 **Input**: User description: "Bring TCDir's colorized directory-listing experience to Linux (and macOS soon after), so the same tool gives the same listing across platforms. Keep the Windows product unchanged. Windows-only conveniences (terminal-font auto-config, shell aliases) should be supported on the new platforms too, but after the core listing ships." (GH Issue #8)
 
+## Clarifications
+
+### Session 2026-06-24
+
+- Q: How should filename case be treated for sorting and mask-matching on Linux/macOS? → A: Hybrid — case-insensitive sort for display, case-sensitive (OS-native) matching. Mirrors what Windows actually does (case-insensitive collation, case-sensitive resolution) and the prevailing Linux tools (eza, lsd, and desktop `ls` sort case-insensitively; default shell globbing matches case-sensitively).
+- Q: How should TCDir handle filename patterns on Linux/macOS, given the shell pre-expands unquoted globs? → A: Hybrid (find/fd-like) — shell-expanded file lists are shown as-is; TCDir does its own matching for quoted and recursive patterns; and TCDir always self-enumerates a directory argument so its own hidden/attribute/sort policy applies (the shell's `*` omits dotfiles).
+- Q: How should Windows-only columns/indicators appear on Linux/macOS? → A: Hide whole columns that have no meaning on the platform (e.g. drop the cloud column on Linux); within shared columns (e.g. the attribute letters) simply omit the unsupported indicators.
+- Q: The Windows "Volume in drive X" header has no Linux/macOS equivalent — what replaces it? → A: Suppress the volume header by default (no common Linux lister shows one). Provide an opt-in switch that shows a POSIX header (mountpoint + filesystem type — not column labels). In tree mode show a concise (directories, files) footer by default; provide a switch to show the full Windows-style summary footer (files listed, bytes used, free space).
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Colorized directory listing on Linux (Priority: P1)
@@ -136,17 +145,18 @@ confirm clean removal; confirm a manual-instructions fallback for unsupported sh
   Windows font installation have no Linux/macOS equivalent. The tool must report
   clearly that the feature is unavailable on this platform rather than erroring or
   crashing.
-- **Windows-only columns/indicators**: attribute letters and the cloud column that
-  represent Windows-only concepts must be presented sensibly on platforms where
-  they don't apply [NEEDS CLARIFICATION: on Linux/macOS, hide such columns
-  entirely, or show them blank/neutral?].
-- **Name case sensitivity**: Linux (and case-sensitive macOS volumes) can hold two
-  names differing only in case in one directory. Sorting and mask-matching must
-  behave predictably [NEEDS CLARIFICATION: match the platform (case-sensitive) or
-  preserve Windows-like case-insensitive ordering/matching?].
-- **Volume/header line**: the Windows "Volume in drive X" header has no drive-letter
-  equivalent on Linux/macOS [NEEDS CLARIFICATION: suppress the header, or replace it
-  with mountpoint/filesystem information?].
+- **Windows-only columns/indicators**: columns that represent Windows-only
+  concepts (e.g. the cloud-status column on Linux) are hidden entirely on platforms
+  where they don't apply; within shared columns (e.g. the attribute letters),
+  unsupported indicators (System, Encrypted, Compressed, …) are simply omitted.
+- **Name case**: on Linux (and case-sensitive macOS volumes) two names differing
+  only in case can coexist in one directory. Display sorting is case-insensitive
+  (familiar, matches Windows/eza/lsd); matching is case-sensitive (OS-native,
+  matches default shell globbing). Both case-only-differing files are listed.
+- **Volume/header line**: the Windows "Volume in drive X" header is suppressed by
+  default on Linux/macOS; an opt-in switch shows a POSIX header (mountpoint +
+  filesystem type). The free-space footer is preserved; in tree mode a concise
+  (directories, files) footer shows by default with a switch for the full summary.
 - **Filenames the platform permits but Windows would not**: unusual characters and
   long names must display without corruption or data loss.
 - **Symbolic links**: broken links and link loops must be handled gracefully
@@ -168,9 +178,14 @@ confirm clean removal; confirm a manual-instructions fallback for unsupported sh
 - **FR-004**: System MUST map the platform's file metadata to the existing
   type/attribute indicators (directory, symlink, hidden, read-only) using
   platform-appropriate conventions (e.g. dotfile = hidden).
-- **FR-005**: System MUST provide the same sorting options available on Windows.
-- **FR-006**: System MUST support file-mask filtering equivalent to the Windows
-  behavior.
+- **FR-005**: System MUST provide the same sorting options available on Windows,
+  with name sorting case-insensitive for display on all platforms.
+- **FR-006**: System MUST match filename patterns case-sensitively on Linux/macOS
+  (OS-native), while listing both files that differ only in case.
+- **FR-006a**: On Linux/macOS, System MUST display shell-expanded file lists as
+  given, MUST perform its own matching for quoted and recursive patterns, and MUST
+  self-enumerate a directory argument so its own hidden/attribute/sort policy
+  applies (rather than depending on the shell's `*`, which omits dotfiles).
 - **FR-007**: System MUST display file owner (user and group) on Linux and macOS.
 - **FR-008**: System MUST resolve and display symbolic-link targets.
 - **FR-009**: System MUST support macOS in addition to Linux, delivering the same
@@ -191,6 +206,15 @@ confirm clean removal; confirm a manual-instructions fallback for unsupported sh
 - **FR-017**: System MUST display names containing characters the platform permits
   without corruption, including wide and non-BMP characters, preserving column
   alignment.
+- **FR-018**: On Linux/macOS, System MUST hide columns that have no meaning on the
+  platform (e.g. the cloud-status column on Linux), and MUST omit unsupported
+  indicators within shared columns rather than showing placeholders.
+- **FR-019**: On Linux/macOS, System MUST suppress the Windows-style volume header
+  by default, and MUST provide an opt-in switch to display a POSIX header showing
+  the mountpoint and filesystem type.
+- **FR-020**: In tree mode, System MUST show a concise (directories, files) footer
+  by default, and MUST provide a switch to show the full summary footer (files
+  listed, bytes used, free space) as on Windows.
 
 ### Key Entities
 

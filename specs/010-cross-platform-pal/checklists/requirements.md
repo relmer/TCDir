@@ -13,7 +13,7 @@
 
 ## Requirement Completeness
 
-- [ ] No [NEEDS CLARIFICATION] markers remain
+- [x] No [NEEDS CLARIFICATION] markers remain
 - [x] Requirements are testable and unambiguous
 - [x] Success criteria are measurable
 - [x] Success criteria are technology-agnostic (no implementation details)
@@ -31,14 +31,7 @@
 
 ## Notes
 
-- Three open [NEEDS CLARIFICATION] markers remain in the Edge Cases section, all
-  genuine UX/behavior forks with no obvious default. They are intended for the
-  `/speckit.clarify` step:
-  1. Presentation of Windows-only columns/indicators on Linux/macOS (hide vs.
-     blank).
-  2. Name case-sensitivity policy for sort/match on Linux/macOS (platform-native
-     vs. Windows-like).
-  3. The volume/header line on systems without drive letters (suppress vs.
-     mountpoint/filesystem info).
-- Items marked incomplete require spec updates before `/speckit.plan`. The single
-  unchecked item above is resolved by running `/speckit.clarify`.
+- All three original [NEEDS CLARIFICATION] markers were resolved via
+  `/speckit.clarify` (Session 2026-06-24), along with a fourth clarification on
+  pattern handling. See the spec's Clarifications section. Spec is ready for
+  `/speckit.plan`.
