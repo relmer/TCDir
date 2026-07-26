@@ -16,6 +16,55 @@ using namespace Microsoft::VisualStudio::CppUnitTestFramework;
 
 namespace UnitTest
 {
+    ////////////////////////////////////////////////////////////////////////////
+    //
+    //  CProfileFileAccessMock
+    //
+    //  In-memory stand-in for the profile file I/O, so read/write failure
+    //  modes can be exercised without touching the real file system.
+    //
+    ////////////////////////////////////////////////////////////////////////////
+
+    class CProfileFileAccessMock : public IProfileFileAccess
+    {
+    public:
+
+        HRESULT ReadAllBytes (const wstring & strPath, string & strBytes) override
+        {
+            m_strReadPath = strPath;
+
+            strBytes.clear();
+
+            if (SUCCEEDED (m_hrRead))
+            {
+                strBytes = m_strContent;
+            }
+
+            return m_hrRead;
+        }
+
+        HRESULT WriteAllBytes (const wstring & strPath, const string & strBytes) override
+        {
+            m_strWritePath = strPath;
+            m_strWritten   = strBytes;
+            m_cWriteCalls += 1;
+
+            return m_hrWrite;
+        }
+
+        HRESULT m_hrRead      = S_OK;
+        HRESULT m_hrWrite     = S_OK;
+        string  m_strContent;
+        string  m_strWritten;
+        wstring m_strReadPath;
+        wstring m_strWritePath;
+        int     m_cWriteCalls = 0;
+    };
+
+
+
+
+
     TEST_CLASS(ProfileFileManagerTests)
     {
     public:
@@ -162,6 +211,231 @@ namespace UnitTest
             Assert::AreEqual (2u, static_cast<unsigned>(rgLines.size()));
             Assert::AreEqual (L"# before", rgLines[0].c_str());
             Assert::AreEqual (L"# after",  rgLines[1].c_str());
+        }
+
+
+
+
+        //
+        // A failed read must never surface as success with no content. That is
+        // the shape that let a whole profile get replaced by just an alias
+        // block: read silently returned nothing, and the caller wrote it back.
+        //
+
+        TEST_METHOD(ReadProfileFile_ReadFails_ReturnsFailureAndNoLines)
+        {
+            CProfileFileAccessMock  mock;
+            vector<wstring>         rgLines;
+            bool                    fHasBom = false;
+            HRESULT                 hr      = S_OK;
+
+            mock.m_hrRead = HRESULT_FROM_WIN32 (ERROR_READ_FAULT);
+
+            CProfileFileManager fileMgr (mock);
+
+
+
+            hr = fileMgr.ReadProfileFile (L"C:\\test\\profile.ps1", rgLines, fHasBom);
+
+            Assert::IsTrue  (FAILED (hr));
+            Assert::IsTrue  (rgLines.empty());
+        }
+
+
+
+
+        //
+        // The caller's vector must not keep stale content after a failed read.
+        //
+
+        TEST_METHOD(ReadProfileFile_ReadFails_ClearsCallerLines)
+        {
+            CProfileFileAccessMock  mock;
+            vector<wstring>         rgLines = { L"stale one", L"stale two" };
+            bool                    fHasBom = false;
+            HRESULT                 hr      = S_OK;
+
+            mock.m_hrRead = HRESULT_FROM_WIN32 (ERROR_READ_FAULT);
+
+            CProfileFileManager fileMgr (mock);
+
+
+
+            hr = fileMgr.ReadProfileFile (L"C:\\test\\profile.ps1", rgLines, fHasBom);
+
+            Assert::IsTrue (FAILED (hr));
+            Assert::IsTrue (rgLines.empty());
+        }
+
+
+
+
+        //
+        // A genuinely empty file is still a success — the fix must not turn
+        // "nothing to read" into an error.
+        //
+
+        TEST_METHOD(ReadProfileFile_EmptyFile_SucceedsWithNoLines)
+        {
+            CProfileFileAccessMock  mock;
+            vector<wstring>         rgLines;
+            bool                    fHasBom = false;
+            HRESULT                 hr      = S_OK;
+
+            CProfileFileManager fileMgr (mock);
+
+
+
+            hr = fileMgr.ReadProfileFile (L"C:\\test\\profile.ps1", rgLines, fHasBom);
+
+            Assert::IsTrue  (SUCCEEDED (hr));
+            Assert::IsTrue  (rgLines.empty());
+            Assert::IsFalse (fHasBom);
+        }
+
+
+
+
+        TEST_METHOD(ReadProfileFile_ContentSplitsIntoLines)
+        {
+            CProfileFileAccessMock  mock;
+            vector<wstring>         rgLines;
+            bool                    fHasBom = false;
+            HRESULT                 hr      = S_OK;
+
+            mock.m_strContent = "first\r\nsecond\nthird\rfourth";
+
+            CProfileFileManager fileMgr (mock);
+
+
+
+            hr = fileMgr.ReadProfileFile (L"C:\\test\\profile.ps1", rgLines, fHasBom);
+
+            Assert::IsTrue   (SUCCEEDED (hr));
+            Assert::AreEqual (4u, static_cast<unsigned>(rgLines.size()));
+            Assert::AreEqual (L"first",  rgLines[0].c_str());
+            Assert::AreEqual (L"second", rgLines[1].c_str());
+            Assert::AreEqual (L"third",  rgLines[2].c_str());
+            Assert::AreEqual (L"fourth", rgLines[3].c_str());
+        }
+
+
+
+
+        TEST_METHOD(ReadProfileFile_Utf8Bom_StrippedAndFlagged)
+        {
+            CProfileFileAccessMock  mock;
+            vector<wstring>         rgLines;
+            bool                    fHasBom = false;
+            HRESULT                 hr      = S_OK;
+            string                  strWithBom;
+
+            strWithBom.push_back (static_cast<char>(0xEF));
+            strWithBom.push_back (static_cast<char>(0xBB));
+            strWithBom.push_back (static_cast<char>(0xBF));
+            strWithBom += "content";
+
+            mock.m_strContent = strWithBom;
+
+            CProfileFileManager fileMgr (mock);
+
+
+
+            hr = fileMgr.ReadProfileFile (L"C:\\test\\profile.ps1", rgLines, fHasBom);
+
+            Assert::IsTrue   (SUCCEEDED (hr));
+            Assert::IsTrue   (fHasBom);
+            Assert::AreEqual (1u, static_cast<unsigned>(rgLines.size()));
+            Assert::AreEqual (L"content", rgLines[0].c_str());
+        }
+
+
+
+
+        TEST_METHOD(ReadProfileFile_Utf16_IsRejected)
+        {
+            CProfileFileAccessMock  mock;
+            vector<wstring>         rgLines;
+            bool                    fHasBom = false;
+            HRESULT                 hr      = S_OK;
+            string                  strUtf16;
+
+            strUtf16.push_back (static_cast<char>(0xFF));
+            strUtf16.push_back (static_cast<char>(0xFE));
+            strUtf16 += "content";
+
+            mock.m_strContent = strUtf16;
+
+            CProfileFileManager fileMgr (mock);
+
+
+
+            hr = fileMgr.ReadProfileFile (L"C:\\test\\profile.ps1", rgLines, fHasBom);
+
+            Assert::IsTrue (FAILED (hr));
+            Assert::IsTrue (rgLines.empty());
+        }
+
+
+
+
+        TEST_METHOD(WriteProfileFile_JoinsLinesWithCrLfAndTrailingNewline)
+        {
+            CProfileFileAccessMock  mock;
+            vector<wstring>         rgLines = { L"alpha", L"beta" };
+            HRESULT                 hr      = S_OK;
+
+            CProfileFileManager fileMgr (mock);
+
+
+
+            hr = fileMgr.WriteProfileFile (L"C:\\test\\profile.ps1", rgLines, false);
+
+            Assert::IsTrue   (SUCCEEDED (hr));
+            Assert::AreEqual (1, mock.m_cWriteCalls);
+            Assert::AreEqual ("alpha\r\nbeta\r\n", mock.m_strWritten.c_str());
+        }
+
+
+
+
+        TEST_METHOD(WriteProfileFile_PreserveBom_EmitsBomBytes)
+        {
+            CProfileFileAccessMock  mock;
+            vector<wstring>         rgLines = { L"alpha" };
+            HRESULT                 hr      = S_OK;
+
+            CProfileFileManager fileMgr (mock);
+
+
+
+            hr = fileMgr.WriteProfileFile (L"C:\\test\\profile.ps1", rgLines, true);
+
+            Assert::IsTrue   (SUCCEEDED (hr));
+            Assert::IsTrue   (mock.m_strWritten.size() > 3);
+            Assert::AreEqual (static_cast<unsigned char>(0xEF), static_cast<unsigned char>(mock.m_strWritten[0]));
+            Assert::AreEqual (static_cast<unsigned char>(0xBB), static_cast<unsigned char>(mock.m_strWritten[1]));
+            Assert::AreEqual (static_cast<unsigned char>(0xBF), static_cast<unsigned char>(mock.m_strWritten[2]));
+        }
+
+
+
+
+        TEST_METHOD(WriteProfileFile_WriteFails_PropagatesFailure)
+        {
+            CProfileFileAccessMock  mock;
+            vector<wstring>         rgLines = { L"alpha" };
+            HRESULT                 hr      = S_OK;
+
+            mock.m_hrWrite = HRESULT_FROM_WIN32 (ERROR_WRITE_FAULT);
+
+            CProfileFileManager fileMgr (mock);
+
+
+
+            hr = fileMgr.WriteProfileFile (L"C:\\test\\profile.ps1", rgLines, false);
+
+            Assert::IsTrue (FAILED (hr));
         }
     };
 }

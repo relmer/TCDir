@@ -367,6 +367,8 @@ HRESULT CAliasManager::WriteAliasBlockToFile (
     vector<wstring>     rgFileLines;
     bool                fHasBom     = false;
     SAliasBlock         targetBlock;
+    uintmax_t           cbOnDisk    = 0;
+    error_code          ec;
 
 
 
@@ -374,6 +376,14 @@ HRESULT CAliasManager::WriteAliasBlockToFile (
     {
         hr = fileMgr.ReadProfileFile (strTargetPath, rgFileLines, fHasBom);
         CHR (hr);
+
+        //
+        // Defense in depth: a non-empty profile that parsed to nothing means
+        // the read lost content, and writing that back would destroy the file.
+        //
+
+        cbOnDisk = filesystem::file_size (strTargetPath, ec);
+        CBREx (ec || !rgFileLines.empty() || cbOnDisk == 0, HRESULT_FROM_WIN32 (ERROR_READ_FAULT));
 
         hr = fileMgr.CreateBackup (strTargetPath);
         CHR (hr);

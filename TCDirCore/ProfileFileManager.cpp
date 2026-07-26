@@ -20,6 +20,42 @@ static constexpr unsigned char k_rgUtf16BE[]  = { 0xFE, 0xFF };
 static constexpr LPCWSTR k_pszHeaderMarker = L"#  TCDir Aliases";
 static constexpr LPCWSTR k_pszFooterMarker = L"#  End TCDir Aliases";
 
+//
+// Default file access used when no accessor is injected
+//
+
+static CProfileFileAccessReal s_realFileAccess;
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CProfileFileManager::CProfileFileManager
+//
+////////////////////////////////////////////////////////////////////////////////
+
+CProfileFileManager::CProfileFileManager()
+    : m_fileAccess (s_realFileAccess)
+{
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CProfileFileManager::CProfileFileManager
+//
+////////////////////////////////////////////////////////////////////////////////
+
+CProfileFileManager::CProfileFileManager (IProfileFileAccess & fileAccess)
+    : m_fileAccess (fileAccess)
+{
+}
+
 
 
 
@@ -35,9 +71,7 @@ static constexpr LPCWSTR k_pszFooterMarker = L"#  End TCDir Aliases";
 
 HRESULT CProfileFileManager::ReadProfileFile (const wstring & strPath, vector<wstring> & rgLines, bool & fHasBom)
 {
-    HRESULT hr     = S_OK;
-    FILE *  pf     = nullptr;
-    long    cbFile = 0;
+    HRESULT hr = S_OK;
     string  strRaw;
 
 
@@ -46,101 +80,121 @@ HRESULT CProfileFileManager::ReadProfileFile (const wstring & strPath, vector<ws
     fHasBom = false;
 
     //
-    // Read the raw bytes
+    // A failed read must propagate as a failure. Returning S_OK with no lines
+    // lets a caller write that emptiness straight back over a real profile.
     //
 
-    _wfopen_s (&pf, strPath.c_str(), L"rb");
-    CBRAEx (pf != nullptr, HRESULT_FROM_WIN32 (ERROR_FILE_NOT_FOUND));
+    hr = m_fileAccess.ReadAllBytes (strPath, strRaw);
+    CHR (hr);
 
-    fseek (pf, 0, SEEK_END);
-    cbFile = ftell (pf);
-    fseek (pf, 0, SEEK_SET);
+    hr = ParseProfileBytes (strRaw, rgLines, fHasBom);
+    CHR (hr);
 
-    if (cbFile > 0)
+Error:
+    if (FAILED (hr))
     {
-        strRaw.resize (static_cast<size_t>(cbFile));
-        size_t cbRead = fread (strRaw.data(), 1, strRaw.size(), pf);
-        strRaw.resize (cbRead);
+        rgLines.clear();
     }
 
-    fclose (pf);
-    pf = nullptr;
+    return hr;
+}
 
-    //
-    // Check BOM
-    //
 
-    if (strRaw.size() >= 2)
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CProfileFileManager::ParseProfileBytes
+//
+//  Strips a UTF-8 BOM, rejects UTF-16, and decodes the bytes into lines.
+//
+////////////////////////////////////////////////////////////////////////////////
+
+HRESULT CProfileFileManager::ParseProfileBytes (const string & strRaw, vector<wstring> & rgLines, bool & fHasBom)
+{
+    HRESULT               hr        = S_OK;
+    const unsigned char * pb        = nullptr;
+    string                strBody   = strRaw;
+    int                   cchNeeded = 0;
+    wstring               strWide;
+
+
+
+    rgLines.clear();
+    fHasBom = false;
+
+    pb = reinterpret_cast<const unsigned char *>(strBody.data());
+
+    if (strBody.size() >= 2)
     {
-        auto pb = reinterpret_cast<const unsigned char *>(strRaw.data());
+        bool fUtf16 = (pb[0] == k_rgUtf16LE[0] && pb[1] == k_rgUtf16LE[1]) ||
+                      (pb[0] == k_rgUtf16BE[0] && pb[1] == k_rgUtf16BE[1]);
 
-        if ((pb[0] == k_rgUtf16LE[0] && pb[1] == k_rgUtf16LE[1]) ||
-            (pb[0] == k_rgUtf16BE[0] && pb[1] == k_rgUtf16BE[1]))
-        {
-            //
-            // UTF-16 — bail with clear error
-            //
-
-            CBRAEx (false, HRESULT_FROM_WIN32 (ERROR_UNSUPPORTED_TYPE));
-        }
+        CBREx (!fUtf16, HRESULT_FROM_WIN32 (ERROR_UNSUPPORTED_TYPE));
     }
 
-    if (strRaw.size() >= 3)
+    if (strBody.size() >= 3 && pb[0] == k_rgUtf8Bom[0] && pb[1] == k_rgUtf8Bom[1] && pb[2] == k_rgUtf8Bom[2])
     {
-        auto pb = reinterpret_cast<const unsigned char *>(strRaw.data());
-
-        if (pb[0] == k_rgUtf8Bom[0] && pb[1] == k_rgUtf8Bom[1] && pb[2] == k_rgUtf8Bom[2])
-        {
-            fHasBom = true;
-            strRaw.erase (0, 3);
-        }
+        fHasBom = true;
+        strBody.erase (0, 3);
     }
 
-    //
-    // Convert UTF-8 to wstring lines
-    //
+    BAIL_OUT_IF (strBody.empty(), S_OK);
 
-    if (!strRaw.empty())
-    {
-        int cchNeeded = MultiByteToWideChar (CP_UTF8, 0, strRaw.data(), static_cast<int>(strRaw.size()), nullptr, 0);
+    cchNeeded = MultiByteToWideChar (CP_UTF8, 0, strBody.data(), static_cast<int>(strBody.size()), nullptr, 0);
+    CBRAEx (cchNeeded > 0, HRESULT_FROM_WIN32 (GetLastError()));
 
-        CBRAEx (cchNeeded > 0, HRESULT_FROM_WIN32 (GetLastError()));
+    strWide.resize (static_cast<size_t>(cchNeeded), L'\0');
 
-        wstring strWide (static_cast<size_t>(cchNeeded), L'\0');
+    MultiByteToWideChar (CP_UTF8, 0, strBody.data(), static_cast<int>(strBody.size()), strWide.data(), cchNeeded);
 
-        MultiByteToWideChar (CP_UTF8, 0, strRaw.data(), static_cast<int>(strRaw.size()), strWide.data(), cchNeeded);
-
-        //
-        // Split into lines (handle \r\n, \n, \r)
-        //
-
-        size_t pos = 0;
-
-        while (pos < strWide.size())
-        {
-            size_t end = strWide.find_first_of (L"\r\n", pos);
-
-            if (end == wstring::npos)
-            {
-                rgLines.push_back (strWide.substr (pos));
-                break;
-            }
-
-            rgLines.push_back (strWide.substr (pos, end - pos));
-
-            if (end + 1 < strWide.size() && strWide[end] == L'\r' && strWide[end + 1] == L'\n')
-            {
-                pos = end + 2;
-            }
-            else
-            {
-                pos = end + 1;
-            }
-        }
-    }
+    SplitIntoLines (strWide, rgLines);
 
 Error:
     return hr;
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CProfileFileManager::SplitIntoLines
+//
+//  Splits on \r\n, \n, or \r.
+//
+////////////////////////////////////////////////////////////////////////////////
+
+void CProfileFileManager::SplitIntoLines (const wstring & strWide, vector<wstring> & rgLines)
+{
+    size_t pos = 0;
+    size_t end = 0;
+
+
+
+    while (pos < strWide.size())
+    {
+        end = strWide.find_first_of (L"\r\n", pos);
+
+        if (end == wstring::npos)
+        {
+            rgLines.push_back (strWide.substr (pos));
+            break;
+        }
+
+        rgLines.push_back (strWide.substr (pos, end - pos));
+
+        if (end + 1 < strWide.size() && strWide[end] == L'\r' && strWide[end + 1] == L'\n')
+        {
+            pos = end + 2;
+        }
+        else
+        {
+            pos = end + 1;
+        }
+    }
 }
 
 
@@ -299,7 +353,7 @@ HRESULT CProfileFileManager::WriteProfileFile (const wstring & strPath, const ve
     wstring strContent;
     int     cbNeeded   = 0;
     string  strUtf8;
-    FILE *  pf         = nullptr;
+    string  strPayload;
 
 
 
@@ -352,21 +406,15 @@ HRESULT CProfileFileManager::WriteProfileFile (const wstring & strPath, const ve
     // Write to file
     //
 
-    _wfopen_s (&pf, strPath.c_str(), L"wb");
-    CBRAEx (pf != nullptr, HRESULT_FROM_WIN32 (ERROR_ACCESS_DENIED));
-
     if (fPreserveBom)
     {
-        fwrite (k_rgUtf8Bom, 1, sizeof (k_rgUtf8Bom), pf);
+        strPayload.assign (reinterpret_cast<const char *>(k_rgUtf8Bom), sizeof (k_rgUtf8Bom));
     }
 
-    if (!strUtf8.empty())
-    {
-        fwrite (strUtf8.data(), 1, strUtf8.size(), pf);
-    }
+    strPayload += strUtf8;
 
-    fclose (pf);
-    pf = nullptr;
+    hr = m_fileAccess.WriteAllBytes (strPath, strPayload);
+    CHR (hr);
 
 Error:
     return hr;
