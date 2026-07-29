@@ -2,6 +2,11 @@
 
 All notable changes to TCDir are documented in this file.
 
+## [5.6.1] - 2026-07-28
+
+### Fixed
+- Profile file read failures no longer silently overwrite the user's alias config. `IProfileFileAccess` seam checks every seek/tell/read; writes are now atomic via scratch file + rename.
+
 ## [5.6.0] - 2026-06-21
 
 ### Added
