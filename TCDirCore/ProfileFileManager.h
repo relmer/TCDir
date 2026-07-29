@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ProfilePathResolver.h"
+#include "ProfileFileAccess.h"
 
 
 
@@ -40,6 +41,9 @@ struct SAliasBlock
 class CProfileFileManager
 {
 public:
+    CProfileFileManager();
+    explicit CProfileFileManager (IProfileFileAccess & fileAccess);
+
     HRESULT ReadProfileFile     (const wstring & strPath, vector<wstring> & rgLines, bool & fHasBom);
     HRESULT FindAliasBlock      (const vector<wstring> & rgLines, SAliasBlock & block);
     HRESULT WriteProfileFile    (const wstring & strPath, const vector<wstring> & rgLines, bool fPreserveBom);
@@ -47,4 +51,10 @@ public:
     void    ReplaceAliasBlock   (vector<wstring> & rgLines, const SAliasBlock & block, const vector<wstring> & rgNewBlock);
     void    AppendAliasBlock    (vector<wstring> & rgLines, const vector<wstring> & rgNewBlock);
     void    RemoveAliasBlock    (vector<wstring> & rgLines, const SAliasBlock & block);
+
+private:
+    HRESULT ParseProfileBytes   (const string & strRaw, vector<wstring> & rgLines, bool & fHasBom);
+    void    SplitIntoLines      (const wstring & strWide, vector<wstring> & rgLines);
+
+    IProfileFileAccess & m_fileAccess;
 };

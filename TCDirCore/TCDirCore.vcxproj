@@ -244,6 +244,7 @@
     <ClInclude Include="ResultsDisplayerWide.h" />
     <ClInclude Include="ResultsDisplayerWithHeaderAndFooter.h" />
     <ClInclude Include="SizeFormat.h" />
+    <ClInclude Include="ProfileFileAccess.h" />
     <ClInclude Include="ProfileFileManager.h" />
     <ClInclude Include="ProfilePathResolver.h" />
     <ClInclude Include="ReparsePointResolver.h" />
