@@ -1,6 +1,6 @@
 # Win32 Surface Inventory — the PAL / shim contract
 
-**Feature**: `010-cross-platform-pal` · **Issue**: #8 · **Created**: 2026-06-24
+**Feature**: `011-cross-platform-pal` · **Issue**: #8 · **Created**: 2026-06-24
 **Status**: Draft (analysis artifact — no code changes)
 
 ## Purpose

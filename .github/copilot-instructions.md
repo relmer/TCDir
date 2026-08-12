@@ -355,5 +355,5 @@ BYTE           * buffer         = nullptr;
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
 shell commands, and other important information, read the current plan:
-`specs/010-cross-platform-pal/plan.md` (cross-platform support, issue #8).
+`specs/011-cross-platform-pal/plan.md` (cross-platform support, issue #8).
 <!-- SPECKIT END -->

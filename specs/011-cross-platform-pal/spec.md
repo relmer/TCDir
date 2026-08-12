@@ -1,6 +1,6 @@
 # Feature Specification: Cross-Platform Support (Linux & macOS)
 
-**Feature Branch**: `010-cross-platform-pal`
+**Feature Branch**: `011-cross-platform-pal`
 **Created**: 2026-06-24
 **Status**: Draft
 **Input**: User description: "Bring TCDir's colorized directory-listing experience to Linux (and macOS soon after), so the same tool gives the same listing across platforms. Keep the Windows product unchanged. Windows-only conveniences (terminal-font auto-config, shell aliases) should be supported on the new platforms too, but after the core listing ships." (GH Issue #8)

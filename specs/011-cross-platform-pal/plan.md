@@ -1,7 +1,7 @@
 # Implementation Plan: Cross-Platform Support (Linux & macOS)
 
-**Branch**: `010-cross-platform-pal` | **Date**: 2026-06-25 | **Spec**: [spec.md](./spec.md)
-**Input**: Feature specification from `specs/010-cross-platform-pal/spec.md`
+**Branch**: `011-cross-platform-pal` | **Date**: 2026-06-25 | **Spec**: [spec.md](./spec.md)
+**Input**: Feature specification from `specs/011-cross-platform-pal/spec.md`
 
 ## Summary
 
@@ -79,7 +79,7 @@ Tracking. Recommend a constitution MINOR amendment once the MVP lands.
 ### Documentation (this feature)
 
 ```text
-specs/010-cross-platform-pal/
+specs/011-cross-platform-pal/
 ├── plan.md                     # This file
 ├── spec.md                     # Feature spec (clarified)
 ├── research.md                 # Phase 0 — decisions + rationale
