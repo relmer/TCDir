@@ -20,7 +20,8 @@ This document tracks which features have been ported and which are pending.
 | 008    | Ellipsize Long Targets   | #11      | Shipped            | v5.4          | Shipped            | v5.5          | Middle-truncate long target paths with `…`              |
 | 009    | Variable-width /W cols   | #10      | Shipped            | v5.5          | Shipped            | v5.5          | Per-column variable widths like ls/eza                  |
 |        | Per-file git status      | #7       | Open               |               |                    |               |                                                         |
-|        | Cross-platform support   | #8       | Open               |               |                    |               | Linux + macOS                                           |
+| 010    | Nerd Font Install        |          | Shipped            | v5.6.0        | Spec ready         |               | `--Install-NerdFonts` / `--Uninstall-NerdFonts` (spec added retroactively) |
+| 011    | Cross-platform PAL       | #8       | In progress        |               | n/a (TCDir-only)   |               | Linux + macOS; spec/plan on branch `011-cross-platform-pal`             |
 
 ## Workflow
 
@@ -34,5 +35,5 @@ This document tracks which features have been ported and which are pending.
 
 | Project | Latest Release | Date       |
 | ------- | -------------- | ---------- |
-| TCDir   | v5.5.1628      | 2026-04-19 |
-| RCDir   | v5.5.1408      | 2026-04-20 |
+| TCDir   | v5.6.1         | 2026-07-28 |
+| RCDir   | v5.5.1409      | 2026-08-11 |
