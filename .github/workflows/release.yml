@@ -242,6 +242,10 @@ jobs:
       - name: Publish to WinGet
         if: env.WINGET_PAT != ''
         shell: pwsh
+        env:
+          # wingetcreate reads the token from this variable; passing it with
+          # --token puts it on the command line, where it can end up in logs.
+          WINGET_CREATE_GITHUB_TOKEN: ${{ secrets.WINGET_PAT }}
         run: |
           $tag = "${{ steps.tag.outputs.tag }}"
           $version = "${{ steps.tag.outputs.version }}"
@@ -250,4 +254,4 @@ jobs:
           wingetcreate update relmer.TCDir `
             --version $version `
             --urls "$baseUrl/TCDir.exe" "$baseUrl/TCDir-ARM64.exe" `
-            --submit --token "${{ secrets.WINGET_PAT }}"
+            --submit
