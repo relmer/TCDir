@@ -3,6 +3,7 @@
 #include "ArchiveFileAccess.h"
 
 #include "ByteSource.h"
+#include "IsoReader.h"
 #include "LibArchiveReader.h"
 #include "ZipReader.h"
 
@@ -51,6 +52,14 @@ HRESULT CArchiveFileAccess::Read (const filesystem::path & path, EArchiveFormat 
             CHR (hr);
 
             hr = CZipReader::Read (source, result);
+            CHR (hr);
+            break;
+
+        case EArchiveFormat::Iso:
+            hr = source.Open (path);
+            CHR (hr);
+
+            hr = CIsoReader::Read (source, result);
             CHR (hr);
             break;
 
