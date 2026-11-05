@@ -69,11 +69,22 @@ bool    IsLibArchiveAvailable()
 
 `CArchiveFileAccess` opens a `CFileByteSource` and dispatches to `CZipReader`, `CIsoReader` (which calls `CUdfReader`) or `CLibArchiveReader`. Tests use `MockArchiveFileAccess` with in-memory images.
 
-## FileInfo / CDirectoryInfo additions
+## CDirectoryInfo additions
 
-- `FileInfo::m_fInArchive` (`bool`, default `false`): entry came from an archive tree.
-- `CDirectoryInfo::m_fInArchive` (`bool`, default `false`): `m_dirPath` is a virtual location inside an archive.
-- `CDirectoryInfo::m_strError` (`wstring`): archive parse error text for the main thread to print.
+- `CDirectoryInfo::m_fInArchive` (`bool`, default `false`): `m_dirPath` is a virtual location inside an archive. Every entry in such a directory comes from the archive, so a per-entry `FileInfo` flag is not needed.
+- `CDirectoryInfo::m_archiveErrorPath` (`filesystem::path`) and `CDirectoryInfo::m_strArchiveError` (`wstring`): the archive that failed to parse and the error text, for the main thread to print.
+
+## SEnumerationError
+
+`CFileEnumerator::Enumerate` returns the archive path and error text in `SEnumerationError { m_archivePath; m_strMessage; }` when an archive fails to parse.
+
+## CDiscImage
+
+`CIsoReader` and `CUdfReader` share sector reads, little-endian field decoding and date conversion through `CDiscImage` (`DiscImage.h/.cpp`). A short read is reported as `ERROR_BAD_FORMAT`, so a truncated image counts as corrupt.
+
+## Test helpers
+
+`UnitTest/Mocks/ZipBuilder.h/.cpp` (`CZipBuilder`) and `UnitTest/Mocks/IsoImageBuilder.h/.cpp` build in-memory archives. `UnitTest/Mocks/MockArchiveFileAccess.h` maps paths to attributes and prepared entry lists.
 
 ## State transitions
 

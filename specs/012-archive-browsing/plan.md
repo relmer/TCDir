@@ -74,6 +74,7 @@ TCDirCore/
 ├── ArchiveFormat.h/.cpp         # New: CArchiveFormat (extension → format, libarchive availability)
 ├── WildcardMatcher.h/.cpp       # New: CWildcardMatcher (FindFirstFile-compatible * ? matching)
 ├── ZipReader.h/.cpp             # New: CZipReader
+├── DiscImage.h/.cpp             # New: CDiscImage (sector reads shared by the ISO and UDF readers)
 ├── IsoReader.h/.cpp             # New: CIsoReader (ISO 9660 + Joliet)
 ├── UdfReader.h/.cpp             # New: CUdfReader (UDF 1.02-2.01)
 ├── LibArchiveReader.h/.cpp      # New: CLibArchiveReader (archiveint.dll binding)
@@ -81,7 +82,7 @@ TCDirCore/
 ├── ArchiveFileAccess.h/.cpp     # New: IArchiveFileAccess + CArchiveFileAccess (real file probes, readers)
 ├── ArchiveFileSystem.h/.cpp     # New: CArchiveFileSystem (path split, cache, virtual enumeration)
 ├── FileEnumerator.h/.cpp        # New: CFileEnumerator (real or archive enumeration behind one call)
-├── DirectoryInfo.h              # FileInfo::m_fInArchive, CDirectoryInfo::m_fInArchive
+├── DirectoryInfo.h              # CDirectoryInfo::m_fInArchive and archive error fields
 ├── DirectoryLister.h/.cpp       # Use CFileEnumerator; archive-aware existence check; skip OS calls for archive entries
 ├── MultiThreadedLister.h/.cpp   # Use CFileEnumerator; propagate archive errors to the main thread
 ├── MaskGrouper.h/.cpp           # Archive-aware directory test when splitting masks
@@ -94,7 +95,8 @@ TCDirCore/
 └── TCDirCore.vcxproj(.filters)  # New files
 
 UnitTest/
-├── Mocks/ArchiveBuilders.h/.cpp # New: in-memory zip and iso image builders for tests
+├── Mocks/ZipBuilder.h/.cpp      # New: in-memory zip builder for tests
+├── Mocks/IsoImageBuilder.h/.cpp # New: in-memory ISO 9660 and UDF image builder for tests
 ├── Mocks/MockArchiveFileAccess.h# New
 ├── WildcardMatcherTests.cpp     # New
 ├── ArchiveFormatTests.cpp       # New
@@ -117,7 +119,7 @@ README.md, CHANGELOG.md          # User documentation
 1. **Archive files become directories.** With the switch, `CFileEnumerator` sets `FILE_ATTRIBUTE_DIRECTORY` on each real file whose extension is recognized (and that is not an offline or recall-on-access cloud placeholder), and registers the path with `CArchiveFileSystem`. Recursion, tree drawing, attribute filters, directory counts and icons then apply with no further changes.
 2. **Virtual path lookup.** `CArchiveFileSystem::Resolve (dirPath)` walks the parent chain of `dirPath` and checks each prefix against the set of registered archive paths (one hash lookup per component). The archive is parsed on first enumeration and cached as `shared_ptr<const CArchiveTree>` under a mutex. Parse failures are cached too, so an error is reported once.
 3. **Command-line targets.** `CMaskGrouper` and `CDirectoryLister::List` call `CArchiveFileSystem::IsDirectory` and `Exists` instead of `filesystem::is_directory`/`exists` when the switch is on. These split the path at the first real file with an archive extension (research R5).
-4. **Per-entry OS calls.** `FileInfo::m_fInArchive` and `CDirectoryInfo::m_fInArchive` indicate archive origin. `ResolveReparseTarget`, `HandleFileMatchStreams`, `GetFileOwner`, `IsUnderSyncRoot` and `GetDiskFreeSpaceEx` are skipped for them; `CDriveInfo` and the volume footer use the real archive file path.
+4. **Per-entry OS calls.** `CDirectoryInfo::m_fInArchive` indicates archive origin. `ResolveReparseTarget`, `HandleFileMatchStreams`, `GetFileOwner`, `IsUnderSyncRoot` and `GetDiskFreeSpaceEx` are skipped for them; `CDriveInfo` and the volume footer use the real archive file path.
 5. **Errors.** An archive that fails to parse produces `Error:   <path>: <reason>` through the existing `ColorPrintf` `{Error}` style. In multi-threaded mode the HRESULT and message are stored on the `CDirectoryInfo` (`Status::Error`) and printed by the main thread, the same as an inaccessible directory. This is the existing error path (console output, not stderr; see Complexity Tracking).
 6. **Thread safety.** `CArchiveTree` is immutable after construction. `CArchiveFileSystem` guards its maps with a `std::mutex`; two workers asking for the same archive wait on one parse (`std::shared_future`).
 7. **libarchive binding.** `CLibArchiveReader` loads `archiveint.dll` with `LoadLibraryExW (L"archiveint.dll", nullptr, LOAD_LIBRARY_SEARCH_SYSTEM32)` once (`std::call_once`), resolves the function pointers, and reports `HRESULT_FROM_WIN32 (ERROR_NOT_SUPPORTED)` when it is absent. `CArchiveFormat` recognizes libarchive extensions only when the DLL loads.
