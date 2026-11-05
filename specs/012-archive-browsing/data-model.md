@@ -42,7 +42,7 @@ Implementations: `CFileByteSource` (`CreateFileW`, `GENERIC_READ`, `FILE_SHARE_R
 | Member | Purpose |
 |--------|---------|
 | `struct SNode { wstring m_strName; bool m_fDirectory; ULONGLONG m_ullSize; FILETIME m_ftLastWrite; DWORD m_dwAttributes; vector<size_t> m_vChildren; }` | One file or folder. Index 0 is the root. |
-| `static HRESULT Build (const vector<SArchiveEntry> &, unique_ptr<CArchiveTree> &)` | Normalizes separators, drops empty, `.` and `..` components and drive or root prefixes (sanitization), creates implied folders, keeps duplicates. An explicit folder entry that follows an implied one updates its time and attributes. |
+| `static HRESULT Build (const vector<SArchiveEntry> &, unique_ptr<CArchiveTree> &)` | Normalizes separators, drops empty, `.` and `..` components and drive or root prefixes (sanitization), creates implied folders. Duplicate files become separate nodes. An explicit folder entry that follows an implied one updates its time and attributes. |
 | `const SNode * FindFolder (const wstring & innerPath) const` | Case-insensitive component walk. Returns `nullptr` when missing or when a component is a file. |
 | `void EnumerateChildren (const SNode &, const wstring & spec, function<void (const WIN32_FIND_DATAW &)>) const` | Applies `CWildcardMatcher`. Synthesizes `WIN32_FIND_DATAW`: name (truncated to `MAX_PATH - 1` with no crash), attributes (`FILE_ATTRIBUTE_DIRECTORY` for folders, `FILE_ATTRIBUTE_NORMAL` when none), size split into high/low, all three times = last-write time, `dwReserved0 = 0`. |
 
@@ -53,7 +53,7 @@ Implementations: `CFileByteSource` (`CreateFileW`, `GENERIC_READ`, `FILE_SHARE_R
 | `CArchiveFileSystem (shared_ptr<IArchiveFileAccess>)` | |
 | `bool IsArchiveFile (const WIN32_FIND_DATAW & wfd) const` | Not a directory, not offline/recall-on-access, extension recognized. |
 | `void RegisterArchive (const filesystem::path &)` | Adds to the known set (called by `CFileEnumerator` for marked entries). |
-| `bool TrySplit (const filesystem::path &, SArchiveLocation &)` | Uses the known set first, then probes components left to right with `IArchiveFileAccess::GetAttributes` (command-line targets). Real directories always win. |
+| `bool TrySplit (const filesystem::path &, SArchiveLocation &)` | Uses the known set first, then probes components left to right with `IArchiveFileAccess::GetAttributes` (command-line targets). A real directory always takes precedence. |
 | `HRESULT GetTree (const filesystem::path & archivePath, shared_ptr<const CArchiveTree> &, wstring & strError)` | Parses once; caches the tree or the failure. |
 | `bool IsDirectory (path)` / `bool Exists (path)` | Real file system first, then archive lookup. |
 
@@ -71,7 +71,7 @@ bool    IsLibArchiveAvailable()
 
 ## CDirectoryInfo additions
 
-- `CDirectoryInfo::m_fInArchive` (`bool`, default `false`): `m_dirPath` is a virtual location inside an archive. Every entry in such a directory comes from the archive, so a per-entry `FileInfo` flag is not needed.
+- `CDirectoryInfo::m_fInArchive` (`bool`, default `false`): `m_dirPath` is a virtual location inside an archive. Every entry in such a directory comes from the archive, so `FileInfo` has no per-entry flag.
 - `CDirectoryInfo::m_archiveErrorPath` (`filesystem::path`) and `CDirectoryInfo::m_strArchiveError` (`wstring`): the archive that failed to parse and the error text, for the main thread to print.
 
 ## SEnumerationError
