@@ -60,7 +60,7 @@ All user-facing output MUST follow established patterns:
 
 - **Colorized Output**: Use the `CConsole` class for all terminal output; respect TCDIR environment variable color configuration
 - **CLI Syntax**: Follow existing switch patterns (`-X`, `/X`, `-X:value`); new switches MUST be documented in `Usage.cpp`
-- **Error Messages**: Errors go to stderr; user-facing messages MUST be clear, actionable, and consistent in tone
+- **Error Messages**: Errors print to the console through `CConsole` in the `{Error}` color, inline with the listing; user-facing messages MUST be clear, actionable, and consistent in tone
 - **Help System**: All features MUST be documented in `-?` help output and `--Env`/`--Config` where applicable
 - **Backward Compatibility**: Existing command-line behavior MUST NOT change without explicit user notification
 
@@ -155,4 +155,4 @@ This constitution supersedes all ad-hoc practices. All code changes MUST verify 
 
 **Guidance Reference**: See `.github/copilot-instructions.md` for detailed runtime development guidance and code style rules.
 
-**Version**: 1.3.0 | **Ratified**: 2026-01-24 | **Last Amended**: 2026-04-19
+**Version**: 1.3.1 | **Ratified**: 2026-01-24 | **Last Amended**: 2026-11-05
