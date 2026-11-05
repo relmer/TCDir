@@ -3,6 +3,7 @@
 #include "ArchiveFileAccess.h"
 
 #include "ByteSource.h"
+#include "LibArchiveReader.h"
 #include "ZipReader.h"
 
 
@@ -53,6 +54,11 @@ HRESULT CArchiveFileAccess::Read (const filesystem::path & path, EArchiveFormat 
             CHR (hr);
             break;
 
+        case EArchiveFormat::LibArchive:
+            hr = CLibArchiveReader::Read (path, result);
+            CHR (hr);
+            break;
+
         default:
             CHR (HRESULT_FROM_WIN32 (ERROR_NOT_SUPPORTED));
             break;
@@ -76,7 +82,7 @@ Error:
 
 bool CArchiveFileAccess::IsLibArchiveAvailable()
 {
-    return false;
+    return CLibArchiveReader::IsAvailable();
 }
 
 

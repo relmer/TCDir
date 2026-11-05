@@ -289,11 +289,13 @@ constexpr CConfig::SSwitchMapping CConfig::s_switchMappings[] =
     { L"tree-"sv,      false, &CConfig::m_fTree          },
     { L"ellipsize"sv,  true,  &CConfig::m_fEllipsize     },
     { L"ellipsize-"sv, false, &CConfig::m_fEllipsize     },
+    { L"archives"sv,   true,  &CConfig::m_fArchives      },
+    { L"archives-"sv,  false, &CConfig::m_fArchives      },
 };
 
 //
 // Switch member order — must match s_kSwitchInfos in Usage.cpp
-// W, S, P, M, B, Owner, Streams, Icons, Tree, Ellipsize
+// W, S, P, M, B, Owner, Streams, Icons, Tree, Ellipsize, Archives
 //
 
 const optional<bool> CConfig::* CConfig::s_switchMemberOrder[CConfig::SWITCH_COUNT] =
@@ -308,6 +310,7 @@ const optional<bool> CConfig::* CConfig::s_switchMemberOrder[CConfig::SWITCH_COU
     &CConfig::m_fIcons,
     &CConfig::m_fTree,
     &CConfig::m_fEllipsize,
+    &CConfig::m_fArchives,
 };
 
 

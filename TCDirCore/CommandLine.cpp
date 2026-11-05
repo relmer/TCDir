@@ -73,6 +73,7 @@ void CCommandLine::ApplyConfigDefaults (const CConfig & config)
     if (config.m_fIcons.has_value() && !m_fIcons.has_value())  m_fIcons         = config.m_fIcons.value();
     if (config.m_fTree.has_value())                            m_fTree          = config.m_fTree.value();
     if (config.m_fEllipsize.has_value() && !m_fEllipsize.has_value())  m_fEllipsize = config.m_fEllipsize.value();
+    if (config.m_fArchives.has_value())                        m_fArchives      = config.m_fArchives.value();
 
     //
     // Only apply tree-specific config when tree mode is active.

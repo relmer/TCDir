@@ -204,6 +204,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="LibArchiveReader.h" />
     <ClInclude Include="ZipReader.h" />
     <ClInclude Include="FileEnumerator.h" />
     <ClInclude Include="ArchiveFileSystem.h" />
@@ -266,6 +267,7 @@
     <ClInclude Include="WorkQueue.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="LibArchiveReader.cpp" />
     <ClCompile Include="ZipReader.cpp" />
     <ClCompile Include="FileEnumerator.cpp" />
     <ClCompile Include="ArchiveFileSystem.cpp" />

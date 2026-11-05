@@ -15,6 +15,9 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="LibArchiveReader.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="ZipReader.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -143,6 +146,9 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="LibArchiveReader.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="ZipReader.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>

@@ -120,6 +120,7 @@ static constexpr SSwitchInfo s_kSwitchInfos[] =
     { L"Icons",      L"Enable file-type icons"          },
     { L"Tree",       L"Display directory tree view"     },
     { L"Ellipsize",  L"Truncate long link target paths" },
+    { L"Archives",   L"List archive contents as directories" },
 };
 
 
@@ -568,6 +569,9 @@ static vector<SUsageOptionRow> BuildPrimaryOptionRows (wstring_view szShort, wst
         { format (L"{{InformationHighlight}}{0}Tree{{Information}}", pszLong),
           format (L"Displays a hierarchical directory tree view. Use {{InformationHighlight}}{0}Tree-{{Information}} to disable.", pszLong),
           L"" },
+        { format (L"{{InformationHighlight}}{0}Archives{{Information}}", pszLong),
+          format (L"Lists the contents of archive files (.zip, .iso, .7z, .rar, .tar, ...) as directories, including with {{InformationHighlight}}-S{{Information}} and {{InformationHighlight}}{0}Tree{{Information}}. Use {{InformationHighlight}}{0}Archives-{{Information}} to disable.", pszLong),
+          L"" },
         { format (L"{{InformationHighlight}}{0}Ellipsize{{Information}}", pszLong),
           format (L"Truncates long link target paths with \u2026 to prevent line wrapping. Default: on. Use {{InformationHighlight}}{0}Ellipsize-{{Information}} to disable.", pszLong),
           L"" },
@@ -973,6 +977,7 @@ void CUsage::DisplaySwitchConfiguration (CConsole & console, int columnWidthAttr
         &config.m_fIcons,
         &config.m_fTree,
         &config.m_fEllipsize,
+        &config.m_fArchives,
     };
 
     static_assert (_countof (switchValues) == _countof (s_kSwitchInfos), "Switch arrays must match");
@@ -1795,7 +1800,8 @@ static bool HasEnvVarSwitches (const CConfig & config)
            config.m_fBareListing.has_value()   ||
            config.m_fShowOwner.has_value()     ||
            config.m_fShowStreams.has_value()    ||
-           config.m_fIcons.has_value();
+           config.m_fIcons.has_value()          ||
+           config.m_fArchives.has_value();
 }
 
 
@@ -1897,6 +1903,7 @@ static void DisplayEnvVarSwitchesSection (CConsole & console, const CConfig & co
         &config.m_fIcons,
         &config.m_fTree,
         &config.m_fEllipsize,
+        &config.m_fArchives,
     };
 
     static_assert (_countof (switchValues) == _countof (s_kSwitchInfos), "Switch arrays must match");
@@ -2177,6 +2184,7 @@ void CUsage::DisplayEnvVarHelp (CConsole & console, wchar_t chPrefix)
         L"                  {{InformationHighlight}}Owner{{Information}}    Display file ownership\n"
         L"                  {{InformationHighlight}}Streams{{Information}}  Display alternate data streams (NTFS)\n"
         L"                  {{InformationHighlight}}Icons{{Information}}    Enable file-type icons; use {{InformationHighlight}}Icons-{{Information}} to disable\n"
+        L"                  {{InformationHighlight}}Archives{{Information}} List archive contents as directories; use {{InformationHighlight}}Archives-{{Information}} to disable\n"
         L"\n"
         L"  {{InformationHighlight}}<Item>{{Information}}      A display item:\n"
         L"                  {{InformationHighlight}}D{{Information}}  Date                     {{InformationHighlight}}T{{Information}}  Time\n"
@@ -2375,6 +2383,7 @@ void CUsage::DisplayConfigFileHelp (CConsole & console, wchar_t chPrefix)
         L"                  {{InformationHighlight}}Owner{{Information}}    Display file ownership\n"
         L"                  {{InformationHighlight}}Streams{{Information}}  Display alternate data streams (NTFS)\n"
         L"                  {{InformationHighlight}}Icons{{Information}}    Enable file-type icons; use {{InformationHighlight}}Icons-{{Information}} to disable\n"
+        L"                  {{InformationHighlight}}Archives{{Information}} List archive contents as directories; use {{InformationHighlight}}Archives-{{Information}} to disable\n"
         L"\n"
         L"  {{InformationHighlight}}<Item>{{Information}}      A display item:\n"
         L"                  {{InformationHighlight}}D{{Information}}  Date                     {{InformationHighlight}}T{{Information}}  Time\n"
