@@ -261,6 +261,7 @@
     <ClCompile Include="IatHook\IatPatch.cpp" />
     <ClCompile Include="MaskGroupingTests.cpp" />
     <ClCompile Include="Mocks\FileSystemMock.cpp" />
+    <ClCompile Include="Mocks\ZipBuilder.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
@@ -290,6 +291,10 @@
     <ClCompile Include="ProfilePathResolverTests.cpp" />
     <ClCompile Include="ReparsePointResolverTests.cpp" />
     <ClCompile Include="TuiWidgetsTests.cpp" />
+    <ClCompile Include="ArchiveFormatTests.cpp" />
+    <ClCompile Include="ArchiveTreeTests.cpp" />
+    <ClCompile Include="WildcardMatcherTests.cpp" />
+    <ClCompile Include="ZipReaderTests.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Mocks\MockArchiveFileAccess.h" />
@@ -299,6 +304,7 @@
     <ClInclude Include="IatHook\ScopedIatPatch.h" />
     <ClInclude Include="Mocks\FileSystemMock.h" />
     <ClInclude Include="Mocks\TestConsole.h" />
+    <ClInclude Include="Mocks\ZipBuilder.h" />
     <ClInclude Include="pch.h" />
   </ItemGroup>
   <ItemGroup>
