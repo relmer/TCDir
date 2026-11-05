@@ -69,7 +69,7 @@ HRESULT CArchiveFileAccess::Read (const filesystem::path & path, EArchiveFormat 
             break;
 
         default:
-            CHR (HRESULT_FROM_WIN32 (ERROR_NOT_SUPPORTED));
+            BAIL_OUT_IF (TRUE, HRESULT_FROM_WIN32 (ERROR_NOT_SUPPORTED));
             break;
     }
 
