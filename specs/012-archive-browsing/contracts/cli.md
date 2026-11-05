@@ -35,7 +35,7 @@ One row in the primary options table:
 | `tcdir --Archives -S dir` / `--Tree dir` | Recurses through real directories and archives. |
 | `tcdir --Archives x.zip\missing` | `Error:   <full path> does not exist` (current not-found text). |
 
-## Errors (error stream, `{Error}` style)
+## Errors (existing `{Error}` console output, same path as "does not exist")
 
 | Condition | Message |
 |-----------|---------|

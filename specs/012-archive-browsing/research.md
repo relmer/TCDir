@@ -26,7 +26,7 @@
 **Format details used**:
 - End of central directory (EOCD, signature `0x06054B50`) is located by a backward scan of the last 65,557 bytes (22-byte record plus a comment of up to 65,535 bytes).
 - ZIP64: EOCD locator `0x07064B50` and ZIP64 EOCD `0x06064B50` supply 64-bit entry count, directory size and offset. The ZIP64 extra field (`0x0001`) supplies 64-bit sizes per entry.
-- Central directory header `0x02014B50`. General-purpose flag bit 0 indicates encryption; bit 11 indicates UTF-8 names. Without bit 11, names are decoded with the Info-ZIP Unicode Path extra field (`0x7075`) when present, otherwise with the OEM code page (CP437 by convention).
+- Central directory header `0x02014B50`. General-purpose flag bit 0 indicates encryption; bit 11 indicates UTF-8 names. Without bit 11, names are decoded with the Info-ZIP Unicode Path extra field (`0x7075`) when present, otherwise with the system OEM code page (`CP_OEMCP`, as Explorer does).
 - Times: the NTFS extra field (`0x000A`, tag `0x0001`) supplies a UTC FILETIME. Otherwise the DOS date/time is a local time and is converted to UTC with `TzSpecificLocalTimeToSystemTime`, which applies the DST rules in effect on that date.
 - Attributes: when the "version made by" host is MS-DOS (0), NTFS (10) or VFAT (14), the low byte of the external attributes contains the DOS attributes. When the host is Unix (3), the high 16 bits contain the Unix mode; `S_IFDIR` indicates a directory, and the absence of owner write permission maps to read-only.
 - A trailing `/` or `\` in the name indicates a directory entry.

@@ -20,25 +20,25 @@
 
 ### User Story 1 - List the Contents of an Archive (Priority: P1)
 
-A user runs `tcdir --archives release.zip` and gets a listing of the files and folders at the root of the archive. The listing has the same columns, colors, icons, sorting and summary footer as a normal directory listing. The user does not have to extract the archive or open another tool to see its contents.
+A user runs `tcdir --Archives release.zip` and gets a listing of the files and folders at the root of the archive. The listing has the same columns, colors, icons, sorting and summary footer as a normal directory listing. The user does not have to extract the archive or open another tool to see its contents.
 
 **Why this priority**: This is the core of the feature. Every other story depends on a single archive being listed as a directory.
 
-**Independent Test**: Create a .zip with a few files and one subfolder. Run `tcdir --archives <archive>` and verify that the root entries appear with sizes and dates, and that the subfolder appears as a directory.
+**Independent Test**: Create a .zip with a few files and one subfolder. Run `tcdir --Archives <archive>` and verify that the root entries appear with sizes and dates, and that the subfolder appears as a directory.
 
 **Acceptance Scenarios**:
 
-1. **Given** an archive `release.zip` with `readme.txt`, `app.exe` and folder `docs\`, **When** the user runs `tcdir --archives release.zip`, **Then** the listing contains `readme.txt`, `app.exe` and the directory `docs`, with the uncompressed size and last-modified time of each file
+1. **Given** an archive `release.zip` with `readme.txt`, `app.exe` and folder `docs\`, **When** the user runs `tcdir --Archives release.zip`, **Then** the listing contains `readme.txt`, `app.exe` and the directory `docs`, with the uncompressed size and last-modified time of each file
 2. **Given** the same archive, **When** the user runs `tcdir release.zip` without the switch, **Then** the output lists the file `release.zip` itself, identical to current behavior
 3. **Given** the same archive, **When** the user adds any existing display switch (wide, bare, sort order, attribute filter, owner, streams), **Then** the switch applies to the archive entries as it does to a real directory, or has no visible effect where the information does not exist in an archive
 4. **Given** the same archive, **When** the listing completes, **Then** the header contains the archive path as the listed directory, and the footer contains the file, directory and byte totals of the listed entries
-5. **Given** a directory that contains archives, **When** the user runs `tcdir --archives` on that directory, **Then** each archive appears in the listing as a directory instead of a file
+5. **Given** a directory that contains archives, **When** the user runs `tcdir --Archives` on that directory, **Then** each archive appears in the listing as a directory instead of a file
 
 ---
 
 ### User Story 2 - Navigate Into Folders and Filter Inside an Archive (Priority: P2)
 
-With the switch, a user runs `tcdir --archives release.zip\docs` to list a folder inside the archive, or `tcdir --archives release.zip\docs\*.md` to filter with a wildcard mask, the same way as with a real path.
+With the switch, a user runs `tcdir --Archives release.zip\docs` to list a folder inside the archive, or `tcdir --Archives release.zip\docs\*.md` to filter with a wildcard mask, the same way as with a real path.
 
 **Why this priority**: Most large archives have nested folders. A root-only listing is of limited use without a way to go deeper and filter.
 
@@ -46,8 +46,8 @@ With the switch, a user runs `tcdir --archives release.zip\docs` to list a folde
 
 **Acceptance Scenarios**:
 
-1. **Given** `release.zip` with `docs\guide.md` and `docs\api\ref.md`, **When** the user runs `tcdir --archives release.zip\docs`, **Then** the listing contains `guide.md` and the directory `api`
-2. **Given** the same archive, **When** the user runs `tcdir --archives release.zip\docs\*.md`, **Then** the listing contains only `guide.md`
+1. **Given** `release.zip` with `docs\guide.md` and `docs\api\ref.md`, **When** the user runs `tcdir --Archives release.zip\docs`, **Then** the listing contains `guide.md` and the directory `api`
+2. **Given** the same archive, **When** the user runs `tcdir --Archives release.zip\docs\*.md`, **Then** the listing contains only `guide.md`
 3. **Given** an archive whose entries are file paths with no explicit folder entries, **When** the user lists it, **Then** the implied folders appear as directories
 4. **Given** a path inside an archive that does not exist, **When** the user lists it, **Then** tcdir reports the same "not found" error it reports for a missing real path
 5. **Given** a path that continues past an archive file, **When** the user runs tcdir on it without the switch, **Then** tcdir reports the path as not found, identical to current behavior
@@ -56,7 +56,7 @@ With the switch, a user runs `tcdir --archives release.zip\docs` to list a folde
 
 ### User Story 3 - Recursive and Tree Listings Through Archives (Priority: P2)
 
-A user runs `tcdir --archives -S` or `tcdir --archives --Tree` on a real directory. tcdir descends into every archive in the tree, the same way it descends into a subdirectory. This also applies when the target itself is an archive.
+A user runs `tcdir --Archives -S` or `tcdir --Archives --Tree` on a real directory. tcdir descends into every archive in the tree, the same way it descends into a subdirectory. This also applies when the target itself is an archive.
 
 **Why this priority**: Searching a whole tree, including archive contents, for a file is a primary use of this feature. It depends only on Story 1.
 
@@ -64,10 +64,10 @@ A user runs `tcdir --archives -S` or `tcdir --archives --Tree` on a real directo
 
 **Acceptance Scenarios**:
 
-1. **Given** a directory `src` that contains `lib.zip` with nested folders, **When** the user runs `tcdir --archives -S src`, **Then** every folder inside `lib.zip` is listed in turn with its subtotal, and the grand total includes the archive contents
-2. **Given** the same directory, **When** the user runs `tcdir --archives --Tree src`, **Then** the tree contains the contents of `lib.zip` under its entry, with the same connectors and depth limit that apply to real directories
+1. **Given** a directory `src` that contains `lib.zip` with nested folders, **When** the user runs `tcdir --Archives -S src`, **Then** every folder inside `lib.zip` is listed in turn with its subtotal, and the grand total includes the archive contents
+2. **Given** the same directory, **When** the user runs `tcdir --Archives --Tree src`, **Then** the tree contains the contents of `lib.zip` under its entry, with the same connectors and depth limit that apply to real directories
 3. **Given** the same directory, **When** the user runs `tcdir -S src` or `tcdir --Tree src` without the switch, **Then** `lib.zip` is listed as a file and the output is identical to current behavior
-4. **Given** the same directory, **When** the user runs `tcdir --archives -S src\*.cpp`, **Then** `.cpp` files inside archives match the mask the same way as `.cpp` files in real subdirectories
+4. **Given** the same directory, **When** the user runs `tcdir --Archives -S src\*.cpp`, **Then** `.cpp` files inside archives match the mask the same way as `.cpp` files in real subdirectories
 
 ---
 
@@ -82,7 +82,7 @@ A user who prefers archives as directories in every listing sets this option in 
 **Acceptance Scenarios**:
 
 1. **Given** the option is set in the config file or TCDIR, **When** the user runs `tcdir`, **Then** archives appear as directories
-2. **Given** the option is set, **When** the user runs `tcdir --archives-`, **Then** archives appear as files, identical to current behavior
+2. **Given** the option is set, **When** the user runs `tcdir --Archives-`, **Then** archives appear as files, identical to current behavior
 3. **Given** the option is set, **When** the user runs `tcdir --Config` or `tcdir --Env`, **Then** the output includes the option and its value
 
 ---
@@ -105,7 +105,7 @@ Beyond .zip, the user can browse the other archive formats that Windows can read
 
 ### Edge Cases
 
-- A corrupt or truncated archive, or a file with an archive extension that is not an archive: tcdir prints a clear error on stderr, lists nothing for that archive and continues. During `-S` or `--Tree`, the error does not stop the recursion.
+- A corrupt or truncated archive, or a file with an archive extension that is not an archive: tcdir prints a clear error, lists nothing for that archive and continues. During `-S` or `--Tree`, the error does not stop the recursion.
 - A password-protected archive or one with encrypted entries: tcdir lists the entry names, sizes and dates where the format exposes them without the password. If the format encrypts the listing itself, tcdir reports that the archive is encrypted. tcdir never prompts for a password.
 - An empty archive: the output matches the output for an empty directory.
 - Entry paths with forward slashes, or a mix of `/` and `\`: both are path separators.
@@ -122,7 +122,7 @@ Beyond .zip, the user can browse the other archive formats that Windows can read
 
 ### Functional Requirements
 
-- **FR-001**: tcdir MUST add a switch, `--archives` (the plan phase confirms the final switch text), that turns on archive browsing. Without the switch, tcdir MUST treat archives as ordinary files, identical to current behavior.
+- **FR-001**: tcdir MUST add a switch, `--Archives`, that turns on archive browsing. Without the switch, tcdir MUST treat archives as ordinary files, identical to current behavior.
 - **FR-002**: With the switch, tcdir MUST treat every file of a supported archive format as a directory: in the target path, in directory listings, and in `-S` and `--Tree` recursion.
 - **FR-003**: With the switch, a command-line target that resolves to an archive MUST list the archive root contents.
 - **FR-004**: With the switch, tcdir MUST accept target paths that continue past an archive file into it (`archive.zip\folder\sub`) and list that folder inside the archive.
@@ -135,9 +135,9 @@ Beyond .zip, the user can browse the other archive formats that Windows can read
 - **FR-011**: tcdir MUST support .zip and .iso, plus every other archive format that Windows can read with its built-in support. tcdir MUST NOT bundle a third-party archive library unless the plan phase finds that Windows cannot read a required format.
 - **FR-012**: Listing an .iso image MUST NOT mount it or otherwise change system state.
 - **FR-013**: With the switch, `-S` and `--Tree` MUST descend into archives with the same rules, depth limit and masks that apply to real subdirectories.
-- **FR-014**: The option MUST be settable as a default in the TCDIR environment variable and the config file, MUST be turned off for one command with the negated switch (`--archives-`), and MUST appear in the `--Env` and `--Config` output.
+- **FR-014**: The option MUST be settable as a default in the TCDIR environment variable and the config file, MUST be turned off for one command with the negated switch (`--Archives-`), and MUST appear in the `--Env` and `--Config` output.
 - **FR-015**: tcdir MUST NEVER extract archive contents to disk or modify the archive, and MUST NOT decompress entry data merely to list it, except where a format requires a full scan to enumerate its entries.
-- **FR-016**: Errors that occur while tcdir opens or reads an archive MUST go to stderr in the existing tcdir error style and MUST NOT stop the listing of other targets or the rest of a recursion.
+- **FR-016**: Errors that occur while tcdir opens or reads an archive MUST use the existing tcdir error output (the `Error:` line style of the "does not exist" message) and MUST NOT stop the listing of other targets or the rest of a recursion.
 - **FR-017**: The switch MUST be documented in the `-?` help output.
 
 ### Key Entities
