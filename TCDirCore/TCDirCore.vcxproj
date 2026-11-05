@@ -214,6 +214,9 @@
     <ClInclude Include="WildcardMatcher.h" />
     <ClInclude Include="ByteSource.h" />
     <ClInclude Include="ArchiveEntry.h" />
+    <ClInclude Include="DiscImage.h" />
+    <ClInclude Include="IsoReader.h" />
+    <ClInclude Include="UdfReader.h" />
     <ClInclude Include="AliasBlockGenerator.h" />
     <ClInclude Include="AliasManager.h" />
     <ClInclude Include="AnsiCodes.h" />
@@ -275,6 +278,9 @@
     <ClCompile Include="ArchiveFormat.cpp" />
     <ClCompile Include="WildcardMatcher.cpp" />
     <ClCompile Include="ByteSource.cpp" />
+    <ClCompile Include="DiscImage.cpp" />
+    <ClCompile Include="IsoReader.cpp" />
+    <ClCompile Include="UdfReader.cpp" />
     <ClCompile Include="AliasBlockGenerator.cpp" />
     <ClCompile Include="AliasManager.cpp" />
     <ClCompile Include="CommandLine.cpp" />

@@ -262,6 +262,7 @@
     <ClCompile Include="MaskGroupingTests.cpp" />
     <ClCompile Include="Mocks\FileSystemMock.cpp" />
     <ClCompile Include="Mocks\ZipBuilder.cpp" />
+    <ClCompile Include="Mocks\IsoImageBuilder.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
@@ -277,6 +278,7 @@
     <ClCompile Include="NerdFontInstallerTests.cpp" />
     <ClCompile Include="JsonParserTests.cpp" />
     <ClCompile Include="NerdFontDetectorTests.cpp" />
+    <ClCompile Include="IsoReaderTests.cpp" />
     <ClCompile Include="PathEllipsisTests.cpp" />
     <ClCompile Include="CommandLineTests.cpp" />
     <ClCompile Include="ConsoleTests.cpp" />
@@ -303,6 +305,7 @@
     <ClInclude Include="IatHook\IatPatch.h" />
     <ClInclude Include="IatHook\ScopedIatPatch.h" />
     <ClInclude Include="Mocks\FileSystemMock.h" />
+    <ClInclude Include="Mocks\IsoImageBuilder.h" />
     <ClInclude Include="Mocks\TestConsole.h" />
     <ClInclude Include="Mocks\ZipBuilder.h" />
     <ClInclude Include="pch.h" />
