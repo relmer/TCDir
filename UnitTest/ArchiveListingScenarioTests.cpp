@@ -11,6 +11,7 @@
 #include "../TCDirCore/DriveInfo.h"
 #include "../TCDirCore/Flag.h"
 #include "../TCDirCore/MultiThreadedLister.h"
+#include "../TCDirCore/ResultsDisplayerNormal.h"
 #include "../TCDirCore/ResultsDisplayerTree.h"
 
 
@@ -233,6 +234,69 @@ namespace UnitTest
             Assert::AreEqual  (size_t (3), pDir->m_vNames.size());
             Assert::IsTrue    (CFlag::IsSet (CCapturingResultsDisplayer::AttributesOf (*pDir, L"docs"), FILE_ATTRIBUTE_DIRECTORY));
             Assert::IsTrue    (CFlag::IsNotSet (CCapturingResultsDisplayer::AttributesOf (*pDir, L"readme.txt"), FILE_ATTRIBUTE_DIRECTORY));
+        }
+
+
+
+
+        TEST_METHOD(AttributeFilter_DirectoriesOnly)
+        {
+            SFixture             fixture;
+            ScopedFileSystemMock mock     (fixture.m_tree);
+            CArchiveTestLister   lister   (fixture.m_cmdLinePtr, fixture.m_consolePtr, fixture.m_configPtr);
+
+            fixture.m_cmdLinePtr->m_dwAttributesRequired = FILE_ATTRIBUTE_DIRECTORY;
+
+            lister.SetArchiveFileSystem (fixture.m_archiveFsPtr);
+            lister.List (MaskGroup (L"C:\\MockRoot\\release.zip", { L"*" }));
+
+            auto pDir = lister.Displayer().Find (L"C:\\MockRoot\\release.zip");
+
+            Assert::IsNotNull (pDir);
+            Assert::AreEqual  (size_t (1), pDir->m_vNames.size());
+            Assert::AreEqual  (L"docs", pDir->m_vNames[0].c_str());
+        }
+
+
+
+
+        TEST_METHOD(EmptyArchive_ListsNoEntries)
+        {
+            SFixture             fixture;
+            ScopedFileSystemMock mock     (fixture.m_tree);
+            CArchiveTestLister   lister   (fixture.m_cmdLinePtr, fixture.m_consolePtr, fixture.m_configPtr);
+
+            fixture.m_accessPtr->AddArchive (L"C:\\MockRoot\\empty.zip", {});
+
+            lister.SetArchiveFileSystem (fixture.m_archiveFsPtr);
+            lister.List (MaskGroup (L"C:\\MockRoot\\empty.zip", { L"*" }));
+
+            auto pDir = lister.Displayer().Find (L"C:\\MockRoot\\empty.zip");
+
+            Assert::IsNotNull (pDir);
+            Assert::IsTrue    (pDir->m_vNames.empty());
+        }
+
+
+
+
+        TEST_METHOD(OwnerAndStreams_ArchiveEntriesListWithoutError)
+        {
+            SFixture             fixture;
+            ScopedFileSystemMock mock     (fixture.m_tree);
+
+            fixture.m_cmdLinePtr->m_fShowOwner   = true;
+            fixture.m_cmdLinePtr->m_fShowStreams = true;
+
+            CDirectoryLister lister (fixture.m_cmdLinePtr, fixture.m_consolePtr, fixture.m_configPtr,
+                                     make_unique<CResultsDisplayerNormal> (fixture.m_cmdLinePtr, fixture.m_consolePtr, fixture.m_configPtr, false));
+
+            lister.SetArchiveFileSystem (fixture.m_archiveFsPtr);
+            lister.List (MaskGroup (L"C:\\MockRoot\\release.zip", { L"*" }));
+            fixture.m_consolePtr->Flush();
+
+            Assert::IsTrue (fixture.m_consolePtr->m_strCaptured.find (L"readme.txt") != wstring::npos);
+            Assert::IsTrue (fixture.m_consolePtr->m_strCaptured.find (L"Error") == wstring::npos);
         }
 
 
