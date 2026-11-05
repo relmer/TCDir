@@ -995,6 +995,106 @@ namespace UnitTest
 
 
 
+
+        //
+        //  --Archives switch parsing
+        //
+
+        TEST_METHOD(ParseArchivesSwitch_DefaultIsOff)
+        {
+            CCommandLine    cl;
+            const wchar_t * a1      = L"*.zip";
+            wchar_t       * argv1[] = { const_cast<wchar_t *>(a1) };
+            HRESULT         hr      = cl.Parse(1, argv1);
+
+
+
+            Assert::IsTrue  (SUCCEEDED(hr));
+            Assert::IsFalse (cl.m_fArchives);
+        }
+
+
+
+
+
+        TEST_METHOD(ParseArchivesSwitchDoubleDash)
+        {
+            CCommandLine    cl;
+            const wchar_t * a1      = L"--Archives";
+            wchar_t       * argv1[] = { const_cast<wchar_t *>(a1) };
+            HRESULT         hr      = cl.Parse(1, argv1);
+
+
+
+            Assert::IsTrue (SUCCEEDED(hr));
+            Assert::IsTrue (cl.m_fArchives);
+        }
+
+
+
+
+
+        TEST_METHOD(ParseArchivesSwitchSlashLowercase)
+        {
+            CCommandLine    cl;
+            const wchar_t * a1      = L"/archives";
+            wchar_t       * argv1[] = { const_cast<wchar_t *>(a1) };
+            HRESULT         hr      = cl.Parse(1, argv1);
+
+
+
+            Assert::IsTrue (SUCCEEDED(hr));
+            Assert::IsTrue (cl.m_fArchives);
+        }
+
+
+
+
+
+        TEST_METHOD(ParseArchivesDisableSwitch_OverridesConfigDefault)
+        {
+            CConfig         config;
+            CCommandLine    cl;
+            const wchar_t * a1      = L"--Archives-";
+            wchar_t       * argv1[] = { const_cast<wchar_t *>(a1) };
+            HRESULT         hr      = S_OK;
+
+
+
+            config.SetEnvironmentProvider (&s_noOpEnv);
+            config.Initialize (FC_LightGrey);
+            config.m_fArchives = true;
+
+            cl.ApplyConfigDefaults (config);
+            Assert::IsTrue (cl.m_fArchives);
+
+            hr = cl.Parse(1, argv1);
+
+            Assert::IsTrue  (SUCCEEDED(hr));
+            Assert::IsFalse (cl.m_fArchives);
+        }
+
+
+
+
+
+        TEST_METHOD(ApplyConfigDefaults_Archives_TransfersToCommandLine)
+        {
+            CConfig      config;
+            CCommandLine cl;
+
+            config.SetEnvironmentProvider (&s_noOpEnv);
+            config.Initialize (FC_LightGrey);
+            config.m_fArchives = true;
+
+            cl.ApplyConfigDefaults (config);
+
+            Assert::IsTrue (cl.m_fArchives);
+        }
+
+
+
+
         TEST_METHOD(ParseSetAliasesSwitch)
         {
             CCommandLine    cl;

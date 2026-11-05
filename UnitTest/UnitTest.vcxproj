@@ -252,6 +252,8 @@
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="ArchiveListingScenarioTests.cpp" />
+    <ClCompile Include="ArchiveFileSystemTests.cpp" />
     <ClCompile Include="ConfigTests.cpp" />
     <ClCompile Include="ConfigFileReaderTests.cpp" />
     <ClCompile Include="ConfigFileTests.cpp" />
@@ -290,6 +292,7 @@
     <ClCompile Include="TuiWidgetsTests.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Mocks\MockArchiveFileAccess.h" />
     <ClInclude Include="EhmTestHelper.h" />
     <ClInclude Include="GitHubReleaseSnapshot.h" />
     <ClInclude Include="IatHook\IatPatch.h" />

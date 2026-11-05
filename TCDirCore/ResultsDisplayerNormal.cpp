@@ -220,8 +220,22 @@ HRESULT CResultsDisplayerNormal::DisplayResultsNormalDateAndTime (const FILETIME
     WCHAR      szTime[9]  = { 0 };  // "12:34 PM"   + null = 9 characters
     SYSTEMTIME st         = { 0 };
     SYSTEMTIME stLocal    = { 0 };
+    bool       fNoTime    = ftLastWriteTime.dwLowDateTime == 0 && ftLastWriteTime.dwHighDateTime == 0;
 
 
+
+    //
+    // Archive entries can have no time at all; the columns are blank
+    // instead of 1601-01-01.
+    //
+
+    if (fNoTime)
+    {
+        m_consolePtr->ColorPrintf (L"{Date}%*s  {Time}%*s{Default} ",
+                                   static_cast<int> (ARRAYSIZE (szDate) - 1), L"",
+                                   static_cast<int> (ARRAYSIZE (szTime) - 1), L"");
+        BAIL_OUT_IF (TRUE, S_OK);
+    }
 
     fSuccess = FileTimeToSystemTime (&ftLastWriteTime, &st);
     CWRA (fSuccess);
