@@ -332,7 +332,7 @@ SColumnLayout CResultsDisplayerWide::TryColumnCount (const vector<size_t> & vEff
 void CResultsDisplayerWide::DisplayFileResults (const CDirectoryInfo & di)
 {                                 
     HRESULT        hr          = S_OK;
-    bool           fInSyncRoot = IsUnderSyncRoot (di.m_dirPath.c_str());
+    bool           fInSyncRoot = !di.m_fInArchive && IsUnderSyncRoot (di.m_dirPath.c_str());
     bool           fEllipsize  = !m_cmdLinePtr->m_fEllipsize.has_value() || m_cmdLinePtr->m_fEllipsize.value();
     vector<size_t> vDisplayWidths;
     SColumnLayout  layout;

@@ -10,8 +10,8 @@
 //
 //  CFileByteSource::Open
 //
-//  Opens the file for shared, read-only, random access.  Other processes may
-//  keep writing to or deleting the file while it is open.
+//  Opens the file for shared, read-only, random access.  Other processes can
+//  write to or delete the file while it is open.
 //
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -107,3 +107,8 @@ HRESULT CMemoryByteSource::ReadAt (ULONGLONG offset, void * pBuffer, DWORD cb)
 Error:
     return hr;
 }
+
+
+
+
+

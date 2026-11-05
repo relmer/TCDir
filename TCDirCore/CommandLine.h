@@ -83,6 +83,7 @@ public:
     optional<bool>     m_fIcons;                                                        // /Icons (true), /Icons- (false), absent (nullopt)
     bool               m_fTree                                             = false;    // --Tree switch (tree view mode)
     optional<bool>     m_fEllipsize;                                                    // --Ellipsize (true), --Ellipsize- (false), absent (nullopt = on)
+    bool               m_fArchives                                         = false;    // --Archives switch (list archive contents as directories)
     int                m_cMaxDepth                                         = 0;        // --Depth=N (0 = unlimited)
     int                m_cTreeIndent                                       = 4;        // --TreeIndent=N (1-8)
     ESizeFormat        m_eSizeFormat                                       = ESizeFormat::Default;  // --Size=Auto|Bytes

@@ -42,7 +42,7 @@ void CResultsDisplayerNormal::DisplayFileResults (const CDirectoryInfo & di)
 {
     HRESULT         hr                           = S_OK;
     size_t          cchStringLengthOfMaxFileSize = GetStringLengthOfMaxFileSize (di.m_uliLargestFileSize);
-    bool            fInSyncRoot                  = IsUnderSyncRoot (di.m_dirPath.c_str());
+    bool            fInSyncRoot                  = !di.m_fInArchive && IsUnderSyncRoot (di.m_dirPath.c_str());
     vector<wstring> owners;
     size_t          cchMaxOwnerLength            = 0;
     
@@ -659,7 +659,7 @@ void CResultsDisplayerNormal::GetFileOwners (const CDirectoryInfo & di, vector<w
     for (const auto & fileInfo : di.m_vMatches)
     {
         filesystem::path fullPath = di.m_dirPath / fileInfo.cFileName;
-        wstring          owner    = GetFileOwner (fullPath.c_str());
+        wstring          owner    = di.m_fInArchive ? wstring() : GetFileOwner (fullPath.c_str());
         
         cchMaxOwnerLength = max (cchMaxOwnerLength, owner.length());
         owners.push_back (move (owner));

@@ -99,6 +99,15 @@ public:
     ULARGE_INTEGER                          m_uliStreamBytesUsed = {};
 
     //
+    // Archive browsing: m_dirPath is a folder inside an archive, and the
+    // archive that failed to parse (printed by the display thread)
+    //
+
+    bool                                    m_fInArchive         = false;
+    filesystem::path                        m_archiveErrorPath;
+    wstring                                 m_strArchiveError;
+
+    //
     // Multithreading support members (unused in single-threaded mode)
     //
 

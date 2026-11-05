@@ -702,6 +702,19 @@ HRESULT CCommandLine::HandleLongSwitch (LPCWSTR pszArg, int & cArg, WCHAR ** & p
     }
 
     //
+    //  Archives switch: supports negation via --Archives-
+    //
+
+    if (hr != S_OK)
+    {
+        if (_wcsicmp (strSwitch.c_str(), L"archives") == 0)
+        {
+            m_fArchives = !fNegated;
+            hr = S_OK;
+        }
+    }
+
+    //
     //  Parameterized switches: --Depth=N, --TreeIndent=N
     //  Support both '=' separator and space separator
     //
@@ -816,6 +829,7 @@ bool CCommandLine::IsRecognizedLongSwitch (const wstring & strSwitch)
         L"icons",
         L"tree",
         L"ellipsize",
+        L"archives",
         L"depth",
         L"treeindent",
         L"size",

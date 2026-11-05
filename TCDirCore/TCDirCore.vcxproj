@@ -204,6 +204,15 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="ZipReader.h" />
+    <ClInclude Include="FileEnumerator.h" />
+    <ClInclude Include="ArchiveFileSystem.h" />
+    <ClInclude Include="ArchiveFileAccess.h" />
+    <ClInclude Include="ArchiveTree.h" />
+    <ClInclude Include="ArchiveFormat.h" />
+    <ClInclude Include="WildcardMatcher.h" />
+    <ClInclude Include="ByteSource.h" />
+    <ClInclude Include="ArchiveEntry.h" />
     <ClInclude Include="ArchiveEntry.h,ByteSource.h" />
     <ClInclude Include="AliasBlockGenerator.h" />
     <ClInclude Include="AliasManager.h" />
@@ -257,6 +266,13 @@
     <ClInclude Include="WorkQueue.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="ZipReader.cpp" />
+    <ClCompile Include="FileEnumerator.cpp" />
+    <ClCompile Include="ArchiveFileSystem.cpp" />
+    <ClCompile Include="ArchiveFileAccess.cpp" />
+    <ClCompile Include="ArchiveTree.cpp" />
+    <ClCompile Include="ArchiveFormat.cpp" />
+    <ClCompile Include="WildcardMatcher.cpp" />
     <ClCompile Include="ByteSource.cpp" />
     <ClCompile Include="AliasBlockGenerator.cpp" />
     <ClCompile Include="AliasManager.cpp" />

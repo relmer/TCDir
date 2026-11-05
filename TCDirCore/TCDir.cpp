@@ -4,6 +4,7 @@
 #include "pch.h"
 
 #include "AliasManager.h"
+#include "ArchiveFileSystem.h"
 #include "CommandLine.h"
 #include "Config.h"
 #include "Console.h"
@@ -198,10 +199,19 @@ static void RunDirectoryListing (
     shared_ptr<CConsole>       consolePtr,
     shared_ptr<CConfig>        configPtr)
 {
-    unique_ptr<IResultsDisplayer> displayer = CreateDisplayer (cmdlinePtr, consolePtr, configPtr);
-    CDirectoryLister              dirLister   (cmdlinePtr, consolePtr, configPtr, std::move (displayer));
+    unique_ptr<IResultsDisplayer>  displayer    = CreateDisplayer (cmdlinePtr, consolePtr, configPtr);
+    CDirectoryLister               dirLister      (cmdlinePtr, consolePtr, configPtr, std::move (displayer));
+    shared_ptr<CArchiveFileSystem> archiveFsPtr;
 
-    auto groups = CMaskGrouper::GroupMasksByDirectory (cmdlinePtr->m_listMask);
+
+
+    if (cmdlinePtr->m_fArchives)
+    {
+        archiveFsPtr = make_shared<CArchiveFileSystem> (make_shared<CArchiveFileAccess>());
+        dirLister.SetArchiveFileSystem (archiveFsPtr);
+    }
+
+    auto groups = CMaskGrouper::GroupMasksByDirectory (cmdlinePtr->m_listMask, archiveFsPtr.get());
 
 
 
