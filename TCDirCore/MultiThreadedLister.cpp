@@ -326,7 +326,8 @@ HRESULT CMultiThreadedLister::EnumerateMatchingFiles (shared_ptr<CDirectoryInfo>
         error);
 
         //
-        // A spec with no matches is not an error; an unreadable archive is.
+        // A spec with no matches is not an error; an unreadable archive is,
+        // and so is an enumeration that fails part way through.
         //
 
         if (!error.m_strMessage.empty())
@@ -336,7 +337,12 @@ HRESULT CMultiThreadedLister::EnumerateMatchingFiles (shared_ptr<CDirectoryInfo>
             CHR (hr);
         }
 
-        hr = S_OK;
+        if (IsBenignEnumerationError (hr))
+        {
+            hr = S_OK;
+        }
+
+        CHR (hr);
 
         if (StopRequested())
         {
@@ -445,13 +451,40 @@ HRESULT CMultiThreadedLister::EnumerateSubdirectories (shared_ptr<CDirectoryInfo
     error);
 
     //
-    // The directory was already enumerated for matching files, so a failure
-    // here (no entries, or an archive error already recorded) changes nothing.
+    // The directory was already enumerated for matching files, so no entries,
+    // or an archive error that is already in pDirInfo, is not an error here.
+    // Any other failure part way through the enumeration is.
     //
 
-    hr = S_OK;
+    if (!error.m_strMessage.empty() || IsBenignEnumerationError (hr))
+    {
+        hr = S_OK;
+    }
 
     return hr;
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CMultiThreadedLister::IsBenignEnumerationError
+//
+//  True for the results of an enumeration with nothing to list: no entries
+//  match, the path is missing, or the directory is not readable (an
+//  unreadable directory lists as empty, as it did before the enumerator).
+//
+////////////////////////////////////////////////////////////////////////////////
+
+bool CMultiThreadedLister::IsBenignEnumerationError (HRESULT hr)
+{
+    return SUCCEEDED (hr)                                   ||
+           hr == HRESULT_FROM_WIN32 (ERROR_FILE_NOT_FOUND)  ||
+           hr == HRESULT_FROM_WIN32 (ERROR_PATH_NOT_FOUND)  ||
+           hr == HRESULT_FROM_WIN32 (ERROR_NO_MORE_FILES)   ||
+           hr == HRESULT_FROM_WIN32 (ERROR_ACCESS_DENIED);
 }
 
 

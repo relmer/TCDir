@@ -57,6 +57,7 @@ private:
     HRESULT PerformEnumeration            (shared_ptr<CDirectoryInfo> pDirInfo);
     HRESULT EnumerateMatchingFiles        (shared_ptr<CDirectoryInfo> pDirInfo);
     HRESULT EnumerateSubdirectories       (shared_ptr<CDirectoryInfo> pDirInfo);
+    static bool IsBenignEnumerationError  (HRESULT hr);
     void    EnqueueChildDirectory         (const WIN32_FIND_DATA & wfd, shared_ptr<CDirectoryInfo> pDirInfo);
     void    StopWorkers();
 
@@ -86,7 +87,7 @@ private:
                                            size_t iCurrent,
                                            const ChildMap & childMap);
     static bool IsPrunable                (const FileInfo & entry);
-    HRESULT RecurseIntoChildDirectory    (shared_ptr<CDirectoryInfo> pChild,
+    HRESULT RecurseIntoChildDirectory     (shared_ptr<CDirectoryInfo> pChild,
                                            const FileInfo & parentEntry,
                                            bool fIsLast,
                                            const CDriveInfo & driveInfo,

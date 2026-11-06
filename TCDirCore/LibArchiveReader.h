@@ -62,7 +62,7 @@ private:
     static void          LoadApi        (SApi & api);
     static HRESULT       Open           (const SApi & api, const SArchiveSource & source, void *& pArchive);
     static HRESULT       ReadEntries    (const SApi & api, void * pArchive, SArchiveReadResult & result);
-    static HRESULT       ReadEntryData  (const SApi & api, void * pArchive, ULONGLONG cbMax, vector<BYTE> & bytes);
+    static HRESULT       ReadEntryData  (const SApi & api, void * pArchive, ULONGLONG cbMax, ULONGLONG cbExpected, vector<BYTE> & bytes);
     static void          GetEntryInfo   (const SApi & api, void * pEntry, SLibArchiveEntryInfo & info);
     static FILETIME      UnixToFileTime (LONGLONG llSeconds, long lNanoseconds);
 

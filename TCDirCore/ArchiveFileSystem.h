@@ -63,16 +63,18 @@ private:
         HRESULT                          m_hr = S_OK;
         wstring                          m_strError;
         shared_ptr<const CArchiveTree>   m_treePtr;
+        shared_ptr<const vector<BYTE>>   m_bytesPtr;    // Extracted data of an archive stored inside another archive
     };
 
-    EArchiveFormat         FormatFor       (wstring_view fileName) const;
-    bool                   IsTargetArchive (wstring_view fileName) const;
-    shared_ptr<SCacheEntry> GetCacheEntry  (const wstring & key);
-    void                   Parse           (const filesystem::path & archivePath, SCacheEntry & entry);
-    HRESULT                OpenSource      (const filesystem::path & archivePath, SArchiveSource & source);
-    bool                   RegisterNested  (const SArchiveLocation & location);
+    EArchiveFormat          FormatFor       (wstring_view fileName) const;
+    bool                    IsTargetArchive (wstring_view fileName) const;
+    shared_ptr<SCacheEntry> GetCacheEntry   (const wstring & key);
+    void                    Parse           (const filesystem::path & archivePath, SCacheEntry & entry);
+    HRESULT                 OpenSource      (const filesystem::path & archivePath, SArchiveSource & source);
+    HRESULT                 OpenOuterSource (const filesystem::path & outerPath, SArchiveSource & source);
+    bool                    RegisterNested  (const SArchiveLocation & location);
 
-    static wstring         MakeKey         (const filesystem::path & path);
+    static wstring          MakeKey         (const filesystem::path & path);
 
     static constexpr DWORD     s_kdwUnavailableAttributes = FILE_ATTRIBUTE_OFFLINE | FILE_ATTRIBUTE_RECALL_ON_DATA_ACCESS;
     static constexpr ULONGLONG s_kcbMaxNestedArchive      = 256ull * 1024 * 1024;   // Largest archive extracted from another archive

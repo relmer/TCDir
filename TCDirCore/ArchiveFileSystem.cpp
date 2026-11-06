@@ -130,38 +130,60 @@ bool CArchiveFileSystem::IsRegisteredArchive (const filesystem::path & archivePa
 
 bool CArchiveFileSystem::Resolve (const filesystem::path & dirPath, SArchiveLocation & location) const
 {
-    filesystem::path   normalized = dirPath.lexically_normal();
-    filesystem::path   current    = normalized;
-    filesystem::path   parent;
-    wstring            strFull;
-    bool               fFound     = false;
+    filesystem::path           normalized = dirPath.lexically_normal();
+    filesystem::path           current    = normalized;
+    vector<filesystem::path>   ancestors;
+    vector<wstring>            keys;
+    wstring                    strFull;
+    bool                       fEmpty     = false;
+    bool                       fFound     = false;
 
 
 
-    lock_guard<mutex> lock (m_mutex);
-
-    while (current.has_relative_path())
     {
-        if (m_setArchives.contains (MakeKey (current)))
+        lock_guard<mutex> lock (m_mutex);
+
+        fEmpty = m_setArchives.empty();
+    }
+
+    //
+    // Most directories have no archive above them.  The keys are computed
+    // before the lock is taken so that worker threads don't serialize on it.
+    //
+
+    while (!fEmpty && current.has_relative_path())
+    {
+        ancestors.push_back (current);
+        keys.push_back (MakeKey (current));
+        current = current.parent_path();
+    }
+
+    {
+        lock_guard<mutex> lock (m_mutex);
+
+        for (size_t i = 0; !fFound && i < keys.size(); ++i)
         {
-            fFound  = true;
-            strFull = normalized.wstring();
-
-            location.m_archivePath  = current;
-            location.m_strInnerPath = strFull.substr (min (current.wstring().size(), strFull.size()));
-            location.m_strInnerPath.erase (0, location.m_strInnerPath.find_first_not_of (L"\\/"));
-
-            while (!location.m_strInnerPath.empty() &&
-                   (location.m_strInnerPath.back() == L'\\' || location.m_strInnerPath.back() == L'/'))
+            if (m_setArchives.contains (keys[i]))
             {
-                location.m_strInnerPath.pop_back();
+                fFound  = true;
+                current = ancestors[i];
             }
-
-            break;
         }
+    }
 
-        parent  = current.parent_path();
-        current = parent;
+    if (fFound)
+    {
+        strFull = normalized.wstring();
+
+        location.m_archivePath  = current;
+        location.m_strInnerPath = strFull.substr (min (current.wstring().size(), strFull.size()));
+        location.m_strInnerPath.erase (0, location.m_strInnerPath.find_first_not_of (L"\\/"));
+
+        while (!location.m_strInnerPath.empty() &&
+               (location.m_strInnerPath.back() == L'\\' || location.m_strInnerPath.back() == L'/'))
+        {
+            location.m_strInnerPath.pop_back();
+        }
     }
 
     return fFound;
@@ -431,7 +453,8 @@ void CArchiveFileSystem::Parse (const filesystem::path & archivePath, SCacheEntr
     hr = CArchiveTree::Build (result.m_vEntries, treePtr);
     CHR (hr);
 
-    entry.m_treePtr = move (treePtr);
+    entry.m_treePtr  = move (treePtr);
+    entry.m_bytesPtr = source.m_bytesPtr;
 
 
 
@@ -459,8 +482,9 @@ Error:
 //  Returns the bytes of archivePath.  A real archive file is checked first
 //  so that a cloud placeholder is never opened (opening it would start a
 //  download).  An archive stored inside another archive is extracted from
-//  that archive into memory, which in turn may be stored inside another
-//  archive.
+//  that archive into memory.  archiveint.dll does the extraction and cannot
+//  read UDF, so a failure to extract from a disc image is reported as
+//  ERROR_UNSUPPORTED_TYPE rather than as a fault in the inner archive.
 //
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -471,6 +495,7 @@ HRESULT CArchiveFileSystem::OpenSource (const filesystem::path & archivePath, SA
     SArchiveSource     outerSource;
     filesystem::path   entryPath;
     DWORD              dwAttrs     = INVALID_FILE_ATTRIBUTES;
+    bool               fOuterIso   = false;
 
 
 
@@ -478,12 +503,19 @@ HRESULT CArchiveFileSystem::OpenSource (const filesystem::path & archivePath, SA
 
     if (Resolve (archivePath.parent_path(), outer))
     {
-        hr = OpenSource (outer.m_archivePath, outerSource);
+        hr = OpenOuterSource (outer.m_archivePath, outerSource);
         CHR (hr);
 
         entryPath = filesystem::path (outer.m_strInnerPath) / archivePath.filename();
+        fOuterIso = FormatFor (outer.m_archivePath.filename().wstring()) == EArchiveFormat::Iso;
 
         hr = m_accessPtr->ExtractEntry (outerSource, entryPath.native(), s_kcbMaxNestedArchive, source.m_bytesPtr);
+
+        if (fOuterIso && (hr == HRESULT_FROM_WIN32 (ERROR_BAD_FORMAT) || hr == HRESULT_FROM_WIN32 (ERROR_FILE_NOT_FOUND)))
+        {
+            hr = HRESULT_FROM_WIN32 (ERROR_UNSUPPORTED_TYPE);
+        }
+
         CHR (hr);
     }
     else
@@ -494,6 +526,52 @@ HRESULT CArchiveFileSystem::OpenSource (const filesystem::path & archivePath, SA
         CBREx ((dwAttrs & s_kdwUnavailableAttributes) == 0, HRESULT_FROM_WIN32 (ERROR_FILE_OFFLINE));
 
         source.m_path = archivePath;
+    }
+
+
+
+Error:
+    return hr;
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CArchiveFileSystem::OpenOuterSource
+//
+//  Returns the source of an archive that contains another archive.  The
+//  outer archive has already been parsed (its tree listed the inner one), so
+//  its cache entry supplies the extracted bytes when it is itself nested;
+//  otherwise it is a real file whose attributes were checked at parse time.
+//
+////////////////////////////////////////////////////////////////////////////////
+
+HRESULT CArchiveFileSystem::OpenOuterSource (const filesystem::path & outerPath, SArchiveSource & source)
+{
+    HRESULT                          hr       = S_OK;
+    shared_ptr<const CArchiveTree>   treePtr;
+    wstring                          strError;
+    shared_ptr<SCacheEntry>          entryPtr;
+
+
+
+    source = {};
+
+    hr = GetTree (outerPath, treePtr, strError);
+    CHR (hr);
+
+    entryPtr = GetCacheEntry (MakeKey (outerPath));
+
+    if (entryPtr->m_bytesPtr != nullptr)
+    {
+        source.m_bytesPtr = entryPtr->m_bytesPtr;
+    }
+    else
+    {
+        source.m_path = outerPath;
     }
 
 
@@ -537,6 +615,10 @@ wstring CArchiveFileSystem::FormatError (HRESULT hr, EArchiveFormat format, bool
     else if (hr == HRESULT_FROM_WIN32 (ERROR_FILE_TOO_LARGE))
     {
         strError = L" is too large to browse inside another archive";
+    }
+    else if (hr == HRESULT_FROM_WIN32 (ERROR_UNSUPPORTED_TYPE))
+    {
+        strError = L" cannot be extracted from this disc image";
     }
     else if (hr == HRESULT_FROM_WIN32 (ERROR_NOT_SUPPORTED) && format == EArchiveFormat::LibArchive && !fLibArchiveAvailable)
     {

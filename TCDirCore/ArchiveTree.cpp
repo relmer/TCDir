@@ -285,7 +285,8 @@ const CArchiveTree::SNode * CArchiveTree::FindFile (wstring_view innerPath) cons
 
 void CArchiveTree::EnumerateChildren (const SNode & folder, wstring_view spec, const EnumCallback & callback) const
 {
-    WIN32_FIND_DATA wfd = {};
+    WIN32_FIND_DATA   wfd          = {};
+    wstring           preparedSpec = CWildcardMatcher::PrepareSpec (spec);
 
 
 
@@ -293,7 +294,7 @@ void CArchiveTree::EnumerateChildren (const SNode & folder, wstring_view spec, c
     {
         const SNode & child = m_vNodes[iChild];
 
-        if (!CWildcardMatcher::Matches (child.m_strName, spec))
+        if (!CWildcardMatcher::MatchesPrepared (child.m_strName, preparedSpec))
         {
             continue;
         }
@@ -415,7 +416,7 @@ bool CArchiveTree::IsSkippedComponent (const wstring & component)
     return component.empty()      ||
            component == L"."      ||
            component == L".."     ||
-           component.back() == s_kchDriveSeparator;
+           component.find (s_kchDriveSeparator) != wstring::npos;
 }
 
 

@@ -250,7 +250,7 @@ HRESULT CLibArchiveReader::ExtractEntry (
     CBREx (!info.m_fSizeSet || info.m_llSize < 0 || static_cast<ULONGLONG> (info.m_llSize) <= cbMax,
            HRESULT_FROM_WIN32 (ERROR_FILE_TOO_LARGE));
 
-    hr = ReadEntryData (*pApi, pArchive, cbMax, bytes);
+    hr = ReadEntryData (*pApi, pArchive, cbMax, (info.m_fSizeSet && info.m_llSize > 0) ? static_cast<ULONGLONG> (info.m_llSize) : 0, bytes);
     CHR (hr);
 
 
@@ -417,19 +417,22 @@ Error:
 //
 //  CLibArchiveReader::ReadEntryData
 //
-//  Reads the data of the current entry.  An entry whose data cannot be read
-//  (for example a compression method the build doesn't support) is reported
-//  as ERROR_BAD_FORMAT.
+//  Reads the data of the current entry.  cbExpected is the size from the
+//  entry header (0 when unknown) and reserves the buffer up front.  An entry
+//  whose data cannot be read (for example a compression method the build
+//  doesn't support) is reported as ERROR_BAD_FORMAT.
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-HRESULT CLibArchiveReader::ReadEntryData (const SApi & api, void * pArchive, ULONGLONG cbMax, vector<BYTE> & bytes)
+HRESULT CLibArchiveReader::ReadEntryData (const SApi & api, void * pArchive, ULONGLONG cbMax, ULONGLONG cbExpected, vector<BYTE> & bytes)
 {
     HRESULT        hr      = S_OK;
     vector<BYTE>   block   (s_kcbReadBlock);
     INT_PTR        cbRead  = 0;
 
 
+
+    bytes.reserve (static_cast<size_t> (min (cbExpected, cbMax)));
 
     for (;;)
     {

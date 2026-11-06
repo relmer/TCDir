@@ -19,20 +19,43 @@
 
 bool CWildcardMatcher::Matches (wstring_view name, wstring_view spec)
 {
-    wstring upperName;
-    wstring upperSpec;
-    bool    fMatch    = false;
+    return MatchesPrepared (name, PrepareSpec (spec));
+}
 
 
 
-    if (!spec.empty())
-    {
-        upperName = ToUpper (name);
-        upperSpec = ToUpper (NormalizeSpec (spec));
-        fMatch    = MatchUpper (upperName, upperSpec);
-    }
 
-    return fMatch;
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CWildcardMatcher::PrepareSpec
+//
+//  Normalizes and uppercases spec once, so that MatchesPrepared can test many
+//  entries against it.
+//
+////////////////////////////////////////////////////////////////////////////////
+
+wstring CWildcardMatcher::PrepareSpec (wstring_view spec)
+{
+    return ToUpper (NormalizeSpec (spec));
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CWildcardMatcher::MatchesPrepared
+//
+//  Returns true when name matches a spec from PrepareSpec.  An empty spec
+//  matches nothing.
+//
+////////////////////////////////////////////////////////////////////////////////
+
+bool CWildcardMatcher::MatchesPrepared (wstring_view name, const wstring & preparedSpec)
+{
+    return !preparedSpec.empty() && MatchUpper (ToUpper (name), preparedSpec);
 }
 
 
