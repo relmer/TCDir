@@ -92,7 +92,7 @@ HRESULT CFileEnumerator::EnumerateReal (
 
     do
     {
-        MarkArchive (dirPath, wfd);
+        RegisterArchive (dirPath, wfd);
 
         fContinue = callback (wfd);
     }
@@ -163,22 +163,35 @@ Error:
 
 ////////////////////////////////////////////////////////////////////////////////
 //
-//  CFileEnumerator::MarkArchive
+//  CFileEnumerator::IsArchiveFile
 //
-//  Reports an archive file on disk as a directory and registers it, so that
-//  listing and recursion treat it like any other directory.
+//  Returns true when wfd is an archive file on disk that recursion descends
+//  into.  An archive inside an archive (fInArchive) is a plain file.
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-void CFileEnumerator::MarkArchive (const filesystem::path & dirPath, WIN32_FIND_DATA & wfd) const
+bool CFileEnumerator::IsArchiveFile (bool fInArchive, const WIN32_FIND_DATA & wfd) const
 {
-    bool fArchive = m_archiveFsPtr != nullptr && m_archiveFsPtr->IsArchiveFile (wfd);
+    return !fInArchive && m_archiveFsPtr != nullptr && m_archiveFsPtr->IsArchiveFile (wfd);
+}
 
 
 
-    if (fArchive)
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CFileEnumerator::RegisterArchive
+//
+//  Registers an archive file on disk so that its path resolves to an
+//  archive location when recursion descends into it.
+//
+////////////////////////////////////////////////////////////////////////////////
+
+void CFileEnumerator::RegisterArchive (const filesystem::path & dirPath, const WIN32_FIND_DATA & wfd) const
+{
+    if (IsArchiveFile (false, wfd))
     {
-        wfd.dwFileAttributes |= FILE_ATTRIBUTE_DIRECTORY;
         m_archiveFsPtr->RegisterArchive (dirPath / wfd.cFileName);
     }
 }

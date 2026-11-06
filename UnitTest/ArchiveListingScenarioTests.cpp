@@ -91,6 +91,19 @@ namespace UnitTest
             return INVALID_FILE_ATTRIBUTES;
         }
 
+        static ULONGLONG SizeOf (const SDirectory & directory, LPCWSTR pszName)
+        {
+            for (size_t i = 0; i < directory.m_vNames.size(); ++i)
+            {
+                if (directory.m_vNames[i] == pszName)
+                {
+                    return directory.m_vSizes[i];
+                }
+            }
+
+            return 0;
+        }
+
         static wstring Key (const filesystem::path & path)
         {
             return CWildcardMatcher::ToUpper (path.lexically_normal().wstring());
@@ -409,7 +422,7 @@ namespace UnitTest
 
 
 
-        TEST_METHOD(DirectoryListing_WithSwitch_ArchiveIsDirectory)
+        TEST_METHOD(DirectoryListing_WithSwitch_ArchiveIsFile)
         {
             SFixture                     fixture;
             ScopedFileSystemMock         mock      (fixture.m_tree);
@@ -422,9 +435,13 @@ namespace UnitTest
 
             Assert::IsTrue    (SUCCEEDED (hr));
             Assert::IsNotNull (pDir);
-            Assert::IsTrue    (CFlag::IsSet (CCapturingResultsDisplayer::AttributesOf (*pDir, L"release.zip"), FILE_ATTRIBUTE_DIRECTORY));
+            Assert::IsTrue    (CFlag::IsNotSet (CCapturingResultsDisplayer::AttributesOf (*pDir, L"release.zip"), FILE_ATTRIBUTE_DIRECTORY));
+            Assert::AreEqual  (344ull, CCapturingResultsDisplayer::SizeOf (*pDir, L"release.zip"));
             Assert::IsFalse   (pDir->m_fInArchive);
+            Assert::IsNull    (displayer.Find (L"C:\\MockRoot\\release.zip"));
+            Assert::AreEqual  (0, fixture.m_accessPtr->m_cReads.load());
         }
+
 
 
 
@@ -440,12 +457,17 @@ namespace UnitTest
 
             HRESULT hr = RunMultiThreaded (fixture, displayer, L"C:\\MockRoot", L"*", true, totals);
 
+            auto pRoot = displayer.Find (L"C:\\MockRoot");
+
             Assert::IsTrue    (SUCCEEDED (hr));
+            Assert::IsNotNull (pRoot);
+            Assert::IsTrue    (CFlag::IsNotSet (CCapturingResultsDisplayer::AttributesOf (*pRoot, L"release.zip"), FILE_ATTRIBUTE_DIRECTORY));
+            Assert::IsNotNull (displayer.Find (L"C:\\MockRoot\\release.zip"));
             Assert::IsNotNull (displayer.Find (L"C:\\MockRoot\\release.zip\\docs\\api"));
 
-            // notes.txt, main.cpp, and readme.txt, guide.md, ref.md, nested.zip inside release.zip
-            Assert::AreEqual (6u, totals.m_cFiles);
-            Assert::AreEqual (10ull + 20 + 3 + 4 + 5 + 7, totals.m_uliFileBytes.QuadPart);
+            // notes.txt, release.zip, bad.zip, main.cpp, and readme.txt, guide.md, ref.md, nested.zip inside release.zip
+            Assert::AreEqual (8u, totals.m_cFiles);
+            Assert::AreEqual (10ull + 344 + 50 + 20 + 3 + 4 + 5 + 7, totals.m_uliFileBytes.QuadPart);
         }
 
 
@@ -541,7 +563,84 @@ namespace UnitTest
 
             Assert::IsTrue   (SUCCEEDED (hr));
             Assert::IsTrue   (fixture.m_consolePtr->m_strCaptured.find (L"ref.md") != wstring::npos);
-            Assert::AreEqual (6u, totals.m_cFiles);
+            Assert::AreEqual (8u, totals.m_cFiles);
+        }
+
+
+
+
+        TEST_METHOD(TreeMode_MaskMatchesInsideArchive_ArchiveShownAsContainer)
+        {
+            SFixture             fixture;
+            ScopedFileSystemMock mock     (fixture.m_tree);
+            SListingTotals       totals   = {};
+
+            fixture.m_cmdLinePtr->m_fTree = true;
+
+            CResultsDisplayerTree treeDisplayer (fixture.m_cmdLinePtr, fixture.m_consolePtr, fixture.m_configPtr, false);
+
+            HRESULT hr = RunMultiThreaded (fixture, treeDisplayer, L"C:\\MockRoot", L"*.md", true, totals);
+            fixture.m_consolePtr->Flush();
+
+            const wstring & strOutput = fixture.m_consolePtr->m_strCaptured;
+
+            Assert::IsTrue   (SUCCEEDED (hr));
+            Assert::IsTrue   (strOutput.find (L"release.zip") != wstring::npos);
+            Assert::IsTrue   (strOutput.find (L"guide.md")    != wstring::npos);
+            Assert::IsTrue   (strOutput.find (L"notes.txt")   == wstring::npos);
+
+            // guide.md and ref.md; release.zip is a container only
+            Assert::AreEqual (2u, totals.m_cFiles);
+        }
+
+
+
+
+        TEST_METHOD(TreeMode_NoMatchesInsideArchive_ArchivePruned)
+        {
+            SFixture             fixture;
+            ScopedFileSystemMock mock     (fixture.m_tree);
+            SListingTotals       totals   = {};
+
+            fixture.m_cmdLinePtr->m_fTree = true;
+
+            CResultsDisplayerTree treeDisplayer (fixture.m_cmdLinePtr, fixture.m_consolePtr, fixture.m_configPtr, false);
+
+            HRESULT hr = RunMultiThreaded (fixture, treeDisplayer, L"C:\\MockRoot", L"*.cpp", true, totals);
+            fixture.m_consolePtr->Flush();
+
+            const wstring & strOutput = fixture.m_consolePtr->m_strCaptured;
+
+            Assert::IsTrue   (SUCCEEDED (hr));
+            Assert::IsTrue   (strOutput.find (L"main.cpp")    != wstring::npos);
+            Assert::IsTrue   (strOutput.find (L"release.zip") == wstring::npos);
+            Assert::AreEqual (1u, totals.m_cFiles);
+        }
+
+
+
+
+        TEST_METHOD(TreeMode_ArchiveMatchesMask_ShownAndCounted)
+        {
+            SFixture             fixture;
+            ScopedFileSystemMock mock     (fixture.m_tree);
+            SListingTotals       totals   = {};
+
+            fixture.m_cmdLinePtr->m_fTree = true;
+
+            CResultsDisplayerTree treeDisplayer (fixture.m_cmdLinePtr, fixture.m_consolePtr, fixture.m_configPtr, false);
+
+            HRESULT hr = RunMultiThreaded (fixture, treeDisplayer, L"C:\\MockRoot", L"*.zip", true, totals);
+            fixture.m_consolePtr->Flush();
+
+            const wstring & strOutput = fixture.m_consolePtr->m_strCaptured;
+
+            Assert::IsTrue   (SUCCEEDED (hr));
+            Assert::IsTrue   (strOutput.find (L"release.zip") != wstring::npos);
+            Assert::IsTrue   (strOutput.find (L"nested.zip")  != wstring::npos);
+
+            // release.zip, bad.zip and nested.zip inside release.zip
+            Assert::AreEqual (3u, totals.m_cFiles);
         }
 
 

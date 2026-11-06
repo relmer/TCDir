@@ -120,7 +120,7 @@ static constexpr SSwitchInfo s_kSwitchInfos[] =
     { L"Icons",      L"Enable file-type icons"          },
     { L"Tree",       L"Display directory tree view"     },
     { L"Ellipsize",  L"Truncate long link target paths" },
-    { L"Archives",   L"List archive contents as directories" },
+    { L"Archives",   L"Browse archive targets and recurse into archives" },
 };
 
 
@@ -570,7 +570,7 @@ static vector<SUsageOptionRow> BuildPrimaryOptionRows (wstring_view szShort, wst
           format (L"Displays a hierarchical directory tree view. Use {{InformationHighlight}}{0}Tree-{{Information}} to disable.", pszLong),
           L"" },
         { format (L"{{InformationHighlight}}{0}Archives{{Information}}", pszLong),
-          format (L"Lists the contents of archive files (.zip, .iso, .7z, .rar, .tar, ...) as directories, including with {{InformationHighlight}}-S{{Information}} and {{InformationHighlight}}{0}Tree{{Information}}. Use {{InformationHighlight}}{0}Archives-{{Information}} to disable.", pszLong),
+          format (L"Lists the contents of an archive file (.zip, .iso, .7z, .rar, .tar, ...) given as a path, and recurses into archive files with {{InformationHighlight}}-S{{Information}} and {{InformationHighlight}}{0}Tree{{Information}}. Archive files in a listing appear as files. Use {{InformationHighlight}}{0}Archives-{{Information}} to disable.", pszLong),
           L"" },
         { format (L"{{InformationHighlight}}{0}Ellipsize{{Information}}", pszLong),
           format (L"Truncates long link target paths with \u2026 to prevent line wrapping. Default: on. Use {{InformationHighlight}}{0}Ellipsize-{{Information}} to disable.", pszLong),
@@ -2188,7 +2188,7 @@ void CUsage::DisplayEnvVarHelp (CConsole & console, wchar_t chPrefix)
         L"                  {{InformationHighlight}}Icons{{Information}}     Enable file-type icons; use {{InformationHighlight}}Icons-{{Information}} to disable\n"
         L"                  {{InformationHighlight}}Tree{{Information}}      Display directory tree view; use {{InformationHighlight}}Tree-{{Information}} to disable\n"
         L"                  {{InformationHighlight}}Ellipsize{{Information}} Truncate long link target paths (default); use {{InformationHighlight}}Ellipsize-{{Information}} to disable\n"
-        L"                  {{InformationHighlight}}Archives{{Information}}  List archive contents as directories; use {{InformationHighlight}}Archives-{{Information}} to disable\n"
+        L"                  {{InformationHighlight}}Archives{{Information}}  Browse archive targets and recurse into archives; use {{InformationHighlight}}Archives-{{Information}} to disable\n"
         L"\n"
         L"  {{InformationHighlight}}<Item>{{Information}}      A display item:\n"
         L"                  {{InformationHighlight}}D{{Information}}  Date                     {{InformationHighlight}}T{{Information}}  Time\n"
@@ -2389,7 +2389,7 @@ void CUsage::DisplayConfigFileHelp (CConsole & console, wchar_t chPrefix)
         L"                  {{InformationHighlight}}Icons{{Information}}     Enable file-type icons; use {{InformationHighlight}}Icons-{{Information}} to disable\n"
         L"                  {{InformationHighlight}}Tree{{Information}}      Display directory tree view; use {{InformationHighlight}}Tree-{{Information}} to disable\n"
         L"                  {{InformationHighlight}}Ellipsize{{Information}} Truncate long link target paths (default); use {{InformationHighlight}}Ellipsize-{{Information}} to disable\n"
-        L"                  {{InformationHighlight}}Archives{{Information}}  List archive contents as directories; use {{InformationHighlight}}Archives-{{Information}} to disable\n"
+        L"                  {{InformationHighlight}}Archives{{Information}}  Browse archive targets and recurse into archives; use {{InformationHighlight}}Archives-{{Information}} to disable\n"
         L"\n"
         L"  {{InformationHighlight}}<Item>{{Information}}      A display item:\n"
         L"                  {{InformationHighlight}}D{{Information}}  Date                     {{InformationHighlight}}T{{Information}}  Time\n"

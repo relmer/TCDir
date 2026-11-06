@@ -410,26 +410,29 @@ HRESULT CDirectoryLister::RecurseIntoSubdirectories (
     const filesystem::path & dirPath, 
     const filesystem::path & fileSpec)
 {
-    HRESULT             hr    = S_OK;
+    HRESULT             hr          = S_OK;
     SEnumerationError   error;
+    bool                fInArchive  = m_enumerator.IsArchiveLocation (dirPath);
 
-    
+
 
     //
-    // Search for subdirectories to recurse into
+    // Search for subdirectories and archive files to recurse into
     // 
     
     hr = m_enumerator.Enumerate (dirPath, L"*", [&] (const WIN32_FIND_DATA & wfd)
     {
-        HRESULT hrChild = S_OK;
+        HRESULT hrChild    = S_OK;
+        bool    fDirectory = !IsDots (wfd.cFileName) && CFlag::IsSet (wfd.dwFileAttributes, FILE_ATTRIBUTE_DIRECTORY);
 
 
 
         //
-        // Recurse into directories, except "." and ".."
+        // Recurse into directories, except "." and "..", and into archive
+        // files
         //
-                
-        if (!IsDots (wfd.cFileName) && CFlag::IsSet (wfd.dwFileAttributes, FILE_ATTRIBUTE_DIRECTORY))
+
+        if (fDirectory || m_enumerator.IsArchiveFile (fInArchive, wfd))
         {
             hrChild = ProcessDirectory (driveInfo, dirPath / wfd.cFileName, fileSpec, IResultsDisplayer::EDirectoryLevel::Subdirectory);
             IGNORE_RETURN_VALUE (hrChild, S_OK);

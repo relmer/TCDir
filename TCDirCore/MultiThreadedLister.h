@@ -85,7 +85,8 @@ private:
     bool    IsLastVisibleEntry            (const vector<FileInfo> & vMatches,
                                            size_t iCurrent,
                                            const ChildMap & childMap);
-    HRESULT RecurseIntoChildDirectory     (shared_ptr<CDirectoryInfo> pChild,
+    static bool IsPrunable                (const FileInfo & entry);
+    HRESULT RecurseIntoChildDirectory    (shared_ptr<CDirectoryInfo> pChild,
                                            const FileInfo & parentEntry,
                                            bool fIsLast,
                                            const CDriveInfo & driveInfo,

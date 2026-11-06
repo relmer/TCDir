@@ -45,8 +45,9 @@ struct FileInfo : public WIN32_FIND_DATA
     {
     }
 
-    vector<SStreamInfo> m_vStreams;        // Alternate data streams (empty if none or not collected)
-    wstring             m_strReparseTarget;  // Resolved link target path (empty if not a supported reparse point)
+    vector<SStreamInfo> m_vStreams;                     // Alternate data streams (empty if none or not collected)
+    wstring             m_strReparseTarget;             // Resolved link target path (empty if not a supported reparse point)
+    bool                m_fArchiveContainer = false;    // Tree mode: archive file added for recursion only; it did not match a file spec
 };
 
 typedef vector<FileInfo>         FileInfoVector;

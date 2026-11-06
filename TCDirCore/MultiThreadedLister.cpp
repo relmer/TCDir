@@ -366,9 +366,10 @@ HRESULT CMultiThreadedLister::EnumerateSubdirectories (shared_ptr<CDirectoryInfo
     SEnumerationError   error;
 
     //
-    // In tree mode, directories must also appear in m_vMatches so they are
-    // visible in the interleaved tree display. Build a set of directory names
-    // already present (from EnumerateMatchingFiles) to avoid duplicates.
+    // In tree mode, directories and archive files must also appear in
+    // m_vMatches so they are visible in the interleaved tree display. Build a
+    // set of the entries already present (from EnumerateMatchingFiles) to
+    // avoid duplicates.
     //
 
     NameSet seenDirs;
@@ -381,33 +382,41 @@ HRESULT CMultiThreadedLister::EnumerateSubdirectories (shared_ptr<CDirectoryInfo
 
         for (const auto & entry : pDirInfo->m_vMatches)
         {
-            if (CFlag::IsSet (entry.dwFileAttributes, FILE_ATTRIBUTE_DIRECTORY))
+            if (CFlag::IsSet (entry.dwFileAttributes, FILE_ATTRIBUTE_DIRECTORY) ||
+                m_enumerator.IsArchiveFile (pDirInfo->m_fInArchive, entry))
             {
                 seenDirs.insert (entry.cFileName);
             }
         }
     }
 
-    // Search using "*" to find all directories
+    // Search using "*" to find all directories and archive files
     hr = m_enumerator.Enumerate (pDirInfo->m_dirPath, L"*", [&] (const WIN32_FIND_DATA & wfd)
     {
+        bool fDirectory = !IsDots (wfd.cFileName) && CFlag::IsSet (wfd.dwFileAttributes, FILE_ATTRIBUTE_DIRECTORY);
+        bool fArchive   = m_enumerator.IsArchiveFile (pDirInfo->m_fInArchive, wfd);
+
+
+
         if (StopRequested())
         {
             return false;
         }
 
-        // Enqueue directories for recursion
-        if (!IsDots (wfd.cFileName) && CFlag::IsSet (wfd.dwFileAttributes, FILE_ATTRIBUTE_DIRECTORY))
+        // Enqueue directories and archive files for recursion
+        if (fDirectory || fArchive)
         {
             lock_guard<mutex> lock (pDirInfo->m_mutex);
 
             EnqueueChildDirectory (wfd, pDirInfo);
 
             //
-            // In tree mode, add every directory to m_vMatches so the tree
-            // display can show it and recurse into it.  Skip if the directory
-            // was already added by EnumerateMatchingFiles (e.g., a directory
-            // whose name matched the file spec like *.cpp matching "foo.cpp/").
+            // In tree mode, add every directory and archive file to m_vMatches
+            // so that it is displayed in the tree and recursed into.  Skip if the
+            // entry was already added by EnumerateMatchingFiles (e.g., a
+            // directory whose name matched the file spec like *.cpp matching
+            // "foo.cpp/").  An archive file that did not match a file spec is
+            // added as a container only, and is not counted as a file.
             //
 
             if (m_cmdLinePtr->m_fTree)
@@ -415,7 +424,18 @@ HRESULT CMultiThreadedLister::EnumerateSubdirectories (shared_ptr<CDirectoryInfo
                 if (!seenDirs.contains (wfd.cFileName))
                 {
                     seenDirs.insert (wfd.cFileName);
-                    AddMatchToList (wfd, *pDirInfo, nullptr);
+
+                    if (fDirectory)
+                    {
+                        AddMatchToList (wfd, *pDirInfo, nullptr);
+                    }
+                    else
+                    {
+                        FileInfo container (wfd);
+
+                        container.m_fArchiveContainer = true;
+                        pDirInfo->m_vMatches.push_back (move (container));
+                    }
                 }
             }
         }
@@ -966,29 +986,34 @@ HRESULT CMultiThreadedLister::DisplayTreeEntries (
             CHR (E_ABORT);
         }
 
-        const FileInfo & entry  = pDirInfo->m_vMatches[i];
-        bool             fIsDir = (entry.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0;
+        const FileInfo & entry   = pDirInfo->m_vMatches[i];
+        bool             fIsDir  = (entry.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0;
+        auto             itChild = childMap.find (entry.cFileName);
 
         //
         // Determine visibility of this entry.
-        // Files are always visible.  Directories are visible only if
-        // they (or a descendant) have matching files, or if pruning
-        // is not active.
+        // Files are always visible, including archive files that matched a
+        // file spec.  Directories and container-only archive files are
+        // visible only if they (or a descendant) have matching files, or if
+        // pruning is not active.
         //
 
-        if (fIsDir && m_fTreePruningActive)
+        if (IsPrunable (entry) && m_fTreePruningActive)
         {
-            auto it = childMap.find (entry.cFileName);
-
-            if (it != childMap.end() && !WaitForTreeVisibility (it->second))
+            if (itChild != childMap.end() && !WaitForTreeVisibility (itChild->second))
             {
                 //
-                // This directory was pruned (no matching descendants).
-                // Adjust the parent's subdirectory count so that
-                // AccumulateTotals only counts directories we actually show.
+                // This entry was pruned (no matching descendants).  Adjust
+                // the parent's subdirectory count so that AccumulateTotals
+                // only counts displayed directories.  A container-only
+                // archive file was never counted.
                 //
 
-                --pDirInfo->m_cSubDirectories;
+                if (fIsDir)
+                {
+                    --pDirInfo->m_cSubDirectories;
+                }
+
                 continue;
             }
         }
@@ -998,18 +1023,14 @@ HRESULT CMultiThreadedLister::DisplayTreeEntries (
         treeDisplayer.DisplaySingleEntry (entry, treeState, fIsLast, i);
 
         //
-        // If the entry is a directory, find its child node and recurse.
+        // If the entry is a directory or an archive file, recurse into its
+        // child node.
         //
 
-        if (fIsDir)
+        if (itChild != childMap.end())
         {
-            auto it = childMap.find (entry.cFileName);
-
-            if (it != childMap.end())
-            {
-                hr = RecurseIntoChildDirectory (it->second, entry, fIsLast, driveInfo, treeDisplayer, totals, treeState);
-                IGNORE_RETURN_VALUE (hr, S_OK);
-            }
+            hr = RecurseIntoChildDirectory (itChild->second, entry, fIsLast, driveInfo, treeDisplayer, totals, treeState);
+            IGNORE_RETURN_VALUE (hr, S_OK);
         }
     }
 
@@ -1043,17 +1064,17 @@ bool CMultiThreadedLister::IsLastVisibleEntry (
 
     for (size_t j = iCurrent + 1; j < cEntries; ++j)
     {
-        const FileInfo & nextEntry  = vMatches[j];
-        bool             fNextIsDir = (nextEntry.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0;
+        const FileInfo & nextEntry = vMatches[j];
 
-        if (!fNextIsDir)
+        if (!IsPrunable (nextEntry))
         {
             return false;   // A file follows — always visible
         }
 
         //
-        // Next entry is a directory.  If pruning is not active,
-        // it's visible.  Otherwise wait for its visibility.
+        // Next entry is a directory or a container-only archive file.  If
+        // pruning is not active, it's visible.  Otherwise wait for its
+        // visibility.
         //
 
         if (!m_fTreePruningActive)
@@ -1074,6 +1095,25 @@ bool CMultiThreadedLister::IsLastVisibleEntry (
     }
 
     return true;
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CMultiThreadedLister::IsPrunable
+//
+//  Returns true for a tree entry that is hidden when tree pruning is active
+//  and nothing below it matches: a directory, or an archive file that was
+//  added only so the tree can descend into it.
+//
+////////////////////////////////////////////////////////////////////////////////
+
+bool CMultiThreadedLister::IsPrunable (const FileInfo & entry)
+{
+    return CFlag::IsSet (entry.dwFileAttributes, FILE_ATTRIBUTE_DIRECTORY) || entry.m_fArchiveContainer;
 }
 
 
