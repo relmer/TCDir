@@ -63,6 +63,8 @@ public:
 
     static constexpr LPCWSTR s_kpszCompleteSwitch = L"--Complete";
     static constexpr LPCWSTR s_kpszWordPrefix     = L"w:";
+    static constexpr LPCWSTR s_kpszProbeNumber    = L"1";      // Value for a switch that takes a number
+    static constexpr size_t  s_kcchMinLongSwitch  = 3;
 
 private:
     struct SPrefixes
@@ -73,7 +75,11 @@ private:
     };
 
     static bool    SplitPrefix       (const wstring & strWord, SPrefixes & prefixes, wstring & strRest);
-    static void    AddSwitches       (ESwitchForm eForm, const SPrefixes & prefixes, const wstring & strRest, vector<SCompletionCandidate> & candidates);
+    static void    AddSwitches       (ESwitchForm eForm, const SPrefixes & prefixes, const wstring & strRest, const SCompletionRequest & request, vector<SCompletionCandidate> & candidates);
+    static bool    IsOffered         (const SSwitchDefinition & definition, const SCompletionRequest & request, bool fContextParses);
+    static const SSwitchDefinition * DefinitionOf (const wstring & strWord);
+    static wstring ProbeFor          (const SSwitchDefinition & definition);
+    static bool    Parses            (const vector<wstring> & words, const wstring & strExtra);
     static bool    AddValues         (const SPrefixes & prefixes, const wstring & strRest, vector<SCompletionCandidate> & candidates);
     static void    AddCombinedValues (const SSwitchDefinition & definition, const wstring & strBase, const wstring & strTyped, vector<SCompletionCandidate> & candidates);
     static void    AddSingleValues   (const SSwitchDefinition & definition, const wstring & strBase, const wstring & strTyped, vector<SCompletionCandidate> & candidates);

@@ -76,9 +76,9 @@
 
 **Independent Test**: Quickstart scenario 7.
 
-- [ ] T025 [P] [US6] Write tests in UnitTest/CompleterTests.cpp: after `-W`, `-W` isn't offered; after `--Tree`, `-W`, `-B`, `-S` and `--Owner` aren't offered; `-A:` stays after `-A:H`; neither `--Icons` nor `--Icons-` after `--Icons`; alias flags in the context count as present; every candidate offered with `--Tree` parses with it (SC-005)
-- [ ] T026 [US6] Filter candidates through the catalog (present, repeatable, negatable) and `CCommandLine::Parse` of the context plus the candidate in TCDirCore/Completer.cpp
-- [ ] T027 [US6] Run quickstart scenario 7, build, run all tests, commit the phase
+- [X] T025 [P] [US6] Write tests in UnitTest/CompleterTests.cpp: after `-W`, `-W` isn't offered; after `--Tree`, `-W`, `-B`, `-S` and `--Owner` aren't offered; `-A:` stays after `-A:H`; neither `--Icons` nor `--Icons-` after `--Icons`; alias flags in the context count as present; every candidate offered with `--Tree` parses with it (SC-005)
+- [X] T026 [US6] Filter candidates through the catalog (present, repeatable, negatable) and `CCommandLine::Parse` of the context plus the candidate in TCDirCore/Completer.cpp
+- [X] T027 [US6] Run quickstart scenario 7, build, run all tests, commit the phase
 
 ## Phase 8: Polish
 

@@ -1,5 +1,6 @@
 #include "pch.h"
 #include "EhmTestHelper.h"
+#include "../TCDirCore/CommandLine.h"
 #include "../TCDirCore/Completer.h"
 
 
@@ -62,9 +63,8 @@ namespace UnitTest
         {
             vector<wstring> texts = Texts (Complete (L"--Tr"));
 
-            Assert::AreEqual (size_t (2), texts.size());
-            Assert::AreEqual (L"--Tree",       texts[0].c_str());
-            Assert::AreEqual (L"--TreeIndent", texts[1].c_str());
+            Assert::AreEqual (size_t (1), texts.size());            // --TreeIndent requires --Tree
+            Assert::AreEqual (L"--Tree", texts[0].c_str());
         }
 
 
@@ -84,7 +84,10 @@ namespace UnitTest
 
             for (const SSwitchDefinition & definition : CSwitchCatalog::All())
             {
-                if (definition.m_eForm == ESwitchForm::Long && CSwitchCatalog::IsAvailable (definition))
+                bool fRequiresOther = wstring_view (definition.m_pszName) == L"Depth" || wstring_view (definition.m_pszName) == L"TreeIndent" ||
+                                      wstring_view (definition.m_pszName) == L"WhatIf";
+
+                if (definition.m_eForm == ESwitchForm::Long && CSwitchCatalog::IsAvailable (definition) && !fRequiresOther)
                 {
                     Assert::IsTrue (Contains (texts, (wstring (L"--") + definition.m_pszName).c_str()), definition.m_pszName);
                 }
@@ -138,8 +141,9 @@ namespace UnitTest
 
         TEST_METHOD(ListText_IncludesValueSyntax)
         {
-            vector<SCompletionCandidate> candidates = Complete (L"--Dep");
+            vector<SCompletionCandidate> candidates = Complete (L"--Dep", { L"--Tree" });
 
+            Assert::AreEqual (size_t (1), candidates.size());
             Assert::AreEqual (L"--Depth=N", candidates[0].m_strListText.c_str());
             Assert::AreEqual (L"--Depth",   candidates[0].m_strCompletion.c_str());
         }
@@ -246,6 +250,110 @@ namespace UnitTest
             Assert::IsTrue (Complete (L"-W:").empty());
             Assert::IsTrue (Complete (L"--Depth=").empty());
             Assert::IsTrue (Complete (L"--Bogus=").empty());
+        }
+
+
+
+
+        //
+        //  Context
+        //
+
+        TEST_METHOD(Context_PresentSwitchNotOffered)
+        {
+            Assert::IsFalse (Contains (Texts (Complete (L"-", { L"-W" })), L"-W"));
+            Assert::IsFalse (Contains (Texts (Complete (L"-", { L"/w" })), L"-W"));
+            Assert::IsTrue  (Contains (Texts (Complete (L"-", { L"-W" })), L"-B"));
+        }
+
+
+
+
+        TEST_METHOD(Context_TreeConflictsNotOffered)
+        {
+            vector<wstring> texts = Texts (Complete (L"-", { L"--Tree" }));
+
+            for (LPCWSTR pszConflict : { L"-W", L"-B", L"-S", L"--Owner", L"--Tree" })
+            {
+                Assert::IsFalse (Contains (texts, pszConflict), pszConflict);
+            }
+
+            Assert::IsTrue (Contains (texts, L"--Depth"));
+            Assert::IsTrue (Contains (texts, L"-A"));
+        }
+
+
+
+
+        TEST_METHOD(Context_RequirementsRespected)
+        {
+            Assert::IsFalse (Contains (Texts (Complete (L"--")), L"--Depth"));
+            Assert::IsFalse (Contains (Texts (Complete (L"--")), L"--WhatIf"));
+            Assert::IsTrue  (Contains (Texts (Complete (L"--", { L"--set-aliases" })), L"--WhatIf"));
+        }
+
+
+
+
+        TEST_METHOD(Context_RepeatableAndNegatable)
+        {
+            Assert::IsTrue  (Contains (Texts (Complete (L"-", { L"-A:H" })),    L"-A"));
+            Assert::IsFalse (Contains (Texts (Complete (L"--", { L"--Icons" })),  L"--Icons"));
+            Assert::IsFalse (Contains (Texts (Complete (L"--", { L"--Icons-" })), L"--Icons"));
+        }
+
+
+
+
+        TEST_METHOD(Context_AliasFlagsCountAsPresent)
+        {
+            Assert::IsFalse (Contains (Texts (Complete (L"--", { L"-w" })), L"--Tree"));
+        }
+
+
+
+
+        TEST_METHOD(Context_EveryCandidateParsesWithContext)
+        {
+            for (LPCWSTR pszContext : { L"--Tree", L"-W", L"--set-aliases", L"-S" })
+            {
+                for (const SCompletionCandidate & candidate : Complete (L"-", { pszContext }))
+                {
+                    const SSwitchDefinition * pDefinition = nullptr;
+
+                    for (const SSwitchDefinition & definition : CSwitchCatalog::All())
+                    {
+                        if (CSwitchCatalog::PrefixFor (definition, L"-", L"--") + definition.m_pszName == candidate.m_strCompletion)
+                        {
+                            pDefinition = &definition;
+                        }
+                    }
+
+                    Assert::IsNotNull (pDefinition, candidate.m_strCompletion.c_str());
+
+                    wstring          strProbe = candidate.m_strCompletion;
+                    CCommandLine     cl;
+
+                    if (pDefinition->m_chValueSeparator != 0)
+                    {
+                        strProbe += pDefinition->m_chValueSeparator;
+                        strProbe += pDefinition->m_values.empty() ? L"1" : pDefinition->m_values[0].m_pszValue;
+                    }
+
+                    wstring    strContext = pszContext;
+                    wchar_t  * argv[]     = { strContext.data(), strProbe.data() };
+
+                    Assert::IsTrue (SUCCEEDED (cl.Parse (2, argv)), (strContext + L" " + strProbe).c_str());
+                }
+            }
+        }
+
+
+
+
+        TEST_METHOD(Context_IncompleteContextSkipsParserCheck)
+        {
+            Assert::IsTrue (Contains (Texts (Complete (L"--", { L"--Depth=0" })), L"--Tree"));
         }
     };
 }
