@@ -82,9 +82,9 @@
 
 ## Phase 8: Polish
 
-- [ ] T028 [P] Document completion setup in README.md and CHANGELOG.md
-- [ ] T029 Build Release x64 and ARM64, run Code Analysis with zero warnings, run all tests
-- [ ] T030 Run the prose check on new comments and docs, then commit the phase
+- [X] T028 [P] Document completion setup in README.md and CHANGELOG.md
+- [X] T029 Build Release x64 and ARM64, run Code Analysis with zero warnings, run all tests
+- [X] T030 Run the prose check on new comments and docs, then commit the phase
 
 ## Dependencies
 

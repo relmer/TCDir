@@ -2,6 +2,18 @@
 
 All notable changes to TCDir are documented in this file.
 
+## [Unreleased]
+
+### Added
+- PowerShell tab completion for switches and switch values, in PowerShell 7 and Windows PowerShell 5.1
+  - `--set-aliases` registers it for `tcdir` and every alias; `--get-aliases` reports whether it is installed
+  - `--Completion=pwsh` prints the registration script for use without the aliases
+  - Each Tab press runs the installed tcdir to get candidates (`tcdir --Complete`), so new switches complete without a new setup step
+  - Switches already on the command line, and switches that conflict with it, aren't offered
+
+### Fixed
+- `-settings` now prints the "Did you mean --settings?" hint
+
 ## [5.6.1] - 2026-07-28
 
 ### Fixed

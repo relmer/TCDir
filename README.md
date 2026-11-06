@@ -106,6 +106,19 @@ tcdir --set-aliases --whatif  # preview without writing
 
 Both PowerShell 7+ (`pwsh`) and Windows PowerShell 5.1 (`powershell`) are supported — the wizard auto-detects which version launched it.
 
+
+### Tab completion
+
+The alias block also registers PowerShell tab completion for `tcdir` and every alias. Press Tab after `tcdir --Tr` for `--Tree`, or Ctrl+Space after `tcdir --` for every switch with its description. Values complete too: `-O:`, `-A:`, `-T:`, `--Size=` and `--TreeIndent=`. Switches that are already on the command line, or that conflict with it, aren't offered, and words that aren't switches complete as paths.
+
+Without the aliases, add this line to your PowerShell profile:
+
+```powershell
+tcdir --Completion pwsh | Out-String | Invoke-Expression
+```
+
+Candidates come from the installed tcdir each time Tab is pressed, so a newer tcdir offers its new switches without a new setup step. Windows PowerShell 5.1 doesn't pass words that start with a single `-` to completers, so in 5.1 use `/` (`/W`, `/Tree`) or `--` (`--Tree`).
+
 ## Requirements
 
 - Windows 10/11
@@ -169,7 +182,8 @@ Common switches:
 - `--Depth=N`: limit tree depth to N levels (requires `--Tree`)
 - `--TreeIndent=N`: tree indent width per level, 1–8, default 4 (requires `--Tree`)
 - `--Size=Auto|Bytes`: `Auto` shows abbreviated sizes (e.g., `8.90 KB`); `Bytes` shows exact comma-separated sizes. Tree mode defaults to `Auto`, non-tree defaults to `Bytes`
-- `--set-aliases`: interactive wizard to configure PowerShell aliases for tcdir
+- `--set-aliases`: interactive wizard to configure PowerShell aliases for tcdir, with tab completion
+- `--Completion=pwsh`: print the PowerShell tab completion script; add `tcdir --Completion pwsh | Out-String | Invoke-Expression` to a profile to enable it
 - `--get-aliases`: display all configured tcdir aliases and their source profiles
 - `--remove-aliases`: interactive removal of tcdir aliases from profile files
 - `--whatif`: dry-run modifier for `--set-aliases` or `--remove-aliases` (preview only, no file changes)
