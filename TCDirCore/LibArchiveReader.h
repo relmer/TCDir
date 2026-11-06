@@ -6,6 +6,12 @@
 
 
 
+struct SLibArchiveDetails;
+
+
+
+
+
 ////////////////////////////////////////////////////////////////////////////////
 //
 //  SLibArchiveEntryInfo
@@ -60,6 +66,12 @@ private:
 
     static const SApi *  GetApi();
     static void          LoadApi        (SApi & api);
+    static void          LoadDetailApi  (HMODULE hModule, SApi & api);
+    static void          AddEntryDetails  (const SApi & api, void * pEntry, const SLibArchiveEntryInfo & info, SLibArchiveDetails & lib);
+    static void          AddStreamDetails (const SApi & api, void * pArchive, SLibArchiveDetails & lib);
+    static void          AddName        (const wchar_t * (__cdecl * pfnName) (void *), void * pEntry, map<wstring, ULONGLONG> & counts);
+    static ULONGLONG     CountIf        (int (__cdecl * pfn) (void *), void * pEntry);
+    static wstring       Widen          (const char * psz);
     static HRESULT       Open           (const SApi & api, const SArchiveSource & source, void *& pArchive);
     static HRESULT       ReadEntries    (const SApi & api, void * pArchive, SArchiveReadResult & result);
     static HRESULT       ReadEntryData  (const SApi & api, void * pArchive, ULONGLONG cbMax, ULONGLONG cbExpected, vector<BYTE> & bytes);
@@ -74,6 +86,10 @@ private:
     static constexpr int       s_kiArchiveEof          = 1;
     static constexpr int       s_kiArchiveWarn         = -20;
     static constexpr unsigned  s_kuFileTypeDirectory   = 0040000;
+    static constexpr unsigned  s_kuFileTypeSymlink     = 0120000;
+    static constexpr unsigned  s_kuPermMask            = 07777;
+    static constexpr int       s_kiAclTypeAll          = 0x3F00;  // ACCESS | DEFAULT | the NFS4 types
+    static constexpr int       s_kiRawFilter           = -1;      // archive_filter_bytes index for the bytes read from the source
     static constexpr unsigned  s_kuPermOwnerWrite      = 0000200;
     static constexpr size_t    s_kcbReadBlock          = 65536;
 

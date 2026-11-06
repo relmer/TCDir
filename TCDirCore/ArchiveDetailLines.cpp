@@ -32,7 +32,7 @@ wstring CArchiveDetailLines::FormatName (const SArchiveDetails & details)
             break;
 
         case EArchiveFormat::LibArchive:
-            strName = details.m_libArchive.m_strFormatName.empty() ? wstring (L"Archive") : details.m_libArchive.m_strFormatName;
+            strName = LibArchiveName (details.m_libArchive);
             break;
 
         default:
@@ -106,6 +106,10 @@ void CArchiveDetailLines::AddDetails (const SArchiveReport & report, vector<SInf
     else if (report.m_details.m_format == EArchiveFormat::Iso)
     {
         AddDiscDetails (report.m_details.m_disc, lines);
+    }
+    else if (report.m_details.m_format == EArchiveFormat::LibArchive)
+    {
+        AddLibArchiveDetails (report.m_details.m_libArchive, lines);
     }
 }
 
@@ -427,6 +431,182 @@ wstring CArchiveDetailLines::BootPlatformsOf (const SDiscDetails & disc)
     }
 
     return strText.empty() ? wstring (L"No") : L"Yes: " + strText;
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CArchiveDetailLines::AddLibArchiveDetails
+//
+//  Stream totals, then the rows that apply: encrypted headers, links,
+//  owners, groups, permissions, and entries with extra metadata.
+//
+////////////////////////////////////////////////////////////////////////////////
+
+void CArchiveDetailLines::AddLibArchiveDetails (const SLibArchiveDetails & lib, vector<SInfoLine> & lines)
+{
+    vector<wstring> parts;
+
+
+
+    if (lib.m_ullStreamCompressed.has_value() && lib.m_ullStreamUncompressed.value_or (0) > 0)
+    {
+        lines.push_back ({ L"Stream", format (L"{} of {} ({})",
+                                              CResultsDisplayerWithHeaderAndFooter::FormatNumberWithSeparators (lib.m_ullStreamCompressed.value()),
+                                              CArchiveInfoDisplayer::FormatBytes (lib.m_ullStreamUncompressed.value()),
+                                              CArchiveInfoDisplayer::FormatRatio (lib.m_ullStreamCompressed.value(), lib.m_ullStreamUncompressed.value())) });
+    }
+
+    if (lib.m_fHeadersEncrypted)
+    {
+        lines.push_back ({ L"Headers", L"Encrypted" });
+    }
+
+    AddCountPart (lib.m_cSymlinks,  L"symbolic link", L"symbolic links", parts);
+    AddCountPart (lib.m_cHardLinks, L"hard link",     L"hard links",     parts);
+    AddJoinedLine (L"Links", parts, lines);
+
+    AddNameCounts (L"Owners", lib.m_mapOwners, lines);
+    AddNameCounts (L"Groups", lib.m_mapGroups, lines);
+    AddPermissionCounts (lib.m_mapPermissions, lines);
+
+    AddCountPart (lib.m_cSparse,      L"sparse file",                   L"sparse files",                   parts);
+    AddCountPart (lib.m_cXattrs,      L"entry with extended attributes", L"entries with extended attributes", parts);
+    AddCountPart (lib.m_cAcls,        L"entry with ACLs",               L"entries with ACLs",              parts);
+    AddCountPart (lib.m_cBirthTimes,  L"entry with a creation time",    L"entries with a creation time",   parts);
+    AddCountPart (lib.m_cAccessTimes, L"entry with an access time",     L"entries with an access time",    parts);
+    AddJoinedLine (L"Metadata", parts, lines);
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CArchiveDetailLines::LibArchiveName
+//
+//  "POSIX ustar format, compressed with gzip".
+//
+////////////////////////////////////////////////////////////////////////////////
+
+wstring CArchiveDetailLines::LibArchiveName (const SLibArchiveDetails & lib)
+{
+    wstring strName = lib.m_strFormatName.empty() ? wstring (L"Archive") : lib.m_strFormatName;
+
+
+
+    for (size_t i = 0; i < lib.m_vFilters.size(); ++i)
+    {
+        strName += (i == 0 ? L", compressed with " : L" and ") + lib.m_vFilters[i];
+    }
+
+    return strName;
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CArchiveDetailLines::AddCountPart
+//
+////////////////////////////////////////////////////////////////////////////////
+
+void CArchiveDetailLines::AddCountPart (ULONGLONG cItems, LPCWSTR pszSingular, LPCWSTR pszPlural, vector<wstring> & parts)
+{
+    if (cItems > 0)
+    {
+        parts.push_back (CArchiveInfoDisplayer::FormatCount (cItems, pszSingular, pszPlural));
+    }
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CArchiveDetailLines::AddJoinedLine
+//
+//  Adds the parts as one comma-separated row, then clears them.
+//
+////////////////////////////////////////////////////////////////////////////////
+
+void CArchiveDetailLines::AddJoinedLine (LPCWSTR pszLabel, vector<wstring> & parts, vector<SInfoLine> & lines)
+{
+    wstring strValue;
+
+
+
+    for (const wstring & strPart : parts)
+    {
+        strValue += (strValue.empty() ? L"" : L", ") + strPart;
+    }
+
+    if (!strValue.empty())
+    {
+        lines.push_back ({ pszLabel, strValue });
+    }
+
+    parts.clear();
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CArchiveDetailLines::AddNameCounts
+//
+//  One row per owner or group, most entries first.
+//
+////////////////////////////////////////////////////////////////////////////////
+
+void CArchiveDetailLines::AddNameCounts (LPCWSTR pszLabel, const map<wstring, ULONGLONG> & counts, vector<SInfoLine> & lines)
+{
+    vector<pair<wstring, ULONGLONG>> sorted (counts.begin(), counts.end());
+
+
+
+    stable_sort (sorted.begin(), sorted.end(), [] (const auto & a, const auto & b) { return a.second > b.second; });
+
+    for (size_t i = 0; i < sorted.size(); ++i)
+    {
+        lines.push_back ({ i == 0 ? wstring (pszLabel) : wstring(),
+                           format (L"{} ({})", sorted[i].first, CArchiveInfoDisplayer::FormatCount (sorted[i].second, L"entry", L"entries")) });
+    }
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CArchiveDetailLines::AddPermissionCounts
+//
+//  One row per permission set in octal, most entries first.
+//
+////////////////////////////////////////////////////////////////////////////////
+
+void CArchiveDetailLines::AddPermissionCounts (const map<unsigned, ULONGLONG> & counts, vector<SInfoLine> & lines)
+{
+    map<wstring, ULONGLONG> octal;
+
+
+
+    for (const auto & [uPerm, cEntries] : counts)
+    {
+        octal[format (L"{:04o}", uPerm)] = cEntries;
+    }
+
+    AddNameCounts (L"Permissions", octal, lines);
 }
 
 

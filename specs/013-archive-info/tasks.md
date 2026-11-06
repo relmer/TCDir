@@ -110,12 +110,12 @@
 
 **Independent Test**: LibArchiveReaderTests with in-memory archives. Quickstart scenario 8.
 
-- [ ] T042 [US6] Load the optional exports from research R4 in `CLibArchiveReader::LoadApi` (the pointer for a missing export is null) in TCDirCore/LibArchiveReader.h and TCDirCore/LibArchiveReader.cpp
-- [ ] T043 [P] [US6] Write tests for libarchive details with in-memory archives: format name for tar, filter name for tar.gz, stream byte totals present with a filter and absent for zip, symlink and hard link counts, owners and groups, permission sets, details not collected when `m_detailsPtr` is null; skipped when `archiveint.dll` is missing, in UnitTest/LibArchiveReaderTests.cpp
-- [ ] T044 [US6] Collect `SLibArchiveDetails` in `CLibArchiveReader::ReadEntries` with a private static helper per group (stream, links, ownership, attributes), in TCDirCore/LibArchiveReader.cpp
-- [ ] T045 [P] [US6] Write tests for the libarchive lines: format with filters, stream totals with ratio, owners and groups sorted by count, permissions in octal, lines with no data omitted, in UnitTest/ArchiveInfoDisplayerTests.cpp
-- [ ] T046 [US6] Add the libarchive lines to `CArchiveInfoDisplayer` in TCDirCore/ArchiveInfoDisplayer.cpp
-- [ ] T047 [US6] Run `--Info` on every libarchive folder in TestData\Archives, build, run all tests, commit the phase
+- [X] T042 [US6] Load the optional exports from research R4 in `CLibArchiveReader::LoadApi` (the pointer for a missing export is null) in TCDirCore/LibArchiveReader.h and TCDirCore/LibArchiveReader.cpp
+- [X] T043 [P] [US6] Write tests for libarchive details with in-memory archives: format name for tar, filter name for tar.gz, stream byte totals present with a filter and absent for zip, symlink and hard link counts, owners and groups, permission sets, details not collected when `m_detailsPtr` is null; skipped when `archiveint.dll` is missing, in UnitTest/LibArchiveReaderTests.cpp
+- [X] T044 [US6] Collect `SLibArchiveDetails` in `CLibArchiveReader::ReadEntries` with a private static helper per group (stream, links, ownership, attributes), in TCDirCore/LibArchiveReader.cpp
+- [X] T045 [P] [US6] Write tests for the libarchive lines: format with filters, stream totals with ratio, owners and groups sorted by count, permissions in octal, lines with no data omitted, in UnitTest/ArchiveInfoDisplayerTests.cpp
+- [X] T046 [US6] Add the libarchive lines to `CArchiveInfoDisplayer` in TCDirCore/ArchiveInfoDisplayer.cpp
+- [X] T047 [US6] Run `--Info` on every libarchive folder in TestData\Archives, build, run all tests, commit the phase
 
 **Checkpoint**: Every format has its details.
 

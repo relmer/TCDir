@@ -497,5 +497,66 @@ namespace UnitTest
             Assert::AreEqual (L"No", ValueOf (lines, L"Bootable").c_str());
             Assert::AreEqual (L"; listed from ISO 9660", ValueOf (lines, L"File systems").c_str());
         }
+
+
+
+
+        //
+        //  libarchive rows
+        //
+
+        TEST_METHOD(LibArchive_FormatStreamAndCounts)
+        {
+            SArchiveReport       report = MakeReport();
+            vector<SInfoLine>    lines;
+            SLibArchiveDetails & lib    = report.m_details.m_libArchive;
+            vector<wstring>      owners;
+
+
+
+            report.m_details.m_format    = EArchiveFormat::LibArchive;
+            lib.m_strFormatName          = L"POSIX ustar format";
+            lib.m_vFilters               = { L"gzip" };
+            lib.m_ullStreamCompressed    = 50;
+            lib.m_ullStreamUncompressed  = 200;
+            lib.m_cSymlinks              = 2;
+            lib.m_cHardLinks             = 1;
+            lib.m_mapOwners              = { { L"alice", 3 }, { L"bob", 7 } };
+            lib.m_mapPermissions         = { { 0644, 4 } };
+            lib.m_cXattrs                = 1;
+
+            CArchiveInfoDisplayer::BuildLines (report, lines);
+            owners = RowsUnder (lines, L"Owners");
+
+            Assert::AreEqual (L"POSIX ustar format, compressed with gzip", ValueOf (lines, L"Format").c_str());
+            Assert::AreEqual (L"50 of 200 bytes (25%)",                    ValueOf (lines, L"Stream").c_str());
+            Assert::AreEqual (L"2 symbolic links, 1 hard link",            ValueOf (lines, L"Links").c_str());
+            Assert::AreEqual (L"0644 (4 entries)",                         ValueOf (lines, L"Permissions").c_str());
+            Assert::AreEqual (L"1 entry with extended attributes",         ValueOf (lines, L"Metadata").c_str());
+            Assert::AreEqual (size_t (2), owners.size());
+            Assert::AreEqual (L"bob (7 entries)",   owners[0].c_str());
+            Assert::AreEqual (L"alice (3 entries)", owners[1].c_str());
+        }
+
+
+
+
+        TEST_METHOD(LibArchive_EmptyRowsOmitted)
+        {
+            SArchiveReport    report = MakeReport();
+            vector<SInfoLine> lines;
+
+
+
+            report.m_details.m_format = EArchiveFormat::LibArchive;
+            CArchiveInfoDisplayer::BuildLines (report, lines);
+
+            Assert::AreEqual (L"Archive", ValueOf (lines, L"Format").c_str());
+
+            for (LPCWSTR pszLabel : { L"Stream", L"Headers", L"Links", L"Owners", L"Groups", L"Permissions", L"Metadata" })
+            {
+                Assert::IsNull (FindLine (lines, pszLabel), pszLabel);
+            }
+        }
     };
 }

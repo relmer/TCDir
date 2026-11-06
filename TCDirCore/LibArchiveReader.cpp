@@ -2,6 +2,7 @@
 
 #include "LibArchiveReader.h"
 
+#include "ArchiveDetails.h"
 #include "ArchiveTree.h"
 
 
@@ -31,6 +32,9 @@ struct CLibArchiveReader::SApi
     using PfnEntryInt         = int            (__cdecl *) (void *);
     using PfnEntryInt64       = LONGLONG       (__cdecl *) (void *);
     using PfnEntryLong        = long           (__cdecl *) (void *);
+    using PfnFilterName       = const char *   (__cdecl *) (void *, int);
+    using PfnFilterBytes      = LONGLONG       (__cdecl *) (void *, int);
+    using PfnEntryAclCount    = int            (__cdecl *) (void *, int);
 
     bool              m_fLoaded                = false;
     PfnReadNew        m_pfnReadNew             = nullptr;
@@ -54,6 +58,24 @@ struct CLibArchiveReader::SApi
     PfnEntryInt       m_pfnEntryPermIsSet      = nullptr;
     PfnEntryMode      m_pfnEntryPerm           = nullptr;
     PfnEntryInt       m_pfnEntryIsEncrypted    = nullptr;
+
+    //
+    // Optional, for --Info details
+    //
+
+    PfnErrorString    m_pfnFormatName             = nullptr;
+    PfnArchiveInt     m_pfnFilterCount            = nullptr;
+    PfnFilterName     m_pfnFilterName             = nullptr;
+    PfnFilterBytes    m_pfnFilterBytes            = nullptr;
+    PfnEntryPath      m_pfnEntryUname             = nullptr;
+    PfnEntryPath      m_pfnEntryGname             = nullptr;
+    PfnEntryPath      m_pfnEntryHardlink          = nullptr;
+    PfnEntryInt       m_pfnEntrySparseCount       = nullptr;
+    PfnEntryInt       m_pfnEntryXattrCount        = nullptr;
+    PfnEntryAclCount  m_pfnEntryAclCount          = nullptr;
+    PfnEntryInt       m_pfnEntryBirthtimeIsSet    = nullptr;
+    PfnEntryInt       m_pfnEntryAtimeIsSet        = nullptr;
+    PfnEntryInt       m_pfnEntryMetadataEncrypted = nullptr;
 };
 
 
@@ -148,6 +170,8 @@ void CLibArchiveReader::LoadApi (SApi & api)
                     api.m_pfnEntrySize           && api.m_pfnEntryMtimeIsSet  && api.m_pfnEntryMtime       &&
                     api.m_pfnEntryMtimeNsec      && api.m_pfnEntryPermIsSet   && api.m_pfnEntryPerm        &&
                     api.m_pfnEntryIsEncrypted    && api.m_pfnOpenMemory       && api.m_pfnReadData;
+
+    LoadDetailApi (hModule, api);
 
 
 
@@ -390,7 +414,17 @@ HRESULT CLibArchiveReader::ReadEntries (const SApi & api, void * pArchive, SArch
         GetEntryInfo (api, pEntry, info);
         result.m_vEntries.push_back (ConvertEntry (info));
 
+        if (result.m_detailsPtr != nullptr)
+        {
+            AddEntryDetails (api, pEntry, info, result.m_detailsPtr->m_libArchive);
+        }
+
         api.m_pfnDataSkip (pArchive);
+    }
+
+    if (result.m_detailsPtr != nullptr)
+    {
+        AddStreamDetails (api, pArchive, result.m_detailsPtr->m_libArchive);
     }
 
     if (iResult < s_kiArchiveWarn)
@@ -401,12 +435,198 @@ HRESULT CLibArchiveReader::ReadEntries (const SApi & api, void * pArchive, SArch
 
         result.m_vEntries.clear();
         result.m_fListingEncrypted = true;
+
+        if (result.m_detailsPtr != nullptr)
+        {
+            result.m_detailsPtr->m_libArchive.m_fHeadersEncrypted = true;
+        }
     }
 
 
 
 Error:
     return hr;
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CLibArchiveReader::LoadDetailApi
+//
+//  Exports used only for --Info details.  Each one is optional.  When an
+//  export is missing, its pointer is null and its value is unknown.
+//
+////////////////////////////////////////////////////////////////////////////////
+
+void CLibArchiveReader::LoadDetailApi (HMODULE hModule, SApi & api)
+{
+    api.m_pfnFormatName          = reinterpret_cast<SApi::PfnErrorString>  (GetProcAddress (hModule, "archive_format_name"));
+    api.m_pfnFilterCount         = reinterpret_cast<SApi::PfnArchiveInt>   (GetProcAddress (hModule, "archive_filter_count"));
+    api.m_pfnFilterName          = reinterpret_cast<SApi::PfnFilterName>   (GetProcAddress (hModule, "archive_filter_name"));
+    api.m_pfnFilterBytes         = reinterpret_cast<SApi::PfnFilterBytes>  (GetProcAddress (hModule, "archive_filter_bytes"));
+    api.m_pfnEntryUname          = reinterpret_cast<SApi::PfnEntryPath>    (GetProcAddress (hModule, "archive_entry_uname_w"));
+    api.m_pfnEntryGname          = reinterpret_cast<SApi::PfnEntryPath>    (GetProcAddress (hModule, "archive_entry_gname_w"));
+    api.m_pfnEntryHardlink       = reinterpret_cast<SApi::PfnEntryPath>    (GetProcAddress (hModule, "archive_entry_hardlink_w"));
+    api.m_pfnEntrySparseCount    = reinterpret_cast<SApi::PfnEntryInt>     (GetProcAddress (hModule, "archive_entry_sparse_count"));
+    api.m_pfnEntryXattrCount     = reinterpret_cast<SApi::PfnEntryInt>     (GetProcAddress (hModule, "archive_entry_xattr_count"));
+    api.m_pfnEntryAclCount       = reinterpret_cast<SApi::PfnEntryAclCount>(GetProcAddress (hModule, "archive_entry_acl_count"));
+    api.m_pfnEntryBirthtimeIsSet = reinterpret_cast<SApi::PfnEntryInt>     (GetProcAddress (hModule, "archive_entry_birthtime_is_set"));
+    api.m_pfnEntryAtimeIsSet     = reinterpret_cast<SApi::PfnEntryInt>     (GetProcAddress (hModule, "archive_entry_atime_is_set"));
+    api.m_pfnEntryMetadataEncrypted = reinterpret_cast<SApi::PfnEntryInt>  (GetProcAddress (hModule, "archive_entry_is_metadata_encrypted"));
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CLibArchiveReader::AddEntryDetails
+//
+//  Adds one entry to the link, ownership, permission and attribute totals.
+//
+////////////////////////////////////////////////////////////////////////////////
+
+void CLibArchiveReader::AddEntryDetails (const SApi & api, void * pEntry, const SLibArchiveEntryInfo & info, SLibArchiveDetails & lib)
+{
+    if (info.m_uFileType == s_kuFileTypeSymlink)
+    {
+        ++lib.m_cSymlinks;
+    }
+
+    if (api.m_pfnEntryHardlink != nullptr && api.m_pfnEntryHardlink (pEntry) != nullptr)
+    {
+        ++lib.m_cHardLinks;
+    }
+
+    AddName (api.m_pfnEntryUname, pEntry, lib.m_mapOwners);
+    AddName (api.m_pfnEntryGname, pEntry, lib.m_mapGroups);
+
+    if (info.m_fPermSet)
+    {
+        lib.m_mapPermissions[info.m_uPerm & s_kuPermMask] += 1;
+    }
+
+    lib.m_cBirthTimes  += CountIf (api.m_pfnEntryBirthtimeIsSet, pEntry);
+    lib.m_cAccessTimes += CountIf (api.m_pfnEntryAtimeIsSet,     pEntry);
+    lib.m_cSparse      += CountIf (api.m_pfnEntrySparseCount,    pEntry);
+    lib.m_cXattrs      += CountIf (api.m_pfnEntryXattrCount,     pEntry);
+
+    if (api.m_pfnEntryAclCount != nullptr && api.m_pfnEntryAclCount (pEntry, s_kiAclTypeAll) > 0)
+    {
+        ++lib.m_cAcls;
+    }
+
+    if (api.m_pfnEntryMetadataEncrypted != nullptr && api.m_pfnEntryMetadataEncrypted (pEntry) != 0)
+    {
+        lib.m_fHeadersEncrypted = true;
+    }
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CLibArchiveReader::AddStreamDetails
+//
+//  The format name, the filters (outermost first; the last filter is the
+//  raw read and is not listed), and the stream byte totals.  The totals are
+//  meaningful only when a filter decompressed the whole stream; formats such
+//  as ZIP and 7z skip entry data.
+//
+////////////////////////////////////////////////////////////////////////////////
+
+void CLibArchiveReader::AddStreamDetails (const SApi & api, void * pArchive, SLibArchiveDetails & lib)
+{
+    int cFilters = (api.m_pfnFilterCount != nullptr) ? api.m_pfnFilterCount (pArchive) : 0;
+
+
+
+    if (api.m_pfnFormatName != nullptr)
+    {
+        lib.m_strFormatName = Widen (api.m_pfnFormatName (pArchive));
+    }
+
+    for (int iFilter = 0; api.m_pfnFilterName != nullptr && iFilter + 1 < cFilters; ++iFilter)
+    {
+        lib.m_vFilters.push_back (Widen (api.m_pfnFilterName (pArchive, iFilter)));
+    }
+
+    if (cFilters > 1 && api.m_pfnFilterBytes != nullptr)
+    {
+        lib.m_ullStreamCompressed   = static_cast<ULONGLONG> (max<LONGLONG> (0, api.m_pfnFilterBytes (pArchive, s_kiRawFilter)));
+        lib.m_ullStreamUncompressed = static_cast<ULONGLONG> (max<LONGLONG> (0, api.m_pfnFilterBytes (pArchive, 0)));
+    }
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CLibArchiveReader::AddName
+//
+////////////////////////////////////////////////////////////////////////////////
+
+void CLibArchiveReader::AddName (SApi::PfnEntryPath pfnName, void * pEntry, map<wstring, ULONGLONG> & counts)
+{
+    const wchar_t * pszName = (pfnName != nullptr) ? pfnName (pEntry) : nullptr;
+
+
+
+    if (pszName != nullptr && *pszName != L'\0')
+    {
+        counts[pszName] += 1;
+    }
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CLibArchiveReader::CountIf
+//
+//  1 when the optional function exists and returns a positive value.
+//
+////////////////////////////////////////////////////////////////////////////////
+
+ULONGLONG CLibArchiveReader::CountIf (SApi::PfnEntryInt pfn, void * pEntry)
+{
+    return (pfn != nullptr && pfn (pEntry) > 0) ? 1 : 0;
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CLibArchiveReader::Widen
+//
+//  libarchive format and filter strings are ASCII.
+//
+////////////////////////////////////////////////////////////////////////////////
+
+wstring CLibArchiveReader::Widen (const char * psz)
+{
+    wstring str;
+
+
+
+    for (; psz != nullptr && *psz != '\0'; ++psz)
+    {
+        str += static_cast<wchar_t> (static_cast<unsigned char> (*psz));
+    }
+
+    return str;
 }
 
 
