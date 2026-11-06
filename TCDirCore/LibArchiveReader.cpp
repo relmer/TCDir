@@ -3,6 +3,7 @@
 #include "LibArchiveReader.h"
 
 #include "ArchiveDetails.h"
+#include "ArchiveReport.h"
 #include "ArchiveTree.h"
 
 
@@ -64,6 +65,7 @@ struct CLibArchiveReader::SApi
     //
 
     PfnErrorString    m_pfnFormatName             = nullptr;
+    PfnArchiveInt     m_pfnFormat                 = nullptr;
     PfnArchiveInt     m_pfnFilterCount            = nullptr;
     PfnFilterName     m_pfnFilterName             = nullptr;
     PfnFilterBytes    m_pfnFilterBytes            = nullptr;
@@ -299,6 +301,205 @@ Error:
 
 ////////////////////////////////////////////////////////////////////////////////
 //
+//  CLibArchiveReader::Verify
+//
+//  Reads the data of every file entry.  libarchive checks the checksums the
+//  format stores while it decompresses, and reports a mismatch as a warning
+//  or a failure from archive_read_data.  A fatal error ends the walk,
+//  because the reader can't continue past it.  Encrypted entries are
+//  skipped.
+//
+////////////////////////////////////////////////////////////////////////////////
+
+HRESULT CLibArchiveReader::Verify (const SArchiveSource & source, SVerifyResult & result)
+{
+    HRESULT                hr       = S_OK;
+    const SApi           * pApi     = GetApi();
+    void                 * pArchive = nullptr;
+    void                 * pEntry   = nullptr;
+    int                    iResult  = s_kiArchiveOk;
+    bool                   fFatal   = false;
+    SLibArchiveEntryInfo   info;
+
+
+
+    result = {};
+
+    CBREx (pApi != nullptr, HRESULT_FROM_WIN32 (ERROR_NOT_SUPPORTED));
+
+    hr = Open (*pApi, source, pArchive);
+    CHR (hr);
+
+    while (!fFatal)
+    {
+        iResult = pApi->m_pfnNextHeader (pArchive, &pEntry);
+
+        if (iResult == s_kiArchiveEof)
+        {
+            break;
+        }
+
+        if (iResult < s_kiArchiveWarn)
+        {
+            AddDamage (L"", ErrorText (*pApi, pArchive), result);
+            break;
+        }
+
+        GetEntryInfo (*pApi, pEntry, info);
+
+        if (info.m_uFileType != s_kuFileTypeRegular)
+        {
+            continue;
+        }
+
+        if (info.m_fEncrypted)
+        {
+            ++result.m_cSkipped;
+            pApi->m_pfnDataSkip (pArchive);
+            continue;
+        }
+
+        VerifyEntryData (*pApi, pArchive, info.m_strPath, result, fFatal);
+    }
+
+    result.m_eCoverage = CoverageOf (*pApi, pArchive);
+
+
+
+Error:
+    if (pArchive != nullptr)
+    {
+        pApi->m_pfnReadFree (pArchive);
+    }
+
+    return hr;
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CLibArchiveReader::VerifyEntryData
+//
+//  Reads one entry's data to the end and counts it as passed or damaged.
+//
+////////////////////////////////////////////////////////////////////////////////
+
+void CLibArchiveReader::VerifyEntryData (
+    const SApi       & api,
+    void             * pArchive,
+    const wstring    & strPath,
+    SVerifyResult    & result,
+    bool             & fFatal)
+{
+    vector<BYTE>   block   (s_kcbReadBlock);
+    INT_PTR        cbRead  = 0;
+
+
+
+    do
+    {
+        cbRead = api.m_pfnReadData (pArchive, block.data(), block.size());
+    }
+    while (cbRead > 0);
+
+    if (cbRead < 0)
+    {
+        AddDamage (strPath, ErrorText (api, pArchive), result);
+        fFatal = cbRead <= s_kiArchiveFatal;
+    }
+    else
+    {
+        ++result.m_cPassed;
+    }
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CLibArchiveReader::CoverageOf
+//
+//  ZIP, 7z, RAR, CAB and LZH store a checksum per entry.  Otherwise a
+//  compression filter (gzip, xz, ...) checks the stream as a whole.  tar,
+//  cpio and XAR check only their headers, and ISO 9660 has no checksums.
+//
+////////////////////////////////////////////////////////////////////////////////
+
+EChecksumCoverage CLibArchiveReader::CoverageOf (const SApi & api, void * pArchive)
+{
+    static constexpr int s_krgPerEntryFormats[] =
+    {
+        s_kiFormatZip, s_kiFormat7Zip, s_kiFormatRar, s_kiFormatRar5, s_kiFormatCab, s_kiFormatLha,
+    };
+
+    int                 iFamily   = (api.m_pfnFormat != nullptr) ? (api.m_pfnFormat (pArchive) & s_kiFormatBaseMask) : 0;
+    int                 cFilters  = (api.m_pfnFilterCount != nullptr) ? api.m_pfnFilterCount (pArchive) : 0;
+    EChecksumCoverage   coverage  = EChecksumCoverage::HeadersOnly;
+
+
+
+    if (find (begin (s_krgPerEntryFormats), end (s_krgPerEntryFormats), iFamily) != end (s_krgPerEntryFormats))
+    {
+        coverage = EChecksumCoverage::PerEntry;
+    }
+    else if (cFilters > 1)
+    {
+        coverage = EChecksumCoverage::Stream;
+    }
+    else if (iFamily == s_kiFormatIso9660)
+    {
+        coverage = EChecksumCoverage::None;
+    }
+
+    return coverage;
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CLibArchiveReader::AddDamage
+//
+////////////////////////////////////////////////////////////////////////////////
+
+void CLibArchiveReader::AddDamage (const wstring & strPath, const wstring & strReason, SVerifyResult & result)
+{
+    ++result.m_cDamaged;
+    result.m_vDamaged.push_back ({ strPath, strReason });
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CLibArchiveReader::ErrorText
+//
+////////////////////////////////////////////////////////////////////////////////
+
+wstring CLibArchiveReader::ErrorText (const SApi & api, void * pArchive)
+{
+    wstring strText = Widen (api.m_pfnErrorString (pArchive));
+
+
+
+    return strText.empty() ? wstring (L"read error") : strText;
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
 //  CLibArchiveReader::IsSamePath
 //
 //  Compares two paths inside an archive component by component, ignoring
@@ -464,6 +665,7 @@ Error:
 void CLibArchiveReader::LoadDetailApi (HMODULE hModule, SApi & api)
 {
     api.m_pfnFormatName          = reinterpret_cast<SApi::PfnErrorString>  (GetProcAddress (hModule, "archive_format_name"));
+    api.m_pfnFormat              = reinterpret_cast<SApi::PfnArchiveInt>   (GetProcAddress (hModule, "archive_format"));
     api.m_pfnFilterCount         = reinterpret_cast<SApi::PfnArchiveInt>   (GetProcAddress (hModule, "archive_filter_count"));
     api.m_pfnFilterName          = reinterpret_cast<SApi::PfnFilterName>   (GetProcAddress (hModule, "archive_filter_name"));
     api.m_pfnFilterBytes         = reinterpret_cast<SApi::PfnFilterBytes>  (GetProcAddress (hModule, "archive_filter_bytes"));

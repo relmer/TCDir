@@ -558,5 +558,53 @@ namespace UnitTest
                 Assert::IsNull (FindLine (lines, pszLabel), pszLabel);
             }
         }
+
+
+
+
+        //
+        //  Verify rows
+        //
+
+        TEST_METHOD(Verify_CountsAndDamagedRowsInErrorColor)
+        {
+            SArchiveReport    report = MakeReport();
+            vector<SInfoLine> lines;
+            SVerifyResult     verify;
+
+
+
+            verify.m_eCoverage = EChecksumCoverage::PerEntry;
+            verify.m_cPassed   = 7;
+            verify.m_cDamaged  = 1;
+            verify.m_vDamaged  = { { L"readme.txt", L"CRC mismatch" } };
+            report.m_verify    = verify;
+
+            CArchiveInfoDisplayer::BuildLines (report, lines);
+
+            Assert::AreEqual (L"7 passed, 1 damaged, 0 skipped (checked against a checksum per entry)", ValueOf (lines, L"Verify").c_str());
+            Assert::AreEqual (L"readme.txt: CRC mismatch", lines.back().m_strValue.c_str());
+            Assert::IsTrue   (lines.back().m_attrValue == CConfig::Error);
+        }
+
+
+
+
+        TEST_METHOD(Verify_Unavailable)
+        {
+            SArchiveReport    report = MakeReport();
+            vector<SInfoLine> lines;
+            SVerifyResult     verify;
+
+
+
+            verify.m_eCoverage = EChecksumCoverage::Unavailable;
+            verify.m_strError  = L": verification requires Windows 11 23H2 or later";
+            report.m_verify    = verify;
+
+            CArchiveInfoDisplayer::BuildLines (report, lines);
+
+            Assert::AreEqual (L"Not available: verification requires Windows 11 23H2 or later", ValueOf (lines, L"Verify").c_str());
+        }
     };
 }

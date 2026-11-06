@@ -84,6 +84,7 @@ private:
     static void    AddEncryptionLines (const SArchiveReport & report, vector<SInfoLine> & lines);
     static void    AddExtensionLines  (const SArchiveStatistics & statistics, vector<SInfoLine> & lines);
     static void    AddRows            (LPCWSTR pszLabel, const vector<wstring> & rows, vector<SInfoLine> & lines);
+    static void    AddVerifyLines     (const SVerifyResult & verify, vector<SInfoLine> & lines);
     static wstring FormatDateRange    (const SArchiveStatistics & statistics);
     static size_t  LabelWidth         (const vector<SInfoLine> & lines);
 

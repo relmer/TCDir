@@ -3,6 +3,7 @@
 
 #include "../TCDirCore/ArchiveDetails.h"
 #include "../TCDirCore/ArchiveFileAccess.h"
+#include "../TCDirCore/ArchiveReport.h"
 #include "../TCDirCore/LibArchiveReader.h"
 
 
@@ -474,6 +475,50 @@ namespace UnitTest
 
             Assert::AreEqual (S_OK, CLibArchiveReader::Read (MemorySource (MakeTar ({ { "a.txt", Bytes ("x") } })), result));
             Assert::IsNull   (result.m_detailsPtr.get());
+        }
+
+
+
+
+        TEST_METHOD(Verify_Tar_AllPassedHeadersOnly)
+        {
+            SVerifyResult result;
+
+            if (!CLibArchiveReader::IsAvailable())
+            {
+                Logger::WriteMessage (L"archiveint.dll is not available; skipped");
+                return;
+            }
+
+            Assert::AreEqual (S_OK, CLibArchiveReader::Verify (MemorySource (MakeTar ({ { "a.txt", Bytes ("one") }, { "b.txt", Bytes ("two") } })), result));
+            Assert::AreEqual (2ull, result.m_cPassed);
+            Assert::AreEqual (0ull, result.m_cDamaged);
+            Assert::IsTrue   (result.m_eCoverage == EChecksumCoverage::HeadersOnly);
+        }
+
+
+
+
+        TEST_METHOD(Verify_TarGz_StreamCoverageAndDamage)
+        {
+            vector<BYTE>    gz;
+            SVerifyResult   result;
+
+            if (!CLibArchiveReader::IsAvailable())
+            {
+                Logger::WriteMessage (L"archiveint.dll is not available; skipped");
+                return;
+            }
+
+            gz = Gzip (MakeTar ({ { "a.txt", Bytes ("gzip me") } }));
+
+            Assert::AreEqual (S_OK, CLibArchiveReader::Verify (MemorySource (gz), result));
+            Assert::AreEqual (1ull, result.m_cPassed);
+            Assert::IsTrue   (result.m_eCoverage == EChecksumCoverage::Stream);
+
+            gz[13] ^= 0xFF;                                             // Damage NLEN of the first stored deflate block
+
+            Assert::AreEqual (HRESULT_FROM_WIN32 (ERROR_BAD_FORMAT), CLibArchiveReader::Verify (MemorySource (gz), result));
         }
     };
 }

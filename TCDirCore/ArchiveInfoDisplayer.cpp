@@ -114,6 +114,11 @@ void CArchiveInfoDisplayer::BuildLines (const SArchiveReport & report, vector<SI
     AddEncryptionLines (report, lines);
     CArchiveDetailLines::AddDetails (report, lines);
     AddExtensionLines (report.m_statistics, lines);
+
+    if (report.m_verify.has_value())
+    {
+        AddVerifyLines (report.m_verify.value(), lines);
+    }
 }
 
 
@@ -264,6 +269,55 @@ void CArchiveInfoDisplayer::AddExtensionLines (const SArchiveStatistics & statis
     }
 
     AddRows (L"Extensions", rows, lines);
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CArchiveInfoDisplayer::AddVerifyLines
+//
+//  The counts and what the checksums cover, then one row per damaged entry
+//  in the error color.
+//
+////////////////////////////////////////////////////////////////////////////////
+
+void CArchiveInfoDisplayer::AddVerifyLines (const SVerifyResult & verify, vector<SInfoLine> & lines)
+{
+    static constexpr LPCWSTR s_krgCoverage[] =
+    {
+        L"checked against a checksum per entry",              // PerEntry
+        L"checked by decompressing the stream",               // Stream
+        L"the format doesn't store data checksums; entries were read",   // HeadersOnly
+        L"the format doesn't store checksums; entries were read",        // None
+    };
+
+    size_t  iCoverage = static_cast<size_t> (verify.m_eCoverage);
+    wstring strError  = verify.m_strError;
+
+
+
+    if (verify.m_eCoverage == EChecksumCoverage::Unavailable)
+    {
+        strError.erase (0, strError.find_first_not_of (L": "));
+        lines.push_back ({ L"Verify", L"Not available" + (strError.empty() ? wstring() : L": " + strError) });
+        return;
+    }
+
+    lines.push_back ({ L"Verify", format (L"{} passed, {} damaged, {} skipped ({})",
+                                          CResultsDisplayerWithHeaderAndFooter::FormatNumberWithSeparators (verify.m_cPassed),
+                                          CResultsDisplayerWithHeaderAndFooter::FormatNumberWithSeparators (verify.m_cDamaged),
+                                          CResultsDisplayerWithHeaderAndFooter::FormatNumberWithSeparators (verify.m_cSkipped),
+                                          (iCoverage < ARRAYSIZE (s_krgCoverage)) ? s_krgCoverage[iCoverage] : L"") });
+
+    for (const SDamagedEntry & damaged : verify.m_vDamaged)
+    {
+        lines.push_back ({ L"",
+                           format (L"{}: {}", damaged.m_strPath.empty() ? wstring (L"(archive)") : damaged.m_strPath, damaged.m_strReason),
+                           CConfig::Error });
+    }
 }
 
 

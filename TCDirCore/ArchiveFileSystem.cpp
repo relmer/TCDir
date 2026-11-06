@@ -465,6 +465,9 @@ HRESULT CArchiveFileSystem::Verify (
 
     strError.clear();
 
+    CBRFEx (m_fLibArchiveAvailable, HRESULT_FROM_WIN32 (ERROR_NOT_SUPPORTED),
+            strError = L": verification requires Windows 11 23H2 or later");
+
     hr = PrepareSource (archivePath, format, source);
     CHR (hr);
 
@@ -474,7 +477,7 @@ HRESULT CArchiveFileSystem::Verify (
 
 
 Error:
-    if (FAILED (hr))
+    if (FAILED (hr) && strError.empty())
     {
         strError = FormatError (hr, CArchiveFormat::FromFileName (fileName, true), m_fLibArchiveAvailable);
     }

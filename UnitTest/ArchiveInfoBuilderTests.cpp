@@ -158,5 +158,25 @@ namespace UnitTest
             Assert::IsTrue   (report.m_verify->m_eCoverage == EChecksumCoverage::Unavailable);
             Assert::IsFalse  (report.m_verify->m_strError.empty());
         }
+
+
+
+
+        TEST_METHOD(Build_Verify_UdfImageUnavailable)
+        {
+            auto                accessPtr = MakeAccess();
+            CArchiveFileSystem  fs          (accessPtr);
+            CArchiveInfoBuilder builder     (fs, true);
+            SArchiveReport      report;
+            SArchiveDetails     details;
+
+            accessPtr->AddArchive (L"C:\\Root\\disc.iso", { CMockArchiveFileAccess::File (L"a.txt", 1) });
+            details.m_disc.m_eListedTree = EDiscTree::Udf;
+            accessPtr->SetDetails (L"C:\\Root\\disc.iso", details);
+
+            Assert::AreEqual (S_OK, builder.Build (L"C:\\Root\\disc.iso", 1, report));
+            Assert::IsTrue   (report.m_verify->m_eCoverage == EChecksumCoverage::Unavailable);
+            Assert::AreEqual (0, accessPtr->m_cVerifies.load());
+        }
     };
 }

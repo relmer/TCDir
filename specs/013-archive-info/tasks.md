@@ -125,11 +125,11 @@
 
 **Independent Test**: Quickstart scenarios 9 and 10.
 
-- [ ] T048 [P] [US7] Write tests for `CLibArchiveReader::Verify` with in-memory archives: intact zip all passed, zip with one damaged byte reports that entry with the libarchive reason, encrypted entry skipped, coverage per format per research R5 (zip per entry, tar.gz stream, tar headers only), in UnitTest/LibArchiveReaderTests.cpp
-- [ ] T049 [US7] Implement `CLibArchiveReader::Verify (source, format, SVerifyResult &)` (reads each entry with `archive_read_data`, treats WARN or FAILED during data reads as damage, skips encrypted entries) and `CArchiveFileAccess::Verify` (dispatches every format to libarchive, returns `Unavailable` for UDF-only images and the missing-libarchive error without `archiveint.dll`), in TCDirCore/LibArchiveReader.h, TCDirCore/LibArchiveReader.cpp and TCDirCore/ArchiveFileAccess.cpp
-- [ ] T050 [P] [US7] Write tests for verify in `CArchiveInfoBuilder` (run only with the flag, nested archives verified from memory) in UnitTest/ArchiveInfoBuilderTests.cpp, and for the verify line and damaged entries in `{Error}` in UnitTest/ArchiveInfoDisplayerTests.cpp
-- [ ] T051 [US7] Call `Verify` from `CArchiveInfoBuilder`, add the verify lines to `CArchiveInfoDisplayer`, and return the failure code for damaged entries from `CArchiveInfo::Run`, in TCDirCore/ArchiveInfoBuilder.cpp, TCDirCore/ArchiveInfoDisplayer.cpp and TCDirCore/TCDir.cpp
-- [ ] T052 [US7] Run quickstart scenarios 9 and 10, build, run all tests, commit the phase
+- [X] T048 [P] [US7] Write tests for `CLibArchiveReader::Verify` with in-memory archives: intact zip all passed, zip with one damaged byte reports that entry with the libarchive reason, encrypted entry skipped, coverage per format per research R5 (zip per entry, tar.gz stream, tar headers only), in UnitTest/LibArchiveReaderTests.cpp
+- [X] T049 [US7] Implement `CLibArchiveReader::Verify (source, format, SVerifyResult &)` (reads each entry with `archive_read_data`, treats WARN or FAILED during data reads as damage, skips encrypted entries) and `CArchiveFileAccess::Verify` (dispatches every format to libarchive, returns `Unavailable` for UDF-only images and the missing-libarchive error without `archiveint.dll`), in TCDirCore/LibArchiveReader.h, TCDirCore/LibArchiveReader.cpp and TCDirCore/ArchiveFileAccess.cpp
+- [X] T050 [P] [US7] Write tests for verify in `CArchiveInfoBuilder` (run only with the flag, nested archives verified from memory) in UnitTest/ArchiveInfoBuilderTests.cpp, and for the verify line and damaged entries in `{Error}` in UnitTest/ArchiveInfoDisplayerTests.cpp
+- [X] T051 [US7] Call `Verify` from `CArchiveInfoBuilder`, add the verify lines to `CArchiveInfoDisplayer`, and return the failure code for damaged entries from `CArchiveInfo::Run`, in TCDirCore/ArchiveInfoBuilder.cpp, TCDirCore/ArchiveInfoDisplayer.cpp and TCDirCore/TCDir.cpp
+- [X] T052 [US7] Run quickstart scenarios 9 and 10, build, run all tests, commit the phase
 
 **Checkpoint**: Verification works for every format libarchive reads.
 

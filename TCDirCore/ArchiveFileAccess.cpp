@@ -136,16 +136,15 @@ Error:
 //  CArchiveFileAccess::Verify
 //
 //  Reads every entry of an archive and checks the checksums it stores.
+//  libarchive reads every format tcdir browses, ZIP and ISO 9660 included.
 //
 ////////////////////////////////////////////////////////////////////////////////
 
 HRESULT CArchiveFileAccess::Verify (const SArchiveSource & source, EArchiveFormat format, SVerifyResult & result)
 {
-    UNREFERENCED_PARAMETER (source);
     UNREFERENCED_PARAMETER (format);
 
-    result = {};
-    return E_NOTIMPL;
+    return CLibArchiveReader::Verify (source, result);
 }
 
 

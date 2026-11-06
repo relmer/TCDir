@@ -7,6 +7,8 @@
 
 
 struct SLibArchiveDetails;
+struct SVerifyResult;
+enum class EChecksumCoverage;
 
 
 
@@ -58,6 +60,7 @@ public:
                                          wstring_view           entryPath,
                                          ULONGLONG              cbMax,
                                          vector<BYTE>         & bytes);
+    static HRESULT       Verify         (const SArchiveSource & source, SVerifyResult & result);
     static SArchiveEntry ConvertEntry   (const SLibArchiveEntryInfo & info);
     static bool          IsSamePath     (wstring_view path1, wstring_view path2);
 
@@ -72,6 +75,10 @@ private:
     static void          AddName        (const wchar_t * (__cdecl * pfnName) (void *), void * pEntry, map<wstring, ULONGLONG> & counts);
     static ULONGLONG     CountIf        (int (__cdecl * pfn) (void *), void * pEntry);
     static wstring       Widen          (const char * psz);
+    static void          VerifyEntryData (const SApi & api, void * pArchive, const wstring & strPath, SVerifyResult & result, bool & fFatal);
+    static EChecksumCoverage CoverageOf (const SApi & api, void * pArchive);
+    static void          AddDamage      (const wstring & strPath, const wstring & strReason, SVerifyResult & result);
+    static wstring       ErrorText      (const SApi & api, void * pArchive);
     static HRESULT       Open           (const SApi & api, const SArchiveSource & source, void *& pArchive);
     static HRESULT       ReadEntries    (const SApi & api, void * pArchive, SArchiveReadResult & result);
     static HRESULT       ReadEntryData  (const SApi & api, void * pArchive, ULONGLONG cbMax, ULONGLONG cbExpected, vector<BYTE> & bytes);
@@ -87,6 +94,16 @@ private:
     static constexpr int       s_kiArchiveWarn         = -20;
     static constexpr unsigned  s_kuFileTypeDirectory   = 0040000;
     static constexpr unsigned  s_kuFileTypeSymlink     = 0120000;
+    static constexpr unsigned  s_kuFileTypeRegular     = 0100000;
+    static constexpr int       s_kiArchiveFatal        = -30;
+    static constexpr int       s_kiFormatBaseMask      = 0xFF0000;
+    static constexpr int       s_kiFormatIso9660       = 0x40000;
+    static constexpr int       s_kiFormatZip           = 0x50000;
+    static constexpr int       s_kiFormatLha           = 0xB0000;
+    static constexpr int       s_kiFormatCab           = 0xC0000;
+    static constexpr int       s_kiFormatRar           = 0xD0000;
+    static constexpr int       s_kiFormat7Zip          = 0xE0000;
+    static constexpr int       s_kiFormatRar5          = 0x100000;
     static constexpr unsigned  s_kuPermMask            = 07777;
     static constexpr int       s_kiAclTypeAll          = 0x3F00;  // ACCESS | DEFAULT | the NFS4 types
     static constexpr int       s_kiRawFilter           = -1;      // archive_filter_bytes index for the bytes read from the source
