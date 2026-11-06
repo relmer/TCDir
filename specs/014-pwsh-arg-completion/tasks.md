@@ -66,9 +66,9 @@
 
 **Independent Test**: Quickstart scenarios 5 and 6.
 
-- [ ] T022 [P] [US5] Write tests in UnitTest/CompleterTests.cpp: `-O:` → each key with and without `-`; `-A:H` extends `H` with each other letter and `-`; `-T:` → `C`, `A`, `W`; `--Size=` → `Auto` and `Bytes`; `--TreeIndent=` → `1` to `8`; `-W:` → nothing; value tooltips are the help descriptions
-- [ ] T023 [US5] Complete values from the catalog in `CCompleter::Complete` in TCDirCore/Completer.cpp
-- [ ] T024 [US5] Run quickstart scenarios 5 and 6, build, run all tests, commit the phase
+- [X] T022 [P] [US5] Write tests in UnitTest/CompleterTests.cpp: `-O:` → each key with and without `-`; `-A:H` extends `H` with each other letter and `-`; `-T:` → `C`, `A`, `W`; `--Size=` → `Auto` and `Bytes`; `--TreeIndent=` → `1` to `8`; `-W:` → nothing; value tooltips are the help descriptions
+- [X] T023 [US5] Complete values from the catalog in `CCompleter::Complete` in TCDirCore/Completer.cpp
+- [X] T024 [US5] Run quickstart scenarios 5 and 6, build, run all tests, commit the phase
 
 ## Phase 7: User Story 6 - Context-aware candidates (P3)
 

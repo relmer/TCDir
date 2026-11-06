@@ -85,6 +85,7 @@ struct SSwitchDefinition
     LPCWSTR                     m_pszDescription;
     LPCWSTR                     m_pszContinuation;      // Second help line; empty for none
     bool                        m_fDebugOnly;
+    bool                        m_fCombinableValues = false;    // Values combine, as attribute letters do
 };
 
 

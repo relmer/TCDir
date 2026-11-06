@@ -191,5 +191,61 @@ namespace UnitTest
             Assert::IsFalse (CCompleter::IsCompleteRequest (3, rgSecond));
             Assert::IsFalse (CCompleter::IsCompleteRequest (1, rgFirst));
         }
+
+
+
+
+        //
+        //  Values
+        //
+
+        TEST_METHOD(Values_SortKeysWithAndWithoutReverse)
+        {
+            vector<SCompletionCandidate> candidates = Complete (L"-O:");
+            vector<wstring>              texts      = Texts (candidates);
+
+            Assert::AreEqual (size_t (8), texts.size());
+            Assert::IsTrue   (Contains (texts, L"-O:S"));
+            Assert::IsTrue   (Contains (texts, L"-O:-S"));
+            Assert::IsTrue   (Contains (Texts (Complete (L"-O:-")), L"-O:-D"));
+            Assert::AreEqual (L"By size (smallest first)", candidates[1].m_strTooltip.c_str());
+        }
+
+
+
+
+        TEST_METHOD(Values_AttributesExtendTypedLetters)
+        {
+            vector<wstring> texts = Texts (Complete (L"-A:H"));
+
+            Assert::IsTrue  (Contains (texts, L"-A:HD"));
+            Assert::IsTrue  (Contains (texts, L"-A:HS"));
+            Assert::IsTrue  (Contains (texts, L"-A:H-"));
+            Assert::IsFalse (Contains (texts, L"-A:HH"));
+            Assert::IsFalse (Contains (Texts (Complete (L"-A:H-")), L"-A:H--"));
+        }
+
+
+
+
+        TEST_METHOD(Values_TimeSizeTreeIndentAndShell)
+        {
+            Assert::AreEqual (size_t (3), Complete (L"-T:").size());
+            Assert::IsTrue   (Contains (Texts (Complete (L"--Size=")), L"--Size=Auto"));
+            Assert::IsTrue   (Contains (Texts (Complete (L"--size=b")), L"--Size=Bytes"));
+            Assert::AreEqual (size_t (8), Complete (L"--TreeIndent=").size());
+            Assert::IsTrue   (Contains (Texts (Complete (L"/Completion=")), L"/Completion=pwsh"));
+            Assert::IsTrue   (Contains (Texts (Complete (L"/A:")), L"/A:D"));
+        }
+
+
+
+
+        TEST_METHOD(Values_SwitchWithoutValuesHasNoCandidates)
+        {
+            Assert::IsTrue (Complete (L"-W:").empty());
+            Assert::IsTrue (Complete (L"--Depth=").empty());
+            Assert::IsTrue (Complete (L"--Bogus=").empty());
+        }
     };
 }

@@ -74,6 +74,10 @@ private:
 
     static bool    SplitPrefix       (const wstring & strWord, SPrefixes & prefixes, wstring & strRest);
     static void    AddSwitches       (ESwitchForm eForm, const SPrefixes & prefixes, const wstring & strRest, vector<SCompletionCandidate> & candidates);
+    static bool    AddValues         (const SPrefixes & prefixes, const wstring & strRest, vector<SCompletionCandidate> & candidates);
+    static void    AddCombinedValues (const SSwitchDefinition & definition, const wstring & strBase, const wstring & strTyped, vector<SCompletionCandidate> & candidates);
+    static void    AddSingleValues   (const SSwitchDefinition & definition, const wstring & strBase, const wstring & strTyped, vector<SCompletionCandidate> & candidates);
+    static bool    ContainsNoCase    (wstring_view text, wstring_view part);
     static bool    StartsWithNoCase  (wstring_view text, wstring_view prefix);
     static wstring WithoutTabs       (wstring strText);
 };

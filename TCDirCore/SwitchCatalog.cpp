@@ -80,7 +80,7 @@ const SSwitchValue CSwitchCatalog::s_krgTreeIndentValues[] =
 const SSwitchDefinition CSwitchCatalog::s_krgSwitches[] =
 {
     { ESwitchForm::Short, L"A", L"", L':', s_krgAttributeValues, false, true,  ESwitchSection::Primary,
-      L"Displays files with specified attributes.", L"", false },
+      L"Displays files with specified attributes.", L"", false, true },
     { ESwitchForm::Short, L"O", L"", L':', s_krgSortValues,      false, false, ESwitchSection::Primary,
       L"List by files in sorted order.", L"", false },
     { ESwitchForm::Short, L"T", L"", L':', s_krgTimeValues,      false, false, ESwitchSection::Primary,

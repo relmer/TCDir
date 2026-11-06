@@ -92,7 +92,7 @@ void CCompleter::Complete (const SCompletionRequest & request, vector<SCompletio
 
     candidates.clear();
 
-    if (!SplitPrefix (request.m_strWord, prefixes, strRest))
+    if (!SplitPrefix (request.m_strWord, prefixes, strRest) || AddValues (prefixes, strRest, candidates))
     {
         return;
     }
@@ -146,6 +146,184 @@ bool CCompleter::SplitPrefix (const wstring & strWord, SPrefixes & prefixes, wst
     }
 
     return fSwitch;
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CCompleter::AddValues
+//
+//  Completes the value after a switch's ':' or '=' separator.  Returns
+//  false when the word has no separator.  Attribute letters combine, so
+//  each candidate extends the letters already typed; other values replace
+//  them.
+//
+////////////////////////////////////////////////////////////////////////////////
+
+bool CCompleter::AddValues (const SPrefixes & prefixes, const wstring & strRest, vector<SCompletionCandidate> & candidates)
+{
+    size_t                      iSeparator  = strRest.find_first_of (L":=");
+    wstring                     strName;
+    wstring                     strTyped;
+    wchar_t                     chSeparator = 0;
+    ESwitchForm                 eForm       = ESwitchForm::Long;
+    const SSwitchDefinition   * pDefinition = nullptr;
+    wstring                     strBase;
+
+
+
+    if (iSeparator == wstring::npos)
+    {
+        return false;
+    }
+
+    strName     = strRest.substr (0, iSeparator);
+    strTyped    = strRest.substr (iSeparator + 1);
+    chSeparator = strRest[iSeparator];
+    eForm       = (chSeparator == L':' && strName.size() == 1) ? ESwitchForm::Short : ESwitchForm::Long;
+    pDefinition = CSwitchCatalog::Find (eForm, strName);
+
+    if (pDefinition == nullptr || pDefinition->m_chValueSeparator != chSeparator)
+    {
+        return true;
+    }
+
+    strBase = CSwitchCatalog::PrefixFor (*pDefinition, prefixes.m_strShort, prefixes.m_strLong) + pDefinition->m_pszName + chSeparator;
+
+    if (pDefinition->m_fCombinableValues)
+    {
+        AddCombinedValues (*pDefinition, strBase, strTyped, candidates);
+    }
+    else
+    {
+        AddSingleValues (*pDefinition, strBase, strTyped, candidates);
+    }
+
+    return true;
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CCompleter::AddCombinedValues
+//
+//  Each letter not typed yet, appended to the typed letters.  The "-"
+//  prefix is offered unless the typed letters already end with it.
+//
+////////////////////////////////////////////////////////////////////////////////
+
+void CCompleter::AddCombinedValues (
+    const SSwitchDefinition        & definition,
+    const wstring                  & strBase,
+    const wstring                  & strTyped,
+    vector<SCompletionCandidate>   & candidates)
+{
+    bool fEndsWithPrefix = false;
+
+
+
+    for (const SSwitchValue & value : definition.m_values)
+    {
+        if (value.m_fPrefix)
+        {
+            fEndsWithPrefix = !strTyped.empty() && StartsWithNoCase (strTyped.substr (strTyped.size() - 1), value.m_pszValue);
+
+            if (!fEndsWithPrefix)
+            {
+                candidates.push_back ({ strBase + strTyped + value.m_pszValue, value.m_pszValue, value.m_pszDescription });
+            }
+
+            continue;
+        }
+
+        if (!ContainsNoCase (strTyped, value.m_pszValue))
+        {
+            candidates.push_back ({ strBase + strTyped + value.m_pszValue, value.m_pszValue, value.m_pszDescription });
+        }
+    }
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CCompleter::AddSingleValues
+//
+//  Values that start with the typed text.  A prefix value (the "-" that
+//  reverses a sort) is offered in front of each other value.
+//
+////////////////////////////////////////////////////////////////////////////////
+
+void CCompleter::AddSingleValues (
+    const SSwitchDefinition        & definition,
+    const wstring                  & strBase,
+    const wstring                  & strTyped,
+    vector<SCompletionCandidate>   & candidates)
+{
+    vector<pair<wstring, wstring>> choices;
+
+
+
+    for (const SSwitchValue & value : definition.m_values)
+    {
+        if (!value.m_fPrefix)
+        {
+            choices.push_back ({ value.m_pszValue, value.m_pszDescription });
+        }
+    }
+
+    for (const SSwitchValue & prefix : definition.m_values)
+    {
+        if (!prefix.m_fPrefix)
+        {
+            continue;
+        }
+
+        for (size_t i = 0, cChoices = choices.size(); i < cChoices; ++i)
+        {
+            choices.push_back ({ prefix.m_pszValue + choices[i].first, choices[i].second + L", " + prefix.m_pszDescription });
+        }
+    }
+
+    for (const auto & [strValue, strDescription] : choices)
+    {
+        if (StartsWithNoCase (strValue, strTyped))
+        {
+            candidates.push_back ({ strBase + strValue, strValue, strDescription });
+        }
+    }
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CCompleter::ContainsNoCase
+//
+////////////////////////////////////////////////////////////////////////////////
+
+bool CCompleter::ContainsNoCase (wstring_view text, wstring_view part)
+{
+    bool fFound = false;
+
+
+
+    for (size_t ib = 0; !fFound && ib + part.size() <= text.size(); ++ib)
+    {
+        fFound = StartsWithNoCase (text.substr (ib), part);
+    }
+
+    return fFound;
 }
 
 
