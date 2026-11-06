@@ -204,6 +204,8 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="ArchiveReport.h" />
+    <ClInclude Include="ArchiveDetails.h" />
     <ClInclude Include="LibArchiveReader.h" />
     <ClInclude Include="ZipReader.h" />
     <ClInclude Include="FileEnumerator.h" />

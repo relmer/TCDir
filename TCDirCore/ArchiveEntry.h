@@ -4,6 +4,12 @@
 
 
 
+struct SArchiveDetails;
+
+
+
+
+
 ////////////////////////////////////////////////////////////////////////////////
 //
 //  EArchiveFormat
@@ -57,8 +63,9 @@ struct SArchiveEntry
 
 struct SArchiveReadResult
 {
-    vector<SArchiveEntry>   m_vEntries;
-    bool                    m_fListingEncrypted = false;   // The entry list itself is encrypted
+    vector<SArchiveEntry>         m_vEntries;
+    bool                          m_fListingEncrypted = false;   // The entry list itself is encrypted
+    shared_ptr<SArchiveDetails>   m_detailsPtr;                  // Set by the caller to collect format details
 };
 
 

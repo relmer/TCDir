@@ -10,9 +10,9 @@
 
 ## Phase 1: Setup
 
-- [ ] T001 Add `ArchiveDetails.h` with `SMethodGroup`, `EZipEncryption`, `SZipDetails`, `EDiscTree`, `SDiscDetails`, `SLibArchiveDetails` and `SArchiveDetails` per data-model.md in TCDirCore/ArchiveDetails.h; register it in TCDirCore/TCDirCore.vcxproj and .filters
-- [ ] T002 Add `shared_ptr<SArchiveDetails> m_detailsPtr` to `SArchiveReadResult` (null means "don't collect"), column-aligned with the existing members, in TCDirCore/ArchiveEntry.h
-- [ ] T003 [P] Add `SExtensionGroup`, `SArchiveStatistics`, `EChecksumCoverage`, `SDamagedEntry`, `SVerifyResult` and `SArchiveReport` per data-model.md in TCDirCore/ArchiveReport.h; register it in TCDirCore/TCDirCore.vcxproj and .filters
+- [X] T001 Add `ArchiveDetails.h` with `SMethodGroup`, `EZipEncryption`, `SZipDetails`, `EDiscTree`, `SDiscDetails`, `SLibArchiveDetails` and `SArchiveDetails` per data-model.md in TCDirCore/ArchiveDetails.h; register it in TCDirCore/TCDirCore.vcxproj and .filters
+- [X] T002 Add `shared_ptr<SArchiveDetails> m_detailsPtr` to `SArchiveReadResult` (null means "don't collect"), column-aligned with the existing members, in TCDirCore/ArchiveEntry.h
+- [X] T003 [P] Add `SExtensionGroup`, `SArchiveStatistics`, `EChecksumCoverage`, `SDamagedEntry`, `SVerifyResult` and `SArchiveReport` per data-model.md in TCDirCore/ArchiveReport.h; register it in TCDirCore/TCDirCore.vcxproj and .filters
 
 **Checkpoint**: Solution builds. No behavior change.
 

@@ -15,6 +15,12 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="ArchiveReport.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ArchiveDetails.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="LibArchiveReader.h">
       <Filter>Header Files</Filter>
     </ClInclude>
