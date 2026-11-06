@@ -204,6 +204,10 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="ArchiveInfo.h" />
+    <ClInclude Include="ArchiveInfoDisplayer.h" />
+    <ClInclude Include="ArchiveInfoBuilder.h" />
+    <ClInclude Include="ArchiveStatistics.h" />
     <ClInclude Include="ArchiveReport.h" />
     <ClInclude Include="ArchiveDetails.h" />
     <ClInclude Include="LibArchiveReader.h" />
@@ -271,6 +275,10 @@
     <ClInclude Include="WorkQueue.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="ArchiveInfo.cpp" />
+    <ClCompile Include="ArchiveInfoDisplayer.cpp" />
+    <ClCompile Include="ArchiveInfoBuilder.cpp" />
+    <ClCompile Include="ArchiveStatistics.cpp" />
     <ClCompile Include="LibArchiveReader.cpp" />
     <ClCompile Include="ZipReader.cpp" />
     <ClCompile Include="FileEnumerator.cpp" />

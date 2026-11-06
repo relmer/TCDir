@@ -252,6 +252,9 @@
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="ArchiveInfoDisplayerTests.cpp" />
+    <ClCompile Include="ArchiveInfoBuilderTests.cpp" />
+    <ClCompile Include="ArchiveStatisticsTests.cpp" />
     <ClCompile Include="LibArchiveReaderTests.cpp" />
     <ClCompile Include="ArchiveListingScenarioTests.cpp" />
     <ClCompile Include="ArchiveFileSystemTests.cpp" />

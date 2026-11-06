@@ -5,6 +5,7 @@
 
 #include "AliasManager.h"
 #include "ArchiveFileSystem.h"
+#include "ArchiveInfo.h"
 #include "CommandLine.h"
 #include "Config.h"
 #include "Console.h"
@@ -241,6 +242,7 @@ int wmain (int argc, WCHAR * argv[])
     shared_ptr<CConfig>      configPtr    = make_shared<CConfig>();
     shared_ptr<CConsole>     consolePtr   = make_shared<CConsole>();
     bool                     fWorkerHandled = false;
+    HRESULT                  hrRun        = S_OK;
 
  
 
@@ -292,7 +294,14 @@ int wmain (int argc, WCHAR * argv[])
         perfTimerPtr = make_unique<PerfTimer> (L"TCDir time elapsed", PerfTimer::Automatic, PerfTimer::Msec, [] (const wchar_t * msg) { fputws (msg, stdout); });
     }
 
-    RunDirectoryListing (cmdlinePtr, consolePtr, configPtr);
+    if (cmdlinePtr->m_fInfo)
+    {
+        hrRun = CArchiveInfo::Run (*cmdlinePtr, *consolePtr, make_shared<CArchiveFileAccess>());
+    }
+    else
+    {
+        RunDirectoryListing (cmdlinePtr, consolePtr, configPtr);
+    }
 
     //
     // Display any config file or TCDIR environment variable issues at the end of the run
@@ -300,6 +309,8 @@ int wmain (int argc, WCHAR * argv[])
 
     CUsage::DisplayConfigFileIssues (*consolePtr, cmdlinePtr->GetSwitchPrefix());
     CUsage::DisplayEnvVarIssues (*consolePtr, cmdlinePtr->GetSwitchPrefix());
+
+    hr = hrRun;
 
     
 

@@ -33,16 +33,16 @@
 
 **Independent Test**: Quickstart scenarios 1, 2, 11, 12, 13 and 16.
 
-- [ ] T010 [P] [US1] Write tests for `CArchiveStatistics::Compute`: files, explicit and implied folders, nested archives counted by suffix, uncompressed total, largest file with tie on the first entry, deepest path counted in components, oldest and newest with entries lacking a time left out, no timestamps at all, encrypted count, listing-encrypted flag, extension groups lowercase with "(none)" and sorted by size then extension, empty archive, in UnitTest/ArchiveStatisticsTests.cpp
-- [ ] T011 [US1] Implement `CArchiveStatistics::Compute (const SArchiveReadResult &, SArchiveStatistics &)` in one pass with private static helpers for depth, extension and folder collection, in TCDirCore/ArchiveStatistics.h and TCDirCore/ArchiveStatistics.cpp
-- [ ] T012 [P] [US1] Write tests for `CArchiveInfoBuilder::Build`: report for a mocked archive (size on disk, statistics), read error becomes the report error text, encrypted listing reports size and format without statistics, in UnitTest/ArchiveInfoBuilderTests.cpp
-- [ ] T013 [US1] Implement `CArchiveInfoBuilder` (takes `CArchiveFileSystem &` and the verify flag, sets `m_detailsPtr`, calls `ReadDetails`, then `CArchiveStatistics::Compute`) in TCDirCore/ArchiveInfoBuilder.h and TCDirCore/ArchiveInfoBuilder.cpp
-- [ ] T014 [P] [US1] Write tests for `CArchiveInfoDisplayer` line builders: heading, label width (longest label plus 3), size on disk, contents with singular and plural ("1 nested archive"), uncompressed with ratio, "none" for empty values, date range in the listing's date and time format, encryption line, extension rows with aligned columns, error block in `{Error}`, output through `TestConsole` with the configured colors, in UnitTest/ArchiveInfoDisplayerTests.cpp
-- [ ] T015 [US1] Implement `CArchiveInfoDisplayer::Display (const SArchiveReport &)` with private static line builders that return strings, using `FormatNumberWithSeparators` and the listing date format, per contracts/cli.md, in TCDirCore/ArchiveInfoDisplayer.h and TCDirCore/ArchiveInfoDisplayer.cpp
-- [ ] T016 [US1] Add `RunArchiveInfo` to TCDirCore/TCDir.cpp: create `CArchiveFileSystem`, build and print the report for each target that is an archive path, and return the failure code. Call it instead of `RunDirectoryListing` when `m_fInfo` is set
-- [ ] T017 [US1] Add `--Info` and `--Verify` rows from contracts/cli.md to the help in TCDirCore/Usage.cpp
-- [ ] T018 [US1] Run quickstart scenarios 1, 2, 11, 12, 13 and 16 against TestData\Archives
-- [ ] T019 [US1] Build Debug x64, run all tests, commit the phase (include `TCDirCore/Version.h`)
+- [X] T010 [P] [US1] Write tests for `CArchiveStatistics::Compute`: files, explicit and implied folders, nested archives counted by suffix, uncompressed total, largest file with tie on the first entry, deepest path counted in components, oldest and newest with entries lacking a time left out, no timestamps at all, encrypted count, listing-encrypted flag, extension groups lowercase with "(none)" and sorted by size then extension, empty archive, in UnitTest/ArchiveStatisticsTests.cpp
+- [X] T011 [US1] Implement `CArchiveStatistics::Compute (const SArchiveReadResult &, SArchiveStatistics &)` in one pass with private static helpers for depth, extension and folder collection, in TCDirCore/ArchiveStatistics.h and TCDirCore/ArchiveStatistics.cpp
+- [X] T012 [P] [US1] Write tests for `CArchiveInfoBuilder::Build`: report for a mocked archive (size on disk, statistics), read error becomes the report error text, encrypted listing reports size and format without statistics, in UnitTest/ArchiveInfoBuilderTests.cpp
+- [X] T013 [US1] Implement `CArchiveInfoBuilder` (takes `CArchiveFileSystem &` and the verify flag, sets `m_detailsPtr`, calls `ReadDetails`, then `CArchiveStatistics::Compute`) in TCDirCore/ArchiveInfoBuilder.h and TCDirCore/ArchiveInfoBuilder.cpp
+- [X] T014 [P] [US1] Write tests for `CArchiveInfoDisplayer` line builders: heading, label width (longest label plus 3), size on disk, contents with singular and plural ("1 nested archive"), uncompressed with ratio, "none" for empty values, date range in the listing's date and time format, encryption line, extension rows with aligned columns, error block in `{Error}`, output through `TestConsole` with the configured colors, in UnitTest/ArchiveInfoDisplayerTests.cpp
+- [X] T015 [US1] Implement `CArchiveInfoDisplayer::Display (const SArchiveReport &)` with private static line builders that return strings, using `FormatNumberWithSeparators` and the listing date format, per contracts/cli.md, in TCDirCore/ArchiveInfoDisplayer.h and TCDirCore/ArchiveInfoDisplayer.cpp
+- [X] T016 [US1] Add `CArchiveInfo::Run` in TCDirCore/ArchiveInfo.h and TCDirCore/ArchiveInfo.cpp: create `CArchiveFileSystem`, build and print the report for each target that is an archive path, and return the failure code. Call it from TCDirCore/TCDir.cpp instead of `RunDirectoryListing` when `m_fInfo` is set
+- [X] T017 [US1] Add `--Info` and `--Verify` rows from contracts/cli.md to the help in TCDirCore/Usage.cpp
+- [X] T018 [US1] Run quickstart scenarios 1, 2, 11, 12, 13 and 16 against TestData\Archives
+- [X] T019 [US1] Build Debug x64, run all tests, commit the phase (include `TCDirCore/Version.h`)
 
 **Checkpoint**: MVP: one block per archive path.
 
@@ -55,7 +55,7 @@
 - [ ] T020 [P] [US2] Write tests for `CArchiveInfoFinder::Find (targets, callback)` without `-s`: archive path, mask in a folder (non-archives skipped, name order), folder treated as `folder\*`, no target treated as `*`, several targets in order, a target with no archives returns "No archives match <target>" and the run continues, mask inside an archive (`outer.zip\*.7z`), in UnitTest/ArchiveInfoFinderTests.cpp
 - [ ] T021 [US2] Implement `CArchiveInfoFinder` (splits targets with `CMaskGrouper::GroupMasksByDirectory`, enumerates folders with `CFileEnumerator` and archive folders with `CArchiveTree::EnumerateChildren`, filters matches with `CArchiveFileSystem::IsArchiveFile`) in TCDirCore/ArchiveInfoFinder.h and TCDirCore/ArchiveInfoFinder.cpp
 - [ ] T022 [P] [US2] Write tests for the summary line (archive count, combined size on disk, combined uncompressed size) and its absence for a single block in UnitTest/ArchiveInfoDisplayerTests.cpp
-- [ ] T023 [US2] Add `CArchiveInfoDisplayer::DisplaySummary` and use `CArchiveInfoFinder` in `RunArchiveInfo`, printing each block as it is found, in TCDirCore/ArchiveInfoDisplayer.h, TCDirCore/ArchiveInfoDisplayer.cpp and TCDirCore/TCDir.cpp
+- [ ] T023 [US2] Add `CArchiveInfoDisplayer::DisplaySummary` and use `CArchiveInfoFinder` in `CArchiveInfo::Run`, printing each block as it is found, in TCDirCore/ArchiveInfoDisplayer.h, TCDirCore/ArchiveInfoDisplayer.cpp and TCDirCore/TCDir.cpp
 - [ ] T024 [US2] Run quickstart scenarios 3 and 14, build, run all tests, commit the phase
 
 **Checkpoint**: Masks and several targets work.
@@ -128,7 +128,7 @@
 - [ ] T048 [P] [US7] Write tests for `CLibArchiveReader::Verify` with in-memory archives: intact zip all passed, zip with one damaged byte reports that entry with the libarchive reason, encrypted entry skipped, coverage per format per research R5 (zip per entry, tar.gz stream, tar headers only), in UnitTest/LibArchiveReaderTests.cpp
 - [ ] T049 [US7] Implement `CLibArchiveReader::Verify (source, format, SVerifyResult &)` (reads each entry with `archive_read_data`, treats WARN or FAILED during data reads as damage, skips encrypted entries) and `CArchiveFileAccess::Verify` (dispatches every format to libarchive, returns `Unavailable` for UDF-only images and the missing-libarchive error without `archiveint.dll`), in TCDirCore/LibArchiveReader.h, TCDirCore/LibArchiveReader.cpp and TCDirCore/ArchiveFileAccess.cpp
 - [ ] T050 [P] [US7] Write tests for verify in `CArchiveInfoBuilder` (run only with the flag, nested archives verified from memory) in UnitTest/ArchiveInfoBuilderTests.cpp, and for the verify line and damaged entries in `{Error}` in UnitTest/ArchiveInfoDisplayerTests.cpp
-- [ ] T051 [US7] Call `Verify` from `CArchiveInfoBuilder`, add the verify lines to `CArchiveInfoDisplayer`, and return the failure code for damaged entries from `RunArchiveInfo`, in TCDirCore/ArchiveInfoBuilder.cpp, TCDirCore/ArchiveInfoDisplayer.cpp and TCDirCore/TCDir.cpp
+- [ ] T051 [US7] Call `Verify` from `CArchiveInfoBuilder`, add the verify lines to `CArchiveInfoDisplayer`, and return the failure code for damaged entries from `CArchiveInfo::Run`, in TCDirCore/ArchiveInfoBuilder.cpp, TCDirCore/ArchiveInfoDisplayer.cpp and TCDirCore/TCDir.cpp
 - [ ] T052 [US7] Run quickstart scenarios 9 and 10, build, run all tests, commit the phase
 
 **Checkpoint**: Verification works for every format libarchive reads.
@@ -143,7 +143,7 @@
 ## Dependencies
 
 - Phase 1 → Phase 2 → US1 (Phase 3).
-- US2 depends on US1 (`RunArchiveInfo`). US3 depends on US2 (finder).
+- US2 depends on US1 (`CArchiveInfo::Run`). US3 depends on US2 (finder).
 - US4, US5 and US6 depend on US1 only and can run in any order or in parallel. They touch different readers, but all add lines to `ArchiveInfoDisplayer.cpp`, so their displayer tasks run one after another.
 - US7 depends on US1 and uses the libarchive work from US6 (T042).
 - Polish runs last.

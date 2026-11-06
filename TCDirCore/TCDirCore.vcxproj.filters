@@ -15,6 +15,18 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="ArchiveInfo.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ArchiveInfoDisplayer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ArchiveInfoBuilder.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ArchiveStatistics.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="ArchiveReport.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -158,6 +170,18 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="ArchiveInfo.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ArchiveInfoDisplayer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ArchiveInfoBuilder.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ArchiveStatistics.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="LibArchiveReader.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
