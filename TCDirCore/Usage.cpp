@@ -7,6 +7,7 @@
 #include "IconMapping.h"
 #include "NerdFontConstants.h"
 #include "NerdFontDetector.h"
+#include "SwitchCatalog.h"
 #include "UnicodeSymbols.h"
 #include "Version.h"
 
@@ -515,72 +516,31 @@ static void PrintUsageHeader (CConsole & console)
 
 ////////////////////////////////////////////////////////////////////////////////
 //
-//  BuildPrimaryOptionRows
+//  BuildOptionRows
+//
+//  The help rows of one section, from the switch catalog.
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-static vector<SUsageOptionRow> BuildPrimaryOptionRows (wstring_view szShort, wstring_view pszLong, wstring_view pszMDisable)
+static vector<SUsageOptionRow> BuildOptionRows (ESwitchSection eSection, wstring_view szShort, wstring_view pszLong)
 {
-    return
+    vector<SUsageOptionRow> rows;
+
+
+
+    for (const SSwitchDefinition & definition : CSwitchCatalog::All())
     {
-        { format (L"{{InformationHighlight}}{0}A{{Information}}", szShort), 
-          L"Displays files with specified attributes.",
-          L"" },
-        { format (L"{{InformationHighlight}}{0}O{{Information}}", szShort),
-          L"List by files in sorted order.",
-          L"" },
-        { format (L"{{InformationHighlight}}{0}T{{Information}}", szShort),
-          L"Selects the time field for display and sorting.",
-          L"" },
-        { format (L"{{InformationHighlight}}{0}S{{Information}}", szShort),
-          L"Displays files in specified directory and all subdirectories.",
-          L"" },
-        { format (L"{{InformationHighlight}}{0}W{{Information}}", szShort),
-          L"Displays results in a wide listing format.",
-          L"" },
-        { format (L"{{InformationHighlight}}{0}B{{Information}}", szShort),
-          L"Displays bare file names only (no headers, footers, or details).",
-          L"" },
-        { format (L"{{InformationHighlight}}{0}P{{Information}}", szShort),
-          L"Displays performance timing information.",
-          L"" },
-        { format (L"{{InformationHighlight}}{0}M{{Information}}", szShort),
-          format (L"Enables multi-threaded enumeration (default). Use{{InformationHighlight}}{0}{{Information}} to disable.", pszMDisable),
-          L"" },
-        { format (L"{{InformationHighlight}}{0}Env{{Information}}", pszLong),
-          L"Displays " TCDIR_ENV_VAR_NAME L" help, syntax, and current value.",
-          L"" },
-        { format (L"{{InformationHighlight}}{0}Config{{Information}}", pszLong),
-          L"Displays config file diagnostics, syntax reference, and parse errors.",
-          L"" },
-        { format (L"{{InformationHighlight}}{0}Settings{{Information}}", pszLong),
-          L"Displays current merged configuration for all items and extensions.",
-          L"" },
-        { format (L"{{InformationHighlight}}{0}Owner{{Information}}", pszLong),
-          format (L"Displays the owner of each file and directory. Not allowed with {{InformationHighlight}}{0}Tree{{Information}}.", pszLong),
-          L"" },
-        { format (L"{{InformationHighlight}}{0}Streams{{Information}}", pszLong),
-          L"Displays alternate data streams (NTFS only).",
-          L"" },
-        { format (L"{{InformationHighlight}}{0}Icons{{Information}}", pszLong),
-          format (L"Enables file-type icons (Nerd Font required). Use {{InformationHighlight}}{0}Icons-{{Information}} to disable.", pszLong),
-          L"" },
-        { format (L"{{InformationHighlight}}{0}Tree{{Information}}", pszLong),
-          format (L"Displays a hierarchical directory tree view. Use {{InformationHighlight}}{0}Tree-{{Information}} to disable.", pszLong),
-          L"" },
-        { format (L"{{InformationHighlight}}{0}Ellipsize{{Information}}", pszLong),
-          format (L"Truncates long link target paths with \u2026 to prevent line wrapping. Default: on. Use {{InformationHighlight}}{0}Ellipsize-{{Information}} to disable.", pszLong),
-          L"" },
-        { format (L"{{InformationHighlight}}{0}Depth{{Information}}={{InformationHighlight}}N{{Information}}", pszLong),
-          format (L"Limits tree depth to N levels (requires {{InformationHighlight}}{0}Tree{{Information}}).", pszLong),
-          L"" },
-        { format (L"{{InformationHighlight}}{0}TreeIndent{{Information}}={{InformationHighlight}}N{{Information}}", pszLong),
-          format (L"Sets tree indent width (1-8, default 4; requires {{InformationHighlight}}{0}Tree{{Information}}).", pszLong),
-          L"" },
-        { format (L"{{InformationHighlight}}{0}Size{{Information}}={{InformationHighlight}}Auto{{Information}}|{{InformationHighlight}}Bytes{{Information}}", pszLong),
-          L"File size format: {InformationHighlight}Auto{Information} = abbreviated (KB/MB/GB), {InformationHighlight}Bytes{Information} = exact with commas.",
-          L"Default: {InformationHighlight}Auto{Information} in tree mode, {InformationHighlight}Bytes{Information} otherwise." },
-    };
+        if (definition.m_eSection != eSection || !CSwitchCatalog::IsAvailable (definition))
+        {
+            continue;
+        }
+
+        rows.push_back ({ CSwitchCatalog::Label (definition, szShort, pszLong),
+                          CSwitchCatalog::FormatText (definition.m_pszDescription, szShort, pszLong),
+                          CSwitchCatalog::FormatText (definition.m_pszContinuation, szShort, pszLong) });
+    }
+
+    return rows;
 }
 
 
@@ -588,43 +548,34 @@ static vector<SUsageOptionRow> BuildPrimaryOptionRows (wstring_view szShort, wst
 
 ////////////////////////////////////////////////////////////////////////////////
 //
-//  BuildAliasRows
+//  BuildValueGrid
+//
+//  Lays out a switch's values two per row, under the value name.
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-static vector<SUsageOptionRow> BuildAliasRows (wstring_view pszLong)
+static vector<SThreeColumnRow> BuildValueGrid (LPCWSTR pszValueName, span<const SSwitchValue> values)
 {
-    vector<SUsageOptionRow> aliasRows =
+    vector<SThreeColumnRow> rows;
+
+
+
+    for (size_t i = 0; i < values.size(); i += 2)
     {
-        { format (L"{{InformationHighlight}}{0}Set-Aliases{{Information}}", pszLong),
-          L"Interactive wizard to configure PowerShell aliases for tcdir.",
-          L"" },
-        { format (L"{{InformationHighlight}}{0}Get-Aliases{{Information}}", pszLong),
-          L"Display currently configured tcdir aliases and their source locations.",
-          L"" },
-        { format (L"{{InformationHighlight}}{0}Remove-Aliases{{Information}}", pszLong),
-          L"Interactive wizard to remove tcdir aliases from a profile.",
-          L"" },
-        { format (L"{{InformationHighlight}}{0}WhatIf{{Information}}", pszLong),
-          format (L"Preview changes without modifying files (use with {{InformationHighlight}}{0}Set-Aliases{{Information}} or {{InformationHighlight}}{0}Remove-Aliases{{Information}}).", pszLong),
-          L"" },
-        { format (L"{{InformationHighlight}}{0}Install-NerdFonts{{Information}}", pszLong),
-          format (L"Download and install {} system-wide, then optionally configure terminal profiles.", NerdFontConst::kpszWtFontFace),
-          L"" },
-        { format (L"{{InformationHighlight}}{0}Uninstall-NerdFonts{{Information}}", pszLong),
-          L"Remove Nerd Font terminal configuration and optionally remove installed font files.",
-          L"" },
-    };
+        SThreeColumnRow row;
 
-#ifdef _DEBUG
-    aliasRows.push_back ({
-        format (L"{{InformationHighlight}}{0}Debug{{Information}}", pszLong),
-        L"Displays raw file attributes in hex for diagnosing edge cases.",
-        L""
-    });
-#endif
+        row.col1 = (i == 0) ? pszValueName : L"";
+        row.col2 = format (L"{{InformationHighlight}}{}{{Information}}  {}", values[i].m_pszValue, values[i].m_pszDescription);
 
-    return aliasRows;
+        if (i + 1 < values.size())
+        {
+            row.col3 = format (L"{{InformationHighlight}}{}{{Information}}  {}", values[i + 1].m_pszValue, values[i + 1].m_pszDescription);
+        }
+
+        rows.push_back (move (row));
+    }
+
+    return rows;
 }
 
 
@@ -677,7 +628,6 @@ void CUsage::DisplayUsage (CConsole & console, wchar_t chPrefix, optional<bool> 
     // Determine prefix strings for single-char and multi-char switches
     wstring_view szShort     = (chPrefix == L'-') ? L"-"    : L"/";
     wstring_view pszLong     = (chPrefix == L'-') ? L"--"   : L"/";
-    wstring_view pszMDisable = (chPrefix == L'-') ? L" -M-" : L" /M-";
 
     // Resolve icon state, then pick cloud status symbols (Nerd Font icons or Unicode circles)
     const CConfig & config = *console.m_configPtr;
@@ -696,8 +646,8 @@ void CUsage::DisplayUsage (CConsole & console, wchar_t chPrefix, optional<bool> 
     constexpr int  SIZE_CONTINUATION_OFFSET   = 2;
     constexpr int  CLOUD_ICON_DESC_GAP        = 2;
 
-    vector<SUsageOptionRow> primaryRows = BuildPrimaryOptionRows (szShort, pszLong, pszMDisable);
-    vector<SUsageOptionRow> aliasRows   = BuildAliasRows (pszLong);
+    vector<SUsageOptionRow> primaryRows = BuildOptionRows (ESwitchSection::Primary, szShort, pszLong);
+    vector<SUsageOptionRow> aliasRows   = BuildOptionRows (ESwitchSection::Alias, szShort, pszLong);
 
     vector<wstring> synopsisTokens = BuildSynopsisTokens (primaryRows, aliasRows, szShort);
 
@@ -734,18 +684,7 @@ void CUsage::DisplayUsage (CConsole & console, wchar_t chPrefix, optional<bool> 
                       primaryRows[0].label,
                       primaryRows[0].description);
 
-    vector<SThreeColumnRow> attributeRows =
-    {
-        { L"attributes", L"{InformationHighlight}D{Information}  Directories",             L"{InformationHighlight}R{Information}  Read-only files" },
-        { L"",           L"{InformationHighlight}H{Information}  Hidden files",            L"{InformationHighlight}A{Information}  Files ready for archiving" },
-        { L"",           L"{InformationHighlight}S{Information}  System files",            L"{InformationHighlight}T{Information}  Temporary files" },
-        { L"",           L"{InformationHighlight}E{Information}  Encrypted files",         L"{InformationHighlight}C{Information}  Compressed files" },
-        { L"",           L"{InformationHighlight}P{Information}  Reparse points",          L"{InformationHighlight}0{Information}  Sparse files" },
-        { L"",           L"{InformationHighlight}X{Information}  Not content indexed",     L"{InformationHighlight}I{Information}  Integrity stream (ReFS)" },
-        { L"",           L"{InformationHighlight}B{Information}  No scrub data (ReFS)",    L"{InformationHighlight}O{Information}  Cloud-only (not local)" },
-        { L"",           L"{InformationHighlight}L{Information}  Locally available",       L"{InformationHighlight}V{Information}  Always locally available" },
-        { L"",           L"{InformationHighlight}-{Information}  Prefix meaning not",      L"" },
-    };
+    vector<SThreeColumnRow> attributeRows = BuildValueGrid (L"attributes", CSwitchCatalog::ValuesOf (L"A"));
 
     int attributeCol2 = AppendDetailGrid (usageBody, INDENT, subLevelDetailCol, COLUMN_GAP, SUBLEVEL_SECOND_COL_OFFSET, attributeRows);
 
@@ -767,12 +706,7 @@ void CUsage::DisplayUsage (CConsole & console, wchar_t chPrefix, optional<bool> 
                       primaryRows[1].label,
                       primaryRows[1].description);
 
-    vector<SThreeColumnRow> sortRows =
-    {
-        { L"sortorder", L"{InformationHighlight}N{Information}  By name (alphabetic)",      L"{InformationHighlight}S{Information}  By size (smallest first)" },
-        { L"",          L"{InformationHighlight}E{Information}  By extension (alphabetic)", L"{InformationHighlight}D{Information}  By date/time (oldest first)" },
-        { L"",          L"{InformationHighlight}-{Information}  Prefix to reverse order",   L"" },
-    };
+    vector<SThreeColumnRow> sortRows = BuildValueGrid (L"sortorder", CSwitchCatalog::ValuesOf (L"O"));
 
     AppendDetailGrid (usageBody, INDENT, subLevelDetailCol, COLUMN_GAP, SUBLEVEL_SECOND_COL_OFFSET, sortRows);
 
@@ -782,11 +716,7 @@ void CUsage::DisplayUsage (CConsole & console, wchar_t chPrefix, optional<bool> 
                       primaryRows[2].label,
                       primaryRows[2].description);
 
-    vector<SThreeColumnRow> timeRows =
-    {
-        { L"timefield", L"{InformationHighlight}C{Information}  Creation time",             L"{InformationHighlight}A{Information}  Last access time" },
-        { L"",          L"{InformationHighlight}W{Information}  Last write time (default)", L"" },
-    };
+    vector<SThreeColumnRow> timeRows = BuildValueGrid (L"timefield", CSwitchCatalog::ValuesOf (L"T"));
 
     AppendDetailGrid (usageBody, INDENT, subLevelDetailCol, COLUMN_GAP, SUBLEVEL_SECOND_COL_OFFSET, timeRows);
 

@@ -810,6 +810,7 @@ bool CCommandLine::IsRecognizedLongSwitch (const wstring & strSwitch)
     {
         L"env",
         L"config",
+        L"settings",
         L"owner",
         L"streams",
         L"debug",

@@ -204,6 +204,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="SwitchCatalog.h" />
     <ClInclude Include="AliasBlockGenerator.h" />
     <ClInclude Include="AliasManager.h" />
     <ClInclude Include="AnsiCodes.h" />
@@ -256,6 +257,7 @@
     <ClInclude Include="WorkQueue.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="SwitchCatalog.cpp" />
     <ClCompile Include="AliasBlockGenerator.cpp" />
     <ClCompile Include="AliasManager.cpp" />
     <ClCompile Include="CommandLine.cpp" />

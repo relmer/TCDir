@@ -102,6 +102,8 @@ public:
     void    ApplyConfigDefaults (const class CConfig & config);
     wchar_t GetSwitchPrefix     (void) const { return m_chSwitchPrefix; }
 
+    static bool IsRecognizedLongSwitch (const wstring & strSwitch);
+
 
 protected: 
     //
@@ -117,7 +119,6 @@ protected:
     
     HRESULT HandleSwitch                  (LPCWSTR pszArg, int & cArg, WCHAR ** & ppszArg);
     HRESULT HandleLongSwitch              (LPCWSTR pszArg, int & cArg, WCHAR ** & ppszArg);
-    static bool IsRecognizedLongSwitch    (const wstring & strSwitch);
     HRESULT ParseSwitch                   (LPCWSTR pszArg, int & cArg, WCHAR ** & ppszArg);
     HRESULT RejectSingleDashLongSwitch    (LPCWSTR pszSwitchArg);
     HRESULT ValidateSwitchCombinations    (void);

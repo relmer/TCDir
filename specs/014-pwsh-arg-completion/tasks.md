@@ -10,15 +10,15 @@
 
 ## Phase 1: Setup
 
-- [ ] T001 Capture `tcdir -? --Icons-` and `tcdir /? /Icons-` from the current Debug build into the scratch folder, without the version header lines, for the before/after comparison in T006
+- [X] T001 Capture `tcdir -? --Icons-` and `tcdir /? /Icons-` from the current Debug build into the scratch folder, without the version header lines, for the before/after comparison in T006
 
 ## Phase 2: Foundational (blocks all stories)
 
-- [ ] T002 Add `ESwitchForm`, `ESwitchSection`, `SSwitchValue` and `SSwitchDefinition` per data-model.md, and `CSwitchCatalog` with a `constexpr` table of every switch in the `-?` help (descriptions and continuations with `{0}` short and `{1}` long prefix placeholders, value lists for `-A`, `-O`, `-T`, `--Size`, `--TreeIndent`), plus `Find (form, name)`, `PlainText (markup)` and `FormatHelpText (definition, shortPrefix, longPrefix)`, in TCDirCore/SwitchCatalog.h and TCDirCore/SwitchCatalog.cpp
-- [ ] T003 [P] Write tests in UnitTest/SwitchCatalogTests.cpp: every catalog switch parses with `CCommandLine::Parse` (with its first value when it takes one), every name `CCommandLine::IsRecognizedLongSwitch` accepts is in the catalog, every value of `-A`, `-O` and `-T` parses, `PlainText` removes color markers, `Find` is case insensitive
-- [ ] T004 Build the option rows in `BuildPrimaryOptionRows` and `BuildAliasRows`, and the attribute, sort and time grids in `CUsage::DisplayUsage`, from `CSwitchCatalog`, in TCDirCore/Usage.cpp
-- [ ] T005 Make `CCommandLine::IsRecognizedLongSwitch` accessible to tests (public static) in TCDirCore/CommandLine.h
-- [ ] T006 Compare `-?` and `/?` output with T001; the output is identical. Run all tests and commit the phase
+- [X] T002 Add `ESwitchForm`, `ESwitchSection`, `SSwitchValue` and `SSwitchDefinition` per data-model.md, and `CSwitchCatalog` with a `constexpr` table of every switch in the `-?` help (descriptions and continuations with `{0}` short and `{1}` long prefix placeholders, value lists for `-A`, `-O`, `-T`, `--Size`, `--TreeIndent`), plus `Find (form, name)`, `PlainText (markup)` and `FormatHelpText (definition, shortPrefix, longPrefix)`, in TCDirCore/SwitchCatalog.h and TCDirCore/SwitchCatalog.cpp
+- [X] T003 [P] Write tests in UnitTest/SwitchCatalogTests.cpp: every catalog switch parses with `CCommandLine::Parse` (with its first value when it takes one), every name `CCommandLine::IsRecognizedLongSwitch` accepts is in the catalog, every value of `-A`, `-O` and `-T` parses, `PlainText` removes color markers, `Find` is case insensitive
+- [X] T004 Build the option rows in `BuildPrimaryOptionRows` and `BuildAliasRows`, and the attribute, sort and time grids in `CUsage::DisplayUsage`, from `CSwitchCatalog`, in TCDirCore/Usage.cpp
+- [X] T005 Make `CCommandLine::IsRecognizedLongSwitch` accessible to tests (public static) in TCDirCore/CommandLine.h
+- [X] T006 Compare `-?` and `/?` output with T001; the output is identical. Run all tests and commit the phase
 
 **Checkpoint**: The help comes from the catalog and prints the same text.
 
