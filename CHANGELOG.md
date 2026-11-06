@@ -14,6 +14,9 @@ All notable changes to TCDir are documented in this file.
   - Read-only: archives are never extracted or modified, and `.iso` images are never mounted
 - The date and time columns are blank for entries with no stored time (possible inside archives)
 
+### Fixed
+- `Tree` and `Ellipsize` are added to the switch help in `--Env` and `--Config`, and to the decoded `TCDIR` settings in `--Env` when they appear in `TCDIR`
+
 ## [5.6.1] - 2026-07-28
 
 ### Fixed
