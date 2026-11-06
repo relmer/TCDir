@@ -34,9 +34,9 @@ struct SEnumerationError
 //
 //  Enumerates one directory, either through FindFirstFile or, for a
 //  location inside an archive, from the archive tree.  When archive
-//  browsing is on, archive files found on disk are registered so that
-//  recursion can descend into them.  Their attributes are not modified,
-//  so they list as files.
+//  browsing is on, archive files found on disk or inside an archive are
+//  registered so that recursion can descend into them.  Their attributes
+//  are not modified, so they list as files.
 //
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -64,7 +64,7 @@ private:
                                   const filesystem::path & fileSpec,
                                   const Callback         & callback,
                                   SEnumerationError      & error) const;
-    void    RegisterArchive      (const filesystem::path & dirPath, const WIN32_FIND_DATA & wfd) const;
+    void    RegisterArchive      (const filesystem::path & dirPath, bool fInArchive, const WIN32_FIND_DATA & wfd) const;
 
     shared_ptr<CArchiveFileSystem> m_archiveFsPtr;
 };

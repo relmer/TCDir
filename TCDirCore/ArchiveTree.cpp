@@ -224,6 +224,58 @@ const CArchiveTree::SNode * CArchiveTree::FindFolder (wstring_view innerPath) co
 
 ////////////////////////////////////////////////////////////////////////////////
 //
+//  CArchiveTree::FindFile
+//
+//  Returns the file at innerPath, or nullptr when a folder component is
+//  missing or the last component is not a file.  When a folder has duplicate
+//  files, the first one matches.
+//
+////////////////////////////////////////////////////////////////////////////////
+
+const CArchiveTree::SNode * CArchiveTree::FindFile (wstring_view innerPath) const
+{
+    vector<wstring>   components;
+    wstring           strFolder;
+    const SNode     * pFolder    = nullptr;
+    const SNode     * pFile      = nullptr;
+
+
+
+    if (SplitPath (innerPath, components))
+    {
+        for (size_t i = 0; i + 1 < components.size(); ++i)
+        {
+            strFolder += components[i];
+            strFolder += L'\\';
+        }
+
+        pFolder = FindFolder (strFolder);
+    }
+
+    if (pFolder != nullptr)
+    {
+        for (size_t iChild : pFolder->m_vChildren)
+        {
+            const SNode & child = m_vNodes[iChild];
+
+            if (!child.m_fDirectory &&
+                CompareStringOrdinal (child.m_strName.c_str(), -1, components.back().c_str(), -1, TRUE) == CSTR_EQUAL)
+            {
+                pFile = &child;
+                break;
+            }
+        }
+    }
+
+    return pFile;
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
 //  CArchiveTree::EnumerateChildren
 //
 //  Calls callback for each child of folder whose name matches spec, in

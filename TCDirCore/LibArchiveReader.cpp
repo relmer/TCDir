@@ -2,6 +2,8 @@
 
 #include "LibArchiveReader.h"
 
+#include "ArchiveTree.h"
+
 
 
 
@@ -20,6 +22,8 @@ struct CLibArchiveReader::SApi
     using PfnReadNew          = void *         (__cdecl *) ();
     using PfnArchiveInt       = int            (__cdecl *) (void *);
     using PfnOpenFileName     = int            (__cdecl *) (void *, const wchar_t *, size_t);
+    using PfnOpenMemory       = int            (__cdecl *) (void *, const void *, size_t);
+    using PfnReadData         = INT_PTR        (__cdecl *) (void *, void *, size_t);
     using PfnNextHeader       = int            (__cdecl *) (void *, void **);
     using PfnErrorString      = const char *   (__cdecl *) (void *);
     using PfnEntryPath        = const wchar_t * (__cdecl *) (void *);
@@ -33,6 +37,8 @@ struct CLibArchiveReader::SApi
     PfnArchiveInt     m_pfnSupportFilterAll    = nullptr;
     PfnArchiveInt     m_pfnSupportFormatAll    = nullptr;
     PfnOpenFileName   m_pfnOpenFileName        = nullptr;
+    PfnOpenMemory     m_pfnOpenMemory          = nullptr;
+    PfnReadData       m_pfnReadData            = nullptr;
     PfnNextHeader     m_pfnNextHeader          = nullptr;
     PfnArchiveInt     m_pfnDataSkip            = nullptr;
     PfnArchiveInt     m_pfnHasEncryptedEntries = nullptr;
@@ -117,6 +123,8 @@ void CLibArchiveReader::LoadApi (SApi & api)
     api.m_pfnSupportFilterAll    = reinterpret_cast<SApi::PfnArchiveInt>   (GetProcAddress (hModule, "archive_read_support_filter_all"));
     api.m_pfnSupportFormatAll    = reinterpret_cast<SApi::PfnArchiveInt>   (GetProcAddress (hModule, "archive_read_support_format_all"));
     api.m_pfnOpenFileName        = reinterpret_cast<SApi::PfnOpenFileName> (GetProcAddress (hModule, "archive_read_open_filename_w"));
+    api.m_pfnOpenMemory          = reinterpret_cast<SApi::PfnOpenMemory>   (GetProcAddress (hModule, "archive_read_open_memory"));
+    api.m_pfnReadData            = reinterpret_cast<SApi::PfnReadData>     (GetProcAddress (hModule, "archive_read_data"));
     api.m_pfnNextHeader          = reinterpret_cast<SApi::PfnNextHeader>   (GetProcAddress (hModule, "archive_read_next_header"));
     api.m_pfnDataSkip            = reinterpret_cast<SApi::PfnArchiveInt>   (GetProcAddress (hModule, "archive_read_data_skip"));
     api.m_pfnHasEncryptedEntries = reinterpret_cast<SApi::PfnArchiveInt>   (GetProcAddress (hModule, "archive_read_has_encrypted_entries"));
@@ -139,7 +147,7 @@ void CLibArchiveReader::LoadApi (SApi & api)
                     api.m_pfnEntryPath           && api.m_pfnEntryFileType    && api.m_pfnEntrySizeIsSet   &&
                     api.m_pfnEntrySize           && api.m_pfnEntryMtimeIsSet  && api.m_pfnEntryMtime       &&
                     api.m_pfnEntryMtimeNsec      && api.m_pfnEntryPermIsSet   && api.m_pfnEntryPerm        &&
-                    api.m_pfnEntryIsEncrypted;
+                    api.m_pfnEntryIsEncrypted    && api.m_pfnOpenMemory       && api.m_pfnReadData;
 
 
 
@@ -160,12 +168,11 @@ Error:
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-HRESULT CLibArchiveReader::Read (const filesystem::path & path, SArchiveReadResult & result)
+HRESULT CLibArchiveReader::Read (const SArchiveSource & source, SArchiveReadResult & result)
 {
     HRESULT        hr       = S_OK;
     const SApi   * pApi     = GetApi();
     void         * pArchive = nullptr;
-    int            iResult  = 0;
 
 
 
@@ -173,14 +180,8 @@ HRESULT CLibArchiveReader::Read (const filesystem::path & path, SArchiveReadResu
 
     CBREx (pApi != nullptr, HRESULT_FROM_WIN32 (ERROR_NOT_SUPPORTED));
 
-    pArchive = pApi->m_pfnReadNew();
-    CPRA (pArchive);
-
-    pApi->m_pfnSupportFilterAll (pArchive);
-    pApi->m_pfnSupportFormatAll (pArchive);
-
-    iResult = pApi->m_pfnOpenFileName (pArchive, path.c_str(), s_kcbReadBlock);
-    CBREx (iResult >= s_kiArchiveWarn, HRESULT_FROM_WIN32 (ERROR_BAD_FORMAT));
+    hr = Open (*pApi, source, pArchive);
+    CHR (hr);
 
     hr = ReadEntries (*pApi, pArchive, result);
     CHR (hr);
@@ -191,6 +192,163 @@ Error:
     if (pArchive != nullptr)
     {
         pApi->m_pfnReadFree (pArchive);
+    }
+
+    return hr;
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CLibArchiveReader::ExtractEntry
+//
+//  Reads the data of the first file entry at entryPath into bytes.  Returns
+//  ERROR_FILE_NOT_FOUND when no file entry has that path,
+//  ERROR_FILE_ENCRYPTED for an encrypted entry, and ERROR_FILE_TOO_LARGE
+//  when the data is larger than cbMax.
+//
+////////////////////////////////////////////////////////////////////////////////
+
+HRESULT CLibArchiveReader::ExtractEntry (
+    const SArchiveSource & source,
+    wstring_view           entryPath,
+    ULONGLONG              cbMax,
+    vector<BYTE>         & bytes)
+{
+    HRESULT                hr       = S_OK;
+    const SApi           * pApi     = GetApi();
+    void                 * pArchive = nullptr;
+    void                 * pEntry   = nullptr;
+    int                    iResult  = s_kiArchiveOk;
+    bool                   fFound   = false;
+    SLibArchiveEntryInfo   info;
+
+
+
+    bytes.clear();
+
+    CBREx (pApi != nullptr, HRESULT_FROM_WIN32 (ERROR_NOT_SUPPORTED));
+
+    hr = Open (*pApi, source, pArchive);
+    CHR (hr);
+
+    while (!fFound)
+    {
+        iResult = pApi->m_pfnNextHeader (pArchive, &pEntry);
+        CBREx (iResult != s_kiArchiveEof, HRESULT_FROM_WIN32 (ERROR_FILE_NOT_FOUND));
+        CBREx (iResult >= s_kiArchiveWarn, HRESULT_FROM_WIN32 (ERROR_BAD_FORMAT));
+
+        GetEntryInfo (*pApi, pEntry, info);
+
+        fFound = info.m_uFileType != s_kuFileTypeDirectory && IsSamePath (info.m_strPath, entryPath);
+    }
+
+    CBREx (!info.m_fEncrypted, HRESULT_FROM_WIN32 (ERROR_FILE_ENCRYPTED));
+    CBREx (!info.m_fSizeSet || info.m_llSize < 0 || static_cast<ULONGLONG> (info.m_llSize) <= cbMax,
+           HRESULT_FROM_WIN32 (ERROR_FILE_TOO_LARGE));
+
+    hr = ReadEntryData (*pApi, pArchive, cbMax, bytes);
+    CHR (hr);
+
+
+
+Error:
+    if (pArchive != nullptr)
+    {
+        pApi->m_pfnReadFree (pArchive);
+    }
+
+    if (FAILED (hr))
+    {
+        bytes.clear();
+    }
+
+    return hr;
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CLibArchiveReader::IsSamePath
+//
+//  Compares two paths inside an archive component by component, ignoring
+//  case and the separator style.  Components that CArchiveTree drops (empty,
+//  "." and "..") are ignored, so a path from the archive tree matches the
+//  path stored in the archive.
+//
+////////////////////////////////////////////////////////////////////////////////
+
+bool CLibArchiveReader::IsSamePath (wstring_view path1, wstring_view path2)
+{
+    vector<wstring>   components1;
+    vector<wstring>   components2;
+    bool              fSame       = false;
+
+
+
+    CArchiveTree::SplitPath (path1, components1);
+    CArchiveTree::SplitPath (path2, components2);
+
+    fSame = !components1.empty() && components1.size() == components2.size();
+
+    for (size_t i = 0; fSame && i < components1.size(); ++i)
+    {
+        fSame = CompareStringOrdinal (components1[i].c_str(), -1, components2[i].c_str(), -1, TRUE) == CSTR_EQUAL;
+    }
+
+    return fSame;
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CLibArchiveReader::Open
+//
+//  Creates a reader for source: the real file, or the bytes in memory.  On
+//  failure the reader is freed and pArchive is nullptr.
+//
+////////////////////////////////////////////////////////////////////////////////
+
+HRESULT CLibArchiveReader::Open (const SApi & api, const SArchiveSource & source, void *& pArchive)
+{
+    HRESULT   hr      = S_OK;
+    int       iResult = 0;
+
+
+
+    pArchive = api.m_pfnReadNew();
+    CPRA (pArchive);
+
+    api.m_pfnSupportFilterAll (pArchive);
+    api.m_pfnSupportFormatAll (pArchive);
+
+    if (source.m_bytesPtr != nullptr)
+    {
+        iResult = api.m_pfnOpenMemory (pArchive, source.m_bytesPtr->data(), source.m_bytesPtr->size());
+    }
+    else
+    {
+        iResult = api.m_pfnOpenFileName (pArchive, source.m_path.c_str(), s_kcbReadBlock);
+    }
+
+    CBREx (iResult >= s_kiArchiveWarn, HRESULT_FROM_WIN32 (ERROR_BAD_FORMAT));
+
+
+
+Error:
+    if (FAILED (hr) && pArchive != nullptr)
+    {
+        api.m_pfnReadFree (pArchive);
+        pArchive = nullptr;
     }
 
     return hr;
@@ -243,6 +401,49 @@ HRESULT CLibArchiveReader::ReadEntries (const SApi & api, void * pArchive, SArch
 
         result.m_vEntries.clear();
         result.m_fListingEncrypted = true;
+    }
+
+
+
+Error:
+    return hr;
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CLibArchiveReader::ReadEntryData
+//
+//  Reads the data of the current entry.  An entry whose data cannot be read
+//  (for example a compression method the build doesn't support) is reported
+//  as ERROR_BAD_FORMAT.
+//
+////////////////////////////////////////////////////////////////////////////////
+
+HRESULT CLibArchiveReader::ReadEntryData (const SApi & api, void * pArchive, ULONGLONG cbMax, vector<BYTE> & bytes)
+{
+    HRESULT        hr      = S_OK;
+    vector<BYTE>   block   (s_kcbReadBlock);
+    INT_PTR        cbRead  = 0;
+
+
+
+    for (;;)
+    {
+        cbRead = api.m_pfnReadData (pArchive, block.data(), block.size());
+        CBREx (cbRead >= 0, HRESULT_FROM_WIN32 (ERROR_BAD_FORMAT));
+
+        if (cbRead == 0)
+        {
+            break;
+        }
+
+        CBREx (bytes.size() + static_cast<size_t> (cbRead) <= cbMax, HRESULT_FROM_WIN32 (ERROR_FILE_TOO_LARGE));
+
+        bytes.insert (bytes.end(), block.begin(), block.begin() + cbRead);
     }
 
 

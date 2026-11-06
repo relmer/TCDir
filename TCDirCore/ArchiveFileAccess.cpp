@@ -36,10 +36,10 @@ DWORD CArchiveFileAccess::GetAttributes (const filesystem::path & path)
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-HRESULT CArchiveFileAccess::Read (const filesystem::path & path, EArchiveFormat format, SArchiveReadResult & result)
+HRESULT CArchiveFileAccess::Read (const SArchiveSource & source, EArchiveFormat format, SArchiveReadResult & result)
 {
-    HRESULT           hr     = S_OK;
-    CFileByteSource   source;
+    HRESULT                   hr            = S_OK;
+    unique_ptr<IByteSource>   byteSourcePtr;
 
 
 
@@ -48,29 +48,103 @@ HRESULT CArchiveFileAccess::Read (const filesystem::path & path, EArchiveFormat 
     switch (format)
     {
         case EArchiveFormat::Zip:
-            hr = source.Open (path);
+            hr = OpenByteSource (source, byteSourcePtr);
             CHR (hr);
 
-            hr = CZipReader::Read (source, result);
+            hr = CZipReader::Read (*byteSourcePtr, result);
             CHR (hr);
             break;
 
         case EArchiveFormat::Iso:
-            hr = source.Open (path);
+            hr = OpenByteSource (source, byteSourcePtr);
             CHR (hr);
 
-            hr = CIsoReader::Read (source, result);
+            hr = CIsoReader::Read (*byteSourcePtr, result);
             CHR (hr);
             break;
 
         case EArchiveFormat::LibArchive:
-            hr = CLibArchiveReader::Read (path, result);
+            hr = CLibArchiveReader::Read (source, result);
             CHR (hr);
             break;
 
         default:
             BAIL_OUT_IF (TRUE, HRESULT_FROM_WIN32 (ERROR_NOT_SUPPORTED));
             break;
+    }
+
+
+
+Error:
+    return hr;
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CArchiveFileAccess::ExtractEntry
+//
+//  Reads the data of one file entry of an archive into memory through
+//  archiveint.dll.
+//
+////////////////////////////////////////////////////////////////////////////////
+
+HRESULT CArchiveFileAccess::ExtractEntry (
+    const SArchiveSource             & source,
+    wstring_view                       entryPath,
+    ULONGLONG                          cbMax,
+    shared_ptr<const vector<BYTE>>   & bytesPtr)
+{
+    HRESULT        hr    = S_OK;
+    vector<BYTE>   bytes;
+
+
+
+    bytesPtr.reset();
+
+    hr = CLibArchiveReader::ExtractEntry (source, entryPath, cbMax, bytes);
+    CHR (hr);
+
+    bytesPtr = make_shared<const vector<BYTE>> (move (bytes));
+
+
+
+Error:
+    return hr;
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CArchiveFileAccess::OpenByteSource
+//
+////////////////////////////////////////////////////////////////////////////////
+
+HRESULT CArchiveFileAccess::OpenByteSource (const SArchiveSource & source, unique_ptr<IByteSource> & byteSourcePtr)
+{
+    HRESULT                       hr      = S_OK;
+    unique_ptr<CFileByteSource>   filePtr;
+
+
+
+    if (source.m_bytesPtr != nullptr)
+    {
+        byteSourcePtr = make_unique<CMemoryByteSource> (source.m_bytesPtr);
+    }
+    else
+    {
+        filePtr = make_unique<CFileByteSource>();
+
+        hr = filePtr->Open (source.m_path);
+        CHR (hr);
+
+        byteSourcePtr = move (filePtr);
     }
 
 

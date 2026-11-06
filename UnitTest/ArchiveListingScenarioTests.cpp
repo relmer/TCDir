@@ -155,6 +155,7 @@ namespace UnitTest
     //        docs\guide.md    (4)
     //        docs\api\ref.md  (5)
     //        nested.zip       (7)
+    //          deep.txt       (9)
     //      sub\
     //        bad.zip          (corrupt)
     //        main.cpp         (20)
@@ -197,6 +198,8 @@ namespace UnitTest
                                                  CMockArchiveFileAccess::File (L"docs/guide.md",   4),
                                                  CMockArchiveFileAccess::File (L"docs/api/ref.md", 5),
                                                  CMockArchiveFileAccess::File (L"nested.zip",      7) });
+                m_accessPtr->AddArchive       (L"C:\\MockRoot\\release.zip\\nested.zip",
+                                               { CMockArchiveFileAccess::File (L"deep.txt", 9) });
                 m_accessPtr->AddBrokenArchive (L"C:\\MockRoot\\sub\\bad.zip", HRESULT_FROM_WIN32 (ERROR_BAD_FORMAT));
 
                 m_archiveFsPtr = make_shared<CArchiveFileSystem> (m_accessPtr);
@@ -310,6 +313,94 @@ namespace UnitTest
 
             Assert::IsTrue (fixture.m_consolePtr->m_strCaptured.find (L"readme.txt") != wstring::npos);
             Assert::IsTrue (fixture.m_consolePtr->m_strCaptured.find (L"Error") == wstring::npos);
+        }
+
+
+
+
+        TEST_METHOD(Recursive_NestedArchive_ContentsListed)
+        {
+            SFixture                     fixture;
+            ScopedFileSystemMock         mock      (fixture.m_tree);
+            CCapturingResultsDisplayer   displayer;
+            SListingTotals               totals    = {};
+
+            fixture.m_cmdLinePtr->m_fRecurse = true;
+
+            HRESULT hr = RunMultiThreaded (fixture, displayer, L"C:\\MockRoot", L"*", true, totals);
+
+            auto pOuter  =displayer.Find (L"C:\\MockRoot\\release.zip");
+            auto pNested = displayer.Find (L"C:\\MockRoot\\release.zip\\nested.zip");
+
+            Assert::IsTrue    (SUCCEEDED (hr));
+            Assert::IsNotNull (pOuter);
+            Assert::IsTrue    (CFlag::IsNotSet (CCapturingResultsDisplayer::AttributesOf (*pOuter, L"nested.zip"), FILE_ATTRIBUTE_DIRECTORY));
+            Assert::IsNotNull (pNested);
+            Assert::IsTrue    (pNested->m_fInArchive);
+            Assert::AreEqual  (L"deep.txt", pNested->m_vNames[0].c_str());
+        }
+
+
+
+
+        TEST_METHOD(Recursive_NestedArchiveWithoutLibArchive_ListedAsFile)
+        {
+            SFixture                     fixture;
+            ScopedFileSystemMock         mock      (fixture.m_tree);
+            CCapturingResultsDisplayer   displayer;
+            SListingTotals               totals    = {};
+
+            fixture.m_cmdLinePtr->m_fRecurse            = true;
+            fixture.m_accessPtr->m_fLibArchiveAvailable = false;
+            fixture.m_archiveFsPtr                      = make_shared<CArchiveFileSystem> (fixture.m_accessPtr);
+
+            HRESULT hr = RunMultiThreaded (fixture, displayer, L"C:\\MockRoot", L"*", true, totals);
+
+            Assert::IsTrue    (SUCCEEDED (hr));
+            Assert::IsNotNull (displayer.Find (L"C:\\MockRoot\\release.zip\\docs"));
+            Assert::IsNull    (displayer.Find (L"C:\\MockRoot\\release.zip\\nested.zip"));
+            Assert::AreEqual  (0, fixture.m_accessPtr->m_cExtracts.load());
+        }
+
+
+
+
+        TEST_METHOD(Recursive_NestedArchiveFailure_ErrorAndRecursionContinues)
+        {
+            SFixture                     fixture;
+            ScopedFileSystemMock         mock      (fixture.m_tree);
+            CCapturingResultsDisplayer   displayer;
+            SListingTotals               totals    = {};
+
+            fixture.m_cmdLinePtr->m_fRecurse = true;
+            fixture.m_accessPtr->AddExtractFailure (L"C:\\MockRoot\\release.zip\\nested.zip", HRESULT_FROM_WIN32 (ERROR_BAD_FORMAT));
+
+            RunMultiThreaded (fixture, displayer, L"C:\\MockRoot", L"*", true, totals);
+            fixture.m_consolePtr->Flush();
+
+            Assert::IsTrue    (fixture.m_consolePtr->m_strCaptured.find (L"release.zip\\nested.zip") != wstring::npos);
+            Assert::IsTrue    (fixture.m_consolePtr->m_strCaptured.find (L"is not a valid archive") != wstring::npos);
+            Assert::IsNotNull (displayer.Find (L"C:\\MockRoot\\release.zip\\docs\\api"));
+        }
+
+
+
+
+        TEST_METHOD(NestedArchiveTarget_ListsContents)
+        {
+            SFixture             fixture;
+            ScopedFileSystemMock mock     (fixture.m_tree);
+            CArchiveTestLister   lister   (fixture.m_cmdLinePtr, fixture.m_consolePtr, fixture.m_configPtr);
+
+            lister.SetArchiveFileSystem (fixture.m_archiveFsPtr);
+            lister.List (MaskGroup (L"C:\\MockRoot\\release.zip\\nested.zip", { L"*" }));
+
+            auto pDir = lister.Displayer().Find (L"C:\\MockRoot\\release.zip\\nested.zip");
+
+            Assert::IsNotNull (pDir);
+            Assert::AreEqual  (size_t (1), pDir->m_vNames.size());
+            Assert::AreEqual  (L"deep.txt", pDir->m_vNames[0].c_str());
+            Assert::AreEqual  (9ull, pDir->m_vSizes[0]);
         }
 
 
@@ -465,9 +556,10 @@ namespace UnitTest
             Assert::IsNotNull (displayer.Find (L"C:\\MockRoot\\release.zip"));
             Assert::IsNotNull (displayer.Find (L"C:\\MockRoot\\release.zip\\docs\\api"));
 
-            // notes.txt, release.zip, bad.zip, main.cpp, and readme.txt, guide.md, ref.md, nested.zip inside release.zip
-            Assert::AreEqual (8u, totals.m_cFiles);
-            Assert::AreEqual (10ull + 344 + 50 + 20 + 3 + 4 + 5 + 7, totals.m_uliFileBytes.QuadPart);
+            // notes.txt, release.zip, bad.zip, main.cpp; readme.txt, guide.md, ref.md, nested.zip inside
+            // release.zip; deep.txt inside nested.zip
+            Assert::AreEqual (9u, totals.m_cFiles);
+            Assert::AreEqual (10ull + 344 + 50 + 20 + 3 + 4 + 5 + 7 + 9, totals.m_uliFileBytes.QuadPart);
         }
 
 
@@ -562,8 +654,9 @@ namespace UnitTest
             fixture.m_consolePtr->Flush();
 
             Assert::IsTrue   (SUCCEEDED (hr));
-            Assert::IsTrue   (fixture.m_consolePtr->m_strCaptured.find (L"ref.md") != wstring::npos);
-            Assert::AreEqual (8u, totals.m_cFiles);
+            Assert::IsTrue   (fixture.m_consolePtr->m_strCaptured.find (L"ref.md")   != wstring::npos);
+            Assert::IsTrue   (fixture.m_consolePtr->m_strCaptured.find (L"deep.txt") != wstring::npos);
+            Assert::AreEqual (9u, totals.m_cFiles);
         }
 
 

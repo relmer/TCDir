@@ -60,11 +60,12 @@ private:
 class CMemoryByteSource : public IByteSource
 {
 public:
-    explicit CMemoryByteSource (vector<BYTE> bytes) : m_vBytes (std::move (bytes)) {}
+    explicit CMemoryByteSource (vector<BYTE> bytes)                      : m_bytesPtr (make_shared<const vector<BYTE>> (std::move (bytes))) {}
+    explicit CMemoryByteSource (shared_ptr<const vector<BYTE>> bytesPtr) : m_bytesPtr (std::move (bytesPtr)) {}
 
-    ULONGLONG Size() const override { return m_vBytes.size(); }
+    ULONGLONG Size() const override { return m_bytesPtr->size(); }
     HRESULT   ReadAt (ULONGLONG offset, void * pBuffer, DWORD cb) override;
 
 private:
-    vector<BYTE> m_vBytes;
+    shared_ptr<const vector<BYTE>> m_bytesPtr;
 };

@@ -12,7 +12,8 @@
 //
 //  SArchiveLocation
 //
-//  A path split into the real archive file and the folder inside it.
+//  A path split into an archive and the folder inside it.  The archive is a
+//  real file, or an archive stored inside another archive.
 //
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -32,6 +33,8 @@ struct SArchiveLocation
 //
 //  Presents archive files as read-only directories.  Each archive is parsed
 //  at most once per run, and all threads share the result (tree or error).
+//  When archiveint.dll is available, an archive stored inside another
+//  archive is browsed too: its data is extracted into memory and parsed.
 //
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -41,6 +44,7 @@ public:
     explicit CArchiveFileSystem (shared_ptr<IArchiveFileAccess> accessPtr);
 
     bool    IsArchiveFile       (const WIN32_FIND_DATA & wfd) const;
+    bool    IsNestedArchiveFile (const WIN32_FIND_DATA & wfd) const;
     void    RegisterArchive     (const filesystem::path & archivePath);
     bool    IsRegisteredArchive (const filesystem::path & archivePath) const;
     bool    Resolve             (const filesystem::path & dirPath, SArchiveLocation & location) const;
@@ -65,10 +69,13 @@ private:
     bool                   IsTargetArchive (wstring_view fileName) const;
     shared_ptr<SCacheEntry> GetCacheEntry  (const wstring & key);
     void                   Parse           (const filesystem::path & archivePath, SCacheEntry & entry);
+    HRESULT                OpenSource      (const filesystem::path & archivePath, SArchiveSource & source);
+    bool                   RegisterNested  (const SArchiveLocation & location);
 
     static wstring         MakeKey         (const filesystem::path & path);
 
-    static constexpr DWORD s_kdwUnavailableAttributes = FILE_ATTRIBUTE_OFFLINE | FILE_ATTRIBUTE_RECALL_ON_DATA_ACCESS;
+    static constexpr DWORD     s_kdwUnavailableAttributes = FILE_ATTRIBUTE_OFFLINE | FILE_ATTRIBUTE_RECALL_ON_DATA_ACCESS;
+    static constexpr ULONGLONG s_kcbMaxNestedArchive      = 256ull * 1024 * 1024;   // Largest archive extracted from another archive
 
     shared_ptr<IArchiveFileAccess>                     m_accessPtr;
     bool                                               m_fLibArchiveAvailable = false;

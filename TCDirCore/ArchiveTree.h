@@ -37,6 +37,7 @@ public:
     const SNode &  Root() const      { return m_vNodes[s_kiRoot]; }
     size_t         NodeCount() const { return m_vNodes.size(); }
     const SNode *  FindFolder        (wstring_view innerPath) const;
+    const SNode *  FindFile          (wstring_view innerPath) const;
     void           EnumerateChildren (const SNode & folder, wstring_view spec, const EnumCallback & callback) const;
 
     static void    ToFindData        (const SNode & node, WIN32_FIND_DATA & wfd);

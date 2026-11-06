@@ -60,3 +60,22 @@ struct SArchiveReadResult
     vector<SArchiveEntry>   m_vEntries;
     bool                    m_fListingEncrypted = false;   // The entry list itself is encrypted
 };
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  SArchiveSource
+//
+//  The bytes of one archive: a real file, or the contents of an archive
+//  stored inside another archive, extracted into memory.
+//
+////////////////////////////////////////////////////////////////////////////////
+
+struct SArchiveSource
+{
+    filesystem::path                 m_path;        // Real archive file; used when m_bytesPtr is null
+    shared_ptr<const vector<BYTE>>   m_bytesPtr;    // Archive extracted from another archive
+};

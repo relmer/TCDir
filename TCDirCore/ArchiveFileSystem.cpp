@@ -49,6 +49,32 @@ bool CArchiveFileSystem::IsArchiveFile (const WIN32_FIND_DATA & wfd) const
 
 ////////////////////////////////////////////////////////////////////////////////
 //
+//  CArchiveFileSystem::IsNestedArchiveFile
+//
+//  True for an archive file stored inside another archive that can be
+//  browsed: archiveint.dll is available to extract it, and it is no larger
+//  than s_kcbMaxNestedArchive.  Other archives inside archives list as files.
+//
+////////////////////////////////////////////////////////////////////////////////
+
+bool CArchiveFileSystem::IsNestedArchiveFile (const WIN32_FIND_DATA & wfd) const
+{
+    ULARGE_INTEGER uliSize = {};
+
+
+
+    uliSize.LowPart  = wfd.nFileSizeLow;
+    uliSize.HighPart = wfd.nFileSizeHigh;
+
+    return m_fLibArchiveAvailable && IsArchiveFile (wfd) && uliSize.QuadPart <= s_kcbMaxNestedArchive;
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
 //  CArchiveFileSystem::RegisterArchive
 //
 //  Adds archivePath to the set of archives listed as directories, so that
@@ -152,6 +178,8 @@ bool CArchiveFileSystem::Resolve (const filesystem::path & dirPath, SArchiveLoca
 //  Splits a command-line path at the first component that is a real file
 //  with an archive extension, and registers that archive.  A real directory
 //  always takes precedence, even when its name has an archive extension.
+//  Archives stored inside the archive are then registered the same way, so
+//  the location is in the innermost archive on the path.
 //
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -194,7 +222,75 @@ bool CArchiveFileSystem::TrySplit (const filesystem::path & path, SArchiveLocati
         break;
     }
 
+    while (fSplit && !location.m_strInnerPath.empty() && RegisterNested (location))
+    {
+        fSplit = Resolve (normalized, location);
+    }
+
     return fSplit;
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CArchiveFileSystem::RegisterNested
+//
+//  Walks the inner path of location and registers the first component that
+//  is an archive file stored in the archive.  Returns false when there is
+//  none, or when the archive fails to parse.
+//
+////////////////////////////////////////////////////////////////////////////////
+
+bool CArchiveFileSystem::RegisterNested (const SArchiveLocation & location)
+{
+    HRESULT                          hr          = S_OK;
+    shared_ptr<const CArchiveTree>   treePtr;
+    wstring                          strError;
+    vector<wstring>                  components;
+    filesystem::path                 innerPrefix;
+    const CArchiveTree::SNode      * pFile       = nullptr;
+    WIN32_FIND_DATA                  wfd         = {};
+    bool                             fRegistered = false;
+
+
+
+    hr = GetTree (location.m_archivePath, treePtr, strError);
+    CHR (hr);
+
+    CArchiveTree::SplitPath (location.m_strInnerPath, components);
+
+    for (const wstring & component : components)
+    {
+        innerPrefix /= component;
+
+        if (treePtr->FindFolder (innerPrefix.native()) != nullptr)
+        {
+            continue;
+        }
+
+        pFile = treePtr->FindFile (innerPrefix.native());
+
+        if (pFile != nullptr)
+        {
+            CArchiveTree::ToFindData (*pFile, wfd);
+
+            if (IsNestedArchiveFile (wfd))
+            {
+                RegisterArchive (location.m_archivePath / innerPrefix);
+                fRegistered = true;
+            }
+        }
+
+        break;
+    }
+
+
+
+Error:
+    return fRegistered;
 }
 
 
@@ -308,26 +404,26 @@ shared_ptr<CArchiveFileSystem::SCacheEntry> CArchiveFileSystem::GetCacheEntry (c
 //
 //  CArchiveFileSystem::Parse
 //
-//  Reads one archive into entry.  The attributes are checked first so that a
-//  cloud placeholder is never opened (opening it would start a download).
+//  Reads one archive into entry.
 //
 ////////////////////////////////////////////////////////////////////////////////
 
 void CArchiveFileSystem::Parse (const filesystem::path & archivePath, SCacheEntry & entry)
 {
     HRESULT                    hr       = S_OK;
-    DWORD                      dwAttrs  = m_accessPtr->GetAttributes (archivePath);
     EArchiveFormat             format   = FormatFor (archivePath.filename().wstring());
+    SArchiveSource             source;
     SArchiveReadResult         result;
     unique_ptr<CArchiveTree>   treePtr;
 
 
 
-    CBREx (dwAttrs != INVALID_FILE_ATTRIBUTES, HRESULT_FROM_WIN32 (ERROR_FILE_NOT_FOUND));
-    CBREx ((dwAttrs & s_kdwUnavailableAttributes) == 0, HRESULT_FROM_WIN32 (ERROR_FILE_OFFLINE));
+    hr = OpenSource (archivePath, source);
+    CHR (hr);
+
     CBREx (format != EArchiveFormat::None, HRESULT_FROM_WIN32 (ERROR_NOT_SUPPORTED));
 
-    hr = m_accessPtr->Read (archivePath, format, result);
+    hr = m_accessPtr->Read (source, format, result);
     CHR (hr);
 
     CBREx (!result.m_fListingEncrypted, HRESULT_FROM_WIN32 (ERROR_FILE_ENCRYPTED));
@@ -350,6 +446,60 @@ Error:
     }
 
     return;
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CArchiveFileSystem::OpenSource
+//
+//  Returns the bytes of archivePath.  A real archive file is checked first
+//  so that a cloud placeholder is never opened (opening it would start a
+//  download).  An archive stored inside another archive is extracted from
+//  that archive into memory, which in turn may be stored inside another
+//  archive.
+//
+////////////////////////////////////////////////////////////////////////////////
+
+HRESULT CArchiveFileSystem::OpenSource (const filesystem::path & archivePath, SArchiveSource & source)
+{
+    HRESULT            hr          = S_OK;
+    SArchiveLocation   outer;
+    SArchiveSource     outerSource;
+    filesystem::path   entryPath;
+    DWORD              dwAttrs     = INVALID_FILE_ATTRIBUTES;
+
+
+
+    source = {};
+
+    if (Resolve (archivePath.parent_path(), outer))
+    {
+        hr = OpenSource (outer.m_archivePath, outerSource);
+        CHR (hr);
+
+        entryPath = filesystem::path (outer.m_strInnerPath) / archivePath.filename();
+
+        hr = m_accessPtr->ExtractEntry (outerSource, entryPath.native(), s_kcbMaxNestedArchive, source.m_bytesPtr);
+        CHR (hr);
+    }
+    else
+    {
+        dwAttrs = m_accessPtr->GetAttributes (archivePath);
+
+        CBREx (dwAttrs != INVALID_FILE_ATTRIBUTES, HRESULT_FROM_WIN32 (ERROR_FILE_NOT_FOUND));
+        CBREx ((dwAttrs & s_kdwUnavailableAttributes) == 0, HRESULT_FROM_WIN32 (ERROR_FILE_OFFLINE));
+
+        source.m_path = archivePath;
+    }
+
+
+
+Error:
+    return hr;
 }
 
 
@@ -383,6 +533,10 @@ wstring CArchiveFileSystem::FormatError (HRESULT hr, EArchiveFormat format, bool
     else if (hr == HRESULT_FROM_WIN32 (ERROR_FILE_OFFLINE))
     {
         strError = L" is not available offline";
+    }
+    else if (hr == HRESULT_FROM_WIN32 (ERROR_FILE_TOO_LARGE))
+    {
+        strError = L" is too large to browse inside another archive";
     }
     else if (hr == HRESULT_FROM_WIN32 (ERROR_NOT_SUPPORTED) && format == EArchiveFormat::LibArchive && !fLibArchiveAvailable)
     {

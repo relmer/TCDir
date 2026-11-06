@@ -6,6 +6,10 @@
 //  In-memory IArchiveFileAccess for tests.  Paths map to attributes and to
 //  prepared entry lists (or read failures), so no real file is opened.
 //
+//  An archive stored inside another archive is added with AddArchive under
+//  its full path (C:\\Root\\a.zip\\inner.zip).  ExtractEntry returns bytes
+//  that encode that path, and Read decodes them to find the entry list.
+//
 //  Usage:
 //      auto accessPtr = make_shared<CMockArchiveFileAccess>();
 //      accessPtr->AddDirectory (L"C:\\Root");
@@ -99,9 +103,9 @@ public:
         return (it != m_mapAttributes.end()) ? it->second : INVALID_FILE_ATTRIBUTES;
     }
 
-    HRESULT Read (const filesystem::path & path, EArchiveFormat format, SArchiveReadResult & result) override
+    HRESULT Read (const SArchiveSource & source, EArchiveFormat format, SArchiveReadResult & result) override
     {
-        auto    it = m_mapArchives.find (Key (path));
+        auto    it = m_mapArchives.find (SourceKey (source));
         HRESULT hr = HRESULT_FROM_WIN32 (ERROR_FILE_NOT_FOUND);
 
         ++m_cReads;
@@ -116,6 +120,38 @@ public:
         return hr;
     }
 
+    HRESULT ExtractEntry (
+        const SArchiveSource             & source,
+        wstring_view                       entryPath,
+        ULONGLONG                          cbMax,
+        shared_ptr<const vector<BYTE>>   & bytesPtr) override
+    {
+        wstring   key   = Key (filesystem::path (SourceKey (source)) / entryPath);
+        auto      it    = m_mapExtractFailures.find (key);
+        HRESULT   hr    = S_OK;
+
+        ++m_cExtracts;
+        m_cbLastExtractMax = cbMax;
+
+        if (it != m_mapExtractFailures.end())
+        {
+            hr = it->second;
+        }
+        else
+        {
+            const BYTE * pb = reinterpret_cast<const BYTE *> (key.data());
+
+            bytesPtr = make_shared<const vector<BYTE>> (pb, pb + key.size() * sizeof (wchar_t));
+        }
+
+        return hr;
+    }
+
+    void AddExtractFailure (const filesystem::path & path, HRESULT hr)
+    {
+        m_mapExtractFailures[Key (path)] = hr;
+    }
+
     bool IsLibArchiveAvailable() override
     {
         return m_fLibArchiveAvailable;
@@ -124,6 +160,8 @@ public:
 
 
     atomic<int>       m_cReads               = 0;
+    atomic<int>       m_cExtracts            = 0;
+    ULONGLONG         m_cbLastExtractMax     = 0;
     EArchiveFormat    m_lastFormat           = EArchiveFormat::None;
     bool              m_fLibArchiveAvailable = true;
 
@@ -140,6 +178,23 @@ private:
         return key;
     }
 
+    static wstring SourceKey (const SArchiveSource & source)
+    {
+        wstring key;
+
+        if (source.m_bytesPtr != nullptr)
+        {
+            key.assign (reinterpret_cast<const wchar_t *> (source.m_bytesPtr->data()), source.m_bytesPtr->size() / sizeof (wchar_t));
+        }
+        else
+        {
+            key = Key (source.m_path);
+        }
+
+        return key;
+    }
+
     unordered_map<wstring, DWORD>      m_mapAttributes;
     unordered_map<wstring, SArchive>   m_mapArchives;
+    unordered_map<wstring, HRESULT>    m_mapExtractFailures;
 };

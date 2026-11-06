@@ -1,6 +1,7 @@
 #include "pch.h"
 #include "EhmTestHelper.h"
 
+#include "../TCDirCore/ArchiveFileAccess.h"
 #include "../TCDirCore/LibArchiveReader.h"
 
 
@@ -154,6 +155,153 @@ namespace UnitTest
             info.m_fEncrypted = true;
 
             Assert::IsTrue (CLibArchiveReader::ConvertEntry (info).m_fEncrypted);
+        }
+
+
+
+
+        ////////////////////////////////////////////////////////////////////////
+        //
+        //  MakeTar
+        //
+        //  Builds a ustar image in memory: a header block and padded data per
+        //  file, then two zero blocks.
+        //
+        ////////////////////////////////////////////////////////////////////////
+
+        static vector<BYTE> MakeTar (const vector<pair<string, vector<BYTE>>> & files)
+        {
+            static constexpr size_t s_kcbBlock = 512;
+
+            vector<BYTE> tar;
+
+            for (const auto & [name, data] : files)
+            {
+                vector<BYTE> header (s_kcbBlock, 0);
+                unsigned     uSum   = 0;
+                char         szField[16];
+
+                memcpy (header.data(), name.data(), name.size());
+                memcpy (header.data() + 100, "0000644", 7);
+                memcpy (header.data() + 108, "0000000", 7);
+                memcpy (header.data() + 116, "0000000", 7);
+                sprintf_s (szField, "%011o", static_cast<unsigned> (data.size()));
+                memcpy (header.data() + 124, szField, 11);
+                memcpy (header.data() + 136, "14000000000", 11);
+                memset (header.data() + 148, ' ', 8);
+                header[156] = '0';
+                memcpy (header.data() + 257, "ustar", 6);
+                memcpy (header.data() + 263, "00", 2);
+
+                for (BYTE b : header)
+                {
+                    uSum += b;
+                }
+
+                sprintf_s (szField, "%06o", uSum);
+                memcpy (header.data() + 148, szField, 7);
+
+                tar.insert (tar.end(), header.begin(), header.end());
+                tar.insert (tar.end(), data.begin(), data.end());
+                tar.resize ((tar.size() + s_kcbBlock - 1) / s_kcbBlock * s_kcbBlock, 0);
+            }
+
+            tar.resize (tar.size() + 2 * s_kcbBlock, 0);
+            return tar;
+        }
+
+        static vector<BYTE> Bytes (const string & text)
+        {
+            return vector<BYTE> (text.begin(), text.end());
+        }
+
+        static SArchiveSource MemorySource (vector<BYTE> bytes)
+        {
+            SArchiveSource source;
+
+            source.m_bytesPtr = make_shared<const vector<BYTE>> (move (bytes));
+            return source;
+        }
+
+
+
+
+        TEST_METHOD(IsSamePath_IgnoresCaseSeparatorsAndDotComponents)
+        {
+            Assert::IsTrue  (CLibArchiveReader::IsSamePath (L"pkg/Inner.zip",   L"PKG\\inner.zip"));
+            Assert::IsTrue  (CLibArchiveReader::IsSamePath (L"./pkg//inner.zip", L"pkg\\inner.zip"));
+            Assert::IsFalse (CLibArchiveReader::IsSamePath (L"pkg/inner.zip",   L"inner.zip"));
+            Assert::IsFalse (CLibArchiveReader::IsSamePath (L"",                L""));
+        }
+
+
+
+
+        TEST_METHOD(ExtractEntry_MemoryTar_ReturnsData)
+        {
+            vector<BYTE> data;
+
+            if (!CLibArchiveReader::IsAvailable())
+            {
+                Logger::WriteMessage (L"archiveint.dll is not available; skipped");
+                return;
+            }
+
+            HRESULT hr = CLibArchiveReader::ExtractEntry (MemorySource (MakeTar ({ { "a.txt", Bytes ("first") }, { "pkg/b.txt", Bytes ("second") } })),
+                                                          L"pkg\\B.TXT", 1024, data);
+
+            Assert::IsTrue   (SUCCEEDED (hr));
+            Assert::AreEqual (string ("second"), string (data.begin(), data.end()));
+        }
+
+
+
+
+        TEST_METHOD(ExtractEntry_MissingOrTooLarge_Errors)
+        {
+            SArchiveSource source = MemorySource (MakeTar ({ { "a.txt", Bytes ("first") } }));
+            vector<BYTE>   data;
+
+            if (!CLibArchiveReader::IsAvailable())
+            {
+                Logger::WriteMessage (L"archiveint.dll is not available; skipped");
+                return;
+            }
+
+            Assert::IsTrue (CLibArchiveReader::ExtractEntry (source, L"missing.txt", 1024, data) == HRESULT_FROM_WIN32 (ERROR_FILE_NOT_FOUND));
+            Assert::IsTrue (CLibArchiveReader::ExtractEntry (source, L"a.txt", 4, data)          == HRESULT_FROM_WIN32 (ERROR_FILE_TOO_LARGE));
+            Assert::IsTrue (data.empty());
+        }
+
+
+
+
+        TEST_METHOD(ArchiveFileAccess_NestedTar_ListsInnerEntries)
+        {
+            CArchiveFileAccess               access;
+            shared_ptr<const vector<BYTE>>   innerPtr;
+            SArchiveSource                   inner;
+            SArchiveReadResult               result;
+            vector<BYTE>                     innerTar = MakeTar ({ { "deep.txt", Bytes ("nested") } });
+
+            if (!CLibArchiveReader::IsAvailable())
+            {
+                Logger::WriteMessage (L"archiveint.dll is not available; skipped");
+                return;
+            }
+
+            HRESULT hr = access.ExtractEntry (MemorySource (MakeTar ({ { "pkg/inner.tar", innerTar } })), L"pkg\\inner.tar", 1 << 20, innerPtr);
+
+            Assert::IsTrue (SUCCEEDED (hr));
+            Assert::IsTrue (*innerPtr == innerTar);
+
+            inner.m_bytesPtr = innerPtr;
+            hr = access.Read (inner, EArchiveFormat::LibArchive, result);
+
+            Assert::IsTrue   (SUCCEEDED (hr));
+            Assert::AreEqual (size_t (1), result.m_vEntries.size());
+            Assert::AreEqual (L"deep.txt", result.m_vEntries[0].m_strPath.c_str());
+            Assert::AreEqual (6ull, result.m_vEntries[0].m_ullSize);
         }
     };
 }

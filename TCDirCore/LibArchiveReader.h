@@ -36,9 +36,10 @@ struct SLibArchiveEntryInfo
 //
 //  CLibArchiveReader
 //
-//  Reads archive entry lists through archiveint.dll, the libarchive build
-//  that ships with Windows 11 23H2 and later.  The DLL has no import
-//  library or header, so it is loaded at run time on first use.
+//  Reads archive entry lists, and the data of single entries, through
+//  archiveint.dll, the libarchive build that ships with Windows 11 23H2 and
+//  later.  The DLL has no import library or header, so it is loaded at run
+//  time on first use.
 //
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -46,16 +47,23 @@ class CLibArchiveReader
 {
 public:
     static bool          IsAvailable();
-    static HRESULT       Read         (const filesystem::path & path, SArchiveReadResult & result);
-    static SArchiveEntry ConvertEntry (const SLibArchiveEntryInfo & info);
+    static HRESULT       Read           (const SArchiveSource & source, SArchiveReadResult & result);
+    static HRESULT       ExtractEntry   (const SArchiveSource & source,
+                                         wstring_view           entryPath,
+                                         ULONGLONG              cbMax,
+                                         vector<BYTE>         & bytes);
+    static SArchiveEntry ConvertEntry   (const SLibArchiveEntryInfo & info);
+    static bool          IsSamePath     (wstring_view path1, wstring_view path2);
 
 private:
     struct SApi;
 
     static const SApi *  GetApi();
-    static void          LoadApi      (SApi & api);
-    static HRESULT       ReadEntries  (const SApi & api, void * pArchive, SArchiveReadResult & result);
-    static void          GetEntryInfo (const SApi & api, void * pEntry, SLibArchiveEntryInfo & info);
+    static void          LoadApi        (SApi & api);
+    static HRESULT       Open           (const SApi & api, const SArchiveSource & source, void *& pArchive);
+    static HRESULT       ReadEntries    (const SApi & api, void * pArchive, SArchiveReadResult & result);
+    static HRESULT       ReadEntryData  (const SApi & api, void * pArchive, ULONGLONG cbMax, vector<BYTE> & bytes);
+    static void          GetEntryInfo   (const SApi & api, void * pEntry, SLibArchiveEntryInfo & info);
     static FILETIME      UnixToFileTime (LONGLONG llSeconds, long lNanoseconds);
 
     //

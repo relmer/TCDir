@@ -363,5 +363,152 @@ namespace UnitTest
             Assert::IsTrue (strIoError.starts_with (L": "));
             Assert::IsFalse (iswspace (strIoError.back()));
         }
+
+
+
+
+        ////////////////////////////////////////////////////////////////////////
+        //
+        //  MakeNestedAccess
+        //
+        //  C:\Root\outer.zip contains pkg\inner.zip, which contains
+        //  docs\guide.md and deep.zip; deep.zip contains deep.txt.
+        //
+        ////////////////////////////////////////////////////////////////////////
+
+        static shared_ptr<CMockArchiveFileAccess> MakeNestedAccess (ULONGLONG cbInner = 100)
+        {
+            auto accessPtr = make_shared<CMockArchiveFileAccess>();
+
+            accessPtr->AddDirectory (L"C:\\Root");
+            accessPtr->AddArchive   (L"C:\\Root\\outer.zip",
+                                     { CMockArchiveFileAccess::File (L"pkg/inner.zip", cbInner) });
+            accessPtr->AddArchive   (L"C:\\Root\\outer.zip\\pkg\\inner.zip",
+                                     { CMockArchiveFileAccess::File (L"docs/guide.md", 4),
+                                       CMockArchiveFileAccess::File (L"deep.zip",      50) });
+            accessPtr->AddArchive   (L"C:\\Root\\outer.zip\\pkg\\inner.zip\\deep.zip",
+                                     { CMockArchiveFileAccess::File (L"deep.txt", 9) });
+            return accessPtr;
+        }
+
+
+
+
+        TEST_METHOD(IsNestedArchiveFile_SizeLimitAndLibArchive)
+        {
+            auto               accessPtr = make_shared<CMockArchiveFileAccess>();
+            CArchiveFileSystem fs          (accessPtr);
+            WIN32_FIND_DATA    wfd       = MakeFindData (L"inner.zip", 0);
+
+            wfd.nFileSizeLow = 0x10000000;          // 256 MB, the limit
+            Assert::IsTrue (fs.IsNestedArchiveFile (wfd));
+
+            wfd.nFileSizeLow = 0x10000001;
+            Assert::IsFalse (fs.IsNestedArchiveFile (wfd));
+
+            wfd.nFileSizeLow  = 0;
+            wfd.nFileSizeHigh = 1;
+            Assert::IsFalse (fs.IsNestedArchiveFile (wfd));
+
+            accessPtr->m_fLibArchiveAvailable = false;
+
+            CArchiveFileSystem fsWithoutDll (accessPtr);
+
+            wfd.nFileSizeHigh = 0;
+            wfd.nFileSizeLow  = 1000;
+            Assert::IsTrue  (fsWithoutDll.IsArchiveFile (wfd));
+            Assert::IsFalse (fsWithoutDll.IsNestedArchiveFile (wfd));
+        }
+
+
+
+
+        TEST_METHOD(TrySplit_NestedArchive_LocationInInnerArchive)
+        {
+            CArchiveFileSystem fs (MakeNestedAccess());
+            SArchiveLocation   location;
+
+            Assert::IsTrue   (fs.TrySplit (L"C:\\Root\\outer.zip\\pkg\\inner.zip\\docs", location));
+            Assert::AreEqual (L"C:\\Root\\outer.zip\\pkg\\inner.zip", location.m_archivePath.c_str());
+            Assert::AreEqual (L"docs", location.m_strInnerPath.c_str());
+            Assert::IsTrue   (fs.IsDirectory (L"C:\\Root\\outer.zip\\pkg\\inner.zip"));
+            Assert::IsTrue   (fs.IsDirectory (L"C:\\Root\\outer.zip\\pkg\\inner.zip\\docs"));
+        }
+
+
+
+
+        TEST_METHOD(TrySplit_TwoLevels_LocationInInnermostArchive)
+        {
+            auto               accessPtr = MakeNestedAccess();
+            CArchiveFileSystem fs          (accessPtr);
+            SArchiveLocation   location;
+
+            shared_ptr<const CArchiveTree> treePtr;
+            wstring                        strError;
+
+            Assert::IsTrue   (fs.TrySplit (L"C:\\Root\\outer.zip\\pkg\\inner.zip\\deep.zip", location));
+            Assert::AreEqual (L"C:\\Root\\outer.zip\\pkg\\inner.zip\\deep.zip", location.m_archivePath.c_str());
+            Assert::IsTrue   (location.m_strInnerPath.empty());
+
+            Assert::IsTrue   (SUCCEEDED (fs.GetTree (location.m_archivePath, treePtr, strError)));
+            Assert::AreEqual (size_t (1), treePtr->Root().m_vChildren.size());
+            Assert::IsTrue   (accessPtr->m_cbLastExtractMax > 0);
+        }
+
+
+
+
+        TEST_METHOD(TrySplit_NestedWithoutLibArchive_StopsAtOuterArchive)
+        {
+            auto accessPtr = MakeNestedAccess();
+
+            accessPtr->m_fLibArchiveAvailable = false;
+
+            CArchiveFileSystem fs (accessPtr);
+            SArchiveLocation   location;
+
+            Assert::IsTrue   (fs.TrySplit (L"C:\\Root\\outer.zip\\pkg\\inner.zip\\docs", location));
+            Assert::AreEqual (L"C:\\Root\\outer.zip", location.m_archivePath.c_str());
+            Assert::IsFalse  (fs.IsDirectory (L"C:\\Root\\outer.zip\\pkg\\inner.zip\\docs"));
+            Assert::AreEqual (0, accessPtr->m_cExtracts.load());
+        }
+
+
+
+
+        TEST_METHOD(TrySplit_NestedTooLarge_StopsAtOuterArchive)
+        {
+            auto               accessPtr = MakeNestedAccess (0x100000000ull);
+            CArchiveFileSystem fs          (accessPtr);
+            SArchiveLocation   location;
+
+            Assert::IsTrue   (fs.TrySplit (L"C:\\Root\\outer.zip\\pkg\\inner.zip", location));
+            Assert::AreEqual (L"C:\\Root\\outer.zip", location.m_archivePath.c_str());
+            Assert::AreEqual (L"pkg\\inner.zip", location.m_strInnerPath.c_str());
+            Assert::AreEqual (0, accessPtr->m_cExtracts.load());
+        }
+
+
+
+
+        TEST_METHOD(GetTree_NestedExtractFailure_CachedWithMessage)
+        {
+            auto               accessPtr = MakeNestedAccess();
+            CArchiveFileSystem fs          (accessPtr);
+            SArchiveLocation   location;
+
+            shared_ptr<const CArchiveTree> treePtr;
+            wstring                        strError;
+
+            accessPtr->AddExtractFailure (L"C:\\Root\\outer.zip\\pkg\\inner.zip", HRESULT_FROM_WIN32 (ERROR_FILE_TOO_LARGE));
+
+            Assert::IsTrue (fs.TrySplit (L"C:\\Root\\outer.zip\\pkg\\inner.zip", location));
+            Assert::IsTrue (FAILED (fs.GetTree (location.m_archivePath, treePtr, strError)));
+            Assert::AreEqual (L" is too large to browse inside another archive", strError.c_str());
+
+            Assert::IsTrue (FAILED (fs.GetTree (location.m_archivePath, treePtr, strError)));
+            Assert::AreEqual (1, accessPtr->m_cExtracts.load());
+        }
     };
 }

@@ -92,7 +92,7 @@ HRESULT CFileEnumerator::EnumerateReal (
 
     do
     {
-        RegisterArchive (dirPath, wfd);
+        RegisterArchive (dirPath, false, wfd);
 
         fContinue = callback (wfd);
     }
@@ -149,7 +149,12 @@ HRESULT CFileEnumerator::EnumerateArchive (
     pFolder = treePtr->FindFolder (location.m_strInnerPath);
     CBREx (pFolder != nullptr, HRESULT_FROM_WIN32 (ERROR_PATH_NOT_FOUND));
 
-    treePtr->EnumerateChildren (*pFolder, fileSpec.native(), callback);
+    treePtr->EnumerateChildren (*pFolder, fileSpec.native(), [&] (const WIN32_FIND_DATA & wfd)
+    {
+        RegisterArchive (dirPath, true, wfd);
+
+        return callback (wfd);
+    });
 
 
 
@@ -165,14 +170,24 @@ Error:
 //
 //  CFileEnumerator::IsArchiveFile
 //
-//  Returns true when wfd is an archive file on disk that recursion descends
-//  into.  An archive inside an archive (fInArchive) is a plain file.
+//  Returns true when wfd is an archive file that recursion descends into.
+//  fInArchive indicates that wfd is an entry of an archive; such an entry
+//  qualifies only under CArchiveFileSystem::IsNestedArchiveFile.
 //
 ////////////////////////////////////////////////////////////////////////////////
 
 bool CFileEnumerator::IsArchiveFile (bool fInArchive, const WIN32_FIND_DATA & wfd) const
 {
-    return !fInArchive && m_archiveFsPtr != nullptr && m_archiveFsPtr->IsArchiveFile (wfd);
+    bool fArchive = false;
+
+
+
+    if (m_archiveFsPtr != nullptr)
+    {
+        fArchive = fInArchive ? m_archiveFsPtr->IsNestedArchiveFile (wfd) : m_archiveFsPtr->IsArchiveFile (wfd);
+    }
+
+    return fArchive;
 }
 
 
@@ -183,14 +198,14 @@ bool CFileEnumerator::IsArchiveFile (bool fInArchive, const WIN32_FIND_DATA & wf
 //
 //  CFileEnumerator::RegisterArchive
 //
-//  Registers an archive file on disk so that its path resolves to an
-//  archive location when recursion descends into it.
+//  Registers an archive file so that its path resolves to an archive
+//  location when recursion descends into it.
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-void CFileEnumerator::RegisterArchive (const filesystem::path & dirPath, const WIN32_FIND_DATA & wfd) const
+void CFileEnumerator::RegisterArchive (const filesystem::path & dirPath, bool fInArchive, const WIN32_FIND_DATA & wfd) const
 {
-    if (IsArchiveFile (false, wfd))
+    if (IsArchiveFile (fInArchive, wfd))
     {
         m_archiveFsPtr->RegisterArchive (dirPath / wfd.cFileName);
     }

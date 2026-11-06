@@ -94,13 +94,14 @@ Error:
 
 HRESULT CMemoryByteSource::ReadAt (ULONGLONG offset, void * pBuffer, DWORD cb)
 {
-    HRESULT hr = S_OK;
+    HRESULT                hr    = S_OK;
+    const vector<BYTE>   & bytes = *m_bytesPtr;
 
 
 
-    CBREx (offset <= m_vBytes.size() && cb <= m_vBytes.size() - offset, HRESULT_FROM_WIN32 (ERROR_HANDLE_EOF));
+    CBREx (offset <= bytes.size() && cb <= bytes.size() - offset, HRESULT_FROM_WIN32 (ERROR_HANDLE_EOF));
 
-    memcpy (pBuffer, m_vBytes.data() + offset, cb);
+    memcpy (pBuffer, bytes.data() + offset, cb);
 
 
 
