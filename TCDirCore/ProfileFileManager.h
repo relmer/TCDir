@@ -24,6 +24,7 @@ struct SAliasBlock
     vector<wstring> rgFunctionLines;     // Full "function xxx { ... }" lines from the block
     wstring         strVersion;          // tcdir version that generated the block
     bool            fFound      = false; // Whether a block was found
+    bool            fCompletion = false; // Whether the block registers tab completion
 };
 
 

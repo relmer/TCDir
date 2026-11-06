@@ -944,6 +944,11 @@ bool CAliasManager::DisplayProfileAliases (
         console.Printf (CConfig::Information, L"    %s\n", funcLine.c_str());
     }
 
+    console.Printf (CConfig::Information, L"\n");
+    console.Printf (CConfig::Information,
+                    block.fCompletion ? L"  Tab completion: installed\n"
+                                      : L"  Tab completion: not installed (run --set-aliases to add it)\n");
+
     //
     // Trailing blank line after the function list.
     //

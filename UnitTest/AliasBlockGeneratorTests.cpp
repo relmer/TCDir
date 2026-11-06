@@ -2,6 +2,7 @@
 #include "EhmTestHelper.h"
 #include "../TCDirCore/AliasBlockGenerator.h"
 #include "../TCDirCore/AliasManager.h"
+#include "../TCDirCore/CompletionScript.h"
 
 
 
@@ -272,7 +273,7 @@ namespace UnitTest
 
             for (const auto & line : rgLines)
             {
-                if (line.starts_with (L"function "))
+                if (line.starts_with (L"function ") && line.find (CCompletionScript::s_kpszHelperName) == wstring::npos)
                 {
                     ++cFunctions;
                 }
@@ -280,6 +281,47 @@ namespace UnitTest
 
             Assert::AreEqual (1, cFunctions, L"Only root function should be present");
         }
+
+
+
+
+        TEST_METHOD(Generate_RegistersCompletionForTcDirAndEveryEnabledAlias)
+        {
+            SAliasConfig    config;
+            vector<wstring> rgLines;
+            vector<wstring> rgRegistrations;
+            size_t          iEnd           = 0;
+
+
+
+            config.strRootAlias       = L"d";
+            config.strTcDirInvocation = L"tcdir";
+            config.rgSubAliases       = { { L"dw", L"-w", L"wide", true }, { L"dd", L"/a:d", L"dirs", true }, { L"ds", L"-s", L"recurse", false } };
+
+            CAliasBlockGenerator::Generate (config, L"5.2.1150", rgLines);
+
+            for (size_t i = 0; i < rgLines.size(); ++i)
+            {
+                if (CCompletionScript::IsRegistration (rgLines[i]))
+                {
+                    rgRegistrations.push_back (rgLines[i]);
+                }
+
+                if (rgLines[i] == L"#  End TCDir Aliases")
+                {
+                    iEnd = i;
+                }
+            }
+
+            Assert::AreEqual (size_t (5), rgRegistrations.size());
+            Assert::IsTrue   (rgRegistrations[0].find (L"'tcdir'")     != wstring::npos);
+            Assert::IsTrue   (rgRegistrations[1].find (L"'tcdir.exe'") != wstring::npos);
+            Assert::IsTrue   (rgRegistrations[2].find (L"'d'")         != wstring::npos);
+            Assert::IsTrue   (rgRegistrations[3].find (L"@('-w')")     != wstring::npos);
+            Assert::IsTrue   (rgRegistrations[4].find (L"@('/a:d')")   != wstring::npos);
+            Assert::IsTrue   (find (rgLines.begin(), rgLines.end(), rgRegistrations.back()) - rgLines.begin() < static_cast<ptrdiff_t> (iEnd));
+        }
+
 
 
 

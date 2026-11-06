@@ -1,6 +1,8 @@
 #include "pch.h"
 #include "ProfileFileManager.h"
 
+#include "CompletionScript.h"
+
 
 
 
@@ -310,7 +312,12 @@ HRESULT CProfileFileManager::FindAliasBlock (const vector<wstring> & rgLines, SA
         {
             const wstring & line = rgLines[k];
 
-            if (line.starts_with (L"function "))
+            if (CCompletionScript::IsRegistration (line))
+            {
+                block.fCompletion = true;
+            }
+
+            if (line.starts_with (L"function ") && !line.starts_with (wstring (L"function ") + CCompletionScript::s_kpszHelperName))
             {
                 block.rgFunctionLines.push_back (line);
 

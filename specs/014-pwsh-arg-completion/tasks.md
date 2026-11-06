@@ -42,11 +42,11 @@
 
 **Independent Test**: Quickstart scenarios 8 to 10.
 
-- [ ] T012 [P] [US3] Write tests in UnitTest/CompletionScriptTests.cpp for `CCompletionScript::Generate (invocation, commands, lines)`: one registration per command, alias flags quoted before `@others`, `w:` word prefix, `2>$null`, the invocation quoted with `&`
-- [ ] T013 [US3] Implement `CCompletionScript` with `SCompletionCommand { name, flags }` in TCDirCore/CompletionScript.h and TCDirCore/CompletionScript.cpp
-- [ ] T014 [P] [US3] Write tests in UnitTest/AliasBlockGeneratorTests.cpp: the block contains registrations for `tcdir`, `tcdir.exe`, the root alias and each enabled sub-alias with its flags, inside the block markers
-- [ ] T015 [US3] Append the registrations in `CAliasBlockGenerator::Generate` in TCDirCore/AliasBlockGenerator.cpp
-- [ ] T016 [US3] Report `Tab completion: installed` or `not installed` per block in `CAliasManager::DisplayProfileAliases` in TCDirCore/AliasManager.cpp, with a test in UnitTest/AliasManagerTests.cpp if the existing seams allow it
+- [X] T012 [P] [US3] Write tests in UnitTest/CompletionScriptTests.cpp for `CCompletionScript::Generate (invocation, commands, lines)`: one registration per command, alias flags quoted before `@others`, `w:` word prefix, `2>$null`, the invocation quoted with `&`
+- [X] T013 [US3] Implement `CCompletionScript` with `SCompletionCommand { name, flags }` in TCDirCore/CompletionScript.h and TCDirCore/CompletionScript.cpp
+- [X] T014 [P] [US3] Write tests in UnitTest/AliasBlockGeneratorTests.cpp: the block contains registrations for `tcdir`, `tcdir.exe`, the root alias and each enabled sub-alias with its flags, inside the block markers
+- [X] T015 [US3] Append the registrations in `CAliasBlockGenerator::Generate` in TCDirCore/AliasBlockGenerator.cpp
+- [X] T016 [US3] Report `Tab completion: installed` or `not installed` per block in `CAliasManager::DisplayProfileAliases` in TCDirCore/AliasManager.cpp, with a test in UnitTest/AliasManagerTests.cpp if the existing seams allow it
 - [ ] T017 [US3] Run quickstart scenarios 8 to 10 in PowerShell 7 and 5.1, build, run all tests, commit the phase
 
 ## Phase 5: User Story 4 - Setup without aliases (P2)
