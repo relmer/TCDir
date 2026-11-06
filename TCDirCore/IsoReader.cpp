@@ -32,7 +32,7 @@ HRESULT CIsoReader::Read (
 
 
 
-    result = {};
+    result.Reset();
 
     hrUdf           = CUdfReader::Read (source, udfResult);
     fUdfUnsupported = hrUdf == HRESULT_FROM_WIN32 (ERROR_NOT_SUPPORTED);
@@ -55,7 +55,7 @@ HRESULT CIsoReader::Read (
 Error:
     if (FAILED (hr))
     {
-        result = {};
+        result.Reset();
     }
 
     return hr;

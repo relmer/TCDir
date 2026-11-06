@@ -176,7 +176,7 @@ HRESULT CLibArchiveReader::Read (const SArchiveSource & source, SArchiveReadResu
 
 
 
-    result = {};
+    result.Reset();
 
     CBREx (pApi != nullptr, HRESULT_FROM_WIN32 (ERROR_NOT_SUPPORTED));
 

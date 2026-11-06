@@ -32,7 +32,7 @@ HRESULT CUdfReader::Read (
 
 
 
-    result = {};
+    result.Reset();
 
     hr = FindRecognitionSequence (source);
     CHR (hr);
@@ -57,7 +57,7 @@ HRESULT CUdfReader::Read (
 Error:
     if (FAILED (hr))
     {
-        result = {};
+        result.Reset();
     }
 
     return hr;

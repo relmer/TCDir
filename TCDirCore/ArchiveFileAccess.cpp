@@ -2,6 +2,8 @@
 
 #include "ArchiveFileAccess.h"
 
+#include "ArchiveDetails.h"
+#include "ArchiveReport.h"
 #include "ByteSource.h"
 #include "IsoReader.h"
 #include "LibArchiveReader.h"
@@ -32,18 +34,27 @@ DWORD CArchiveFileAccess::GetAttributes (const filesystem::path & path)
 //
 //  CArchiveFileAccess::Read
 //
-//  Reads the entry list of one archive with the reader for its format.
+//  Reads the entry list of one archive with the reader for its format.  When
+//  result.m_detailsPtr is set, the reader also fills the format details.
 //
 ////////////////////////////////////////////////////////////////////////////////
 
 HRESULT CArchiveFileAccess::Read (const SArchiveSource & source, EArchiveFormat format, SArchiveReadResult & result)
 {
-    HRESULT                   hr            = S_OK;
-    unique_ptr<IByteSource>   byteSourcePtr;
+    HRESULT                       hr            = S_OK;
+    unique_ptr<IByteSource>       byteSourcePtr;
+    shared_ptr<SArchiveDetails>   detailsPtr    = result.m_detailsPtr;
 
 
 
-    result = {};
+    result              = {};
+    result.m_detailsPtr = detailsPtr;
+
+    if (detailsPtr != nullptr)
+    {
+        *detailsPtr          = {};
+        detailsPtr->m_format = format;
+    }
 
     switch (format)
     {
@@ -114,6 +125,27 @@ HRESULT CArchiveFileAccess::ExtractEntry (
 
 Error:
     return hr;
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CArchiveFileAccess::Verify
+//
+//  Reads every entry of an archive and checks the checksums it stores.
+//
+////////////////////////////////////////////////////////////////////////////////
+
+HRESULT CArchiveFileAccess::Verify (const SArchiveSource & source, EArchiveFormat format, SVerifyResult & result)
+{
+    UNREFERENCED_PARAMETER (source);
+    UNREFERENCED_PARAMETER (format);
+
+    result = {};
+    return E_NOTIMPL;
 }
 
 

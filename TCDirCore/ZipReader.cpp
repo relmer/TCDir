@@ -24,7 +24,7 @@ HRESULT CZipReader::Read (IByteSource & source, SArchiveReadResult & result)
 
 
 
-    result = {};
+    result.Reset();
 
     hr = FindEndRecord (source, ullEndOffset, location);
     CHR (hr);

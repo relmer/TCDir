@@ -66,6 +66,8 @@ struct SArchiveReadResult
     vector<SArchiveEntry>         m_vEntries;
     bool                          m_fListingEncrypted = false;   // The entry list itself is encrypted
     shared_ptr<SArchiveDetails>   m_detailsPtr;                  // Set by the caller to collect format details
+
+    void Reset()   { m_vEntries.clear(); m_fListingEncrypted = false; }
 };
 
 

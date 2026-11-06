@@ -510,5 +510,98 @@ namespace UnitTest
             Assert::IsTrue (FAILED (fs.GetTree (location.m_archivePath, treePtr, strError)));
             Assert::AreEqual (1, accessPtr->m_cExtracts.load());
         }
+
+
+
+
+        TEST_METHOD(ReadDetails_RealArchive_FillsDetails)
+        {
+            auto               accessPtr = MakeNestedAccess();
+            CArchiveFileSystem fs          (accessPtr);
+            SArchiveReadResult result;
+            SArchiveDetails    details;
+            wstring            strError;
+
+            details.m_zip.m_strComment = L"note";
+            accessPtr->SetDetails (L"C:\\Root\\outer.zip", details);
+            result.m_detailsPtr = make_shared<SArchiveDetails>();
+
+            Assert::IsTrue   (SUCCEEDED (fs.ReadDetails (L"C:\\Root\\outer.zip", result, strError)));
+            Assert::IsFalse  (result.m_vEntries.empty());
+            Assert::AreEqual (L"note", result.m_detailsPtr->m_zip.m_strComment.c_str());
+            Assert::IsTrue   (result.m_detailsPtr->m_format == EArchiveFormat::Zip);
+            Assert::IsTrue   (strError.empty());
+        }
+
+
+
+
+        TEST_METHOD(ReadDetails_NestedArchive_ReadsExtractedBytes)
+        {
+            auto               accessPtr = MakeNestedAccess();
+            CArchiveFileSystem fs          (accessPtr);
+            SArchiveReadResult result;
+            wstring            strError;
+
+            Assert::IsTrue   (SUCCEEDED (fs.ReadDetails (L"C:\\Root\\outer.zip\\pkg\\inner.zip", result, strError)));
+            Assert::IsFalse  (result.m_vEntries.empty());
+            Assert::AreEqual (1, accessPtr->m_cExtracts.load());
+            Assert::IsNull   (result.m_detailsPtr.get());
+        }
+
+
+
+
+        TEST_METHOD(ReadDetails_Failures_ReturnErrorText)
+        {
+            auto               accessPtr = MakeNestedAccess();
+            CArchiveFileSystem fs          (accessPtr);
+            SArchiveReadResult result;
+            wstring            strError;
+
+            accessPtr->AddBrokenArchive (L"C:\\Root\\bad.zip", HRESULT_FROM_WIN32 (ERROR_BAD_FORMAT));
+            Assert::IsTrue   (FAILED (fs.ReadDetails (L"C:\\Root\\bad.zip", result, strError)));
+            Assert::AreEqual (L" is not a valid archive", strError.c_str());
+
+            accessPtr->AddExtractFailure (L"C:\\Root\\outer.zip\\pkg\\inner.zip", HRESULT_FROM_WIN32 (ERROR_FILE_TOO_LARGE));
+            Assert::IsTrue   (FAILED (fs.ReadDetails (L"C:\\Root\\outer.zip\\pkg\\inner.zip", result, strError)));
+            Assert::AreEqual (L" is too large to browse inside another archive", strError.c_str());
+        }
+
+
+
+
+        TEST_METHOD(ReadDetails_EncryptedListing_Succeeds)
+        {
+            auto               accessPtr = make_shared<CMockArchiveFileAccess>();
+            CArchiveFileSystem fs          (accessPtr);
+            SArchiveReadResult result;
+            wstring            strError;
+
+            accessPtr->AddEncryptedListingArchive (L"C:\\Root\\secret.7z");
+
+            Assert::IsTrue (SUCCEEDED (fs.ReadDetails (L"C:\\Root\\secret.7z", result, strError)));
+            Assert::IsTrue (result.m_fListingEncrypted);
+        }
+
+
+
+
+        TEST_METHOD(Verify_ReturnsAccessResult)
+        {
+            auto               accessPtr = MakeNestedAccess();
+            CArchiveFileSystem fs          (accessPtr);
+            SVerifyResult      verify;
+            SVerifyResult      result;
+            wstring            strError;
+
+            verify.m_cPassed   = 3;
+            verify.m_eCoverage = EChecksumCoverage::PerEntry;
+            accessPtr->SetVerifyResult (L"C:\\Root\\outer.zip", S_OK, verify);
+
+            Assert::IsTrue   (SUCCEEDED (fs.Verify (L"C:\\Root\\outer.zip", result, strError)));
+            Assert::AreEqual (3ull, result.m_cPassed);
+            Assert::AreEqual (1, accessPtr->m_cVerifies.load());
+        }
     };
 }

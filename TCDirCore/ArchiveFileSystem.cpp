@@ -399,6 +399,131 @@ HRESULT CArchiveFileSystem::GetTree (
 
 ////////////////////////////////////////////////////////////////////////////////
 //
+//  CArchiveFileSystem::ReadDetails
+//
+//  Reads the entry list of one archive (a real file or an archive stored
+//  inside other archives) without caching it.  The caller sets
+//  result.m_detailsPtr to collect format details.  An encrypted listing is
+//  not an error here: the caller reports it.
+//
+////////////////////////////////////////////////////////////////////////////////
+
+HRESULT CArchiveFileSystem::ReadDetails (
+    const filesystem::path & archivePath,
+    SArchiveReadResult     & result,
+    wstring                & strError)
+{
+    HRESULT            hr       = S_OK;
+    wstring            fileName = archivePath.filename().wstring();
+    EArchiveFormat     format   = FormatFor (fileName);
+    SArchiveSource     source;
+
+
+
+    strError.clear();
+
+    hr = PrepareSource (archivePath, format, source);
+    CHR (hr);
+
+    hr = m_accessPtr->Read (source, format, result);
+    CHR (hr);
+
+
+
+Error:
+    if (FAILED (hr))
+    {
+        strError = FormatError (hr, CArchiveFormat::FromFileName (fileName, true), m_fLibArchiveAvailable);
+    }
+
+    return hr;
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CArchiveFileSystem::Verify
+//
+//  Reads every entry of one archive and checks the checksums it stores.
+//
+////////////////////////////////////////////////////////////////////////////////
+
+HRESULT CArchiveFileSystem::Verify (
+    const filesystem::path & archivePath,
+    SVerifyResult          & result,
+    wstring                & strError)
+{
+    HRESULT            hr       = S_OK;
+    wstring            fileName = archivePath.filename().wstring();
+    EArchiveFormat     format   = FormatFor (fileName);
+    SArchiveSource     source;
+
+
+
+    strError.clear();
+
+    hr = PrepareSource (archivePath, format, source);
+    CHR (hr);
+
+    hr = m_accessPtr->Verify (source, format, result);
+    CHR (hr);
+
+
+
+Error:
+    if (FAILED (hr))
+    {
+        strError = FormatError (hr, CArchiveFormat::FromFileName (fileName, true), m_fLibArchiveAvailable);
+    }
+
+    return hr;
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CArchiveFileSystem::PrepareSource
+//
+//  Registers the archives on the path to archivePath, so that a nested
+//  archive resolves through its outer archives, then opens its bytes.
+//
+////////////////////////////////////////////////////////////////////////////////
+
+HRESULT CArchiveFileSystem::PrepareSource (
+    const filesystem::path & archivePath,
+    EArchiveFormat           format,
+    SArchiveSource         & source)
+{
+    HRESULT            hr = S_OK;
+    SArchiveLocation   location;
+
+
+
+    CBREx (format != EArchiveFormat::None, HRESULT_FROM_WIN32 (ERROR_NOT_SUPPORTED));
+
+    TrySplit (archivePath, location);
+
+    hr = OpenSource (archivePath, source);
+    CHR (hr);
+
+
+
+Error:
+    return hr;
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
 //  CArchiveFileSystem::GetCacheEntry
 //
 ////////////////////////////////////////////////////////////////////////////////

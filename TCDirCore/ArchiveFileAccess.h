@@ -7,6 +7,7 @@
 
 
 class IByteSource;
+struct SVerifyResult;
 
 
 
@@ -32,6 +33,7 @@ public:
                                             wstring_view                           entryPath,
                                             ULONGLONG                              cbMax,
                                             shared_ptr<const vector<BYTE>>       & bytesPtr) = 0;
+    virtual HRESULT Verify                 (const SArchiveSource & source, EArchiveFormat format, SVerifyResult & result) = 0;
     virtual bool    IsLibArchiveAvailable() = 0;
 };
 
@@ -54,6 +56,7 @@ public:
                                     wstring_view                           entryPath,
                                     ULONGLONG                              cbMax,
                                     shared_ptr<const vector<BYTE>>       & bytesPtr) override;
+    HRESULT Verify                 (const SArchiveSource & source, EArchiveFormat format, SVerifyResult & result) override;
     bool    IsLibArchiveAvailable() override;
 
 private:

@@ -17,7 +17,9 @@
 //
 ////////////////////////////////////////////////////////////////////////////////
 
+#include "../../TCDirCore/ArchiveDetails.h"
 #include "../../TCDirCore/ArchiveFileAccess.h"
+#include "../../TCDirCore/ArchiveReport.h"
 #include "../../TCDirCore/WildcardMatcher.h"
 
 
@@ -29,8 +31,11 @@ class CMockArchiveFileAccess : public IArchiveFileAccess
 public:
     struct SArchive
     {
-        HRESULT              m_hr = S_OK;
+        HRESULT              m_hr       = S_OK;
         SArchiveReadResult   m_result;
+        SArchiveDetails      m_details;
+        HRESULT              m_hrVerify = S_OK;
+        SVerifyResult        m_verify;
     };
 
 
@@ -75,6 +80,19 @@ public:
         m_mapArchives[Key (path)] = move (archive);
     }
 
+    void SetDetails (const filesystem::path & path, const SArchiveDetails & details)
+    {
+        m_mapArchives[Key (path)].m_details = details;
+    }
+
+    void SetVerifyResult (const filesystem::path & path, HRESULT hr, const SVerifyResult & verify)
+    {
+        SArchive & archive = m_mapArchives[Key (path)];
+
+        archive.m_hrVerify = hr;
+        archive.m_verify   = verify;
+    }
+
     static SArchiveEntry File (const wstring & strPath, ULONGLONG ullSize, DWORD dwAttributes = 0)
     {
         SArchiveEntry entry;
@@ -105,16 +123,41 @@ public:
 
     HRESULT Read (const SArchiveSource & source, EArchiveFormat format, SArchiveReadResult & result) override
     {
-        auto    it = m_mapArchives.find (SourceKey (source));
-        HRESULT hr = HRESULT_FROM_WIN32 (ERROR_FILE_NOT_FOUND);
+        auto                          it         = m_mapArchives.find (SourceKey (source));
+        HRESULT                       hr         = HRESULT_FROM_WIN32 (ERROR_FILE_NOT_FOUND);
+        shared_ptr<SArchiveDetails>   detailsPtr = result.m_detailsPtr;
 
         ++m_cReads;
         m_lastFormat = format;
 
         if (it != m_mapArchives.end())
         {
-            hr     = it->second.m_hr;
-            result = it->second.m_result;
+            hr                  = it->second.m_hr;
+            result              = it->second.m_result;
+            result.m_detailsPtr = detailsPtr;
+
+            if (detailsPtr != nullptr)
+            {
+                *detailsPtr          = it->second.m_details;
+                detailsPtr->m_format = format;
+            }
+        }
+
+        return hr;
+    }
+
+    HRESULT Verify (const SArchiveSource & source, EArchiveFormat format, SVerifyResult & result) override
+    {
+        auto    it = m_mapArchives.find (SourceKey (source));
+        HRESULT hr = HRESULT_FROM_WIN32 (ERROR_FILE_NOT_FOUND);
+
+        ++m_cVerifies;
+        m_lastFormat = format;
+
+        if (it != m_mapArchives.end())
+        {
+            hr     = it->second.m_hrVerify;
+            result = it->second.m_verify;
         }
 
         return hr;
@@ -161,6 +204,7 @@ public:
 
     atomic<int>       m_cReads               = 0;
     atomic<int>       m_cExtracts            = 0;
+    atomic<int>       m_cVerifies            = 0;
     ULONGLONG         m_cbLastExtractMax     = 0;
     EArchiveFormat    m_lastFormat           = EArchiveFormat::None;
     bool              m_fLibArchiveAvailable = true;

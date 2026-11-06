@@ -8,6 +8,12 @@
 
 
 
+struct SVerifyResult;
+
+
+
+
+
 ////////////////////////////////////////////////////////////////////////////////
 //
 //  SArchiveLocation
@@ -53,6 +59,8 @@ public:
     HRESULT GetTree             (const filesystem::path        & archivePath,
                                  shared_ptr<const CArchiveTree> & treePtr,
                                  wstring                        & strError);
+    HRESULT ReadDetails         (const filesystem::path & archivePath, SArchiveReadResult & result, wstring & strError);
+    HRESULT Verify              (const filesystem::path & archivePath, SVerifyResult & result, wstring & strError);
 
     static wstring FormatError  (HRESULT hr, EArchiveFormat format, bool fLibArchiveAvailable);
 
@@ -70,6 +78,7 @@ private:
     bool                    IsTargetArchive (wstring_view fileName) const;
     shared_ptr<SCacheEntry> GetCacheEntry   (const wstring & key);
     void                    Parse           (const filesystem::path & archivePath, SCacheEntry & entry);
+    HRESULT                 PrepareSource   (const filesystem::path & archivePath, EArchiveFormat format, SArchiveSource & source);
     HRESULT                 OpenSource      (const filesystem::path & archivePath, SArchiveSource & source);
     HRESULT                 OpenOuterSource (const filesystem::path & outerPath, SArchiveSource & source);
     bool                    RegisterNested  (const SArchiveLocation & location);

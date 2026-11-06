@@ -214,6 +214,12 @@ HRESULT CCommandLine::ParseSwitch (LPCWSTR pszArg, int & cArg, WCHAR ** & ppszAr
            RejectSingleDashLongSwitch (pszSwitchArg));
 
     hr = HandleSwitch (pszSwitchArg, cArg, ppszArg);
+    CHR (hr);
+
+    if (m_strInfoConflictSwitch.empty() && IsListingSwitch (pszSwitchArg))
+    {
+        m_strInfoConflictSwitch = pszArg;
+    }
 
 Error:
     return hr;
@@ -288,6 +294,9 @@ HRESULT CCommandLine::ValidateSwitchCombinations (void)
     HRESULT hr = S_OK;
 
 
+
+    hr = ValidateInfoCombinations();
+    CHR (hr);
 
     hr = ValidateTreeCombinations();
     CHR (hr);
@@ -503,6 +512,104 @@ Error:
 
 ////////////////////////////////////////////////////////////////////////////////
 //
+//  CCommandLine::ValidateInfoCombinations
+//
+//  --Verify requires --Info, and --Info rejects the listing switches typed on
+//  the command line.  Listing defaults from TCDIR or the config file don't
+//  apply to --Info, so they are reset here rather than reported.
+//
+////////////////////////////////////////////////////////////////////////////////
+
+HRESULT CCommandLine::ValidateInfoCombinations (void)
+{
+    HRESULT hr = S_OK;
+
+
+
+    CBRFEx (!m_fVerify || m_fInfo, E_INVALIDARG,
+            m_strValidationError = L"--Verify requires --Info.");
+
+    BAIL_OUT_IF (!m_fInfo, S_OK);
+
+    CBRFEx (m_strInfoConflictSwitch.empty(), E_INVALIDARG,
+            m_strValidationError = format (L"--Info and {} cannot be used together.", m_strInfoConflictSwitch));
+
+    m_fWideListing = false;
+    m_fBareListing = false;
+    m_fTree        = false;
+    m_fShowOwner   = false;
+    m_fShowStreams = false;
+    m_cMaxDepth    = 0;
+    m_cTreeIndent  = s_kcDefaultTreeIndent;
+
+Error:
+    return hr;
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CCommandLine::IsListingSwitch
+//
+//  Returns true for a switch (without its prefix) that only changes listing
+//  output: -W, -B, -O, -A, -T and the long listing switches.
+//
+////////////////////////////////////////////////////////////////////////////////
+
+bool CCommandLine::IsListingSwitch (LPCWSTR pszSwitchArg)
+{
+    static constexpr LPCWSTR s_krgLongListingSwitches[] =
+    {
+        L"tree",
+        L"depth",
+        L"treeindent",
+        L"owner",
+        L"streams",
+        L"icons",
+        L"ellipsize",
+        L"size",
+    };
+
+    static constexpr wstring_view s_kShortListingSwitches = L"wbota";
+
+    wstring_view   strArg  = pszSwitchArg;
+    bool           fLong   = strArg.size() >= s_kcchMinLongSwitch && strArg[1] != L':' && strArg[1] != L'-';
+    wstring        strName (strArg.substr (0, strArg.find (L'=')));
+    bool           fFound  = false;
+
+
+
+    if (!fLong)
+    {
+        return !strArg.empty() && s_kShortListingSwitches.find ((WCHAR) towlower (strArg[0])) != wstring_view::npos;
+    }
+
+    if (!strName.empty() && strName.back() == L'-')
+    {
+        strName.pop_back();
+    }
+
+    for (LPCWSTR pszName : s_krgLongListingSwitches)
+    {
+        if (_wcsicmp (strName.c_str(), pszName) == 0)
+        {
+            fFound = true;
+            break;
+        }
+    }
+
+    return fFound;
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
 //  CCommandLine::HandleSwitch
 //
 //  Handles both single-char switches (s, w, b, etc.) and long switches (env, config).
@@ -619,6 +726,8 @@ HRESULT CCommandLine::HandleLongSwitch (LPCWSTR pszArg, int & cArg, WCHAR ** & p
         {  L"get-aliases",          &CCommandLine::m_fGetAliases         },
         {  L"remove-aliases",       &CCommandLine::m_fRemoveAliases      },
         {  L"whatif",               &CCommandLine::m_fWhatIf             },
+        {  L"info",                 &CCommandLine::m_fInfo               },
+        {  L"verify",               &CCommandLine::m_fVerify             },
         {  L"install-nerdfonts",    &CCommandLine::m_fInstallNerdFonts   },
         {  L"install-nerd-fonts",   &CCommandLine::m_fInstallNerdFonts   },
         {  L"uninstall-nerdfonts",  &CCommandLine::m_fUninstallNerdFonts },
@@ -838,6 +947,8 @@ bool CCommandLine::IsRecognizedLongSwitch (const wstring & strSwitch)
         L"get-aliases",
         L"remove-aliases",
         L"whatif",
+        L"info",
+        L"verify",
         L"install-nerdfonts",
         L"install-nerd-fonts",
         L"uninstall-nerdfonts",
