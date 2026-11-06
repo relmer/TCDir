@@ -24,7 +24,7 @@ format members applies.
 | `m_fZip64` | `bool` | ZIP64 locator found |
 | `m_fUtf8Paths` | `bool` | Any entry has flag bit 11 |
 | `m_fMultiDisk` | `bool` | End record disk numbers not zero |
-| `m_bCreatorHost`, `m_bCreatorVersion` | `BYTE` | Most common "version made by" |
+| `m_mapCreators` | `map<WORD, ULONGLONG>` | Entry count per "version made by"; the most common one is displayed |
 | `m_ullPrefixSize` | `ULONGLONG` | Bytes before the first local header |
 | `m_strComment` | `wstring` | Empty when absent |
 

@@ -135,10 +135,10 @@
 
 ## Phase 10: Polish
 
-- [ ] T053 [P] Document `--Info` and `--Verify` in README.md and CHANGELOG.md
-- [ ] T054 Run quickstart scenario 15 and check SC-002 (under 1 second for ZIP and ISO)
-- [ ] T055 Build Release x64 and ARM64, run Code Analysis with zero warnings, run all tests
-- [ ] T056 Run the prose check on every new comment and the docs, then commit the phase
+- [X] T053 [P] Document `--Info` and `--Verify` in README.md and CHANGELOG.md
+- [X] T054 Run quickstart scenario 15 and check SC-002 (under 1 second for ZIP and ISO)
+- [X] T055 Build Release x64 and ARM64, run Code Analysis with zero warnings, run all tests
+- [X] T056 Run the prose check on every new comment and the docs, then commit the phase
 
 ## Dependencies
 

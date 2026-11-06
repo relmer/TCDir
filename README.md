@@ -143,7 +143,7 @@ Show help:
 
 Basic syntax:
 
-- `TCDIR [drive:][path][filename] [-A[[:]attributes]] [-O[[:]sortorder]] [-T[[:]timefield]] [-S] [-W] [-B] [-P] [-M] [--Env] [--Config] [--Settings] [--Owner] [--Streams] [--Icons] [--Tree] [--Archives] [--Depth=N] [--TreeIndent=N] [--Size=Auto|Bytes]`
+- `TCDIR [drive:][path][filename] [-A[[:]attributes]] [-O[[:]sortorder]] [-T[[:]timefield]] [-S] [-W] [-B] [-P] [-M] [--Env] [--Config] [--Settings] [--Owner] [--Streams] [--Icons] [--Tree] [--Archives] [--Info] [--Verify] [--Depth=N] [--TreeIndent=N] [--Size=Auto|Bytes]`
 
 Common switches:
 
@@ -167,6 +167,8 @@ Common switches:
 - `--Icons`: enable Nerd Font file/folder icons; use `--Icons-` to disable
 - `--Tree`: hierarchical directory tree view; use `--Tree-` to disable
 - `--Archives`: list the contents of an archive file (`.zip`, `.iso`, `.7z`, `.rar`, `.tar`, ...) given as a path, and recurse into archive files with `-S` and `--Tree`; use `--Archives-` to disable
+- `--Info`: print statistics for each archive that matches the targets instead of a listing; with `-S`, archives in subfolders and inside other archives are reported too
+- `--Verify`: with `--Info`, read every archive entry and check its stored checksum
 - `--Depth=N`: limit tree depth to N levels (requires `--Tree`)
 - `--TreeIndent=N`: tree indent width per level, 1–8, default 4 (requires `--Tree`)
 - `--Size=Auto|Bytes`: `Auto` shows abbreviated sizes (e.g., `8.90 KB`); `Bytes` shows exact comma-separated sizes. Tree mode defaults to `Auto`, non-tree defaults to `Bytes`
@@ -250,6 +252,27 @@ With `--Archives`, a path to an archive file lists the archive's contents, and `
 | `.7z`, `.rar`, `.tar`, `.tgz`/`.tar.gz`, `.tar.bz2`, `.tar.xz`, `.tar.zst`, `.cab`, `.cpio`, `.xar`, `.lzh` | Windows 11 23H2 and later (uses `archiveint.dll`, which ships with Windows) |
 
 Archives are read-only: tcdir never changes them, never extracts them to disk, and never mounts `.iso` images. Only the archive's file list is read, so listing a large `.zip` is fast. Compressed tarballs and solid `.7z`/`.rar` archives must be decompressed to find their entries, so they take longer. On Windows 11 23H2 and later, an archive stored inside another archive (`outer.zip\inner.zip`) is browsed too: tcdir decompresses it into memory to read its file list. Inner archives larger than 256 MB, and all inner archives on earlier Windows versions, are listed as files. In tree view with a file mask, an archive that does not match the mask appears only when it contains matching entries. Owner, stream and cloud columns are blank for archive entries. A corrupt or password-protected archive prints an error, and the rest of the listing continues.
+
+
+### Archive statistics (`--Info`)
+
+`--Info` prints a block of statistics for each archive instead of a listing. It works with or without `--Archives`.
+
+- `tcdir --Info release.zip`: report one archive
+- `tcdir --Info builds\*.zip`: report every matching archive, followed by a summary
+- `tcdir --Info outer.zip\inner.7z`: report an archive stored inside another archive
+- `tcdir --Info -S builds\*.7z`: report matching archives in `builds`, its subfolders, and inside other archives at any depth
+- `tcdir --Info --Verify release.zip`: also read every entry and check the checksums the archive stores
+
+Every block lists the size on disk, the file, folder and nested-archive counts, the uncompressed size and ratio, the largest file, the deepest path, the date range, encryption, and a breakdown by extension. The blocks add these values for each format:
+
+| Format | Details |
+| :--- | :--- |
+| `.zip` | Compression methods with compressed and uncompressed sizes, encryption type (ZipCrypto, AES), the creating host and version, ZIP64, several disks, a self-extractor prefix, and the comment |
+| `.iso` | File systems (ISO 9660, Joliet, Rock Ridge, UDF revision), volume label and IDs, volume dates, sector count, and El Torito boot platforms |
+| Others | Format and compression filters, stream totals, links, owners, groups, permissions, and entries with extended attributes or ACLs |
+
+Listing switches (`-W`, `-B`, `--Tree`, `-O`, `-A`, `-T`, `--Owner`, `--Streams`, `--Icons`, `--Size` and the others that change listing output) can't be combined with `--Info`. Listing defaults in `TCDIR` or `.tcdirconfig` are ignored under `--Info`. `--Verify` requires Windows 11 23H2 or later. With `--Verify`, the run exits with a failure code when an entry is damaged.
 
 - Tree listing: `TCDir.exe --Tree`
 ![TCDir tree listing](Assets/TCDir%20Tree.png)

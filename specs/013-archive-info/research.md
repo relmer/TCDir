@@ -90,7 +90,7 @@ decompressing. tcdir has no decompressors, and adding them is out of scope.
 | Format | Coverage |
 |--------|----------|
 | ZIP, 7z, RAR, CAB, LZH | Each entry |
-| tar.gz, tar.bz2, tar.xz, tar.zst, tar.lzma, tlz | The whole stream, so a damaged byte is reported for the entry being read |
+| tar.gz, tar.bz2, tar.xz, tar.zst, tar.lzma, tlz | The decompressor detects damage that breaks the compressed stream. libarchive stops at the end of the tar data, so the stream trailer checksum is not read |
 | tar, cpio, XAR | Headers only. Reported as "no data checksums", and verify checks that every entry reads |
 | ISO 9660 | No checksums. Verify checks that every entry reads |
 | UDF without an ISO 9660 tree | libarchive can't read it. The verify line reports that verification isn't available for this image |
