@@ -15,6 +15,9 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="ArchiveInfoFinder.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="ArchiveInfo.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -170,6 +173,9 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="ArchiveInfoFinder.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="ArchiveInfo.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>

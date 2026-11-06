@@ -7,6 +7,7 @@
 class CCommandLine;
 class CConsole;
 class IArchiveFileAccess;
+struct SArchiveReport;
 
 
 
@@ -24,5 +25,8 @@ class IArchiveFileAccess;
 class CArchiveInfo
 {
 public:
-    static HRESULT Run (const CCommandLine & cmdline, CConsole & console, shared_ptr<IArchiveFileAccess> accessPtr);
+    static HRESULT Run       (const CCommandLine & cmdline, CConsole & console, shared_ptr<IArchiveFileAccess> accessPtr);
+
+private:
+    static bool    IsDamaged (const SArchiveReport & report);
 };

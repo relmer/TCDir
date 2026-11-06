@@ -52,11 +52,11 @@
 
 **Independent Test**: Quickstart scenarios 3 and 14.
 
-- [ ] T020 [P] [US2] Write tests for `CArchiveInfoFinder::Find (targets, callback)` without `-s`: archive path, mask in a folder (non-archives skipped, name order), folder treated as `folder\*`, no target treated as `*`, several targets in order, a target with no archives returns "No archives match <target>" and the run continues, mask inside an archive (`outer.zip\*.7z`), in UnitTest/ArchiveInfoFinderTests.cpp
-- [ ] T021 [US2] Implement `CArchiveInfoFinder` (splits targets with `CMaskGrouper::GroupMasksByDirectory`, enumerates folders with `CFileEnumerator` and archive folders with `CArchiveTree::EnumerateChildren`, filters matches with `CArchiveFileSystem::IsArchiveFile`) in TCDirCore/ArchiveInfoFinder.h and TCDirCore/ArchiveInfoFinder.cpp
-- [ ] T022 [P] [US2] Write tests for the summary line (archive count, combined size on disk, combined uncompressed size) and its absence for a single block in UnitTest/ArchiveInfoDisplayerTests.cpp
-- [ ] T023 [US2] Add `CArchiveInfoDisplayer::DisplaySummary` and use `CArchiveInfoFinder` in `CArchiveInfo::Run`, printing each block as it is found, in TCDirCore/ArchiveInfoDisplayer.h, TCDirCore/ArchiveInfoDisplayer.cpp and TCDirCore/TCDir.cpp
-- [ ] T024 [US2] Run quickstart scenarios 3 and 14, build, run all tests, commit the phase
+- [X] T020 [P] [US2] Write tests for `CArchiveInfoFinder::Find (targets, callback)` without `-s`: archive path, mask in a folder (non-archives skipped, name order), folder treated as `folder\*`, no target treated as `*`, several targets in order, a target with no archives returns "No archives match <target>" and the run continues, mask inside an archive (`outer.zip\*.7z`), in UnitTest/ArchiveInfoFinderTests.cpp
+- [X] T021 [US2] Implement `CArchiveInfoFinder` (splits targets with `CMaskGrouper::GroupMasksByDirectory`, enumerates folders with `CFileEnumerator` and archive folders with `CArchiveTree::EnumerateChildren`, filters matches with `CArchiveFileSystem::IsArchiveFile`) in TCDirCore/ArchiveInfoFinder.h and TCDirCore/ArchiveInfoFinder.cpp
+- [X] T022 [P] [US2] Write tests for the summary line (archive count, combined size on disk, combined uncompressed size) and its absence for a single block in UnitTest/ArchiveInfoDisplayerTests.cpp
+- [X] T023 [US2] Add `CArchiveInfoDisplayer::DisplaySummary` and use `CArchiveInfoFinder` in `CArchiveInfo::Run`, printing each block as it is found, in TCDirCore/ArchiveInfoDisplayer.h, TCDirCore/ArchiveInfoDisplayer.cpp and TCDirCore/TCDir.cpp
+- [X] T024 [US2] Run quickstart scenarios 3 and 14, build, run all tests, commit the phase
 
 **Checkpoint**: Masks and several targets work.
 
@@ -66,10 +66,10 @@
 
 **Independent Test**: Quickstart scenarios 4, 5 and 6.
 
-- [ ] T025 [P] [US3] Write tests for `CArchiveInfoFinder` with `-s`: subfolders searched depth first after the folder's archives, archives inside matching archives reported after their parent with full paths, archives that don't match the mask searched but not reported (`*.7z` inside a ZIP), a nested archive that fails to open reported with its error, in UnitTest/ArchiveInfoFinderTests.cpp
-- [ ] T026 [US3] Add the `-s` walk to `CArchiveInfoFinder` with a private static helper per level (disk folder, archive folder), in TCDirCore/ArchiveInfoFinder.cpp
-- [ ] T027 [P] [US3] Write a test that a nested report's size on disk equals the entry size in its parent in UnitTest/ArchiveInfoBuilderTests.cpp
-- [ ] T028 [US3] Run quickstart scenarios 4, 5 and 6, build, run all tests, commit the phase
+- [X] T025 [P] [US3] Write tests for `CArchiveInfoFinder` with `-s`: subfolders searched depth first after the folder's archives, archives inside matching archives reported after their parent with full paths, archives that don't match the mask searched but not reported (`*.7z` inside a ZIP), a nested archive that fails to open reported with its error, in UnitTest/ArchiveInfoFinderTests.cpp
+- [X] T026 [US3] Add the `-s` walk to `CArchiveInfoFinder` with a private static helper per level (disk folder, archive folder), in TCDirCore/ArchiveInfoFinder.cpp
+- [X] T027 [P] [US3] Write a test that a nested report's size on disk equals the entry size in its parent in UnitTest/ArchiveInfoBuilderTests.cpp
+- [X] T028 [US3] Run quickstart scenarios 4, 5 and 6, build, run all tests, commit the phase
 
 **Checkpoint**: Nested archives are reachable both ways.
 

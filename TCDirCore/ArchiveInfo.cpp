@@ -5,8 +5,10 @@
 #include "ArchiveFileSystem.h"
 #include "ArchiveInfoBuilder.h"
 #include "ArchiveInfoDisplayer.h"
+#include "ArchiveInfoFinder.h"
 #include "CommandLine.h"
 #include "Console.h"
+#include "DirectoryLister.h"
 
 
 
@@ -16,40 +18,52 @@
 //
 //  CArchiveInfo::Run
 //
-//  Returns S_OK when every target matched and every archive was read, and
-//  E_FAIL otherwise.  Each failure has been printed by then.
+//  Prints a block for each archive as it is found.  Returns S_OK when every
+//  target matched and every archive was read, and E_FAIL otherwise.  Each
+//  failure has been printed by then.
 //
 ////////////////////////////////////////////////////////////////////////////////
 
 HRESULT CArchiveInfo::Run (const CCommandLine & cmdline, CConsole & console, shared_ptr<IArchiveFileAccess> accessPtr)
 {
-    HRESULT                     hr        = S_OK;
-    CArchiveFileSystem          archiveFs (accessPtr);
-    CArchiveInfoBuilder         builder   (archiveFs, cmdline.m_fVerify);
-    CArchiveInfoDisplayer       displayer (console);
-    WIN32_FILE_ATTRIBUTE_DATA   data      = {};
-    ULARGE_INTEGER              uliSize   = {};
-    SArchiveReport              report;
-    bool                        fFailed   = false;
+    shared_ptr<CArchiveFileSystem>   archiveFsPtr = make_shared<CArchiveFileSystem> (accessPtr);
+    CArchiveInfoBuilder              builder        (*archiveFsPtr, cmdline.m_fVerify);
+    CArchiveInfoDisplayer            displayer      (console);
+    list<wstring>                    targets        = cmdline.m_listMask;
+    bool                             fFailed        = false;
 
 
 
-    for (const wstring & strTarget : cmdline.m_listMask)
+    auto report = [&] (const filesystem::path & archivePath, ULONGLONG ullSize)
     {
-        filesystem::path path = filesystem::absolute (strTarget);
+        SArchiveReport archiveReport;
+        HRESULT        hrBuild = builder.Build (archivePath, ullSize, archiveReport);
 
-        uliSize = {};
+        fFailed |= FAILED (hrBuild) || IsDamaged (archiveReport);
+        displayer.Display (archiveReport);
+    };
 
-        if (GetFileAttributesExW (path.c_str(), GetFileExInfoStandard, &data))
+    auto error = [&] (const filesystem::path & archivePath, const wstring & strMessage)
+    {
+        CDirectoryLister::PrintArchiveError (console, archivePath, strMessage);
+    };
+
+    CArchiveInfoFinder finder (archiveFsPtr, cmdline.m_fRecurse, report, error);
+
+
+
+    if (targets.empty())
+    {
+        targets.push_back (L"*");
+    }
+
+    for (const wstring & strTarget : targets)
+    {
+        if (!finder.Find (strTarget))
         {
-            uliSize.LowPart  = data.nFileSizeLow;
-            uliSize.HighPart = data.nFileSizeHigh;
+            console.ColorPrintf (L"{Error}Error:   No archives match {InformationHighlight}%s{Error}\n", strTarget.c_str());
+            fFailed = true;
         }
-
-        hr       = builder.Build (path, uliSize.QuadPart, report);
-        fFailed |= FAILED (hr);
-
-        displayer.Display (report);
     }
 
     displayer.DisplaySummary();
@@ -57,3 +71,23 @@ HRESULT CArchiveInfo::Run (const CCommandLine & cmdline, CConsole & console, sha
 
     return fFailed ? E_FAIL : S_OK;
 }
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CArchiveInfo::IsDamaged
+//
+////////////////////////////////////////////////////////////////////////////////
+
+bool CArchiveInfo::IsDamaged (const SArchiveReport & report)
+{
+    return report.m_verify.has_value() && report.m_verify->m_cDamaged > 0;
+}
+
+
+
+
+
