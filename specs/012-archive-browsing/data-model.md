@@ -63,11 +63,22 @@ Implementations: `CFileByteSource` (`CreateFileW`, `GENERIC_READ`, `FILE_SHARE_R
 
 ```text
 DWORD   GetAttributes (const filesystem::path &)     // INVALID_FILE_ATTRIBUTES when missing
-HRESULT Read (const filesystem::path &, EArchiveFormat, SArchiveReadResult &)
+HRESULT Read (const SArchiveSource &, EArchiveFormat, SArchiveReadResult &)
+HRESULT ExtractEntry (const SArchiveSource &, wstring_view entryPath, ULONGLONG cbMax, shared_ptr<const vector<BYTE>> &)
 bool    IsLibArchiveAvailable()
 ```
 
-`CArchiveFileAccess` opens a `CFileByteSource` and dispatches to `CZipReader`, `CIsoReader` (which calls `CUdfReader`) or `CLibArchiveReader`. Tests use `MockArchiveFileAccess` with in-memory images.
+`CArchiveFileAccess::Read` opens a `CFileByteSource` (or a `CMemoryByteSource` for bytes in memory) and dispatches to `CZipReader`, `CIsoReader` (which calls `CUdfReader`) or `CLibArchiveReader`. `ExtractEntry` reads the data of one file entry through `CLibArchiveReader::ExtractEntry`: `ERROR_FILE_NOT_FOUND` when no file entry matches, `ERROR_FILE_ENCRYPTED` for an encrypted entry, `ERROR_FILE_TOO_LARGE` above `cbMax`. Tests use `MockArchiveFileAccess` with prepared entry lists; its extracted bytes encode the virtual path of the inner archive.
+
+## SArchiveSource
+
+`SArchiveSource { filesystem::path m_path; shared_ptr<const vector<BYTE>> m_bytesPtr; }`: a real archive file (`m_bytesPtr` null), or an archive stored inside another archive, extracted into memory.
+
+## Nested archives
+
+- `CArchiveFileSystem::IsNestedArchiveFile`: an entry of an archive qualifies for browsing when archiveint.dll is available, the extension is recognized, and the size is at most `s_kcbMaxNestedArchive` (256 MB).
+- An inner archive is registered under its virtual path (`C:\x\outer.zip\pkg\inner.zip`). `CFileEnumerator::EnumerateArchive` registers qualifying entries; `CArchiveFileSystem::TrySplit` registers them for target paths, one level at a time, so the location is in the innermost archive.
+- `CArchiveFileSystem::OpenSource` returns the `SArchiveSource` for an archive path. When the parent path resolves into a registered archive, the inner archive is extracted from that archive's source, which may itself be extracted. Nothing is cached except the parsed tree.
 
 ## CDirectoryInfo additions
 
@@ -76,7 +87,7 @@ bool    IsLibArchiveAvailable()
 
 ## Archive files on disk
 
-`CFileEnumerator` does not modify the attributes of an archive file on disk, so it lists as a file. It registers the archive with `CArchiveFileSystem::RegisterArchive`. The recursion passes (`CDirectoryLister::RecurseIntoSubdirectories`, `CMultiThreadedLister::EnumerateSubdirectories`) call `CFileEnumerator::IsArchiveFile` and recurse into an archive file as they do into a directory. An archive inside an archive is not recursed into.
+`CFileEnumerator` does not modify the attributes of an archive file on disk, so it lists as a file. It registers the archive with `CArchiveFileSystem::RegisterArchive`. The recursion passes (`CDirectoryLister::RecurseIntoSubdirectories`, `CMultiThreadedLister::EnumerateSubdirectories`) call `CFileEnumerator::IsArchiveFile` and recurse into an archive file as they do into a directory. `CFileEnumerator::IsArchiveFile` applies `CArchiveFileSystem::IsNestedArchiveFile` to entries of an archive.
 - `CDirectoryInfo::m_archiveErrorPath` (`filesystem::path`) and `CDirectoryInfo::m_strArchiveError` (`wstring`): the archive that failed to parse and the error text, for the main thread to print.
 
 ## SEnumerationError

@@ -112,7 +112,7 @@ Beyond .zip, the user can browse the other archive formats that Windows can read
 - Entry paths that point outside the archive root (`..\`, absolute paths, drive letters): tcdir lists them under a sanitized path and never reads anything outside the archive.
 - Duplicate entry names in one folder: tcdir lists every entry, as it appears in the archive.
 - Entry names in a legacy code page instead of UTF-8: tcdir decodes them with the encoding that the archive declares, or with the system OEM code page if the archive does not declare an encoding.
-- An archive inside an archive (`outer.zip\inner.zip`): the inner archive is listed as a file. Browsing nested archives is out of scope.
+- An archive inside an archive (`outer.zip\inner.zip`): the inner archive is listed as a file. When archiveint.dll is available and the inner archive is no larger than 256 MB, it is also browsed as a target path and in `-S` and `--Tree` recursion (FR-018). Otherwise only the file line appears.
 - Very large archives (100,000+ entries) or archives over 4 GB: tcdir lists them correctly, including 64-bit sizes.
 - An archive that is a cloud placeholder and is not available locally: tcdir does not trigger a download. It lists the archive as a file and reports that its contents are not available offline.
 - A real directory whose name has an archive extension (`foo.zip` is a directory): it is a real directory and is listed as one.
@@ -139,6 +139,7 @@ Beyond .zip, the user can browse the other archive formats that Windows can read
 - **FR-015**: tcdir MUST NEVER extract archive contents to disk or modify the archive, and MUST NOT decompress entry data merely to list it, except where a format requires a full scan to enumerate its entries.
 - **FR-016**: Errors that occur while tcdir opens or reads an archive MUST use the existing tcdir error output (the `Error:` line style of the "does not exist" message) and MUST NOT stop the listing of other targets or the rest of a recursion.
 - **FR-017**: The switch MUST be documented in the `-?` help output.
+- **FR-018**: When archiveint.dll is available, an archive file stored inside another archive, at any depth, MUST be browsable like an archive on disk if its uncompressed size is 256 MB or less. Its data is decompressed into memory, never to disk. A larger inner archive, or any inner archive when archiveint.dll is absent, MUST list as a file.
 
 ### Key Entities
 
@@ -162,7 +163,7 @@ Beyond .zip, the user can browse the other archive formats that Windows can read
 
 - tcdir recognizes archives by file extension. It does not inspect file contents to treat files with other extensions as archives.
 - Archive browsing is read-only. Extraction and adding or deleting entries are out of scope.
-- Nested archives (an archive inside an archive) are listed as files, not browsed.
+- Nested archives (an archive inside an archive) are browsed only through archiveint.dll, which can decompress the inner archive. tcdir doesn't include a decompressor.
 - Times stored in archives without a time zone (as in .zip) are displayed as local time, consistent with other tools.
 - The compressed size and compression ratio are not displayed by default. A future switch could add them.
 - For most formats, a listing reads only the archive metadata, so its cost depends on the entry count rather than the archive size. Some formats, such as compressed tarballs, require a scan of the whole stream to enumerate entries.

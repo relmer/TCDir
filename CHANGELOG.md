@@ -10,9 +10,10 @@ All notable changes to TCDir are documented in this file.
   - Supports `.zip` and `.iso` (ISO 9660, Joliet and UDF) on every Windows version
   - Supports `.7z`, `.rar`, `.tar`, `.tar.gz`/`.tgz`, `.tar.bz2`, `.tar.xz`, `.tar.zst`, `.cab`, `.cpio`, `.xar` and `.lzh` on Windows 11 23H2 and later, through the `archiveint.dll` reader that ships with Windows
   - Paths can go inside an archive: `tcdir --Archives release.zip\docs\*.md`
+  - Archives inside archives (`outer.zip\inner.zip`) are browsed on Windows 11 23H2 and later; inner archives larger than 256 MB list as files
   - `-S` and `--Tree` recurse into archives with the same rules as subdirectories
   - Settable as a default with `Archives` in `TCDIR` or `.tcdirconfig`
-  - Read-only: archives are never extracted or modified, and `.iso` images are never mounted
+  - Read-only: archives are never modified or extracted to disk, and `.iso` images are never mounted
 - The date and time columns are blank for entries with no stored time (possible inside archives)
 
 ### Fixed

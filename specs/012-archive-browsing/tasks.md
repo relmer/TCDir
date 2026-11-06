@@ -116,6 +116,12 @@
 - [X] T057 Build Release x64 and ARM64, run Code Analysis with zero warnings, fix any findings
 - [X] T058 Update specs/sync-status.md with the 012 row and commit
 
+## Phase 9: Follow-up (after review)
+
+- [X] T059 List archive files as files in directory listings; recurse into them only with `-S` and `--Tree`; in tree mode, add an unmatched archive as a container that is pruned like a directory and not counted (FR-002) in TCDirCore/FileEnumerator.cpp, TCDirCore/DirectoryLister.cpp and TCDirCore/MultiThreadedLister.cpp
+- [X] T060 Browse archives inside archives through archiveint.dll with a 256 MB limit (FR-018): `SArchiveSource`, `CLibArchiveReader::ExtractEntry` and memory reads, `CArchiveFileSystem::OpenSource`, `RegisterNested` and `IsNestedArchiveFile`, `CArchiveTree::FindFile`
+- [X] T061 Write tests for T059 and T060 in UnitTest/ArchiveListingScenarioTests.cpp, UnitTest/ArchiveFileSystemTests.cpp and UnitTest/LibArchiveReaderTests.cpp (in-memory tar images through the real archiveint.dll)
+
 ## Dependencies
 
 - Phase 1 → Phase 2 → US1 (Phase 3). US1 is the MVP and blocks the rest because it adds the switch and `CZipReader`.
