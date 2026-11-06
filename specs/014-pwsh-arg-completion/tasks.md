@@ -47,7 +47,7 @@
 - [X] T014 [P] [US3] Write tests in UnitTest/AliasBlockGeneratorTests.cpp: the block contains registrations for `tcdir`, `tcdir.exe`, the root alias and each enabled sub-alias with its flags, inside the block markers
 - [X] T015 [US3] Append the registrations in `CAliasBlockGenerator::Generate` in TCDirCore/AliasBlockGenerator.cpp
 - [X] T016 [US3] Report `Tab completion: installed` or `not installed` per block in `CAliasManager::DisplayProfileAliases` in TCDirCore/AliasManager.cpp, with a test in UnitTest/AliasManagerTests.cpp if the existing seams allow it
-- [ ] T017 [US3] Run quickstart scenarios 8 to 10 in PowerShell 7 and 5.1, build, run all tests, commit the phase
+- [X] T017 [US3] Run quickstart scenarios 8 to 10 in PowerShell 7 and 5.1, build, run all tests, commit the phase
 
 ## Phase 5: User Story 4 - Setup without aliases (P2)
 
@@ -55,10 +55,10 @@
 
 **Independent Test**: Quickstart scenarios 1 and 11.
 
-- [ ] T018 [P] [US4] Write tests in UnitTest/CommandLineTests.cpp: `--Completion pwsh`, `--Completion=pwsh`, `--Completion powershell`, `--Completion bash` (error listing `pwsh`), `--Completion` without a value
-- [ ] T019 [US4] Parse `--Completion <shell>` into `m_strCompletionShell` with validation in TCDirCore/CommandLine.h and TCDirCore/CommandLine.cpp
-- [ ] T020 [US4] Print `CCompletionScript::Generate` output for `tcdir` and `tcdir.exe` with the running exe's full path from `ProcessCommandLine` in TCDirCore/TCDir.cpp, and add the `--Completion` row (with `--Complete` documented in its continuation) to the catalog
-- [ ] T021 [US4] Run quickstart scenarios 1 and 11, build, run all tests, commit the phase
+- [X] T018 [P] [US4] Write tests in UnitTest/CommandLineTests.cpp: `--Completion pwsh`, `--Completion=pwsh`, `--Completion powershell`, `--Completion bash` (error listing `pwsh`), `--Completion` without a value
+- [X] T019 [US4] Parse `--Completion <shell>` into `m_strCompletionShell` with validation in TCDirCore/CommandLine.h and TCDirCore/CommandLine.cpp
+- [X] T020 [US4] Print `CCompletionScript::Generate` output for `tcdir` and `tcdir.exe` with the running exe's full path from `ProcessCommandLine` in TCDirCore/TCDir.cpp, and add the `--Completion` row (with `--Complete` documented in its continuation) to the catalog
+- [X] T021 [US4] Run quickstart scenarios 1 and 11, build, run all tests, commit the phase
 
 ## Phase 6: User Story 5 - Complete switch values (P2)
 

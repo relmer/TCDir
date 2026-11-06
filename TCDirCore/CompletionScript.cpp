@@ -2,6 +2,8 @@
 
 #include "CompletionScript.h"
 
+#include "Completer.h"
+
 
 
 
@@ -28,6 +30,59 @@ void CCompletionScript::Generate (const wstring & strInvocation, const vector<SC
                                  s_kpszHelperName,
                                  FlagArray (command.m_strFlags)));
     }
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CCompletionScript::Print
+//
+//  Prints the registration for tcdir and tcdir.exe, calling this tcdir by
+//  its full path, for "tcdir --Completion pwsh | Out-String | Invoke-Expression".
+//
+////////////////////////////////////////////////////////////////////////////////
+
+HRESULT CCompletionScript::Print()
+{
+    HRESULT           hr        = S_OK;
+    wstring           strPath   (MAX_PATH, L'\0');
+    DWORD             cchPath   = 0;
+    vector<wstring>   lines;
+    wstring           strText;
+
+
+
+    for (;;)
+    {
+        cchPath = GetModuleFileNameW (nullptr, strPath.data(), static_cast<DWORD> (strPath.size()));
+        CWRA (cchPath != 0);
+
+        if (cchPath < strPath.size())
+        {
+            break;
+        }
+
+        strPath.resize (strPath.size() * 2);
+    }
+
+    strPath.resize (cchPath);
+
+    Generate (strPath, { { L"tcdir", L"" }, { L"tcdir.exe", L"" } }, lines);
+
+    for (const wstring & strLine : lines)
+    {
+        strText += strLine + L"\r\n";
+    }
+
+    CCompleter::WriteText (strText);
+
+
+
+Error:
+    return hr;
 }
 
 

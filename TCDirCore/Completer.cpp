@@ -41,6 +41,7 @@ int CCompleter::Run (int argc, WCHAR ** argv)
     SCompletionRequest             request;
     vector<SCompletionCandidate>   candidates;
     wstring_view                   wordArg    = (argc > 2) ? argv[2] : L"";
+    wstring                        strText;
 
 
 
@@ -57,7 +58,13 @@ int CCompleter::Run (int argc, WCHAR ** argv)
     }
 
     Complete (request, candidates);
-    WriteLines (candidates);
+
+    for (const SCompletionCandidate & candidate : candidates)
+    {
+        strText += FormatLine (candidate) + L"\r\n";
+    }
+
+    WriteText (strText);
 
     return 0;
 }
@@ -231,29 +238,23 @@ bool CCompleter::StartsWithNoCase (wstring_view text, wstring_view prefix)
 
 ////////////////////////////////////////////////////////////////////////////////
 //
-//  CCompleter::WriteLines
+//  CCompleter::WriteText
 //
-//  PowerShell decodes a native program's output with the console output
-//  code page, so the lines are encoded with it.  Without a console the
-//  lines are UTF-8.
+//  Writes plain text, without color, to stdout.  PowerShell decodes a
+//  native program's output with the console output code page, so the text
+//  is encoded with it.  Without a console the text is UTF-8.
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-void CCompleter::WriteLines (const vector<SCompletionCandidate> & candidates)
+void CCompleter::WriteText (const wstring & strText)
 {
     HANDLE    hOut      = GetStdHandle (STD_OUTPUT_HANDLE);
     UINT      codePage  = GetConsoleOutputCP();
-    wstring   strText;
     string    strBytes;
     int       cb        = 0;
     DWORD     cbWritten = 0;
 
 
-
-    for (const SCompletionCandidate & candidate : candidates)
-    {
-        strText += FormatLine (candidate) + L"\r\n";
-    }
 
     if (strText.empty() || hOut == INVALID_HANDLE_VALUE || hOut == nullptr)
     {

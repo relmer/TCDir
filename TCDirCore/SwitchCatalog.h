@@ -117,6 +117,7 @@ private:
     static const SSwitchValue            s_krgSortValues[];
     static const SSwitchValue            s_krgTimeValues[];
     static const SSwitchValue            s_krgSizeValues[];
+    static const SSwitchValue            s_krgShellValues[];
     static const SSwitchValue            s_krgTreeIndentValues[];
     static const SSwitchDefinition       s_krgSwitches[];
 };

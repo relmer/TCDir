@@ -1857,5 +1857,59 @@ namespace UnitTest
             Assert::IsTrue (cl.m_eSizeFormat == ESizeFormat::Bytes);
         }
 
+
+
+
+        //
+        //  --Completion
+        //
+
+        TEST_METHOD(ParseCompletion_Forms)
+        {
+            static const vector<vector<LPCWSTR>> s_krgForms =
+            {
+                { L"--Completion", L"pwsh" },
+                { L"--Completion=pwsh" },
+                { L"--completion", L"PowerShell" },
+                { L"/Completion=pwsh" },
+            };
+
+
+
+            for (const vector<LPCWSTR> & args : s_krgForms)
+            {
+                CCommandLine cl;
+                HRESULT      hr = ParseArgs (cl, args);
+
+                Assert::IsTrue   (SUCCEEDED (hr), args[0]);
+                Assert::AreEqual (L"pwsh", cl.m_strCompletionShell.c_str(), args[0]);
+                Assert::IsTrue   (cl.m_listMask.empty(), args[0]);
+            }
+        }
+
+
+
+
+        TEST_METHOD(ParseCompletion_UnsupportedOrMissingShell)
+        {
+            static const vector<vector<LPCWSTR>> s_krgForms =
+            {
+                { L"--Completion", L"bash" },
+                { L"--Completion=zsh" },
+                { L"--Completion" },
+            };
+
+
+
+            for (const vector<LPCWSTR> & args : s_krgForms)
+            {
+                CCommandLine cl;
+                HRESULT      hr = ParseArgs (cl, args);
+
+                Assert::IsTrue   (FAILED (hr), args[0]);
+                Assert::AreEqual (L"--Completion supports: pwsh", cl.m_strValidationError.c_str(), args[0]);
+            }
+        }
+
     };
 }

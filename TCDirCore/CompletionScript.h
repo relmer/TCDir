@@ -37,6 +37,7 @@ class CCompletionScript
 {
 public:
     static void    Generate         (const wstring & strInvocation, const vector<SCompletionCommand> & commands, vector<wstring> & lines);
+    static HRESULT Print();
     static bool    IsRegistration   (const wstring & strLine);
     static wstring QuoteLiteral     (const wstring & strText);
     static wstring FlagArray        (const wstring & strFlags);

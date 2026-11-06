@@ -740,6 +740,13 @@ void CUsage::DisplayUsage (CConsole & console, wchar_t chPrefix, optional<bool> 
     for (const SUsageOptionRow & row : aliasRows)
     {
         AppendAlignedRow (usageBody, INDENT, optionDescCol, row.label, row.description);
+
+        if (!row.continuation.empty())
+        {
+            usageBody.append (continuationCol, L' ');
+            usageBody.append (row.continuation);
+            usageBody.push_back (L'\n');
+        }
     }
 
     console.ColorPuts (usageBody.c_str());

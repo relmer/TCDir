@@ -59,6 +59,7 @@ public:
     static int     Run               (int argc, WCHAR ** argv);
     static void    Complete          (const SCompletionRequest & request, vector<SCompletionCandidate> & candidates);
     static wstring FormatLine        (const SCompletionCandidate & candidate);
+    static void    WriteText         (const wstring & strText);
 
     static constexpr LPCWSTR s_kpszCompleteSwitch = L"--Complete";
     static constexpr LPCWSTR s_kpszWordPrefix     = L"w:";
@@ -75,5 +76,4 @@ private:
     static void    AddSwitches       (ESwitchForm eForm, const SPrefixes & prefixes, const wstring & strRest, vector<SCompletionCandidate> & candidates);
     static bool    StartsWithNoCase  (wstring_view text, wstring_view prefix);
     static wstring WithoutTabs       (wstring strText);
-    static void    WriteLines        (const vector<SCompletionCandidate> & candidates);
 };

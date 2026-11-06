@@ -765,6 +765,11 @@ HRESULT CCommandLine::HandleLongSwitch (LPCWSTR pszArg, int & cArg, WCHAR ** & p
             m_cTreeIndent = n;
             hr = S_OK;
         }
+        else if (_wcsicmp (switchName.c_str(), L"completion") == 0)
+        {
+            hr = HandleCompletionSwitch (switchValue, fHasValue, cArg, ppszArg);
+            CHR (hr);
+        }
         else if (_wcsicmp (switchName.c_str(), L"size") == 0)
         {
             CBREx (fHasValue, E_INVALIDARG);
@@ -786,6 +791,46 @@ HRESULT CCommandLine::HandleLongSwitch (LPCWSTR pszArg, int & cArg, WCHAR ** & p
             hr = S_OK;
         }
     }
+
+Error:
+    return hr;
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CCommandLine::HandleCompletionSwitch
+//
+//  --Completion=<shell> or --Completion <shell>.  "pwsh" and "powershell"
+//  both select the PowerShell script, which serves both editions.
+//
+////////////////////////////////////////////////////////////////////////////////
+
+HRESULT CCommandLine::HandleCompletionSwitch (wstring strValue, bool fHasValue, int & cArg, WCHAR ** & ppszArg)
+{
+    HRESULT hr          = S_OK;
+    bool    fPowerShell = false;
+
+
+
+    if (!fHasValue && cArg > 1)
+    {
+        strValue  = *(ppszArg + 1);
+        fHasValue = true;
+        --cArg;
+        ++ppszArg;
+    }
+
+    fPowerShell = fHasValue && (_wcsicmp (strValue.c_str(), L"pwsh") == 0 || _wcsicmp (strValue.c_str(), L"powershell") == 0);
+
+    CBRFEx (fPowerShell, E_INVALIDARG, m_strValidationError = L"--Completion supports: pwsh");
+
+    m_strCompletionShell = L"pwsh";
+
+
 
 Error:
     return hr;
@@ -820,6 +865,7 @@ bool CCommandLine::IsRecognizedLongSwitch (const wstring & strSwitch)
         L"depth",
         L"treeindent",
         L"size",
+        L"completion",
         L"set-aliases",
         L"get-aliases",
         L"remove-aliases",
