@@ -79,12 +79,12 @@
 
 **Independent Test**: ZipReaderTests with built archives. Quickstart scenario 1 includes the methods line.
 
-- [ ] T029 [US4] Extend `CZipBuilder::SEntryOptions` with `m_wMethod`, `m_ullCompressedSize`, `m_bAesStrength` (emits extra 0x9901 and method 99), `m_fStrongEncryption` (flag bit 6), `m_bVersion`, and add `SetPrefix (bytes)` and `SetDiskNumbers (wDisk, wDirectoryDisk)`, in UnitTest/Mocks/ZipBuilder.h and UnitTest/Mocks/ZipBuilder.cpp
-- [ ] T030 [P] [US4] Write tests for ZIP details: method groups with compressed and uncompressed sizes, AES method taken from the 0x9901 extra, ZipCrypto, AES-128/192/256, PKWARE strong, mixed encryption counts, ZIP64 locator flag, UTF-8 flag, multi-disk, most common creator host and version, prefix size from the smallest local header offset, comment decoded as UTF-8 and as code page 437, compressed size from the ZIP64 extra, details not collected when `m_detailsPtr` is null, in UnitTest/ZipReaderTests.cpp
-- [ ] T031 [US4] Collect `SZipDetails` in `CZipReader` per research R2 with new offset constants (`s_kibMethod`, `s_kibCompressedSize`, `s_kibLocalHeaderOffset`, `s_kibEndDiskNumber`, `s_kibEndDirectoryDisk`, `s_kwExtraAes`) and private static helpers for encryption type and comment decoding, in TCDirCore/ZipReader.h and TCDirCore/ZipReader.cpp
-- [ ] T032 [P] [US4] Write tests for the ZIP lines: format line with creator and UTF-8, methods rows, encryption per type, ZIP64 and multi-disk lines omitted when false, prefix line, comment with several lines indented under the first, in UnitTest/ArchiveInfoDisplayerTests.cpp
-- [ ] T033 [US4] Add the ZIP lines to `CArchiveInfoDisplayer` in TCDirCore/ArchiveInfoDisplayer.cpp
-- [ ] T034 [US4] Run `--Info` on TestData\Archives\zip, build, run all tests, commit the phase
+- [X] T029 [US4] Extend `CZipBuilder::SEntryOptions` with `m_wMethod`, `m_ullCompressedSize`, `m_bAesStrength` (emits extra 0x9901 and method 99), `m_fStrongEncryption` (flag bit 6), `m_bVersion`, and add `SetPrefix (bytes)` and `SetDiskNumbers (wDisk, wDirectoryDisk)`, in UnitTest/Mocks/ZipBuilder.h and UnitTest/Mocks/ZipBuilder.cpp
+- [X] T030 [P] [US4] Write tests for ZIP details: method groups with compressed and uncompressed sizes, AES method taken from the 0x9901 extra, ZipCrypto, AES-128/192/256, PKWARE strong, mixed encryption counts, ZIP64 locator flag, UTF-8 flag, multi-disk, most common creator host and version, prefix size from the smallest local header offset, comment decoded as UTF-8 and as code page 437, compressed size from the ZIP64 extra, details not collected when `m_detailsPtr` is null, in UnitTest/ZipReaderTests.cpp
+- [X] T031 [US4] Collect `SZipDetails` in `CZipReader` per research R2 with new offset constants (`s_kibMethod`, `s_kibCompressedSize`, `s_kibLocalHeaderOffset`, `s_kibEndDiskNumber`, `s_kibEndDirectoryDisk`, `s_kwExtraAes`) and private static helpers for encryption type and comment decoding, in TCDirCore/ZipReader.h and TCDirCore/ZipReader.cpp
+- [X] T032 [P] [US4] Write tests for the ZIP lines: format line with creator and UTF-8, methods rows, encryption per type, ZIP64 and multi-disk lines omitted when false, prefix line, comment with several lines indented under the first, in UnitTest/ArchiveInfoDisplayerTests.cpp
+- [X] T033 [US4] Add the ZIP lines to `CArchiveInfoDisplayer` in TCDirCore/ArchiveInfoDisplayer.cpp
+- [X] T034 [US4] Run `--Info` on TestData\Archives\zip, build, run all tests, commit the phase
 
 **Checkpoint**: ZIP blocks are complete.
 

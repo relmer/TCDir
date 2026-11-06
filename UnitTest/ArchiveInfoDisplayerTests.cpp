@@ -101,7 +101,7 @@ namespace UnitTest
 
             CArchiveInfoDisplayer::BuildLines (MakeReport(), lines);
 
-            Assert::AreEqual (L"ZIP",                                  ValueOf (lines, L"Format").c_str());
+            Assert::AreEqual (L"ZIP",                                  ValueOf (lines, L"Format").c_str());       // No entries, so no creator
             Assert::AreEqual (L"50 bytes",                             ValueOf (lines, L"Size on disk").c_str());
             Assert::AreEqual (L"9 files, 4 folders, 1 nested archive", ValueOf (lines, L"Contents").c_str());
             Assert::AreEqual (L"200 bytes (25%)",                      ValueOf (lines, L"Uncompressed").c_str());
@@ -162,6 +162,7 @@ namespace UnitTest
 
 
 
+            report.m_details.m_format        = EArchiveFormat::LibArchive;
             report.m_statistics.m_cEncrypted = 2;
             CArchiveInfoDisplayer::BuildLines (report, lines);
 
@@ -300,6 +301,147 @@ namespace UnitTest
             Assert::IsTrue   (console.m_strCaptured.find (L"Error:") != wstring::npos);
             Assert::IsTrue   (console.m_strCaptured.find (L" is not a valid archive") != wstring::npos);
             Assert::AreEqual (0ull, displayer.Totals().m_cArchives);
+        }
+
+
+
+
+        //
+        //  ZIP rows
+        //
+
+        static vector<SInfoLine> ZipLines (const SZipDetails & zip)
+        {
+            SArchiveReport    report = MakeReport();
+            vector<SInfoLine> lines;
+
+
+
+            report.m_details.m_zip = zip;
+            CArchiveInfoDisplayer::BuildLines (report, lines);
+
+            return lines;
+        }
+
+        static vector<wstring> RowsUnder (const vector<SInfoLine> & lines, LPCWSTR pszLabel)
+        {
+            vector<wstring> rows;
+            size_t          i    = 0;
+
+
+
+            for (i = 0; i < lines.size() && lines[i].m_strLabel != pszLabel; ++i)
+            {
+            }
+
+            for (; i < lines.size() && (rows.empty() || lines[i].m_strLabel.empty()); ++i)
+            {
+                rows.push_back (lines[i].m_strValue);
+            }
+
+            return rows;
+        }
+
+
+
+
+        TEST_METHOD(Zip_FormatLine_CreatorAndUtf8)
+        {
+            SZipDetails zip;
+
+
+
+            zip.m_mapCreators[static_cast<WORD> ((10 << 8) | 20)] = 3;
+            zip.m_mapCreators[static_cast<WORD> ((3 << 8) | 63)]  = 1;
+            zip.m_fUtf8Paths                                      = true;
+
+            Assert::AreEqual (L"ZIP, made by NTFS 2.0, UTF-8 paths", ValueOf (ZipLines (zip), L"Format").c_str());
+        }
+
+
+
+
+        TEST_METHOD(Zip_MethodRowsAligned)
+        {
+            SZipDetails       zip;
+            vector<wstring>   rows;
+
+
+
+            zip.m_mapMethods[8]  = { 8, 102, 254 };
+            zip.m_mapMethods[0]  = { 1, 235, 235 };
+            zip.m_mapMethods[42] = { 1, 1, 1 };
+
+            rows = RowsUnder (ZipLines (zip), L"Methods");
+
+            Assert::AreEqual (size_t (3), rows.size());
+            Assert::AreEqual (L"Deflate     8 files   102 of 254 bytes", rows[0].c_str());
+            Assert::AreEqual (L"Store       1 file    235 of 235 bytes", rows[1].c_str());
+            Assert::AreEqual (L"Method 42   1 file    1 of 1 byte",      rows[2].c_str());
+        }
+
+
+
+
+        TEST_METHOD(Zip_EncryptionPerType)
+        {
+            SZipDetails       zip;
+            vector<wstring>   rows;
+
+
+
+            zip.m_mapEncryption[EZipEncryption::None]      = 5;
+            zip.m_mapEncryption[EZipEncryption::ZipCrypto] = 1;
+            zip.m_mapEncryption[EZipEncryption::Aes256]    = 3;
+
+            rows = RowsUnder (ZipLines (zip), L"Encryption");
+
+            Assert::AreEqual (size_t (2), rows.size());
+            Assert::AreEqual (L"ZipCrypto (1 entry)",  rows[0].c_str());
+            Assert::AreEqual (L"AES-256 (3 entries)",  rows[1].c_str());
+        }
+
+
+
+
+        TEST_METHOD(Zip_OptionalRowsOmittedWhenFalse)
+        {
+            vector<SInfoLine> lines = ZipLines ({});
+
+
+
+            Assert::IsNull (FindLine (lines, L"ZIP64"));
+            Assert::IsNull (FindLine (lines, L"Disks"));
+            Assert::IsNull (FindLine (lines, L"Prefix"));
+            Assert::IsNull (FindLine (lines, L"Comment"));
+            Assert::AreEqual (L"None", ValueOf (lines, L"Encryption").c_str());
+        }
+
+
+
+
+        TEST_METHOD(Zip_OptionalRowsAndMultiLineComment)
+        {
+            SZipDetails       zip;
+            vector<SInfoLine> lines;
+            vector<wstring>   comment;
+
+
+
+            zip.m_fZip64        = true;
+            zip.m_fMultiDisk    = true;
+            zip.m_ullPrefixSize = 512;
+            zip.m_strComment    = L"First line\r\nSecond line";
+
+            lines   = ZipLines (zip);
+            comment = RowsUnder (lines, L"Comment");
+
+            Assert::AreEqual (L"Yes", ValueOf (lines, L"ZIP64").c_str());
+            Assert::IsNotNull (FindLine (lines, L"Disks"));
+            Assert::AreEqual (L"512 bytes before the archive data (self-extracting)", ValueOf (lines, L"Prefix").c_str());
+            Assert::AreEqual (size_t (2), comment.size());
+            Assert::AreEqual (L"First line",  comment[0].c_str());
+            Assert::AreEqual (L"Second line", comment[1].c_str());
         }
     };
 }

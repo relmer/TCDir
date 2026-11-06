@@ -128,6 +128,44 @@ CZipBuilder & CZipBuilder::SetReportedEntryCount (ULONGLONG cEntries)
 
 ////////////////////////////////////////////////////////////////////////////////
 //
+//  CZipBuilder::SetPrefix
+//
+//  Places cbPrefix zero bytes, in place of a self-extractor program, before
+//  the first local header.  Offsets in the directory account for them.
+//
+////////////////////////////////////////////////////////////////////////////////
+
+CZipBuilder & CZipBuilder::SetPrefix (size_t cbPrefix)
+{
+    m_cbPrefix = cbPrefix;
+
+    return *this;
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CZipBuilder::SetDiskNumbers
+//
+////////////////////////////////////////////////////////////////////////////////
+
+CZipBuilder & CZipBuilder::SetDiskNumbers (WORD wDisk, WORD wDirectoryDisk)
+{
+    m_wDisk          = wDisk;
+    m_wDirectoryDisk = wDirectoryDisk;
+
+    return *this;
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
 //  CZipBuilder::Build
 //
 //  Layout: local headers, central directory, optional ZIP64 end record and
@@ -137,7 +175,7 @@ CZipBuilder & CZipBuilder::SetReportedEntryCount (ULONGLONG cEntries)
 
 vector<BYTE> CZipBuilder::Build() const
 {
-    vector<BYTE>        bytes;
+    vector<BYTE>        bytes (m_cbPrefix, 0);
     vector<ULONGLONG>   localOffsets;
     ULONGLONG           ullDirectoryOffset = 0;
     ULONGLONG           ullDirectorySize   = 0;
@@ -165,7 +203,7 @@ vector<BYTE> CZipBuilder::Build() const
         AppendZip64End (bytes, cEntries, ullDirectorySize, ullDirectoryOffset);
     }
 
-    AppendEndRecord (bytes, cEntries, ullDirectorySize, ullDirectoryOffset, m_strComment, m_fZip64EndRecord);
+    AppendEndRecord (bytes, cEntries, ullDirectorySize, ullDirectoryOffset);
 
     return bytes;
 }
@@ -223,6 +261,59 @@ bool CZipBuilder::UsesZip64Size (const SEntryOptions & options)
 
 ////////////////////////////////////////////////////////////////////////////////
 //
+//  CZipBuilder::FlagsOf
+//
+////////////////////////////////////////////////////////////////////////////////
+
+WORD CZipBuilder::FlagsOf (const SEntryOptions & options)
+{
+    WORD wFlags = 0;
+
+
+
+    wFlags |= options.m_fUtf8 ? s_kwFlagUtf8 : 0;
+    wFlags |= (options.m_fEncrypted || options.m_bAesStrength != 0 || options.m_fStrongEncryption) ? s_kwFlagEncrypted : 0;
+    wFlags |= options.m_fStrongEncryption ? s_kwFlagStrongEncryption : 0;
+
+    return wFlags;
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CZipBuilder::MethodOf
+//
+////////////////////////////////////////////////////////////////////////////////
+
+WORD CZipBuilder::MethodOf (const SEntryOptions & options)
+{
+    return options.m_bAesStrength != 0 ? s_kwMethodAes : options.m_wMethod;
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CZipBuilder::CompressedSizeOf
+//
+////////////////////////////////////////////////////////////////////////////////
+
+ULONGLONG CZipBuilder::CompressedSizeOf (const SEntryOptions & options)
+{
+    return options.m_ullCompressedSize.value_or (options.m_ullSize);
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
 //  CZipBuilder::AppendLocalHeader
 //
 //  The reader parses only the central directory, so the local header has
@@ -232,17 +323,10 @@ bool CZipBuilder::UsesZip64Size (const SEntryOptions & options)
 
 void CZipBuilder::AppendLocalHeader (vector<BYTE> & bytes, const SEntryOptions & options)
 {
-    WORD wFlags = 0;
-
-
-
-    wFlags |= options.m_fUtf8      ? s_kwFlagUtf8      : 0;
-    wFlags |= options.m_fEncrypted ? s_kwFlagEncrypted : 0;
-
     Append32    (bytes, s_kdwLocalSignature);
     Append16    (bytes, s_kwSpecVersion);
-    Append16    (bytes, wFlags);
-    Append16    (bytes, 0);                                         // Compression method: stored
+    Append16    (bytes, FlagsOf (options));
+    Append16    (bytes, MethodOf (options));
     Append16    (bytes, options.m_wDosTime);
     Append16    (bytes, options.m_wDosDate);
     Append32    (bytes, 0);                                         // CRC-32
@@ -266,27 +350,24 @@ void CZipBuilder::AppendLocalHeader (vector<BYTE> & bytes, const SEntryOptions &
 void CZipBuilder::AppendCentralHeader (vector<BYTE> & bytes, const SEntryOptions & options, ULONGLONG ullLocalOffset)
 {
     vector<BYTE>   extra;
-    WORD           wFlags   = 0;
-    bool           fZip64   = UsesZip64Size (options);
-    DWORD          dwSize   = fZip64 ? s_kdwMax32 : static_cast<DWORD> (options.m_ullSize);
-    WORD           wVersion = static_cast<WORD> ((options.m_bHost << s_kcHostShift) | s_kwSpecVersion);
+    bool           fZip64       = UsesZip64Size (options);
+    DWORD          dwSize       = fZip64 ? s_kdwMax32 : static_cast<DWORD> (options.m_ullSize);
+    DWORD          dwCompressed = fZip64 ? s_kdwMax32 : static_cast<DWORD> (CompressedSizeOf (options));
+    WORD           wVersion     = static_cast<WORD> ((options.m_bHost << s_kcHostShift) | options.m_bVersion);
 
 
-
-    wFlags |= options.m_fUtf8      ? s_kwFlagUtf8      : 0;
-    wFlags |= options.m_fEncrypted ? s_kwFlagEncrypted : 0;
 
     AppendExtraFields (extra, options);
 
     Append32    (bytes, s_kdwCentralSignature);
     Append16    (bytes, wVersion);
     Append16    (bytes, fZip64 ? s_kwSpecVersionZip64 : s_kwSpecVersion);
-    Append16    (bytes, wFlags);
-    Append16    (bytes, 0);                                         // Compression method: stored
+    Append16    (bytes, FlagsOf (options));
+    Append16    (bytes, MethodOf (options));
     Append16    (bytes, options.m_wDosTime);
     Append16    (bytes, options.m_wDosDate);
     Append32    (bytes, 0);                                         // CRC-32
-    Append32    (bytes, dwSize);                                    // Compressed size
+    Append32    (bytes, dwCompressed);
     Append32    (bytes, dwSize);                                    // Uncompressed size
     Append16    (bytes, static_cast<WORD> (options.m_strName.size()));
     Append16    (bytes, static_cast<WORD> (extra.size()));
@@ -320,7 +401,17 @@ void CZipBuilder::AppendExtraFields (vector<BYTE> & extra, const SEntryOptions &
         Append16 (extra, s_kwExtraZip64);
         Append16 (extra, static_cast<WORD> (sizeof (ULONGLONG) * 2));
         Append64 (extra, options.m_ullSize);
-        Append64 (extra, options.m_ullSize);
+        Append64 (extra, CompressedSizeOf (options));
+    }
+
+    if (options.m_bAesStrength != 0)
+    {
+        Append16 (extra, s_kwExtraAes);
+        Append16 (extra, s_kcbAesExtra);
+        Append16 (extra, s_kwAesVersion);
+        Append16 (extra, s_kwAesVendor);
+        extra.push_back (options.m_bAesStrength);
+        Append16 (extra, options.m_wMethod);
     }
 
     if (options.m_fNtfsTime)
@@ -390,23 +481,23 @@ void CZipBuilder::AppendZip64End (vector<BYTE> & bytes, ULONGLONG cEntries, ULON
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-void CZipBuilder::AppendEndRecord (vector<BYTE> & bytes, ULONGLONG cEntries, ULONGLONG ullSize, ULONGLONG ullOffset, const string & comment, bool fZip64)
+void CZipBuilder::AppendEndRecord (vector<BYTE> & bytes, ULONGLONG cEntries, ULONGLONG ullSize, ULONGLONG ullOffset) const
 {
-    WORD    wCount   = fZip64 ? s_kwMax16 : static_cast<WORD> (cEntries);
-    DWORD   dwSize   = fZip64 ? s_kdwMax32 : static_cast<DWORD> (ullSize);
-    DWORD   dwOffset = fZip64 ? s_kdwMax32 : static_cast<DWORD> (ullOffset);
+    WORD    wCount   = m_fZip64EndRecord ? s_kwMax16 : static_cast<WORD> (cEntries);
+    DWORD   dwSize   = m_fZip64EndRecord ? s_kdwMax32 : static_cast<DWORD> (ullSize);
+    DWORD   dwOffset = m_fZip64EndRecord ? s_kdwMax32 : static_cast<DWORD> (ullOffset);
 
 
 
     Append32    (bytes, s_kdwEndSignature);
-    Append16    (bytes, 0);                                             // This disk
-    Append16    (bytes, 0);                                             // Disk with the central directory
+    Append16    (bytes, m_wDisk);                                       // This disk
+    Append16    (bytes, m_wDirectoryDisk);                              // Disk with the central directory
     Append16    (bytes, wCount);                                        // Entries on this disk
     Append16    (bytes, wCount);                                        // Total entries
     Append32    (bytes, dwSize);
     Append32    (bytes, dwOffset);
-    Append16    (bytes, static_cast<WORD> (comment.size()));
-    AppendBytes (bytes, comment);
+    Append16    (bytes, static_cast<WORD> (m_strComment.size()));
+    AppendBytes (bytes, m_strComment);
 }
 
 

@@ -2,6 +2,7 @@
 
 #include "ArchiveInfoDisplayer.h"
 
+#include "ArchiveDetailLines.h"
 #include "Console.h"
 #include "DirectoryLister.h"
 #include "ResultsDisplayerWithHeaderAndFooter.h"
@@ -111,6 +112,7 @@ void CArchiveInfoDisplayer::BuildLines (const SArchiveReport & report, vector<SI
 
     AddContentLines (report, lines);
     AddEncryptionLines (report, lines);
+    CArchiveDetailLines::AddDetails (report, lines);
     AddExtensionLines (report.m_statistics, lines);
 }
 
@@ -126,7 +128,7 @@ void CArchiveInfoDisplayer::BuildLines (const SArchiveReport & report, vector<SI
 
 void CArchiveInfoDisplayer::AddFormatLines (const SArchiveReport & report, vector<SInfoLine> & lines)
 {
-    lines.push_back ({ L"Format", FormatName (report.m_details) });
+    lines.push_back ({ L"Format", CArchiveDetailLines::FormatName (report.m_details) });
 }
 
 
@@ -195,6 +197,11 @@ void CArchiveInfoDisplayer::AddEncryptionLines (const SArchiveReport & report, v
     ULONGLONG cEncrypted = report.m_statistics.m_cEncrypted;
 
 
+
+    if (CArchiveDetailLines::AddEncryption (report, lines))
+    {
+        return;
+    }
 
     lines.push_back ({ L"Encryption",
                        cEncrypted == 0 ? wstring (L"None") : FormatCount (cEncrypted, L"encrypted entry", L"encrypted entries") });
@@ -272,43 +279,6 @@ void CArchiveInfoDisplayer::AddRows (LPCWSTR pszLabel, const vector<wstring> & r
     {
         lines.push_back ({ i == 0 ? wstring (pszLabel) : wstring(), rows[i] });
     }
-}
-
-
-
-
-
-////////////////////////////////////////////////////////////////////////////////
-//
-//  CArchiveInfoDisplayer::FormatName
-//
-////////////////////////////////////////////////////////////////////////////////
-
-wstring CArchiveInfoDisplayer::FormatName (const SArchiveDetails & details)
-{
-    wstring strName = L"Unknown";
-
-
-
-    switch (details.m_format)
-    {
-        case EArchiveFormat::Zip:
-            strName = L"ZIP";
-            break;
-
-        case EArchiveFormat::Iso:
-            strName = L"Disc image";
-            break;
-
-        case EArchiveFormat::LibArchive:
-            strName = details.m_libArchive.m_strFormatName.empty() ? wstring (L"Archive") : details.m_libArchive.m_strFormatName;
-            break;
-
-        default:
-            break;
-    }
-
-    return strName;
 }
 
 

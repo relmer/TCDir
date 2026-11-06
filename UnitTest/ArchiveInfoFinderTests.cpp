@@ -87,13 +87,13 @@ namespace UnitTest
             }
         };
 
-        static void AssertReported (const vector<wstring> & wanted, const vector<wstring> & actual)
+        static void AssertReported (const vector<wstring> & rgPaths, const vector<wstring> & actual)
         {
-            Assert::AreEqual (wanted.size(), actual.size());
+            Assert::AreEqual (rgPaths.size(), actual.size());
 
-            for (size_t i = 0; i < wanted.size(); ++i)
+            for (size_t i = 0; i < rgPaths.size(); ++i)
             {
-                Assert::AreEqual (wanted[i].c_str(), actual[i].c_str());
+                Assert::AreEqual (rgPaths[i].c_str(), actual[i].c_str());
             }
         }
 

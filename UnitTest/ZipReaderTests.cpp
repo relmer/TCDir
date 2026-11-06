@@ -1,6 +1,7 @@
 #include "pch.h"
 #include "EhmTestHelper.h"
 #include "Mocks/ZipBuilder.h"
+#include "../TCDirCore/ArchiveDetails.h"
 #include "../TCDirCore/ZipReader.h"
 
 
@@ -502,6 +503,200 @@ namespace UnitTest
 
 
             return static_cast<WORD> ((bHost << s_kcHostShift) | s_kwSpecVersion);
+        }
+
+
+
+
+        //
+        //  Details for --Info
+        //
+
+        static SZipDetails ReadDetails (const CZipBuilder & builder)
+        {
+            SArchiveReadResult result;
+
+
+
+            result.m_detailsPtr = make_shared<SArchiveDetails>();
+            ReadZip (builder, result);
+
+            return result.m_detailsPtr->m_zip;
+        }
+
+        static CZipBuilder::SEntryOptions Entry (const string & name, ULONGLONG ullSize, WORD wMethod, ULONGLONG ullCompressed)
+        {
+            CZipBuilder::SEntryOptions options;
+
+
+
+            options.m_strName           = name;
+            options.m_ullSize           = ullSize;
+            options.m_wMethod           = wMethod;
+            options.m_ullCompressedSize = ullCompressed;
+            return options;
+        }
+
+
+
+
+        TEST_METHOD(Details_NotCollectedWithoutPointer)
+        {
+            CZipBuilder          builder;
+            SArchiveReadResult   result;
+
+
+
+            builder.AddFile ("a.txt", 10);
+            ReadZip (builder, result);
+
+            Assert::IsNull (result.m_detailsPtr.get());
+        }
+
+
+
+
+        TEST_METHOD(Details_MethodGroups)
+        {
+            CZipBuilder builder;
+
+
+
+            builder.AddEntry (Entry ("a.txt", 100, 8, 40))
+                   .AddEntry (Entry ("b.txt", 200, 8, 60))
+                   .AddEntry (Entry ("c.bin", 50, 0, 50))
+                   .AddEntry (Entry ("d.xz",  80, 95, 20))
+                   .AddFolder ("docs/");
+
+            SZipDetails zip = ReadDetails (builder);
+
+            Assert::AreEqual (size_t (3), zip.m_mapMethods.size());
+            Assert::AreEqual (2ull,   zip.m_mapMethods[8].m_cFiles);
+            Assert::AreEqual (100ull, zip.m_mapMethods[8].m_ullCompressed);
+            Assert::AreEqual (300ull, zip.m_mapMethods[8].m_ullUncompressed);
+            Assert::AreEqual (1ull,   zip.m_mapMethods[0].m_cFiles);
+            Assert::AreEqual (1ull,   zip.m_mapMethods[95].m_cFiles);
+        }
+
+
+
+
+        TEST_METHOD(Details_EncryptionTypes)
+        {
+            CZipBuilder                builder;
+            CZipBuilder::SEntryOptions crypto = Entry ("crypto.txt", 1, 8, 1);
+            CZipBuilder::SEntryOptions aes128 = Entry ("aes128.txt", 1, 8, 1);
+            CZipBuilder::SEntryOptions aes256 = Entry ("aes256.txt", 1, 12, 1);
+            CZipBuilder::SEntryOptions strong = Entry ("strong.txt", 1, 8, 1);
+
+
+
+            crypto.m_fEncrypted        = true;
+            aes128.m_bAesStrength      = 1;
+            aes256.m_bAesStrength      = 3;
+            strong.m_fStrongEncryption = true;
+
+            builder.AddEntry (crypto).AddEntry (aes128).AddEntry (aes256).AddEntry (strong).AddFile ("plain.txt", 1);
+
+            SZipDetails zip = ReadDetails (builder);
+
+            Assert::AreEqual (1ull, zip.m_mapEncryption[EZipEncryption::ZipCrypto]);
+            Assert::AreEqual (1ull, zip.m_mapEncryption[EZipEncryption::Aes128]);
+            Assert::AreEqual (1ull, zip.m_mapEncryption[EZipEncryption::Aes256]);
+            Assert::AreEqual (1ull, zip.m_mapEncryption[EZipEncryption::PkwareStrong]);
+            Assert::AreEqual (1ull, zip.m_mapEncryption[EZipEncryption::None]);
+            Assert::AreEqual (1ull, zip.m_mapMethods[12].m_cFiles);          // AES entries group by their real method
+            Assert::IsTrue   (zip.m_mapMethods.find (99) == zip.m_mapMethods.end());
+        }
+
+
+
+
+        TEST_METHOD(Details_Zip64AndCompressedSizeFromExtra)
+        {
+            CZipBuilder                builder;
+            CZipBuilder::SEntryOptions big = Entry ("big.bin", 0x100000000ull, 8, 0x80000000ull);
+
+
+
+            builder.AddEntry (big);
+
+            SZipDetails zip = ReadDetails (builder);
+
+            Assert::IsTrue   (zip.m_fZip64);
+            Assert::AreEqual (0x80000000ull, zip.m_mapMethods[8].m_ullCompressed);
+        }
+
+
+
+
+        TEST_METHOD(Details_Zip64EndRecord)
+        {
+            CZipBuilder builder;
+
+
+
+            builder.AddFile ("a.txt", 1).SetZip64EndRecord (true);
+
+            Assert::IsTrue (ReadDetails (builder).m_fZip64);
+        }
+
+
+
+
+        TEST_METHOD(Details_FlagsCreatorPrefixAndDisks)
+        {
+            CZipBuilder                builder;
+            CZipBuilder::SEntryOptions unixEntry = Entry ("u.txt", 1, 0, 1);
+
+
+
+            unixEntry.m_bHost    = 3;
+            unixEntry.m_bVersion = 63;
+            unixEntry.m_fUtf8    = true;
+
+            builder.AddEntry (unixEntry).AddFile ("a.txt", 1).AddFile ("b.txt", 1).SetPrefix (512).SetDiskNumbers (1, 1);
+
+            SZipDetails zip = ReadDetails (builder);
+
+            Assert::IsTrue   (zip.m_fUtf8Paths);
+            Assert::IsTrue   (zip.m_fMultiDisk);
+            Assert::IsFalse  (zip.m_fZip64);
+            Assert::AreEqual (512ull, zip.m_ullPrefixSize);
+            Assert::AreEqual (2ull, zip.m_mapCreators[MadeBy (0)]);
+            Assert::AreEqual (1ull, zip.m_mapCreators[static_cast<WORD> ((3 << 8) | 63)]);
+        }
+
+
+
+
+        TEST_METHOD(Details_NoPrefix)
+        {
+            CZipBuilder builder;
+
+
+
+            builder.AddFile ("a.txt", 1);
+
+            Assert::AreEqual (0ull, ReadDetails (builder).m_ullPrefixSize);
+            Assert::IsFalse  (ReadDetails (builder).m_fMultiDisk);
+        }
+
+
+
+
+        TEST_METHOD(Details_CommentUtf8AndCodePage437)
+        {
+            CZipBuilder utf8;
+            CZipBuilder dos;
+
+
+
+            utf8.AddFile ("a.txt", 1).SetComment ("caf\xC3\xA9");
+            dos.AddFile  ("a.txt", 1).SetComment ("caf\x82");
+
+            Assert::AreEqual (L"caf\x00E9", ReadDetails (utf8).m_strComment.c_str());
+            Assert::AreEqual (L"caf\x00E9", ReadDetails (dos).m_strComment.c_str());
         }
     };
 }

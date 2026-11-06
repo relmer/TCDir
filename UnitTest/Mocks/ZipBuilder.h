@@ -42,6 +42,11 @@ public:
         ULONGLONG   m_ullNtfsLastWrite     = 0;         // FILETIME value for the NTFS extra field
         string      m_strUnicodePath;                   // UTF-8 Info-ZIP Unicode Path (0x7075); empty for none
         bool        m_fZip64Size           = false;     // Emit 0xFFFFFFFF sizes and the ZIP64 extra field
+        WORD        m_wMethod              = 0;         // Compression method; the real method when m_bAesStrength is set
+        optional<ULONGLONG> m_ullCompressedSize;        // Defaults to m_ullSize
+        BYTE        m_bAesStrength         = 0;         // 1, 2 or 3 emits the WinZip AES extra field (0x9901) and method 99
+        bool        m_fStrongEncryption    = false;     // General purpose flag bit 6
+        BYTE        m_bVersion             = 20;        // Low byte of "version made by" (major * 10 + minor)
     };
 
     CZipBuilder &  AddFile               (const string & name, ULONGLONG ullSize = 0);
@@ -50,6 +55,8 @@ public:
     CZipBuilder &  SetComment            (const string & comment);
     CZipBuilder &  SetZip64EndRecord     (bool fZip64EndRecord);
     CZipBuilder &  SetReportedEntryCount (ULONGLONG cEntries);
+    CZipBuilder &  SetPrefix             (size_t cbPrefix);
+    CZipBuilder &  SetDiskNumbers        (WORD wDisk, WORD wDirectoryDisk);
 
     vector<BYTE>   Build() const;
 
@@ -62,7 +69,10 @@ private:
     static void    AppendCentralHeader   (vector<BYTE> & bytes, const SEntryOptions & options, ULONGLONG ullLocalOffset);
     static void    AppendExtraFields     (vector<BYTE> & extra, const SEntryOptions & options);
     static void    AppendZip64End        (vector<BYTE> & bytes, ULONGLONG cEntries, ULONGLONG ullSize, ULONGLONG ullOffset);
-    static void    AppendEndRecord       (vector<BYTE> & bytes, ULONGLONG cEntries, ULONGLONG ullSize, ULONGLONG ullOffset, const string & comment, bool fZip64);
+    void           AppendEndRecord       (vector<BYTE> & bytes, ULONGLONG cEntries, ULONGLONG ullSize, ULONGLONG ullOffset) const;
+    static WORD    FlagsOf               (const SEntryOptions & options);
+    static WORD    MethodOf              (const SEntryOptions & options);
+    static ULONGLONG CompressedSizeOf    (const SEntryOptions & options);
 
     static void    Append16              (vector<BYTE> & bytes, WORD w);
     static void    Append32              (vector<BYTE> & bytes, DWORD dw);
@@ -81,6 +91,12 @@ private:
     static constexpr int       s_kcHostShift              = 8;
     static constexpr WORD      s_kwFlagEncrypted          = 0x0001;
     static constexpr WORD      s_kwFlagUtf8               = 0x0800;
+    static constexpr WORD      s_kwFlagStrongEncryption   = 0x0040;
+    static constexpr WORD      s_kwExtraAes               = 0x9901;
+    static constexpr WORD      s_kcbAesExtra              = 7;
+    static constexpr WORD      s_kwAesVersion             = 2;
+    static constexpr WORD      s_kwAesVendor              = 0x4541;    // "AE"
+    static constexpr WORD      s_kwMethodAes              = 99;
 
     static constexpr WORD      s_kwExtraZip64             = 0x0001;
     static constexpr WORD      s_kwExtraNtfs              = 0x000A;
@@ -105,4 +121,7 @@ private:
     bool                    m_fZip64EndRecord       = false;
     bool                    m_fReportedCountSet     = false;
     ULONGLONG               m_cReportedEntries      = 0;
+    size_t                  m_cbPrefix              = 0;
+    WORD                    m_wDisk                 = 0;
+    WORD                    m_wDirectoryDisk        = 0;
 };

@@ -44,6 +44,11 @@ HRESULT CZipReader::Read (IByteSource & source, SArchiveReadResult & result)
     hr = ParseDirectory (directory, location.m_cEntries, result);
     CHR (hr);
 
+    if (result.m_detailsPtr != nullptr)
+    {
+        AddLocationDetails (location, result.m_detailsPtr->m_zip);
+    }
+
 
 
 Error:
@@ -103,11 +108,16 @@ HRESULT CZipReader::FindEndRecord (IByteSource & source, ULONGLONG & ullEndOffse
 
     CBREx (ibFound != SIZE_MAX, HRESULT_FROM_WIN32 (ERROR_BAD_FORMAT));
 
-    pRecord                = &tail[ibFound];
-    ullEndOffset           = ullTail + ibFound;
-    location.m_cEntries    = Read16 (pRecord + s_kibEndEntryCount);
-    location.m_ullSize     = Read32 (pRecord + s_kibEndDirectorySize);
-    location.m_ullOffset   = Read32 (pRecord + s_kibEndDirectoryOffset);
+    pRecord                   = &tail[ibFound];
+    ullEndOffset              = ullTail + ibFound;
+    location.m_cEntries       = Read16 (pRecord + s_kibEndEntryCount);
+    location.m_ullSize        = Read32 (pRecord + s_kibEndDirectorySize);
+    location.m_ullOffset      = Read32 (pRecord + s_kibEndDirectoryOffset);
+    location.m_wDisk          = Read16 (pRecord + s_kibEndDiskNumber);
+    location.m_wDirectoryDisk = Read16 (pRecord + s_kibEndDirectoryDisk);
+
+    location.m_vComment.assign (pRecord + s_kcbEndRecord,
+                                pRecord + s_kcbEndRecord + min<size_t> (Read16 (pRecord + s_kibEndCommentLength), cbTail - ibFound - s_kcbEndRecord));
 
     if (location.m_cEntries == s_kwMax16 || location.m_ullSize == s_kdwMax32 || location.m_ullOffset == s_kdwMax32)
     {
@@ -163,6 +173,7 @@ HRESULT CZipReader::ReadZip64EndRecord (IByteSource & source, ULONGLONG ullEndOf
     location.m_cEntries  = Read64 (record + s_kibZip64EntryCount);
     location.m_ullSize   = Read64 (record + s_kibZip64DirectorySize);
     location.m_ullOffset = Read64 (record + s_kibZip64DirectoryOffset);
+    location.m_fZip64    = true;
 
 
 
@@ -189,15 +200,26 @@ HRESULT CZipReader::ParseDirectory (const vector<BYTE> & directory, ULONGLONG cE
     size_t          ib       = 0;
     size_t          cbEntry  = 0;
     SArchiveEntry   entry;
+    SEntryInfo      info;
 
 
 
     result.m_vEntries.reserve (static_cast<size_t> (min<ULONGLONG> (cEntries, directory.size() / s_kcbCentralHeader)));
 
+    if (result.m_detailsPtr != nullptr)
+    {
+        result.m_detailsPtr->m_zip.m_ullPrefixSize = (cEntries > 0) ? ULLONG_MAX : 0;
+    }
+
     for (ULONGLONG i = 0; i < cEntries; ++i)
     {
-        hr = ParseEntry (directory.data() + ib, directory.size() - ib, cbEntry, entry);
+        hr = ParseEntry (directory.data() + ib, directory.size() - ib, cbEntry, entry, info);
         CHR (hr);
+
+        if (result.m_detailsPtr != nullptr)
+        {
+            AddEntryDetails (entry, info, result.m_detailsPtr->m_zip);
+        }
 
         result.m_vEntries.push_back (move (entry));
         ib += cbEntry;
@@ -221,20 +243,27 @@ Error:
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-HRESULT CZipReader::ParseEntry (const BYTE * pb, size_t cbAvailable, size_t & cbEntry, SArchiveEntry & entry)
+HRESULT CZipReader::ParseEntry (
+    const BYTE      * pb,
+    size_t            cbAvailable,
+    size_t          & cbEntry,
+    SArchiveEntry   & entry,
+    SEntryInfo      & info)
 {
-    HRESULT       hr        = S_OK;
-    WORD          wFlags    = 0;
-    size_t        cchName   = 0;
-    size_t        cbExtra   = 0;
-    size_t        cbComment = 0;
-    DWORD         dwSize    = 0;
-    DWORD         dwSig     = 0;
-    SEntrySizes   sizes;
+    HRESULT        hr        = S_OK;
+    WORD           wFlags    = 0;
+    size_t         cchName   = 0;
+    size_t         cbExtra   = 0;
+    size_t         cbComment = 0;
+    DWORD          dwSize    = 0;
+    DWORD          dwSig     = 0;
+    SEntrySizes    sizes;
+    SZip64Fields   zip64;
 
 
 
     entry = {};
+    info  = {};
 
     CBREx (cbAvailable >= s_kcbCentralHeader, HRESULT_FROM_WIN32 (ERROR_BAD_FORMAT));
 
@@ -251,8 +280,13 @@ HRESULT CZipReader::ParseEntry (const BYTE * pb, size_t cbAvailable, size_t & cb
 
     dwSize                  = Read32 (pb + s_kibUncompressedSize);
     sizes.m_ullUncompressed = dwSize;
+    sizes.m_ullCompressed   = Read32 (pb + s_kibCompressedSize);
+    sizes.m_ullLocalOffset  = Read32 (pb + s_kibLocalHeaderOffset);
+    zip64.m_fUncompressed   = dwSize == s_kdwMax32;
+    zip64.m_fCompressed     = sizes.m_ullCompressed == s_kdwMax32;
+    zip64.m_fLocalOffset    = sizes.m_ullLocalOffset == s_kdwMax32;
 
-    ParseExtraFields (pb + s_kcbCentralHeader + cchName, cbExtra, dwSize == s_kdwMax32, sizes);
+    ParseExtraFields (pb + s_kcbCentralHeader + cchName, cbExtra, zip64, sizes);
 
     entry.m_strPath      = sizes.m_strUnicodePath.empty()
                                ? DecodeName (pb + s_kcbCentralHeader, cchName, (wFlags & s_kwFlagUtf8) ? CP_UTF8 : CP_OEMCP)
@@ -263,6 +297,16 @@ HRESULT CZipReader::ParseEntry (const BYTE * pb, size_t cbAvailable, size_t & cb
     entry.m_dwAttributes = MapAttributes (Read16 (pb + s_kibVersionMadeBy), Read32 (pb + s_kibExternalAttributes));
     entry.m_fDirectory   = IsFolderName (entry.m_strPath) || (entry.m_dwAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0;
     entry.m_fEncrypted   = (wFlags & s_kwFlagEncrypted) != 0;
+
+    info.m_wMethod        = Read16 (pb + s_kibMethod);
+    info.m_wFlags         = wFlags;
+    info.m_wVersionMadeBy = Read16 (pb + s_kibVersionMadeBy);
+    info.m_ullCompressed  = sizes.m_ullCompressed;
+    info.m_ullLocalOffset = sizes.m_ullLocalOffset;
+    info.m_fZip64         = sizes.m_fZip64;
+    info.m_fAes           = sizes.m_fAes;
+    info.m_bAesStrength   = sizes.m_bAesStrength;
+    info.m_wAesMethod     = sizes.m_wAesMethod;
 
 
 
@@ -278,13 +322,12 @@ Error:
 //
 //  CZipReader::ParseExtraFields
 //
-//  Applies the ZIP64, NTFS and Info-ZIP Unicode Path extra fields.  The
-//  uncompressed size is the first ZIP64 value, and is present only when the
-//  header field is 0xFFFFFFFF.  Malformed extra data is ignored.
+//  Applies the ZIP64, NTFS, Info-ZIP Unicode Path and WinZip AES extra
+//  fields.  Malformed extra data is ignored.
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-void CZipReader::ParseExtraFields (const BYTE * pb, size_t cb, bool fZip64Size, SEntrySizes & sizes)
+void CZipReader::ParseExtraFields (const BYTE * pb, size_t cb, const SZip64Fields & zip64, SEntrySizes & sizes)
 {
     size_t        ib      = 0;
     WORD          wId     = 0;
@@ -304,9 +347,15 @@ void CZipReader::ParseExtraFields (const BYTE * pb, size_t cb, bool fZip64Size, 
             break;
         }
 
-        if (wId == s_kwExtraZip64 && fZip64Size && cbField >= sizeof (ULONGLONG))
+        if (wId == s_kwExtraZip64)
         {
-            sizes.m_ullUncompressed = Read64 (pField);
+            ParseZip64Extra (pField, cbField, zip64, sizes);
+        }
+        else if (wId == s_kwExtraAes && cbField >= s_kcbAesExtra)
+        {
+            sizes.m_fAes         = true;
+            sizes.m_bAesStrength = pField[s_kibAesStrength];
+            sizes.m_wAesMethod   = Read16 (pField + s_kibAesMethod);
         }
         else if (wId == s_kwExtraNtfs)
         {
@@ -319,6 +368,66 @@ void CZipReader::ParseExtraFields (const BYTE * pb, size_t cb, bool fZip64Size, 
 
         ib += s_kcbExtraHeader + cbField;
     }
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CZipReader::ParseZip64Extra
+//
+//  The ZIP64 extra field contains 64-bit values only for the header fields
+//  that are 0xFFFFFFFF, in this order: uncompressed size, compressed size,
+//  local header offset.
+//
+////////////////////////////////////////////////////////////////////////////////
+
+void CZipReader::ParseZip64Extra (const BYTE * pb, size_t cb, const SZip64Fields & zip64, SEntrySizes & sizes)
+{
+    size_t ib = 0;
+
+
+
+    if (zip64.m_fUncompressed && ib + sizeof (ULONGLONG) <= cb)
+    {
+        sizes.m_ullUncompressed  = Read64 (pb + ib);
+        sizes.m_fZip64           = true;
+        ib                      += sizeof (ULONGLONG);
+    }
+
+    if (zip64.m_fCompressed && ib + sizeof (ULONGLONG) <= cb)
+    {
+        sizes.m_ullCompressed  = Read64 (pb + ib);
+        sizes.m_fZip64         = true;
+        ib                    += sizeof (ULONGLONG);
+    }
+
+    if (zip64.m_fLocalOffset && ib + sizeof (ULONGLONG) <= cb)
+    {
+        sizes.m_ullLocalOffset = Read64 (pb + ib);
+        sizes.m_fZip64         = true;
+    }
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CZipReader::AddLocationDetails
+//
+//  Values from the end record: ZIP64, disk numbers and the comment.
+//
+////////////////////////////////////////////////////////////////////////////////
+
+void CZipReader::AddLocationDetails (const SDirectoryLocation & location, SZipDetails & zip)
+{
+    zip.m_fZip64     = zip.m_fZip64 || location.m_fZip64;
+    zip.m_fMultiDisk = location.m_wDisk != 0 || location.m_wDirectoryDisk != 0;
+    zip.m_strComment = DecodeComment (location.m_vComment);
 }
 
 
@@ -364,6 +473,123 @@ void CZipReader::ParseNtfsExtra (const BYTE * pb, size_t cb, SEntrySizes & sizes
 
         ib += s_kcbExtraHeader + cbTag;
     }
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CZipReader::AddEntryDetails
+//
+//  Adds one entry to the method, encryption and creator totals.  Folder
+//  entries count toward the creator and UTF-8 totals only.
+//
+////////////////////////////////////////////////////////////////////////////////
+
+void CZipReader::AddEntryDetails (const SArchiveEntry & entry, const SEntryInfo & info, SZipDetails & zip)
+{
+    WORD wMethod = info.m_fAes ? info.m_wAesMethod : info.m_wMethod;
+
+
+
+    zip.m_mapCreators[info.m_wVersionMadeBy] += 1;
+    zip.m_fUtf8Paths    = zip.m_fUtf8Paths || (info.m_wFlags & s_kwFlagUtf8) != 0;
+    zip.m_fZip64        = zip.m_fZip64 || info.m_fZip64;
+    zip.m_ullPrefixSize = min (zip.m_ullPrefixSize, info.m_ullLocalOffset);
+
+    if (entry.m_fDirectory)
+    {
+        return;
+    }
+
+    SMethodGroup & group = zip.m_mapMethods[wMethod];
+
+    group.m_cFiles          += 1;
+    group.m_ullCompressed   += info.m_ullCompressed;
+    group.m_ullUncompressed += entry.m_ullSize;
+
+    zip.m_mapEncryption[EncryptionOf (info)] += 1;
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CZipReader::EncryptionOf
+//
+//  Flag bit 0 marks an encrypted entry.  Bit 6 marks PKWARE strong
+//  encryption, and the 0x9901 extra field marks WinZip AES; otherwise the
+//  entry uses the original ZipCrypto scheme.
+//
+////////////////////////////////////////////////////////////////////////////////
+
+EZipEncryption CZipReader::EncryptionOf (const SEntryInfo & info)
+{
+    EZipEncryption encryption = EZipEncryption::None;
+
+
+
+    if ((info.m_wFlags & s_kwFlagEncrypted) == 0)
+    {
+        encryption = EZipEncryption::None;
+    }
+    else if ((info.m_wFlags & s_kwFlagStrongEncryption) != 0)
+    {
+        encryption = EZipEncryption::PkwareStrong;
+    }
+    else if (info.m_fAes && info.m_bAesStrength == s_kbAes128)
+    {
+        encryption = EZipEncryption::Aes128;
+    }
+    else if (info.m_fAes && info.m_bAesStrength == s_kbAes192)
+    {
+        encryption = EZipEncryption::Aes192;
+    }
+    else if (info.m_fAes)
+    {
+        encryption = EZipEncryption::Aes256;
+    }
+    else
+    {
+        encryption = EZipEncryption::ZipCrypto;
+    }
+
+    return encryption;
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CZipReader::DecodeComment
+//
+//  The archive comment has no encoding flag.  UTF-8 is used when the bytes
+//  are valid UTF-8, and code page 437 otherwise.
+//
+////////////////////////////////////////////////////////////////////////////////
+
+wstring CZipReader::DecodeComment (const vector<BYTE> & comment)
+{
+    int       cch        = 0;
+    wstring   strComment;
+
+
+
+    if (!comment.empty())
+    {
+        cch = MultiByteToWideChar (CP_UTF8, MB_ERR_INVALID_CHARS, reinterpret_cast<LPCCH> (comment.data()), static_cast<int> (comment.size()), nullptr, 0);
+
+        strComment = (cch > 0) ? DecodeName (comment.data(), comment.size(), CP_UTF8)
+                               : DecodeName (comment.data(), comment.size(), s_kuCodePageDos);
+    }
+
+    return strComment;
 }
 
 

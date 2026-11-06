@@ -1,5 +1,6 @@
 #pragma once
 
+#include "ArchiveDetails.h"
 #include "ArchiveEntry.h"
 #include "ByteSource.h"
 
@@ -28,24 +29,59 @@ public:
 private:
     struct SDirectoryLocation
     {
-        ULONGLONG m_ullOffset  = 0;
-        ULONGLONG m_ullSize    = 0;
-        ULONGLONG m_cEntries   = 0;
+        ULONGLONG      m_ullOffset      = 0;
+        ULONGLONG      m_ullSize        = 0;
+        ULONGLONG      m_cEntries       = 0;
+        bool           m_fZip64         = false;
+        WORD           m_wDisk          = 0;
+        WORD           m_wDirectoryDisk = 0;
+        vector<BYTE>   m_vComment;
     };
 
     struct SEntrySizes
     {
         ULONGLONG m_ullUncompressed = 0;
+        ULONGLONG m_ullCompressed   = 0;
+        ULONGLONG m_ullLocalOffset  = 0;
+        bool      m_fZip64          = false;     // A ZIP64 extra field supplied a value
         bool      m_fHasNtfsTime    = false;
         FILETIME  m_ftNtfsLastWrite = {};
         wstring   m_strUnicodePath;
+        bool      m_fAes            = false;
+        BYTE      m_bAesStrength    = 0;
+        WORD      m_wAesMethod      = 0;
+    };
+
+    struct SZip64Fields
+    {
+        bool m_fUncompressed = false;
+        bool m_fCompressed   = false;
+        bool m_fLocalOffset  = false;
+    };
+
+    struct SEntryInfo
+    {
+        WORD        m_wMethod        = 0;
+        WORD        m_wFlags         = 0;
+        WORD        m_wVersionMadeBy = 0;
+        ULONGLONG   m_ullCompressed  = 0;
+        ULONGLONG   m_ullLocalOffset = 0;
+        bool        m_fZip64         = false;
+        bool        m_fAes           = false;
+        BYTE        m_bAesStrength   = 0;
+        WORD        m_wAesMethod     = 0;
     };
 
     static HRESULT    FindEndRecord       (IByteSource & source, ULONGLONG & ullEndOffset, SDirectoryLocation & location);
     static HRESULT    ReadZip64EndRecord  (IByteSource & source, ULONGLONG ullEndOffset, SDirectoryLocation & location);
     static HRESULT    ParseDirectory      (const vector<BYTE> & directory, ULONGLONG cEntries, SArchiveReadResult & result);
-    static HRESULT    ParseEntry          (const BYTE * pb, size_t cbAvailable, size_t & cbEntry, SArchiveEntry & entry);
-    static void       ParseExtraFields    (const BYTE * pb, size_t cb, bool fZip64Size, SEntrySizes & sizes);
+    static HRESULT    ParseEntry          (const BYTE * pb, size_t cbAvailable, size_t & cbEntry, SArchiveEntry & entry, SEntryInfo & info);
+    static void       ParseExtraFields    (const BYTE * pb, size_t cb, const SZip64Fields & zip64, SEntrySizes & sizes);
+    static void       ParseZip64Extra     (const BYTE * pb, size_t cb, const SZip64Fields & zip64, SEntrySizes & sizes);
+    static void       AddLocationDetails  (const SDirectoryLocation & location, SZipDetails & zip);
+    static void       AddEntryDetails     (const SArchiveEntry & entry, const SEntryInfo & info, SZipDetails & zip);
+    static EZipEncryption EncryptionOf    (const SEntryInfo & info);
+    static wstring    DecodeComment       (const vector<BYTE> & comment);
     static void       ParseNtfsExtra      (const BYTE * pb, size_t cb, SEntrySizes & sizes);
     static FILETIME   DosToUtc            (WORD wDate, WORD wTime);
     static bool       IsFolderName        (const wstring & name);
@@ -81,8 +117,14 @@ private:
     static constexpr size_t s_kibZip64DirectorySize      = 40;
     static constexpr size_t s_kibZip64DirectoryOffset    = 48;
 
+    static constexpr size_t s_kibEndDiskNumber           = 4;
+    static constexpr size_t s_kibEndDirectoryDisk        = 6;
+
     static constexpr size_t s_kibVersionMadeBy           = 4;
     static constexpr size_t s_kibFlags                   = 8;
+    static constexpr size_t s_kibMethod                  = 10;
+    static constexpr size_t s_kibCompressedSize          = 20;
+    static constexpr size_t s_kibLocalHeaderOffset       = 42;
     static constexpr size_t s_kibTime                    = 12;
     static constexpr size_t s_kibDate                    = 14;
     static constexpr size_t s_kibUncompressedSize        = 24;
@@ -92,10 +134,18 @@ private:
     static constexpr size_t s_kibExternalAttributes      = 38;
 
     static constexpr WORD   s_kwFlagEncrypted            = 0x0001;
+    static constexpr WORD   s_kwFlagStrongEncryption     = 0x0040;
     static constexpr WORD   s_kwFlagUtf8                 = 0x0800;
     static constexpr WORD   s_kwExtraZip64               = 0x0001;
     static constexpr WORD   s_kwExtraNtfs                = 0x000A;
     static constexpr WORD   s_kwExtraUnicodePath         = 0x7075;
+    static constexpr WORD   s_kwExtraAes                 = 0x9901;
+    static constexpr size_t s_kibAesStrength             = 4;      // After the version and the "AE" vendor ID
+    static constexpr size_t s_kibAesMethod               = 5;
+    static constexpr size_t s_kcbAesExtra                = 7;
+    static constexpr BYTE   s_kbAes128                   = 1;
+    static constexpr BYTE   s_kbAes192                   = 2;
+    static constexpr UINT   s_kuCodePageDos              = 437;
     static constexpr WORD   s_kwNtfsTimesTag             = 0x0001;
     static constexpr BYTE   s_kbUnicodePathVersion       = 1;
     static constexpr size_t s_kcbUnicodePathHeader       = 5;      // Version byte plus CRC-32 of the header name
