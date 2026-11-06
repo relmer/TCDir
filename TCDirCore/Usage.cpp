@@ -1801,6 +1801,8 @@ static bool HasEnvVarSwitches (const CConfig & config)
            config.m_fShowOwner.has_value()     ||
            config.m_fShowStreams.has_value()    ||
            config.m_fIcons.has_value()          ||
+           config.m_fTree.has_value()           ||
+           config.m_fEllipsize.has_value()      ||
            config.m_fArchives.has_value();
 }
 
@@ -1916,7 +1918,7 @@ static void DisplayEnvVarSwitchesSection (CConsole & console, const CConfig & co
     {
         if (switchValues[i]->has_value())
         {
-            console.Printf (CConfig::EAttribute::Default, L"      %-8ls %ls\n", 
+            console.Printf (CConfig::EAttribute::Default, L"      %-9ls %ls\n", 
                             s_kSwitchInfos[i].name, s_kSwitchInfos[i].description);
         }
     }
@@ -2177,14 +2179,16 @@ void CUsage::DisplayEnvVarHelp (CConsole & console, wchar_t chPrefix)
         L"{1}\n"
         L"\n"
         L"  {{InformationHighlight}}<Switch>{{Information}}    A command-line switch:\n"
-        L"                  {{InformationHighlight}}W{{Information}}        Wide listing format\n"
-        L"                  {{InformationHighlight}}P{{Information}}        Display performance timing information\n"
-        L"                  {{InformationHighlight}}S{{Information}}        Recurse into subdirectories\n"
-        L"                  {{InformationHighlight}}M{{Information}}        Enables multi-threaded enumeration (default); use {{InformationHighlight}}M-{{Information}} to disable\n"
-        L"                  {{InformationHighlight}}Owner{{Information}}    Display file ownership\n"
-        L"                  {{InformationHighlight}}Streams{{Information}}  Display alternate data streams (NTFS)\n"
-        L"                  {{InformationHighlight}}Icons{{Information}}    Enable file-type icons; use {{InformationHighlight}}Icons-{{Information}} to disable\n"
-        L"                  {{InformationHighlight}}Archives{{Information}} List archive contents as directories; use {{InformationHighlight}}Archives-{{Information}} to disable\n"
+        L"                  {{InformationHighlight}}W{{Information}}         Wide listing format\n"
+        L"                  {{InformationHighlight}}P{{Information}}         Display performance timing information\n"
+        L"                  {{InformationHighlight}}S{{Information}}         Recurse into subdirectories\n"
+        L"                  {{InformationHighlight}}M{{Information}}         Enables multi-threaded enumeration (default); use {{InformationHighlight}}M-{{Information}} to disable\n"
+        L"                  {{InformationHighlight}}Owner{{Information}}     Display file ownership\n"
+        L"                  {{InformationHighlight}}Streams{{Information}}   Display alternate data streams (NTFS)\n"
+        L"                  {{InformationHighlight}}Icons{{Information}}     Enable file-type icons; use {{InformationHighlight}}Icons-{{Information}} to disable\n"
+        L"                  {{InformationHighlight}}Tree{{Information}}      Display directory tree view; use {{InformationHighlight}}Tree-{{Information}} to disable\n"
+        L"                  {{InformationHighlight}}Ellipsize{{Information}} Truncate long link target paths (default); use {{InformationHighlight}}Ellipsize-{{Information}} to disable\n"
+        L"                  {{InformationHighlight}}Archives{{Information}}  List archive contents as directories; use {{InformationHighlight}}Archives-{{Information}} to disable\n"
         L"\n"
         L"  {{InformationHighlight}}<Item>{{Information}}      A display item:\n"
         L"                  {{InformationHighlight}}D{{Information}}  Date                     {{InformationHighlight}}T{{Information}}  Time\n"
@@ -2376,14 +2380,16 @@ void CUsage::DisplayConfigFileHelp (CConsole & console, wchar_t chPrefix)
         L"[{{InformationHighlight}},<Icon>{{Information}}]\n"
         L"\n"
         L"  {{InformationHighlight}}<Switch>{{Information}}    A command-line switch:\n"
-        L"                  {{InformationHighlight}}W{{Information}}        Wide listing format\n"
-        L"                  {{InformationHighlight}}P{{Information}}        Display performance timing information\n"
-        L"                  {{InformationHighlight}}S{{Information}}        Recurse into subdirectories\n"
-        L"                  {{InformationHighlight}}M{{Information}}        Enables multi-threaded enumeration (default); use {{InformationHighlight}}M-{{Information}} to disable\n"
-        L"                  {{InformationHighlight}}Owner{{Information}}    Display file ownership\n"
-        L"                  {{InformationHighlight}}Streams{{Information}}  Display alternate data streams (NTFS)\n"
-        L"                  {{InformationHighlight}}Icons{{Information}}    Enable file-type icons; use {{InformationHighlight}}Icons-{{Information}} to disable\n"
-        L"                  {{InformationHighlight}}Archives{{Information}} List archive contents as directories; use {{InformationHighlight}}Archives-{{Information}} to disable\n"
+        L"                  {{InformationHighlight}}W{{Information}}         Wide listing format\n"
+        L"                  {{InformationHighlight}}P{{Information}}         Display performance timing information\n"
+        L"                  {{InformationHighlight}}S{{Information}}         Recurse into subdirectories\n"
+        L"                  {{InformationHighlight}}M{{Information}}         Enables multi-threaded enumeration (default); use {{InformationHighlight}}M-{{Information}} to disable\n"
+        L"                  {{InformationHighlight}}Owner{{Information}}     Display file ownership\n"
+        L"                  {{InformationHighlight}}Streams{{Information}}   Display alternate data streams (NTFS)\n"
+        L"                  {{InformationHighlight}}Icons{{Information}}     Enable file-type icons; use {{InformationHighlight}}Icons-{{Information}} to disable\n"
+        L"                  {{InformationHighlight}}Tree{{Information}}      Display directory tree view; use {{InformationHighlight}}Tree-{{Information}} to disable\n"
+        L"                  {{InformationHighlight}}Ellipsize{{Information}} Truncate long link target paths (default); use {{InformationHighlight}}Ellipsize-{{Information}} to disable\n"
+        L"                  {{InformationHighlight}}Archives{{Information}}  List archive contents as directories; use {{InformationHighlight}}Archives-{{Information}} to disable\n"
         L"\n"
         L"  {{InformationHighlight}}<Item>{{Information}}      A display item:\n"
         L"                  {{InformationHighlight}}D{{Information}}  Date                     {{InformationHighlight}}T{{Information}}  Time\n"
