@@ -28,11 +28,11 @@
 
 **Independent Test**: Quickstart scenarios 1 to 4 with the script from contracts/cli.md pasted into a session.
 
-- [ ] T007 [P] [US1] Write tests in UnitTest/CompleterTests.cpp: `--Tr` → `--Tree` only; `--` → every long switch in catalog casing; `-` → short switches then long switches with `--`; `/Str` → `/Streams`; matching ignores case; tooltips are plain text from the help; `--Debug` only in Debug builds; the output line format is three tab-separated fields
-- [ ] T008 [P] [US2] Write tests in UnitTest/CompleterTests.cpp: an empty word, `C:\Pro`, `.\-notes` and `foo` → no candidates
-- [ ] T009 [US1] Implement `SCompletionRequest`, `SCompletionCandidate` and `CCompleter::Complete (request, candidates)` and `CCompleter::FormatLine` in TCDirCore/Completer.h and TCDirCore/Completer.cpp
-- [ ] T010 [US1] Add `CCompleter::Run (argc, argv)` (parses `--Complete w:<word> <words>`, writes the lines to stdout) and call it from `wmain` in TCDirCore/TCDir.cpp before `ApplyConfigDefaults` when `argv[1]` is `--Complete`
-- [ ] T011 [US1] Run quickstart scenarios 1 to 4 and 12, build, run all tests, commit the phase
+- [X] T007 [P] [US1] Write tests in UnitTest/CompleterTests.cpp: `--Tr` → `--Tree` only; `--` → every long switch in catalog casing; `-` → short switches then long switches with `--`; `/Str` → `/Streams`; matching ignores case; tooltips are plain text from the help; `--Debug` only in Debug builds; the output line format is three tab-separated fields
+- [X] T008 [P] [US2] Write tests in UnitTest/CompleterTests.cpp: an empty word, `C:\Pro`, `.\-notes` and `foo` → no candidates
+- [X] T009 [US1] Implement `SCompletionRequest`, `SCompletionCandidate` and `CCompleter::Complete (request, candidates)` and `CCompleter::FormatLine` in TCDirCore/Completer.h and TCDirCore/Completer.cpp
+- [X] T010 [US1] Add `CCompleter::Run (argc, argv)` (parses `--Complete w:<word> <words>`, writes the lines to stdout) and call it from `wmain` in TCDirCore/TCDir.cpp before `ApplyConfigDefaults` when `argv[1]` is `--Complete`
+- [X] T011 [US1] Run quickstart scenarios 1 to 4 and 12, build, run all tests, commit the phase
 
 **Checkpoint**: Switch completion works once the script is registered manually.
 

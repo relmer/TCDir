@@ -34,16 +34,34 @@ in the help under `--Completion`.
 Register-ArgumentCompleter -Native -CommandName 'tcdir', 'tcdir.exe' -ScriptBlock {
     param ($wordToComplete, $commandAst, $cursorPosition)
 
-    $others = @($commandAst.CommandElements | Select-Object -Skip 1 |
-                Where-Object { $_.Extent.EndOffset -lt $cursorPosition -or $_.Extent.StartOffset -gt $cursorPosition } |
-                ForEach-Object { $_.Extent.Text })
+    $word   = $wordToComplete
+    $others = @()
 
-    & 'C:\path\to\tcdir.exe' --Complete "w:$wordToComplete" @others 2>$null | ForEach-Object {
+    foreach ($element in @($commandAst.CommandElements | Select-Object -Skip 1)) {
+        if ($element.Extent.StartOffset -lt $cursorPosition -and $element.Extent.EndOffset -ge $cursorPosition) {
+            $word = $element.Extent.Text.Substring(0, $cursorPosition - $element.Extent.StartOffset)
+        }
+        else {
+            $others += $element.Extent.Text
+        }
+    }
+
+    $cchTrim = [Math]::Max(0, $word.Length - $wordToComplete.Length)
+
+    & 'C:\path\to\tcdir.exe' --Complete "w:$word" @others 2>$null | ForEach-Object {
         $fields = $_ -split "`t"
-        [System.Management.Automation.CompletionResult]::new ($fields[0], $fields[1], 'ParameterName', $fields[2])
+        [System.Management.Automation.CompletionResult]::new($fields[0].Substring($cchTrim), $fields[1], 'ParameterValue', $fields[2])
     }
 }
 ```
+
+PowerShell splits `-A:H` into a parameter and an argument and passes only
+`H` as `$wordToComplete`. The script sends tcdir the whole word up to the
+cursor, then trims the candidates back to the part PowerShell replaces.
+
+Windows PowerShell 5.1 doesn't call native completers for a word that
+starts with a single `-` (it parses `-W` as a parameter) or for a bare `--`.
+In 5.1, `/W`, `/Tree` and `--Tr` complete; `-W` doesn't.
 
 The profile block adds one registration per alias, with the alias's flags
 before `@others`.

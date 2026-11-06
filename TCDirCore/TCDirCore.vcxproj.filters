@@ -15,6 +15,9 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Completer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="SwitchCatalog.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -116,6 +119,9 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Completer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="SwitchCatalog.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
