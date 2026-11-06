@@ -4,7 +4,7 @@
 
 | Form | Effect |
 |------|--------|
-| `--Archives` | Treat files with a recognized archive extension as directories. Case-insensitive; `/Archives` and `-Archives` follow the existing long-switch rules. |
+| `--Archives` | Treat a file with a recognized archive extension as a directory when it is in the target path and in `-S` and `--Tree` recursion. Archive files in a listing appear as files. Case-insensitive; `/Archives` and `-Archives` follow the existing long-switch rules. |
 | `--Archives-` | Turn the option off for this command, overriding TCDIR and the config file. |
 
 Default: off.
@@ -20,7 +20,8 @@ Default: off.
 One row in the primary options table:
 
 ```text
-  --Archives    List the contents of archive files (.zip, .iso, .7z, .rar, .tar, ...) as directories.
+  --Archives    Lists the contents of an archive file (.zip, .iso, .7z, .rar, .tar, ...) given as a path,
+                and recurses into archive files with -S and --Tree. Archive files in a listing appear as files.
 ```
 
 ## Target paths

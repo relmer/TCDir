@@ -32,7 +32,7 @@ A user runs `tcdir --Archives release.zip` and gets a listing of the files and f
 2. **Given** the same archive, **When** the user runs `tcdir release.zip` without the switch, **Then** the output lists the file `release.zip` itself, identical to current behavior
 3. **Given** the same archive, **When** the user adds any existing display switch (wide, bare, sort order, attribute filter, owner, streams), **Then** the switch applies to the archive entries as it does to a real directory, or has no visible effect where the information does not exist in an archive
 4. **Given** the same archive, **When** the listing completes, **Then** the header contains the archive path as the listed directory, and the footer contains the file, directory and byte totals of the listed entries
-5. **Given** a directory that contains archives, **When** the user runs `tcdir --Archives` on that directory, **Then** each archive appears in the listing as a directory instead of a file
+5. **Given** a directory that contains archives, **When** the user runs `tcdir --Archives` on that directory without `-S` or `--Tree`, **Then** the output is identical to the output without the switch: each archive appears as a file
 
 ---
 
@@ -73,16 +73,16 @@ A user runs `tcdir --Archives -S` or `tcdir --Archives --Tree` on a real directo
 
 ### User Story 4 - Turn the Switch On by Default (Priority: P3)
 
-A user who prefers archives as directories in every listing sets this option in the TCDIR environment variable or the config file, and turns it off for one command with the negated switch.
+To browse archives in every command, a user sets this option in the TCDIR environment variable or the config file, and turns it off for one command with the negated switch.
 
 **Why this priority**: Convenience for frequent use. The command-line switch alone delivers the feature.
 
-**Independent Test**: Set the option in the config file, run `tcdir` on a directory with an archive and verify that the archive appears as a directory. Then run with the negated switch and verify that the archive appears as a file.
+**Independent Test**: Set the option in the config file, run `tcdir release.zip` and verify that the archive's contents are listed. Then run with the negated switch and verify that the output is one line for the file `release.zip`.
 
 **Acceptance Scenarios**:
 
-1. **Given** the option is set in the config file or TCDIR, **When** the user runs `tcdir`, **Then** archives appear as directories
-2. **Given** the option is set, **When** the user runs `tcdir --Archives-`, **Then** archives appear as files, identical to current behavior
+1. **Given** the option is set in the config file or TCDIR, **When** the user runs `tcdir release.zip` or `tcdir -S`, **Then** the archive contents are listed
+2. **Given** the option is set, **When** the user runs `tcdir --Archives- release.zip`, **Then** the output lists the file `release.zip`, identical to current behavior
 3. **Given** the option is set, **When** the user runs `tcdir --Config` or `tcdir --Env`, **Then** the output includes the option and its value
 
 ---
@@ -123,7 +123,7 @@ Beyond .zip, the user can browse the other archive formats that Windows can read
 ### Functional Requirements
 
 - **FR-001**: tcdir MUST add a switch, `--Archives`, that turns on archive browsing. Without the switch, tcdir MUST treat archives as ordinary files, identical to current behavior.
-- **FR-002**: With the switch, tcdir MUST treat every file of a supported archive format as a directory: in the target path, in directory listings, and in `-S` and `--Tree` recursion.
+- **FR-002**: With the switch, tcdir MUST treat a file of a supported archive format as a directory in the target path and in `-S` and `--Tree` recursion. In a directory listing, an archive file MUST be displayed as a file (attributes, size, date, color, icon), so a listing without `-S` or `--Tree` is identical to one without the switch. In `--Tree`, the archive contents MUST appear below the archive's file line. With a file mask, an archive that does not match the mask MUST appear only when it contains matching entries, the same as a directory, and MUST NOT count as a file.
 - **FR-003**: With the switch, a command-line target that resolves to an archive MUST list the archive root contents.
 - **FR-004**: With the switch, tcdir MUST accept target paths that continue past an archive file into it (`archive.zip\folder\sub`) and list that folder inside the archive.
 - **FR-005**: Wildcard masks MUST work on the last component of a path inside an archive, with the same matching rules as for real directories.

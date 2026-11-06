@@ -6,7 +6,7 @@
 
 ## Summary
 
-Add an opt-in `--Archives` switch. With it, tcdir treats every file with a recognized archive extension as a directory: as a target, inside a target path (`x.zip\docs\*.md`), in listings, and in `-S` and `--Tree` recursion. Without it, all behavior is identical to today.
+Add an opt-in `--Archives` switch. With it, tcdir treats a file with a recognized archive extension as a directory as a target, inside a target path (`x.zip\docs\*.md`), and in `-S` and `--Tree` recursion. In listings, archive files are displayed as files. Without it, all behavior is identical to today.
 
 Archive contents come from three readers behind one interface:
 

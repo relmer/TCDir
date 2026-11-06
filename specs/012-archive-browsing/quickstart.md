@@ -28,11 +28,12 @@ tar -a -cf "$t\release.7z" -C "$t\src" .
 | 1 | `tcdir $t\release.zip` | One line for the file `release.zip` (current behavior). |
 | 2 | `tcdir --Archives $t\release.zip` | `readme.txt` and `<DIR> docs`; header `Directory of ...\release.zip`. |
 | 3 | `tcdir --Archives $t\release.zip\docs\*.md` | Only `guide.md`. |
-| 4 | `tcdir --Archives -S $t` | `release.zip`, `release.tar.gz`, `release.7z` appear as directories, their folders are listed with subtotals, grand total includes archive files. |
-| 5 | `tcdir --Archives --Tree $t` | Archive contents drawn under each archive entry. |
+| 4 | `tcdir --Archives -S $t` | `release.zip`, `release.tar.gz`, `release.7z` appear as files in `$t`, followed by a section for each archive and its folders with subtotals. The grand total includes the archive files and their contents. |
+| 5 | `tcdir --Archives --Tree $t` | Each archive appears as a file line with its contents drawn below it. |
+| 5a | `tcdir --Archives $t` | Identical to `tcdir $t`. |
 | 6 | `tcdir -S $t` | Archives listed as files, identical to a build without the feature. |
 | 7 | `tcdir --Archives <image>.iso` | Contents of the disc image; `Get-Volume` shows no new volume afterward. |
 | 8 | Copy `release.zip` to `bad.zip`, truncate it, `tcdir --Archives -S $t` | One `Error:` line for `bad.zip`, the rest of the listing completes. |
-| 9 | `$env:TCDIR='Archives'; tcdir $t; tcdir --Archives- $t` | First lists archives as directories, second as files. |
+| 9 | `$env:TCDIR='Archives'; tcdir $t\release.zip; tcdir --Archives- $t\release.zip` | First lists the archive contents, second lists the file. |
 | 10 | `tcdir --Archives -P $t\big.zip` (10,000 entries) | Under 1 s. |
 | 11 | `tcdir -P -S C:\Windows\System32` with and without the build | No timing regression beyond noise. |

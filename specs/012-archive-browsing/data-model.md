@@ -71,7 +71,12 @@ bool    IsLibArchiveAvailable()
 
 ## CDirectoryInfo additions
 
-- `CDirectoryInfo::m_fInArchive` (`bool`, default `false`): `m_dirPath` is a virtual location inside an archive. Every entry in such a directory comes from the archive, so `FileInfo` has no per-entry flag.
+- `CDirectoryInfo::m_fInArchive` (`bool`, default `false`): `m_dirPath` is a virtual location inside an archive. Every entry in such a directory comes from the archive, so `FileInfo` has no per-entry archive-origin flag.
+- `FileInfo::m_fArchiveContainer` (`bool`, default `false`): tree mode only. The entry is an archive file that did not match a file spec and was added so the tree can recurse into it. It is pruned like a directory and is not counted as a file.
+
+## Archive files on disk
+
+`CFileEnumerator` does not modify the attributes of an archive file on disk, so it lists as a file. It registers the archive with `CArchiveFileSystem::RegisterArchive`. The recursion passes (`CDirectoryLister::RecurseIntoSubdirectories`, `CMultiThreadedLister::EnumerateSubdirectories`) call `CFileEnumerator::IsArchiveFile` and recurse into an archive file as they do into a directory. An archive inside an archive is not recursed into.
 - `CDirectoryInfo::m_archiveErrorPath` (`filesystem::path`) and `CDirectoryInfo::m_strArchiveError` (`wstring`): the archive that failed to parse and the error text, for the main thread to print.
 
 ## SEnumerationError

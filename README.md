@@ -166,7 +166,7 @@ Common switches:
 - `--Streams`: display NTFS alternate data streams
 - `--Icons`: enable Nerd Font file/folder icons; use `--Icons-` to disable
 - `--Tree`: hierarchical directory tree view; use `--Tree-` to disable
-- `--Archives`: list archive files (`.zip`, `.iso`, `.7z`, `.rar`, `.tar`, ...) as directories, including with `-S` and `--Tree`; use `--Archives-` to disable
+- `--Archives`: list the contents of an archive file (`.zip`, `.iso`, `.7z`, `.rar`, `.tar`, ...) given as a path, and recurse into archive files with `-S` and `--Tree`; use `--Archives-` to disable
 - `--Depth=N`: limit tree depth to N levels (requires `--Tree`)
 - `--TreeIndent=N`: tree indent width per level, 1–8, default 4 (requires `--Tree`)
 - `--Size=Auto|Bytes`: `Auto` shows abbreviated sizes (e.g., `8.90 KB`); `Bytes` shows exact comma-separated sizes. Tree mode defaults to `Auto`, non-tree defaults to `Bytes`
@@ -237,19 +237,19 @@ Incompatible with `-W` (wide), `-B` (bare), `-S` (recurse), `--Owner`, and `--Si
 
 ### Archive browsing (`--Archives`)
 
-With `--Archives`, tcdir lists archive files as if they were directories. Without it, archives are ordinary files and nothing changes.
+With `--Archives`, a path to an archive file lists the archive's contents, and `-S` and `--Tree` recurse into archive files as if they were directories. Archive files in a listing appear as files, with their usual size, date, color and icon, so listing a directory without `-S` or `--Tree` prints the same output as without the switch.
 
 - `tcdir --Archives release.zip`: list the root of the archive
 - `tcdir --Archives release.zip\docs\*.md`: list matching entries in a folder inside the archive
 - `tcdir --Archives -S src`: recurse through `src` and every archive in it
-- `tcdir --Archives --Tree src`: draw archive contents as part of the tree
+- `tcdir --Archives --Tree src`: draw each archive's contents below the archive's file line
 
 | Format | Windows version |
 | :--- | :--- |
 | `.zip`, `.iso` (ISO 9660, Joliet, UDF) | All supported versions |
 | `.7z`, `.rar`, `.tar`, `.tgz`/`.tar.gz`, `.tar.bz2`, `.tar.xz`, `.tar.zst`, `.cab`, `.cpio`, `.xar`, `.lzh` | Windows 11 23H2 and later (uses `archiveint.dll`, which ships with Windows) |
 
-Archives are read-only: tcdir never extracts or changes them and never mounts `.iso` images. Only the archive's file list is read, so listing a large `.zip` is fast. Compressed tarballs and solid `.7z`/`.rar` archives must be decompressed to find their entries, so they take longer. An archive inside an archive is listed as a file. Owner, stream and cloud columns are blank for archive entries. A corrupt or password-protected archive prints an error, and the rest of the listing continues.
+Archives are read-only: tcdir never extracts or changes them and never mounts `.iso` images. Only the archive's file list is read, so listing a large `.zip` is fast. Compressed tarballs and solid `.7z`/`.rar` archives must be decompressed to find their entries, so they take longer. An archive inside an archive is listed as a file. In tree view with a file mask, an archive that does not match the mask appears only when it contains matching entries. Owner, stream and cloud columns are blank for archive entries. A corrupt or password-protected archive prints an error, and the rest of the listing continues.
 
 - Tree listing: `TCDir.exe --Tree`
 ![TCDir tree listing](Assets/TCDir%20Tree.png)
@@ -335,7 +335,7 @@ Enable default switches by including the switch name (in the `TCDIR` env var or 
 - `Streams` - display NTFS alternate data streams by default
 - `Icons` - enable Nerd Font icons by default; `Icons-` to force off
 - `Tree` - enable tree view by default; `Tree-` to force off
-- `Archives` - list archive files as directories by default; `Archives-` to force off
+- `Archives` - browse archive targets and recurse into archives by default; `Archives-` to force off
 - `Depth=N` - set default tree depth limit
 - `TreeIndent=N` - set default tree indent width (1–8)
 - `Size=Auto` / `Size=Bytes` - set default size display format
