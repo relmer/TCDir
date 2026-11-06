@@ -19,7 +19,6 @@ const CArchiveFormat::SSuffix CArchiveFormat::s_krgSuffixes[] =
     { L".tar.bz2"sv,  EArchiveFormat::LibArchive },
     { L".tar.xz"sv,   EArchiveFormat::LibArchive },
     { L".tar.zst"sv,  EArchiveFormat::LibArchive },
-    { L".tar.lz4"sv,  EArchiveFormat::LibArchive },
     { L".tar.lzma"sv, EArchiveFormat::LibArchive },
     { L".7z"sv,       EArchiveFormat::LibArchive },
     { L".rar"sv,      EArchiveFormat::LibArchive },

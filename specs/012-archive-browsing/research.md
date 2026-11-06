@@ -8,7 +8,7 @@
 
 | Reader | Availability | Formats | Notes |
 |--------|--------------|---------|-------|
-| `archiveint.dll` (System32) | Windows 11 23H2 and later. Absent on Windows 10. | 7z, rar, rar5, tar (all variants), gzip/bzip2/xz/zstd/lz4/lzma filters, cab, cpio, xar, lha, ar, iso9660, zip | A Microsoft build of libarchive 3.8.x (`archive_version_string` returns `3.8.9 (WinBuild...)`). It exports the standard libarchive C API: `archive_read_new`, `archive_read_support_format_all`, `archive_read_support_filter_all`, `archive_read_open_filename_w`, `archive_read_next_header`, `archive_read_data_skip`, `archive_entry_pathname_w`, `archive_entry_size`, `archive_entry_mtime`, `archive_entry_filetype`, `archive_entry_is_encrypted`, `archive_error_string`, `archive_read_free`. No import library or header ships in the SDK, so the DLL is loaded at run time with `LoadLibraryExW (..., LOAD_LIBRARY_SEARCH_SYSTEM32)` and `GetProcAddress`. Explorer and `tar.exe` use the same DLL. |
+| `archiveint.dll` (System32) | Windows 11 23H2 and later. Absent on Windows 10. | 7z, rar, rar5, tar (all variants), gzip/bzip2/xz/zstd/lzma filters, cab, cpio, xar, lha, ar, iso9660, zip | A Microsoft build of libarchive 3.8.x (`archive_version_string` returns `3.8.9 (WinBuild...)`). It exports the standard libarchive C API: `archive_read_new`, `archive_read_support_format_all`, `archive_read_support_filter_all`, `archive_read_open_filename_w`, `archive_read_next_header`, `archive_read_data_skip`, `archive_entry_pathname_w`, `archive_entry_size`, `archive_entry_mtime`, `archive_entry_filetype`, `archive_entry_is_encrypted`, `archive_error_string`, `archive_read_free`. No import library or header ships in the SDK, so the DLL is loaded at run time with `LoadLibraryExW (..., LOAD_LIBRARY_SEARCH_SYSTEM32)` and `GetProcAddress`. Explorer and `tar.exe` use the same DLL. |
 | Shell zip folder (`zipfldr.dll`) via `IShellFolder` | All supported Windows versions | zip only | COM, slow on large archives (one shell item per entry), no access to raw attributes, requires COM initialization on every worker thread. |
 | IMAPI2FS (`IFileSystemImage::ImportFileSystem`) | All versions | ISO9660, Joliet, UDF | Imports from an optical recorder or a multisession stream, not from an arbitrary .iso file path. Not suitable. |
 | Virtual disk mount (`AttachVirtualDisk`) | All versions | iso, vhd | Mounts a volume. Violates FR-012 (no change to system state). Rejected. |
@@ -59,7 +59,7 @@
 
 **Rationale**: This is the only Windows-provided reader for 7z, rar, tar and cab, and it is the same component that Explorer uses. It requires no third-party dependency (constitution "Windows SDK, STL only").
 
-**Extensions mapped to libarchive** (case-insensitive, longest suffix wins): `.7z`, `.rar`, `.tar`, `.tar.gz`, `.tgz`, `.tar.bz2`, `.tbz`, `.tbz2`, `.tar.xz`, `.txz`, `.tar.zst`, `.tzst`, `.tar.lz4`, `.tar.lzma`, `.tlz`, `.cab`, `.cpio`, `.xar`, `.lzh`, `.lha`.
+**Extensions mapped to libarchive** (case-insensitive, longest suffix wins): `.7z`, `.rar`, `.tar`, `.tar.gz`, `.tgz`, `.tar.bz2`, `.tbz`, `.tbz2`, `.tar.xz`, `.txz`, `.tar.zst`, `.tzst`, `.tar.lzma`, `.tlz`, `.cab`, `.cpio`, `.xar`, `.lzh`, `.lha`.
 
 **Not mapped**: bare `.gz`, `.bz2`, `.xz`, `.zst` (single compressed streams, not containers); zip-based document formats such as `.docx`, `.jar`, `.nupkg` (treating every Office document as a folder would surprise users; out of scope).
 
