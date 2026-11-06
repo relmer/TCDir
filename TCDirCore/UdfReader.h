@@ -18,7 +18,8 @@
 class CUdfReader
 {
 public:
-    static HRESULT Read (IByteSource & source, SArchiveReadResult & result);
+    static HRESULT Read           (IByteSource & source, SArchiveReadResult & result);
+    static HRESULT DecodeOstaName (const BYTE * p, size_t cb, wstring & strName);
 
 private:
     struct SExtent
@@ -187,7 +188,6 @@ private:
     static HRESULT ReadAllocatedExtents    (SWalkState & state, const SFileEntry & fe, bool fLong, vector<BYTE> & vData);
     static HRESULT ParseFileIdentifiers    (const vector<BYTE> & vData, vector<SFileId> & vFileIds);
     static HRESULT ParseFileIdentifier     (const BYTE * p, size_t cbAvailable, SFileId & fileId, size_t & cbFileId);
-    static HRESULT DecodeOstaName          (const BYTE * p, size_t cb, wstring & strName);
     static HRESULT ReadDirectory           (SWalkState & state, const SLongAd & icb, const SFileEntry & fe, const wstring & strPrefix, UINT cDepth);
     static HRESULT AddEntry                (SWalkState & state, const SFileId & fileId, const wstring & strPrefix, UINT cDepth);
 };

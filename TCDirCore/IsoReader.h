@@ -19,7 +19,8 @@
 class CIsoReader
 {
 public:
-    static HRESULT Read (IByteSource & source, SArchiveReadResult & result);
+    static HRESULT Read           (IByteSource & source, SArchiveReadResult & result);
+    static bool    IsJolietEscape (const BYTE * pEscape);
 
 private:
     struct SDirectoryRecord
@@ -101,7 +102,6 @@ private:
     static HRESULT       FindVolumeRoots       (IByteSource & source, SVolumeRoots & roots);
     static HRESULT       ParseVolumeDescriptor (const vector<BYTE> & vSector, SVolumeRoots & roots, bool & fEnd);
     static HRESULT       ParseRootRecord       (const vector<BYTE> & vSector, bool fJoliet, SDirectoryRecord & root);
-    static bool          IsJolietEscape        (const BYTE * pEscape);
     static HRESULT       ReadDirectory         (SWalkState & state, const SDirectoryRecord & directory, const wstring & strPrefix, UINT cDepth);
     static HRESULT       ParseDirectoryExtent  (const vector<BYTE> & vData, bool fJoliet, vector<SDirectoryRecord> & vRecords);
     static HRESULT       ParseDirectoryRecord  (const BYTE * pRecord, size_t cbAvailable, bool fJoliet, SDirectoryRecord & record);

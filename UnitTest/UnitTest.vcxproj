@@ -252,6 +252,7 @@
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="IsoDetailsTests.cpp" />
     <ClCompile Include="ArchiveInfoFinderTests.cpp" />
     <ClCompile Include="ArchiveInfoDisplayerTests.cpp" />
     <ClCompile Include="ArchiveInfoBuilderTests.cpp" />

@@ -3,6 +3,7 @@
 #include "IsoReader.h"
 
 #include "DiscImage.h"
+#include "IsoDetails.h"
 #include "UdfReader.h"
 
 
@@ -34,6 +35,8 @@ HRESULT CIsoReader::Read (
 
     result.Reset();
 
+    udfResult.m_detailsPtr = result.m_detailsPtr;
+
     hrUdf           = CUdfReader::Read (source, udfResult);
     fUdfUnsupported = hrUdf == HRESULT_FROM_WIN32 (ERROR_NOT_SUPPORTED);
     fFallBack       = fUdfUnsupported || hrUdf == HRESULT_FROM_WIN32 (ERROR_NOT_FOUND);
@@ -43,11 +46,21 @@ HRESULT CIsoReader::Read (
     if (SUCCEEDED (hrUdf))
     {
         result = std::move (udfResult);
+
+        if (result.m_detailsPtr != nullptr)
+        {
+            result.m_detailsPtr->m_disc.m_eListedTree = EDiscTree::Udf;
+        }
     }
     else
     {
         hr = ReadIso9660Tree (source, fUdfUnsupported, result);
         CHR (hr);
+    }
+
+    if (result.m_detailsPtr != nullptr)
+    {
+        CIsoDetails::Read (source, result.m_detailsPtr->m_disc);
     }
 
 
@@ -90,6 +103,11 @@ HRESULT CIsoReader::ReadIso9660Tree (
     CHR (hr);
 
     state.m_fJoliet = roots.m_fJoliet;
+
+    if (result.m_detailsPtr != nullptr)
+    {
+        result.m_detailsPtr->m_disc.m_eListedTree = roots.m_fJoliet ? EDiscTree::Joliet : EDiscTree::Primary;
+    }
 
     hr = ReadDirectory (state, roots.m_fJoliet ? roots.m_joliet : roots.m_primary, L"", 0);
     CHR (hr);

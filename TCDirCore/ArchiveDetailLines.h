@@ -31,6 +31,9 @@ private:
     static void    AddZipDetails    (const SZipDetails & zip, vector<SInfoLine> & lines);
     static void    AddZipMethods    (const SZipDetails & zip, vector<SInfoLine> & lines);
     static void    AddCommentLines  (const wstring & strComment, vector<SInfoLine> & lines);
+    static void    AddDiscDetails   (const SDiscDetails & disc, vector<SInfoLine> & lines);
+    static wstring FileSystemsOf    (const SDiscDetails & disc);
+    static wstring BootPlatformsOf  (const SDiscDetails & disc);
 
     static constexpr int    s_kcHostShift       = 8;
     static constexpr BYTE   s_kbVersionMask     = 0xFF;

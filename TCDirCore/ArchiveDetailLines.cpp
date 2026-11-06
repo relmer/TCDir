@@ -2,6 +2,7 @@
 
 #include "ArchiveDetailLines.h"
 
+#include "IsoDetails.h"
 #include "ResultsDisplayerWithHeaderAndFooter.h"
 
 
@@ -101,6 +102,10 @@ void CArchiveDetailLines::AddDetails (const SArchiveReport & report, vector<SInf
     if (report.m_details.m_format == EArchiveFormat::Zip)
     {
         AddZipDetails (report.m_details.m_zip, lines);
+    }
+    else if (report.m_details.m_format == EArchiveFormat::Iso)
+    {
+        AddDiscDetails (report.m_details.m_disc, lines);
     }
 }
 
@@ -275,6 +280,153 @@ void CArchiveDetailLines::AddCommentLines (const wstring & strComment, vector<SI
         strLine.clear();
         fFirst = false;
     }
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CArchiveDetailLines::AddDiscDetails
+//
+//  File systems, labels and IDs, volume dates, sectors and boot platforms.
+//  Blank IDs and unset dates are omitted.
+//
+////////////////////////////////////////////////////////////////////////////////
+
+void CArchiveDetailLines::AddDiscDetails (const SDiscDetails & disc, vector<SInfoLine> & lines)
+{
+    struct STextRow
+    {
+        LPCWSTR                        m_pszLabel;
+        wstring SDiscDetails::*        m_pstr;
+    };
+
+    struct SDateRow
+    {
+        LPCWSTR                        m_pszLabel;
+        optional<FILETIME> SDiscDetails::* m_pft;
+    };
+
+    static constexpr STextRow s_krgTextRows[] =
+    {
+        { L"Volume label", &SDiscDetails::m_strVolumeLabel },
+        { L"System ID",    &SDiscDetails::m_strSystemId    },
+        { L"Publisher",    &SDiscDetails::m_strPublisher   },
+        { L"Preparer",     &SDiscDetails::m_strPreparer    },
+        { L"Application",  &SDiscDetails::m_strApplication },
+    };
+
+    static constexpr SDateRow s_krgDateRows[] =
+    {
+        { L"Created",  &SDiscDetails::m_ftCreated  },
+        { L"Modified", &SDiscDetails::m_ftModified },
+        { L"Expires",  &SDiscDetails::m_ftExpires  },
+    };
+
+
+
+    lines.push_back ({ L"File systems", FileSystemsOf (disc) });
+
+    for (const STextRow & row : s_krgTextRows)
+    {
+        if (!(disc.*(row.m_pstr)).empty())
+        {
+            lines.push_back ({ row.m_pszLabel, disc.*(row.m_pstr) });
+        }
+    }
+
+    for (const SDateRow & row : s_krgDateRows)
+    {
+        if ((disc.*(row.m_pft)).has_value())
+        {
+            lines.push_back ({ row.m_pszLabel, CArchiveInfoDisplayer::FormatDateTime ((disc.*(row.m_pft)).value()) });
+        }
+    }
+
+    lines.push_back ({ L"Sectors", CArchiveInfoDisplayer::FormatCount (disc.m_ullSectorCount, L"sector", L"sectors") +
+                                   L" of " + CArchiveInfoDisplayer::FormatBytes (disc.m_ulSectorSize) });
+    lines.push_back ({ L"Bootable", BootPlatformsOf (disc) });
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CArchiveDetailLines::FileSystemsOf
+//
+//  "UDF 2.50, ISO 9660, Joliet; listed from UDF".
+//
+////////////////////////////////////////////////////////////////////////////////
+
+wstring CArchiveDetailLines::FileSystemsOf (const SDiscDetails & disc)
+{
+    vector<wstring>   systems;
+    wstring           strText;
+    LPCWSTR           pszListed = L"ISO 9660";
+
+
+
+    if (disc.m_wUdfRevision != 0)
+    {
+        systems.push_back (format (L"UDF {:X}.{:02X}", disc.m_wUdfRevision >> s_kcHostShift, disc.m_wUdfRevision & s_kbVersionMask));
+    }
+
+    if (disc.m_fIso9660)   { systems.push_back (L"ISO 9660");   }
+    if (disc.m_fJoliet)    { systems.push_back (L"Joliet");     }
+    if (disc.m_fRockRidge) { systems.push_back (L"Rock Ridge"); }
+
+    for (const wstring & strName : systems)
+    {
+        strText += (strText.empty() ? L"" : L", ") + strName;
+    }
+
+    if (disc.m_eListedTree == EDiscTree::Udf)
+    {
+        pszListed = L"UDF";
+    }
+    else if (disc.m_eListedTree == EDiscTree::Joliet)
+    {
+        pszListed = L"Joliet";
+    }
+
+    return strText + L"; listed from " + pszListed;
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CArchiveDetailLines::BootPlatformsOf
+//
+////////////////////////////////////////////////////////////////////////////////
+
+wstring CArchiveDetailLines::BootPlatformsOf (const SDiscDetails & disc)
+{
+    wstring strText;
+
+
+
+    for (BYTE bPlatform : disc.m_vBootPlatforms)
+    {
+        strText += strText.empty() ? L"" : L", ";
+
+        switch (bPlatform)
+        {
+            case CIsoDetails::s_kPlatformBios:    strText += L"BIOS";    break;
+            case CIsoDetails::s_kPlatformUefi:    strText += L"UEFI";    break;
+            case CIsoDetails::s_kPlatformPowerPc: strText += L"PowerPC"; break;
+            case CIsoDetails::s_kPlatformMac:     strText += L"Mac";     break;
+            default:                              strText += format (L"platform 0x{:02X}", bPlatform); break;
+        }
+    }
+
+    return strText.empty() ? wstring (L"No") : L"Yes: " + strText;
 }
 
 

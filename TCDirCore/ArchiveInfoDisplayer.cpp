@@ -161,7 +161,12 @@ void CArchiveInfoDisplayer::AddContentLines (const SArchiveReport & report, vect
 
     strUncompressed = FormatBytes (statistics.m_ullUncompressed);
 
-    if (statistics.m_ullUncompressed > 0)
+    //
+    // Disc images store files in whole sectors next to file system
+    // structures, so the ratio of image size to file size means nothing.
+    //
+
+    if (statistics.m_ullUncompressed > 0 && report.m_details.m_format != EArchiveFormat::Iso)
     {
         strUncompressed += L" (" + FormatRatio (report.m_ullSizeOnDisk, statistics.m_ullUncompressed) + L")";
     }

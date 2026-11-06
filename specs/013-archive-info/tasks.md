@@ -94,13 +94,13 @@
 
 **Independent Test**: IsoReaderTests with built images. Quickstart scenario 7.
 
-- [ ] T035 [US5] Extend `CIsoImageBuilder` with PVD and Joliet ID fields, volume dates, a Rock Ridge "SP" and "RR" system use area on the root record, an El Torito boot record and catalog with chosen platform IDs, and a UDF domain revision and logical volume label, in UnitTest/Mocks/IsoImageBuilder.h and UnitTest/Mocks/IsoImageBuilder.cpp
-- [ ] T036 [P] [US5] Write tests for disc details: IDs with trailing spaces removed, Joliet values replacing primary values, blank IDs empty, dates with UTC offset and all-zero dates unset, sector size and count, Rock Ridge detection, boot platforms BIOS, UEFI and BIOS plus UEFI, no boot record, UDF revision and label, listed tree for each `EUdfVariant` and for Joliet and primary images, in UnitTest/IsoReaderTests.cpp
-- [ ] T037 [US5] Collect `SDiscDetails` in `CIsoReader` (volume fields, Rock Ridge, El Torito, listed tree) with private static parsers per descriptor, in TCDirCore/IsoReader.h and TCDirCore/IsoReader.cpp
-- [ ] T038 [US5] Collect the UDF revision and logical volume label in `CUdfReader` and pass them to `CIsoReader`, in TCDirCore/UdfReader.h and TCDirCore/UdfReader.cpp
-- [ ] T039 [P] [US5] Write tests for the disc lines: file systems with the listed tree, blank IDs omitted, dates, sectors, boot platforms with the number for unknown platforms, in UnitTest/ArchiveInfoDisplayerTests.cpp
-- [ ] T040 [US5] Add the disc lines to `CArchiveInfoDisplayer` in TCDirCore/ArchiveInfoDisplayer.cpp
-- [ ] T041 [US5] Run quickstart scenario 7, build, run all tests, commit the phase
+- [X] T035 [US5] Test the disc parsers with synthetic sectors in UnitTest/IsoDetailsTests.cpp instead of extending `CIsoImageBuilder` with PVD and Joliet ID fields, volume dates, a Rock Ridge "SP" and "RR" system use area on the root record, an El Torito boot record and catalog with chosen platform IDs, and a UDF domain revision and logical volume label, in UnitTest/Mocks/IsoImageBuilder.h and UnitTest/Mocks/IsoImageBuilder.cpp
+- [X] T036 [P] [US5] Write tests for disc details: IDs with trailing spaces removed, Joliet values replacing primary values, blank IDs empty, dates with UTC offset and all-zero dates unset, sector size and count, Rock Ridge detection, boot platforms BIOS, UEFI and BIOS plus UEFI, no boot record, UDF revision and label, listed tree for each `EUdfVariant` and for Joliet and primary images, in UnitTest/IsoReaderTests.cpp
+- [X] T037 [US5] Collect `SDiscDetails` in `CIsoDetails` (volume fields, Rock Ridge, El Torito) in TCDirCore/IsoDetails.h and TCDirCore/IsoDetails.cpp, called from `CIsoReader::Read`, which sets the listed tree
+- [X] T038 [US5] Read the UDF revision and logical volume label in `CIsoDetails::ReadUdf`, using `CUdfReader::DecodeOstaName`
+- [X] T039 [P] [US5] Write tests for the disc lines: file systems with the listed tree, blank IDs omitted, dates, sectors, boot platforms with the number for unknown platforms, in UnitTest/ArchiveInfoDisplayerTests.cpp
+- [X] T040 [US5] Add the disc lines to `CArchiveInfoDisplayer` in TCDirCore/ArchiveInfoDisplayer.cpp
+- [X] T041 [US5] Run quickstart scenario 7, build, run all tests, commit the phase
 
 **Checkpoint**: Disc image blocks are complete.
 

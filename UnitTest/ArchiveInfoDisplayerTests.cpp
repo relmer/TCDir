@@ -443,5 +443,59 @@ namespace UnitTest
             Assert::AreEqual (L"First line",  comment[0].c_str());
             Assert::AreEqual (L"Second line", comment[1].c_str());
         }
+
+
+
+
+        //
+        //  Disc image rows
+        //
+
+        TEST_METHOD(Disc_RowsAndOmittedValues)
+        {
+            SArchiveReport    report = MakeReport();
+            vector<SInfoLine> lines;
+            SDiscDetails    & disc   = report.m_details.m_disc;
+
+
+
+            report.m_details.m_format = EArchiveFormat::Iso;
+            disc.m_fIso9660           = true;
+            disc.m_fJoliet            = true;
+            disc.m_wUdfRevision       = 0x0250;
+            disc.m_eListedTree        = EDiscTree::Udf;
+            disc.m_strVolumeLabel     = L"MY_DISC";
+            disc.m_ulSectorSize       = 2048;
+            disc.m_ullSectorCount     = 10;
+            disc.m_vBootPlatforms     = { 0x00, 0xEF, 0x7A };
+
+            CArchiveInfoDisplayer::BuildLines (report, lines);
+
+            Assert::AreEqual (L"Disc image",                                  ValueOf (lines, L"Format").c_str());
+            Assert::AreEqual (L"UDF 2.50, ISO 9660, Joliet; listed from UDF", ValueOf (lines, L"File systems").c_str());
+            Assert::AreEqual (L"MY_DISC",                                     ValueOf (lines, L"Volume label").c_str());
+            Assert::AreEqual (L"10 sectors of 2,048 bytes",                   ValueOf (lines, L"Sectors").c_str());
+            Assert::AreEqual (L"Yes: BIOS, UEFI, platform 0x7A",              ValueOf (lines, L"Bootable").c_str());
+            Assert::AreEqual (L"200 bytes",                                   ValueOf (lines, L"Uncompressed").c_str());
+            Assert::IsNull   (FindLine (lines, L"Publisher"));
+            Assert::IsNull   (FindLine (lines, L"Created"));
+        }
+
+
+
+
+        TEST_METHOD(Disc_NotBootable)
+        {
+            SArchiveReport    report = MakeReport();
+            vector<SInfoLine> lines;
+
+
+
+            report.m_details.m_format = EArchiveFormat::Iso;
+            CArchiveInfoDisplayer::BuildLines (report, lines);
+
+            Assert::AreEqual (L"No", ValueOf (lines, L"Bootable").c_str());
+            Assert::AreEqual (L"; listed from ISO 9660", ValueOf (lines, L"File systems").c_str());
+        }
     };
 }

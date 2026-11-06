@@ -204,6 +204,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="IsoDetails.h" />
     <ClInclude Include="ArchiveDetailLines.h" />
     <ClInclude Include="ArchiveInfoFinder.h" />
     <ClInclude Include="ArchiveInfo.h" />
@@ -277,6 +278,7 @@
     <ClInclude Include="WorkQueue.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="IsoDetails.cpp" />
     <ClCompile Include="ArchiveDetailLines.cpp" />
     <ClCompile Include="ArchiveInfoFinder.cpp" />
     <ClCompile Include="ArchiveInfo.cpp" />
