@@ -27,6 +27,7 @@ Settings can be persisted in a config file (`~\.tcdirconfig`), overridden via th
 
 | Version | Highlights |
 | :---: | :--- |
+| **5.7** | Browse archives as folders (`--Archives`: `.zip`, `.iso`, `.7z`, `.rar`, `.tar.*`, ...) and print archive statistics with checksum verification (`--Info`, `--Verify`) |
 | **5.6** | Install/uninstall Nerd Fonts system-wide (`--install-nerdfonts`, `--uninstall-nerdfonts`) with Windows Terminal profile configuration |
 | **5.5** | Variable-width columns in wide mode (`/W`) — GNU ls-style per-column fitting; outlier truncation with `…` |
 | **5.4** | Symlink, junction, and AppExecLink target display (`→ target`); ellipsize long target paths (`…`) |

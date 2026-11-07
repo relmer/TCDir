@@ -2,7 +2,7 @@
 
 All notable changes to TCDir are documented in this file.
 
-## [Unreleased]
+## [5.7.0] - 2026-11-06
 
 ### Added
 - `--Archives`: list the contents of an archive file given as a path, and recurse into archive files with `-S` and `--Tree`; use `--Archives-` to disable
