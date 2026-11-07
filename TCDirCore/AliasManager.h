@@ -50,6 +50,7 @@ struct SAliasConfig
     wstring                  strTargetPath;       // Resolved path for the chosen profile
     bool                     fSessionOnly  = false;
     bool                     fWhatIf       = false;
+    bool                     fEnableCompletion = false; // Add a tab completion block to the profile
 };
 
 
@@ -127,10 +128,18 @@ private:
                                             int                                iSelected,
                                             bool                               fWhatIf);
 
+    static ETuiResult PromptCompletion     (CTuiWidgets                      & tui,
+                                            SAliasConfig                     & config,
+                                            bool                             & fHasCompletion);
+
+    static void    BuildCompletionPreview  (const SAliasConfig               & config,
+                                            vector<wstring>                  & rgLines);
+
     static HRESULT ConfirmAndApply         (CConsole                         & console,
                                             CTuiWidgets                      & tui,
                                             SAliasConfig                     & config,
-                                            const vector<wstring>            & rgBlockLines);
+                                            const vector<wstring>            & rgBlockLines,
+                                            const vector<wstring>            & rgCompletionLines);
 
     static HRESULT ApplyAliasBlock         (CConsole                         & console,
                                             const SAliasConfig               & config,
@@ -144,7 +153,7 @@ private:
                                             const vector<wstring>            & rgBlockLines);
 
     static HRESULT WriteAliasBlockToFile   (CConsole                         & console,
-                                            const wstring                    & strTargetPath,
+                                            const SAliasConfig               & config,
                                             const vector<wstring>            & rgBlockLines);
 
     static bool    DisplayProfileAliases   (CConsole                         & console,

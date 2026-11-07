@@ -232,13 +232,12 @@ namespace UnitTest
 
 
 
-        TEST_METHOD(Values_TimeSizeTreeIndentAndShell)
+        TEST_METHOD(Values_TimeSizeAndTreeIndent)
         {
             Assert::AreEqual (size_t (3), Complete (L"-T:").size());
             Assert::IsTrue   (Contains (Texts (Complete (L"--Size=")), L"--Size=Auto"));
             Assert::IsTrue   (Contains (Texts (Complete (L"--size=b")), L"--Size=Bytes"));
             Assert::AreEqual (size_t (8), Complete (L"--TreeIndent=").size());
-            Assert::IsTrue   (Contains (Texts (Complete (L"/Completion=")), L"/Completion=pwsh"));
             Assert::IsTrue   (Contains (Texts (Complete (L"/A:")), L"/A:D"));
         }
 

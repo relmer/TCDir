@@ -15,6 +15,9 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="CompletionManager.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="CompletionScript.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -122,6 +125,9 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="CompletionManager.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="CompletionScript.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>

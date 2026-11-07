@@ -399,6 +399,8 @@ HRESULT CCommandLine::ValidateAliasCombinations (void)
         &CCommandLine::m_fSetAliases,
         &CCommandLine::m_fGetAliases,
         &CCommandLine::m_fRemoveAliases,
+        &CCommandLine::m_fEnableCompletion,
+        &CCommandLine::m_fDisableCompletion,
     };
 
     static constexpr bool CCommandLine::* s_krgListingSwitches[] =
@@ -425,15 +427,15 @@ HRESULT CCommandLine::ValidateAliasCombinations (void)
     }
 
     CBRFEx (cAliasFlags <= 1, E_INVALIDARG,
-            m_strValidationError = L"--set-aliases, --get-aliases, and --remove-aliases are mutually exclusive.");
+            m_strValidationError = L"--set-aliases, --get-aliases, --remove-aliases, --enable-completion and --disable-completion are mutually exclusive.");
 
     fAliasWithListing = (cAliasFlags > 0) && AnyMemberFlagSet (s_krgListingSwitches);
 
     CBRFEx (!fAliasWithListing, E_INVALIDARG,
             m_strValidationError = L"Alias switches cannot be combined with listing switches.");
 
-    CBRFEx (!m_fWhatIf || m_fSetAliases || m_fRemoveAliases, E_INVALIDARG,
-            m_strValidationError = L"--whatif is only valid with --set-aliases or --remove-aliases.");
+    CBRFEx (!m_fWhatIf || m_fSetAliases || m_fRemoveAliases || m_fEnableCompletion || m_fDisableCompletion, E_INVALIDARG,
+            m_strValidationError = L"--whatif is only valid with --set-aliases, --remove-aliases, --enable-completion or --disable-completion.");
 
 Error:
     return hr;
@@ -471,6 +473,8 @@ HRESULT CCommandLine::ValidateNerdFontCombinations (void)
         &CCommandLine::m_fSetAliases,
         &CCommandLine::m_fGetAliases,
         &CCommandLine::m_fRemoveAliases,
+        &CCommandLine::m_fEnableCompletion,
+        &CCommandLine::m_fDisableCompletion,
     };
 
 
@@ -618,6 +622,8 @@ HRESULT CCommandLine::HandleLongSwitch (LPCWSTR pszArg, int & cArg, WCHAR ** & p
         {  L"get-aliases",          &CCommandLine::m_fGetAliases         },
         {  L"remove-aliases",       &CCommandLine::m_fRemoveAliases      },
         {  L"whatif",               &CCommandLine::m_fWhatIf             },
+        {  L"enable-completion",    &CCommandLine::m_fEnableCompletion   },
+        {  L"disable-completion",   &CCommandLine::m_fDisableCompletion  },
         {  L"install-nerdfonts",    &CCommandLine::m_fInstallNerdFonts   },
         {  L"install-nerd-fonts",   &CCommandLine::m_fInstallNerdFonts   },
         {  L"uninstall-nerdfonts",  &CCommandLine::m_fUninstallNerdFonts },
@@ -765,11 +771,6 @@ HRESULT CCommandLine::HandleLongSwitch (LPCWSTR pszArg, int & cArg, WCHAR ** & p
             m_cTreeIndent = n;
             hr = S_OK;
         }
-        else if (_wcsicmp (switchName.c_str(), L"completion") == 0)
-        {
-            hr = HandleCompletionSwitch (switchValue, fHasValue, cArg, ppszArg);
-            CHR (hr);
-        }
         else if (_wcsicmp (switchName.c_str(), L"size") == 0)
         {
             CBREx (fHasValue, E_INVALIDARG);
@@ -791,46 +792,6 @@ HRESULT CCommandLine::HandleLongSwitch (LPCWSTR pszArg, int & cArg, WCHAR ** & p
             hr = S_OK;
         }
     }
-
-Error:
-    return hr;
-}
-
-
-
-
-
-////////////////////////////////////////////////////////////////////////////////
-//
-//  CCommandLine::HandleCompletionSwitch
-//
-//  --Completion=<shell> or --Completion <shell>.  "pwsh" and "powershell"
-//  both select the PowerShell script, which serves both editions.
-//
-////////////////////////////////////////////////////////////////////////////////
-
-HRESULT CCommandLine::HandleCompletionSwitch (wstring strValue, bool fHasValue, int & cArg, WCHAR ** & ppszArg)
-{
-    HRESULT hr          = S_OK;
-    bool    fPowerShell = false;
-
-
-
-    if (!fHasValue && cArg > 1)
-    {
-        strValue  = *(ppszArg + 1);
-        fHasValue = true;
-        --cArg;
-        ++ppszArg;
-    }
-
-    fPowerShell = fHasValue && (_wcsicmp (strValue.c_str(), L"pwsh") == 0 || _wcsicmp (strValue.c_str(), L"powershell") == 0);
-
-    CBRFEx (fPowerShell, E_INVALIDARG, m_strValidationError = L"--Completion supports: pwsh");
-
-    m_strCompletionShell = L"pwsh";
-
-
 
 Error:
     return hr;
@@ -865,11 +826,12 @@ bool CCommandLine::IsRecognizedLongSwitch (const wstring & strSwitch)
         L"depth",
         L"treeindent",
         L"size",
-        L"completion",
         L"set-aliases",
         L"get-aliases",
         L"remove-aliases",
         L"whatif",
+        L"enable-completion",
+        L"disable-completion",
         L"install-nerdfonts",
         L"install-nerd-fonts",
         L"uninstall-nerdfonts",

@@ -65,62 +65,63 @@ without the completer registered, and compare the candidates.
 
 ---
 
-### User Story 3 - Setup through the alias installer (Priority: P1)
+### User Story 3 - Enable and disable completion (Priority: P1)
 
-A user who runs `tcdir --set-aliases` gets completion for `tcdir` and for
-every alias the installer defines, with no extra step. `--remove-aliases`
-removes the completion with the aliases, and `--get-aliases` reports whether
-completion is installed.
+A user runs `tcdir --Enable-Completion` once, opens a new session, and gets
+completion for `tcdir` and for every alias the alias installer defined.
+`tcdir --Disable-Completion` removes it. Completion is a separate managed block
+in the profile, apart from the alias block, so it can be turned on
+without aliases.
 
-**Why this priority**: The alias installer already writes a managed block
-into the PowerShell profile, so completion comes with no new setup step.
+**Why this priority**: One command turns completion on, with or without
+aliases.
 
-**Independent Test**: Run `tcdir --set-aliases --whatif` and check that the
-block contains the completer registration for `tcdir` and each alias. Run it
-for real, open a new session, and complete `d --Ar` where `d` is an alias.
+**Independent Test**: Run `tcdir --Enable-Completion --whatif` and check the
+completion block for `tcdir`, `tcdir.exe` and each alias. Run it for real,
+open a new session, and complete `tcdir --Tr`.
 
 **Acceptance Scenarios**:
 
-1. **Given** no tcdir block in the profile, **When** the user runs `tcdir
-   --set-aliases` and opens a new session, **Then** `tcdir --Ar` and
-   `<alias> --Ar` both complete to `--Archives`.
-2. **Given** the block is installed, **When** the user runs `tcdir
-   --remove-aliases` and opens a new session, **Then** no completer is
-   registered for `tcdir` or the aliases.
-3. **Given** the block is installed, **When** the user runs `tcdir
-   --get-aliases`, **Then** the output reports that completion is installed.
-4. **Given** a profile block written by an earlier tcdir version without
-   completion, **When** the user runs `tcdir --set-aliases`, **Then** the
-   block is replaced with one that registers completion.
+1. **Given** no completion block, **When** the user runs `tcdir
+   --Enable-Completion` and opens a new session, **Then** `tcdir --Tr`
+   completes to `--Tree`.
+2. **Given** an alias block in the profile, **When** the user enables
+   completion, **Then** the completion block registers every alias with its
+   flags, and `<alias> --Tr` completes.
+3. **Given** a completion block, **When** the user runs `tcdir
+   --Disable-Completion` and opens a new session, **Then** no completer is
+   registered, and the alias block is untouched.
+4. **Given** a completion block, **When** the user runs `--set-aliases` or
+   `--remove-aliases`, **Then** the completion block is regenerated for the
+   new set of aliases.
 5. **Given** the user installs a newer tcdir, **When** they complete a switch
-   added in the newer version, **Then** it is a candidate without running
-   `--set-aliases` again.
+   added in the newer version, **Then** it is a candidate without enabling
+   completion again.
+6. **Given** `--whatif`, **When** the user enables or disables completion,
+   **Then** tcdir prints the change and doesn't modify the profile.
 
 ---
 
-### User Story 4 - Setup without aliases (Priority: P2)
+### User Story 4 - Offer completion from the alias wizard (Priority: P2)
 
-A user who doesn't install the aliases runs `tcdir --Completion pwsh` to print the
-completer script, and adds one line to their profile:
-`tcdir --Completion pwsh | Out-String | Invoke-Expression`.
+When `--set-aliases` runs and the target profile has no completion block,
+the last wizard step offers to enable tab completion too.
 
-**Why this priority**: Not every user installs the aliases, and this is the
-setup other command-line tools use.
+**Why this priority**: Users who set up aliases discover completion without
+reading the help.
 
-**Independent Test**: Run the one-line setup in a fresh session and complete
-`tcdir --Ar`.
+**Independent Test**: Run `tcdir --set-aliases --whatif` against a profile
+without a completion block, answer yes, and check that the preview includes
+the completion block.
 
 **Acceptance Scenarios**:
 
-1. **Given** a fresh session, **When** the user runs `tcdir --Completion pwsh
-   | Out-String | Invoke-Expression`, **Then** `tcdir --Ar` completes to
-   `--Archives` in that session.
-2. **Given** the aliases are installed, **When** the user also runs the
-   one-line setup, **Then** completion works once and candidates aren't
-   duplicated.
-3. **Given** an unsupported shell value, **When** the user runs `tcdir
-   --Completion bash`, **Then** tcdir prints an error that lists the
-   supported values and exits with a failure code.
+1. **Given** no completion block, **When** the user selects Yes, **Then** the
+   alias block and a completion block are written.
+2. **Given** no completion block, **When** the user declines, **Then** only
+   the alias block is written.
+3. **Given** an existing completion block, **When** the wizard runs, **Then**
+   the wizard skips that step and regenerates the completion block.
 
 ---
 
@@ -218,20 +219,21 @@ produces a conflict error.
 
 **Setup**
 
-- **FR-008**: `--set-aliases` MUST add the completer registration for `tcdir`
-  and for every alias it defines to the managed profile block.
-  `--remove-aliases` MUST remove it with the block. `--whatif` MUST print it.
-- **FR-009**: `--get-aliases` MUST report whether the installed block
-  registers completion.
-- **FR-010**: `tcdir --Completion pwsh` MUST print a script that registers
-  the completer for `tcdir` and `tcdir.exe` when run in a session. Running it
-  in a session that already has the alias block MUST NOT duplicate
-  candidates.
-- **FR-011**: `--Completion` with any other value MUST print an error listing
-  the supported values and exit with a failure code.
-- **FR-012**: `--Completion` MUST be documented in the `-?` help. The
-  interface the script uses to request candidates from tcdir MUST be
-  documented in the help as part of `--Completion`.
+- **FR-008**: `--Enable-Completion` MUST write a managed completion block,
+  separate from the alias block, to the profile that contains the alias block,
+  or to the current user's all-hosts profile when no profile has one. The block
+  MUST register the completer for `tcdir`, `tcdir.exe` and every alias in
+  the alias block, with each alias's flags. Running it again MUST replace the
+  block.
+- **FR-009**: `--Disable-Completion` MUST remove the completion block from
+  every profile that has one, and MUST NOT change the alias block.
+- **FR-010**: `--set-aliases` and `--remove-aliases` MUST regenerate the
+  completion block in the profile they change when it has one.
+- **FR-011**: `--set-aliases` MUST offer to enable completion when the
+  target profile has no completion block. `--get-aliases` MUST report
+  whether completion is enabled.
+- **FR-012**: `--Enable-Completion` and `--Disable-Completion` MUST accept
+  `--whatif`, and MUST be documented in the `-?` help.
 
 **Behavior and compatibility**
 
@@ -241,7 +243,7 @@ produces a conflict error.
   return no candidates and print nothing.
 - **FR-015**: Requesting candidates MUST NOT read the file system, list
   folders, or print anything except the candidates.
-- **FR-016**: Command lines without `--Completion` or the candidate request
+- **FR-016**: Command lines without the completion switches or the candidate request
   MUST produce the output they produce today.
 
 ### Key Entities
@@ -264,9 +266,9 @@ produces a conflict error.
 - **SC-002**: Every switch and value in the `-?` help is offered, and nothing
   else is, as checked by comparing the candidate list with the help.
 - **SC-003**: Path completion offers the same candidates with and without the
-  completer for every word that isn't a switch.
-- **SC-004**: A user with the aliases installed gets completion after one
-  `--set-aliases` run and a new session, with no other setup.
+  completer for every word that isn't a- **SC-004**: A user gets completion after one `--Enable-Completion` run (or one
+  `--set-aliases` run with completion accepted) and a new session.
+r setup.
 - **SC-005**: No candidate that User Story 6 offers causes a command-line
   conflict error when added to the command line.
 

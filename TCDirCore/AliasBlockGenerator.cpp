@@ -2,7 +2,6 @@
 #include "AliasBlockGenerator.h"
 
 #include "AliasManager.h"
-#include "CompletionScript.h"
 
 
 
@@ -92,16 +91,6 @@ void CAliasBlockGenerator::Generate (const SAliasConfig & config, const wstring 
     }
 
     //
-    // Tab completion for tcdir and every alias
-    //
-
-    rgBlockLines.push_back (L"");
-    rgBlockLines.push_back (L"#  Tab completion");
-    rgBlockLines.push_back (L"");
-
-    AddCompletion (config, rgBlockLines);
-
-    //
     // Footer banner
     //
 
@@ -109,42 +98,6 @@ void CAliasBlockGenerator::Generate (const SAliasConfig & config, const wstring 
     rgBlockLines.push_back (L"################################################################################");
     rgBlockLines.push_back (L"#  End TCDir Aliases");
     rgBlockLines.push_back (L"################################################################################");
-}
-
-
-
-
-
-////////////////////////////////////////////////////////////////////////////////
-//
-//  CAliasBlockGenerator::AddCompletion
-//
-//  Registers completion for tcdir, tcdir.exe, the root alias and each
-//  enabled sub-alias.  A sub-alias passes its flags, so candidates that
-//  conflict with them aren't offered.
-//
-////////////////////////////////////////////////////////////////////////////////
-
-void CAliasBlockGenerator::AddCompletion (const SAliasConfig & config, vector<wstring> & rgBlockLines)
-{
-    vector<SCompletionCommand> commands =
-    {
-        { L"tcdir",             L"" },
-        { L"tcdir.exe",         L"" },
-        { config.strRootAlias,  L"" },
-    };
-
-
-
-    for (const auto & sub : config.rgSubAliases)
-    {
-        if (sub.fEnabled)
-        {
-            commands.push_back ({ sub.strName, sub.strFlags });
-        }
-    }
-
-    CCompletionScript::Generate (config.strTcDirInvocation, commands, rgBlockLines);
 }
 
 

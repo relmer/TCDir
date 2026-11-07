@@ -24,7 +24,6 @@ public:
     void            WriteSeparatorLine        (WORD attr);
     virtual HRESULT Flush                     (void);
     void            SetAutoFlush              (bool fAutoFlush)  { m_fAutoFlush = fAutoFlush; }
-    void            SetResetOnExit            (bool fReset)      { m_fResetOnExit = fReset; }
 
     UINT    GetWidth                  (void)     { return m_cxConsoleWidth; }
 
@@ -47,7 +46,6 @@ protected:
     HANDLE              m_hStdOut        = nullptr;
     bool                m_fIsRedirected  = true;    // True if redirected (e.g., in a unit test)
     bool                m_fAutoFlush     = false;   // When set, each output call flushes immediately
-    bool                m_fResetOnExit   = true;    // Append a color reset when the console is destroyed
     WORD                m_attrDefault    = FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE;
     wstring             m_strBuffer;
     UINT                m_cxConsoleWidth = 80;

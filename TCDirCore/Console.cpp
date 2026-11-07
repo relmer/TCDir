@@ -35,11 +35,7 @@ CConsole::~CConsole (void)
 {
     // Use ANSI reset sequence to restore terminal to default colors
     // This only affects future output, not already-rendered text
-    if (m_fResetOnExit)
-    {
-        m_strBuffer.append (AnsiCodes::RESET_ALL);
-    }
-
+    m_strBuffer.append (AnsiCodes::RESET_ALL);
     Flush();
 }
 

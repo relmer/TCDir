@@ -57,11 +57,6 @@ const SSwitchValue CSwitchCatalog::s_krgSizeValues[] =
     { L"Bytes", L"Exact with commas"      },
 };
 
-const SSwitchValue CSwitchCatalog::s_krgShellValues[] =
-{
-    { L"pwsh", L"PowerShell 7 and Windows PowerShell 5.1" },
-};
-
 const SSwitchValue CSwitchCatalog::s_krgTreeIndentValues[] =
 {
     { L"1", L"Indent width" }, { L"2", L"Indent width" }, { L"3", L"Indent width" }, { L"4", L"Indent width (default)" },
@@ -126,10 +121,12 @@ const SSwitchDefinition CSwitchCatalog::s_krgSwitches[] =
     { ESwitchForm::Long,  L"Remove-Aliases", L"", 0, {}, false, false, ESwitchSection::Alias,
       L"Interactive wizard to remove tcdir aliases from a profile.", L"", false },
     { ESwitchForm::Long,  L"WhatIf", L"", 0, {}, false, false, ESwitchSection::Alias,
-      L"Preview changes without modifying files (use with {{InformationHighlight}}{1}Set-Aliases{{Information}} or {{InformationHighlight}}{1}Remove-Aliases{{Information}}).", L"", false },
-    { ESwitchForm::Long,  L"Completion", L"={InformationHighlight}pwsh{Information}", L'=', s_krgShellValues, false, false, ESwitchSection::Alias,
-      L"Prints the PowerShell tab completion script. To enable it, add {{InformationHighlight}}tcdir {1}Completion=pwsh | Out-String | Invoke-Expression{{Information}} to your profile.",
-      L"The script calls {{InformationHighlight}}tcdir --Complete{{Information}} for the candidates. {{InformationHighlight}}{1}Set-Aliases{{Information}} adds it to the alias block.", false },
+      L"Preview changes without modifying files (use with {{InformationHighlight}}{1}Set-Aliases{{Information}}, {{InformationHighlight}}{1}Remove-Aliases{{Information}},",
+      L"{{InformationHighlight}}{1}Enable-Completion{{Information}} or {{InformationHighlight}}{1}Disable-Completion{{Information}}).", false },
+    { ESwitchForm::Long,  L"Enable-Completion", L"", 0, {}, false, false, ESwitchSection::Alias,
+      L"Adds PowerShell tab completion for tcdir and its aliases to your profile.", L"", false },
+    { ESwitchForm::Long,  L"Disable-Completion", L"", 0, {}, false, false, ESwitchSection::Alias,
+      L"Removes PowerShell tab completion from your profile.", L"", false },
     { ESwitchForm::Long,  L"Install-NerdFonts", L"", 0, {}, false, false, ESwitchSection::Alias,
       L"Download and install {2} system-wide, then optionally configure terminal profiles.", L"", false },
     { ESwitchForm::Long,  L"Uninstall-NerdFonts", L"", 0, {}, false, false, ESwitchSection::Alias,

@@ -93,7 +93,8 @@ public:
     bool               m_fWhatIf                                           = false;    // --whatif switch
     bool               m_fInstallNerdFonts                                 = false;    // --Install-NerdFonts switch
     bool               m_fUninstallNerdFonts                               = false;    // --Uninstall-NerdFonts switch
-    wstring            m_strCompletionShell;                                            // --Completion=<shell> (empty when absent)
+    bool               m_fEnableCompletion                                 = false;    // --Enable-Completion switch
+    bool               m_fDisableCompletion                                = false;    // --Disable-Completion switch
 
 
     //
@@ -120,7 +121,6 @@ protected:
     
     HRESULT HandleSwitch                  (LPCWSTR pszArg, int & cArg, WCHAR ** & ppszArg);
     HRESULT HandleLongSwitch              (LPCWSTR pszArg, int & cArg, WCHAR ** & ppszArg);
-    HRESULT HandleCompletionSwitch        (wstring strValue, bool fHasValue, int & cArg, WCHAR ** & ppszArg);
     HRESULT ParseSwitch                   (LPCWSTR pszArg, int & cArg, WCHAR ** & ppszArg);
     HRESULT RejectSingleDashLongSwitch    (LPCWSTR pszSwitchArg);
     HRESULT ValidateSwitchCombinations    (void);

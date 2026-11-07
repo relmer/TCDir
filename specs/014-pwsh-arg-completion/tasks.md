@@ -97,3 +97,16 @@
 1. MVP: Phases 1 to 3, switch completion with a pasted script.
 2. US3 and US4 make setup a single step.
 3. US5 and US6 refine the candidates.
+
+## Phase 9: Separate completion block (rework of US3 and US4)
+
+**Goal**: Completion is a separate profile block managed by `--Enable-Completion` and `--Disable-Completion`; `--Completion` is removed; the alias wizard offers completion.
+
+- [X] T031 Remove `--Completion` (parsing, catalog row, `CCompletionScript::Print`, `CConsole::SetResetOnExit`, tests and docs) in TCDirCore/CommandLine.h, TCDirCore/CommandLine.cpp, TCDirCore/SwitchCatalog.cpp, TCDirCore/CompletionScript.cpp, TCDirCore/Console.h, TCDirCore/Console.cpp, TCDirCore/TCDir.cpp and UnitTest/CommandLineTests.cpp
+- [X] T032 Remove the completion lines from the alias block in TCDirCore/AliasBlockGenerator.cpp and the related tests
+- [X] T033 Add `FindCompletionBlock` (markers `#  TCDir Completion` and `#  End TCDir Completion`) next to `FindAliasBlock`, sharing one marker scan, in TCDirCore/ProfileFileManager.h and TCDirCore/ProfileFileManager.cpp, with tests in UnitTest/ProfileFileManagerTests.cpp
+- [X] T034 Add `CCompletionScript::GenerateBlock (version, invocation, commands, lines)` with the banner and markers, and `CCompletionScript::CommandsFromAliasBlock (block, commands)` that parses each alias's flags from its function line, with tests in UnitTest/CompletionScriptTests.cpp
+- [X] T035 Add `CCompletionManager` (`Run`, `Enable`, `Disable`, `UpdateLines`) in TCDirCore/CompletionManager.h and TCDirCore/CompletionManager.cpp; `UpdateLines` replaces, adds or removes the completion block in a profile's lines and is tested in UnitTest/CompletionManagerTests.cpp
+- [X] T036 Parse `--Enable-Completion` and `--Disable-Completion` (mutually exclusive with each other and the alias switches; `--whatif` allowed) and dispatch them from TCDirCore/TCDir.cpp, with tests in UnitTest/CommandLineTests.cpp, and add both rows to the catalog
+- [X] T037 Regenerate the completion block from `CAliasManager::WriteAliasBlockToFile` and `RemoveAliasBlockFromFile`, offer completion as the last `--set-aliases` step when the target profile lacks a completion block, include it in the preview, and report it in `--get-aliases`, in TCDirCore/AliasManager.h and TCDirCore/AliasManager.cpp
+- [X] T038 Update README.md, CHANGELOG.md and contracts/cli.md; run `--Enable-Completion --whatif` and `--Disable-Completion --whatif` against the real profile; build Release x64 and ARM64 with Code Analysis; run all tests; commit

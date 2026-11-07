@@ -6,7 +6,7 @@
 #include "AliasManager.h"
 #include "CommandLine.h"
 #include "Completer.h"
-#include "CompletionScript.h"
+#include "CompletionManager.h"
 #include "Config.h"
 #include "Console.h"
 #include "DirectoryLister.h"
@@ -76,21 +76,6 @@ static HRESULT ProcessCommandLine (
         BAIL_OUT_IF (cmdline.m_fSettings, S_FALSE);
     }
 
-    if (!cmdline.m_strCompletionShell.empty())
-    {
-        //
-        // The script is piped to Invoke-Expression, so no escape sequence
-        // may follow it
-        //
-
-        console.SetResetOnExit (false);
-
-        hr = CCompletionScript::Print();
-        CHR (hr);
-
-        BAIL_OUT_IF (TRUE, S_FALSE);
-    }
-
     //
     // Install-NerdFonts command — process and exit
     //
@@ -116,6 +101,13 @@ static HRESULT ProcessCommandLine (
     if (cmdline.m_fSetAliases || cmdline.m_fGetAliases || cmdline.m_fRemoveAliases)
     {
         hr = CAliasManager::Run (cmdline, console);
+        CHR (hr);
+        BAIL_OUT_IF (true, S_FALSE);
+    }
+
+    if (cmdline.m_fEnableCompletion || cmdline.m_fDisableCompletion)
+    {
+        hr = CCompletionManager::Run (cmdline, console);
         CHR (hr);
         BAIL_OUT_IF (true, S_FALSE);
     }
