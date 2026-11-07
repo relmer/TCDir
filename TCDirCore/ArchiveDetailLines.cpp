@@ -121,8 +121,10 @@ void CArchiveDetailLines::AddDetails (const SArchiveReport & report, vector<SInf
 //
 //  CArchiveDetailLines::ZipName
 //
-//  "ZIP, made by NTFS 2.0, UTF-8 paths".  The creator is the most common
-//  "version made by" value among the entries.
+//  "ZIP 2.0, created on Windows (NTFS), UTF-8 paths".  The creator is the
+//  most common "version made by" value among the entries.  Its low byte
+//  specifies the ZIP specification version the creating tool supports, and
+//  its high byte specifies the host system.
 //
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -147,10 +149,10 @@ wstring CArchiveDetailLines::ZipName (const SZipDetails & zip)
     if (cMost > 0)
     {
         bVersion  = static_cast<BYTE> (wCreator & s_kbVersionMask);
-        strName  += format (L", made by {} {}.{}",
-                            HostName (static_cast<BYTE> (wCreator >> s_kcHostShift)),
+        strName  += format (L" {}.{}, created on {}",
                             bVersion / s_kcVersionDivisor,
-                            bVersion % s_kcVersionDivisor);
+                            bVersion % s_kcVersionDivisor,
+                            HostName (static_cast<BYTE> (wCreator >> s_kcHostShift)));
     }
 
     if (zip.m_fUtf8Paths)
@@ -669,7 +671,8 @@ wstring CArchiveDetailLines::MethodName (WORD wMethod)
 //
 //  CArchiveDetailLines::HostName
 //
-//  "Version made by" host systems from APPNOTE.TXT 4.4.2.
+//  "Version made by" host systems from APPNOTE.TXT 4.4.2.  Windows tools write
+//  host 0 (FAT), 10 (NTFS) or 14 (VFAT), so those codes display as Windows.
 //
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -677,8 +680,8 @@ wstring CArchiveDetailLines::HostName (BYTE bHost)
 {
     static constexpr LPCWSTR s_krgHosts[] =
     {
-        L"MS-DOS", L"Amiga", L"OpenVMS", L"Unix", L"VM/CMS", L"Atari ST", L"OS/2 HPFS", L"Macintosh",
-        L"Z-System", L"CP/M", L"NTFS", L"MVS", L"VSE", L"Acorn RISC", L"VFAT", L"MVS",
+        L"Windows (FAT)", L"Amiga", L"OpenVMS", L"Unix", L"VM/CMS", L"Atari ST", L"OS/2 HPFS", L"Macintosh",
+        L"Z-System", L"CP/M", L"Windows (NTFS)", L"MVS", L"VSE", L"Acorn RISC", L"Windows (VFAT)", L"MVS",
         L"BeOS", L"Tandem", L"OS/400", L"macOS",
     };
 
