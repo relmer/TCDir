@@ -27,6 +27,7 @@ All notable changes to TCDir are documented in this file.
 - `scripts\New-Screenshots.ps1` regenerates the README screenshots from a staged demo folder
 
 ### Fixed
+- Help descriptions longer than the console width wrap to the description column instead of the left edge, and every description starts at the same column
 - `Tree` and `Ellipsize` are added to the switch help in `--Env` and `--Config`, and to the decoded `TCDIR` settings in `--Env` when they appear in `TCDIR`
 
 ## [5.6.1] - 2026-07-28
