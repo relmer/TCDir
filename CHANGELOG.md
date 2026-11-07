@@ -14,7 +14,6 @@ All notable changes to TCDir are documented in this file.
   - `-S` and `--Tree` recurse into archives with the same rules as subdirectories
   - Settable as a default with `Archives` in `TCDIR` or `.tcdirconfig`
   - Read-only: archives are never modified or extracted to disk, and `.iso` images are never mounted
-- The date and time columns are blank for entries with no stored time (possible inside archives)
 - `--Info`: print statistics for each archive that matches the targets instead of a listing
   - Targets can be an archive, a mask, a folder, or a path inside other archives (`outer.zip\inner.7z`)
   - With `-S`, archives in subfolders and inside other archives are reported at any depth
@@ -23,6 +22,7 @@ All notable changes to TCDir are documented in this file.
   - Disc image blocks add file systems, the volume label and IDs, volume dates, sectors and El Torito boot platforms
   - Blocks for the other formats add the format and filters, stream totals, links, owners, groups and permissions
 - `--Verify`: with `--Info`, read every entry and check the checksums the archive stores; damaged entries fail the run
+- The date and time columns are blank for entries with no stored time (possible inside archives)
 
 ### Fixed
 - `Tree` and `Ellipsize` are added to the switch help in `--Env` and `--Config`, and to the decoded `TCDIR` settings in `--Env` when they appear in `TCDIR`
