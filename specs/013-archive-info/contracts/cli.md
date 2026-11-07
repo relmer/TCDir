@@ -40,7 +40,7 @@ are ignored under `--Info`.
 ```text
  C:\TestData\Archives\zip\level1.zip
 
-   Format         ZIP 2.0, created on Windows (NTFS), UTF-8 paths
+   Format         ZIP 2.0, Windows file attributes, UTF-8 paths
    Size on disk   3,104 bytes
    Contents       9 files, 4 folders, 1 nested archive
    Uncompressed   4,289 bytes (72%)

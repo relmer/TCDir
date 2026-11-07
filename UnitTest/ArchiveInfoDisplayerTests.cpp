@@ -355,7 +355,7 @@ namespace UnitTest
             zip.m_mapCreators[static_cast<WORD> ((3 << 8) | 63)]  = 1;
             zip.m_fUtf8Paths                                      = true;
 
-            Assert::AreEqual (L"ZIP 2.0, created on Windows (NTFS), UTF-8 paths", ValueOf (ZipLines (zip), L"Format").c_str());
+            Assert::AreEqual (L"ZIP 2.0, Windows file attributes, UTF-8 paths", ValueOf (ZipLines (zip), L"Format").c_str());
         }
 
 
