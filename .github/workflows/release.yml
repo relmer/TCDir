@@ -251,7 +251,33 @@ jobs:
           $version = "${{ steps.tag.outputs.version }}"
           $baseUrl = "https://github.com/relmer/TCDir/releases/download/$tag"
 
+          $outDir = Join-Path $env:RUNNER_TEMP 'winget'
+
           wingetcreate update relmer.TCDir `
             --version $version `
             --urls "$baseUrl/TCDir.exe" "$baseUrl/TCDir-ARM64.exe" `
-            --submit
+            --out $outDir
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+          # winget-pkgs accepts only schema 1.28.0 or newer, and the latest
+          # wingetcreate release (1.12.13) writes 1.12.0. Raise any older
+          # schema version to 1.28.0.
+          $minSchema = [version] '1.28.0'
+          $manifests = Get-ChildItem $outDir -Recurse -Filter *.yaml
+
+          foreach ($file in $manifests)
+          {
+              $text = Get-Content $file.FullName -Raw
+
+              if ($text -match 'ManifestVersion:\s*(\d+\.\d+\.\d+)' -and [version] $Matches[1] -lt $minSchema)
+              {
+                  $old  = [regex]::Escape($Matches[1])
+                  $text = $text -replace "ManifestVersion:\s*$old", "ManifestVersion: $minSchema"
+                  $text = $text -replace "\.$old\.schema\.json", ".$minSchema.schema.json"
+                  Set-Content $file.FullName $text -NoNewline
+              }
+          }
+
+          wingetcreate submit `
+            --prtitle "New version: relmer.TCDir version $version" `
+            $manifests[0].DirectoryName
