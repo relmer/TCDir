@@ -119,8 +119,9 @@ Both PowerShell 7+ (`pwsh`) and Windows PowerShell 5.1 (`powershell`) are suppor
 Run this from PowerShell to add tab completion for `tcdir` and your aliases to your profile:
 
 ```powershell
-tcdir --Enable-Completion     # add or update the completion block
-tcdir --Disable-Completion    # remove it; aliases stay
+tcdir --Enable-Completion           # add or update the completion block
+tcdir --Enable-Completion --whatif  # preview the block without writing
+tcdir --Disable-Completion          # remove it; aliases stay
 ```
 
 `--set-aliases` offers to enable completion as its last step, and regenerates the completion block when the aliases change. Completion works without aliases too.
@@ -197,7 +198,7 @@ Common switches:
 - `--Enable-Completion` / `--Disable-Completion`: add or remove PowerShell tab completion for tcdir and its aliases
 - `--get-aliases`: display all configured tcdir aliases and their source profiles
 - `--remove-aliases`: interactive removal of tcdir aliases from profile files
-- `--whatif`: dry-run modifier for `--set-aliases` or `--remove-aliases` (preview only, no file changes)
+- `--whatif`: dry-run modifier for `--set-aliases`, `--remove-aliases`, `--Enable-Completion` or `--Disable-Completion` (preview only, no file changes)
 - `--install-nerdfonts`: download and install CaskaydiaCove Nerd Font system-wide, then optionally configure terminal profiles
 - `--uninstall-nerdfonts`: remove Nerd Font terminal configuration and optionally remove the installed font files
 
