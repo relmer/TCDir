@@ -1,6 +1,8 @@
 #include "pch.h"
 #include "AliasManager.h"
 
+#include "CompletionManager.h"
+#include "CompletionScript.h"
 #include "TuiWidgets.h"
 #include "Version.h"
 
@@ -359,9 +361,10 @@ void CAliasManager::BuildProfileLabels (
 
 HRESULT CAliasManager::WriteAliasBlockToFile (
     CConsole              & console,
-    const wstring         & strTargetPath,
+    const SAliasConfig    & config,
     const vector<wstring> & rgBlockLines)
 {
+    const wstring & strTargetPath = config.strTargetPath;
     HRESULT             hr          = S_OK;
     CProfileFileManager fileMgr;
     vector<wstring>     rgFileLines;
@@ -399,6 +402,11 @@ HRESULT CAliasManager::WriteAliasBlockToFile (
     {
         fileMgr.AppendAliasBlock (rgFileLines, rgBlockLines);
     }
+
+    CCompletionManager::UpdateLines (rgFileLines,
+                                     config.fEnableCompletion ? ECompletionUpdate::Add : ECompletionUpdate::Refresh,
+                                     config.strTcDirInvocation,
+                                     VERSION_WSTRING);
 
     hr = fileMgr.WriteProfileFile (strTargetPath, rgFileLines, fHasBom);
     CHR (hr);
@@ -517,7 +525,7 @@ HRESULT CAliasManager::ApplyAliasBlock (
     }
     else
     {
-        hr = WriteAliasBlockToFile (console, config.strTargetPath, rgBlockLines);
+        hr = WriteAliasBlockToFile (console, config, rgBlockLines);
         CHR (hr);
     }
 
@@ -608,13 +616,20 @@ HRESULT CAliasManager::ConfirmAndApply (
     CConsole              & console,
     CTuiWidgets           & tui,
     SAliasConfig          & config,
-    const vector<wstring> & rgBlockLines)
+    const vector<wstring> & rgBlockLines,
+    const vector<wstring> & rgCompletionLines)
 {
     HRESULT         hr        = S_OK;
-    vector<wstring> rgPreview;
+    vector<wstring> rgPreview = rgBlockLines;
     ETuiResult      tuiResult = ETuiResult::Cancelled;
 
 
+
+    if (!rgCompletionLines.empty())
+    {
+        rgPreview.push_back (L"");
+        rgPreview.insert (rgPreview.end(), rgCompletionLines.begin(), rgCompletionLines.end());
+    }
 
     //
     // In Whatif mode, skip confirmation — print preview and exit
@@ -623,7 +638,7 @@ HRESULT CAliasManager::ConfirmAndApply (
     if (config.fWhatIf)
     {
         tui.Cleanup();
-        PrintWhatIfPreview (console, config, rgBlockLines);
+        PrintWhatIfPreview (console, config, rgPreview);
         BAIL_OUT_IF (true, S_OK);
     }
 
@@ -650,13 +665,8 @@ HRESULT CAliasManager::ConfirmAndApply (
     }
 
     //
-    // Build preview and confirm
+    // Confirm with the alias block and any completion block
     //
-
-    for (const auto & line : rgBlockLines)
-    {
-        rgPreview.push_back (line);
-    }
 
     tuiResult = tui.PromptConfirmation (L"Apply these changes?", rgPreview);
 
@@ -826,6 +836,89 @@ ETuiResult CAliasManager::PromptProfileLocation (
 
 ////////////////////////////////////////////////////////////////////////////////
 //
+//  CAliasManager::PromptCompletion
+//
+//  Offers tab completion as the last wizard step when the target profile
+//  doesn't have a completion block yet.  A profile that has one gets it
+//  regenerated, and session-only output has no profile to write it to.
+//
+////////////////////////////////////////////////////////////////////////////////
+
+ETuiResult CAliasManager::PromptCompletion (CTuiWidgets & tui, SAliasConfig & config, bool & fHasCompletion)
+{
+    static const vector<wstring> s_krgChoices = { L"Yes", L"No" };
+
+    CProfileFileManager   fileMgr;
+    vector<wstring>       rgLines;
+    bool                  fHasBom   = false;
+    int                   iSelected = 0;
+    ETuiResult            result    = ETuiResult::Confirmed;
+    error_code            ec;
+
+
+
+    fHasCompletion = false;
+
+    if (config.fSessionOnly)
+    {
+        return result;
+    }
+
+    if (filesystem::exists (config.strTargetPath, ec) && SUCCEEDED (fileMgr.ReadProfileFile (config.strTargetPath, rgLines, fHasBom)))
+    {
+        fHasCompletion = CCompletionManager::HasCompletionBlock (rgLines);
+    }
+
+    if (!fHasCompletion)
+    {
+        result = tui.PromptRadioButtonList (L"Enable PowerShell tab completion for tcdir and these aliases?", s_krgChoices, iSelected);
+        config.fEnableCompletion = (iSelected == 0);
+    }
+
+    return result;
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CAliasManager::BuildCompletionPreview
+//
+//  The completion block that the wizard writes or regenerates, built from
+//  the wizard's aliases, for the confirmation preview.
+//
+////////////////////////////////////////////////////////////////////////////////
+
+void CAliasManager::BuildCompletionPreview (const SAliasConfig & config, vector<wstring> & rgLines)
+{
+    vector<SCompletionCommand> commands =
+    {
+        { L"tcdir",            L"" },
+        { L"tcdir.exe",        L"" },
+        { config.strRootAlias, L"" },
+    };
+
+
+
+    for (const SAliasDefinition & sub : config.rgSubAliases)
+    {
+        if (sub.fEnabled)
+        {
+            commands.push_back ({ sub.strName, sub.strFlags });
+        }
+    }
+
+    CCompletionScript::GenerateBlock (VERSION_WSTRING, config.strTcDirInvocation, commands, rgLines);
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
 //  CAliasManager::SetAliases
 //
 //  Interactive wizard for setting up aliases.
@@ -843,7 +936,9 @@ HRESULT CAliasManager::SetAliases (CConsole & console, bool fWhatIf)
     int                      iSelected     = 0;
     SAliasConfig             config;
     vector<wstring>          rgBlockLines;
+    vector<wstring>          rgCompletionLines;
     ETuiResult               tuiResult     = ETuiResult::Cancelled;
+    bool                     fHasCompletion = false;
 
 
 
@@ -869,9 +964,17 @@ HRESULT CAliasManager::SetAliases (CConsole & console, bool fWhatIf)
     hr = ResolveTcDirInvocation (config.strTcDirInvocation);
     CHR (hr);
 
+    tuiResult = PromptCompletion (tui, config, fHasCompletion);
+    BAIL_OUT_IF (tuiResult != ETuiResult::Confirmed, S_OK);
+
     CAliasBlockGenerator::Generate (config, wstring (VERSION_WSTRING), rgBlockLines);
 
-    hr = ConfirmAndApply (console, tui, config, rgBlockLines);
+    if (config.fEnableCompletion || fHasCompletion)
+    {
+        BuildCompletionPreview (config, rgCompletionLines);
+    }
+
+    hr = ConfirmAndApply (console, tui, config, rgBlockLines, rgCompletionLines);
     CHR (hr);
 
 Error:
@@ -943,6 +1046,11 @@ bool CAliasManager::DisplayProfileAliases (
     {
         console.Printf (CConfig::Information, L"    %s\n", funcLine.c_str());
     }
+
+    console.Printf (CConfig::Information, L"\n");
+    console.Printf (CConfig::Information,
+                    CCompletionManager::HasCompletionBlock (rgLines) ? L"  Tab completion: enabled\n"
+                                                                     : L"  Tab completion: not enabled (run --enable-completion to add it)\n");
 
     //
     // Trailing blank line after the function list.
@@ -1034,6 +1142,7 @@ HRESULT CAliasManager::RemoveAliasBlockFromFile (
     vector<wstring>     rgFileLines;
     bool                fHasBom     = false;
     SAliasBlock         block;
+    wstring             strInvocation;
 
 
 
@@ -1048,6 +1157,18 @@ HRESULT CAliasManager::RemoveAliasBlockFromFile (
     if (block.fFound)
     {
         fileMgr.RemoveAliasBlock (rgFileLines, block);
+
+        //
+        // A completion block stays, now registering only tcdir
+        //
+
+        if (CCompletionManager::HasCompletionBlock (rgFileLines))
+        {
+            hr = ResolveTcDirInvocation (strInvocation);
+            CHR (hr);
+
+            CCompletionManager::UpdateLines (rgFileLines, ECompletionUpdate::Refresh, strInvocation, VERSION_WSTRING);
+        }
 
         hr = fileMgr.WriteProfileFile (strPath, rgFileLines, fHasBom);
         CHR (hr);

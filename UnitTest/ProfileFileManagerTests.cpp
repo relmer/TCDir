@@ -3,6 +3,7 @@
 #include "../TCDirCore/ProfileFileManager.h"
 #include "../TCDirCore/AliasBlockGenerator.h"
 #include "../TCDirCore/AliasManager.h"
+#include "../TCDirCore/CompletionScript.h"
 
 
 
@@ -436,6 +437,59 @@ namespace UnitTest
             hr = fileMgr.WriteProfileFile (L"C:\\test\\profile.ps1", rgLines, false);
 
             Assert::IsTrue (FAILED (hr));
+        }
+
+
+
+
+        TEST_METHOD(FindCompletionBlock_SeparateFromAliasBlock)
+        {
+            SAliasConfig        config;
+            vector<wstring>     rgLines;
+            vector<wstring>     rgCompletion;
+            CProfileFileManager fileMgr;
+            SAliasBlock         aliases;
+            SAliasBlock         completion;
+
+
+
+            config.strRootAlias       = L"d";
+            config.strTcDirInvocation = L"tcdir";
+            config.rgSubAliases       = { { L"dw", L"-w", L"wide", true } };
+
+            CAliasBlockGenerator::Generate (config, L"5.2.1150", rgLines);
+            CCompletionScript::GenerateBlock (L"5.2.1150", L"tcdir", { { L"tcdir", L"" } }, rgCompletion);
+            fileMgr.AppendAliasBlock (rgLines, rgCompletion);
+
+            Assert::IsTrue   (SUCCEEDED (fileMgr.FindAliasBlock (rgLines, aliases)));
+            Assert::IsTrue   (SUCCEEDED (fileMgr.FindCompletionBlock (rgLines, completion)));
+            Assert::IsTrue   (aliases.fFound);
+            Assert::IsTrue   (completion.fFound);
+            Assert::AreEqual (size_t (2), aliases.rgAliasNames.size());
+            Assert::IsTrue   (completion.iStartLine > aliases.iEndLine);
+            Assert::AreEqual (rgLines.size() - 1, completion.iEndLine);
+            Assert::AreEqual (L"5.2.1150", completion.strVersion.c_str());
+        }
+
+
+
+
+        TEST_METHOD(FindCompletionBlock_AliasBlockOnly_NotFound)
+        {
+            SAliasConfig        config;
+            vector<wstring>     rgLines;
+            CProfileFileManager fileMgr;
+            SAliasBlock         completion;
+
+
+
+            config.strRootAlias       = L"d";
+            config.strTcDirInvocation = L"tcdir";
+
+            CAliasBlockGenerator::Generate (config, L"5.2.1150", rgLines);
+
+            Assert::IsTrue  (SUCCEEDED (fileMgr.FindCompletionBlock (rgLines, completion)));
+            Assert::IsFalse (completion.fFound);
         }
     };
 }

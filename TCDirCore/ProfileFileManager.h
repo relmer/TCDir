@@ -46,6 +46,7 @@ public:
 
     HRESULT ReadProfileFile     (const wstring & strPath, vector<wstring> & rgLines, bool & fHasBom);
     HRESULT FindAliasBlock      (const vector<wstring> & rgLines, SAliasBlock & block);
+    HRESULT FindCompletionBlock (const vector<wstring> & rgLines, SAliasBlock & block);
     HRESULT WriteProfileFile    (const wstring & strPath, const vector<wstring> & rgLines, bool fPreserveBom);
     HRESULT CreateBackup        (const wstring & strPath);
     void    ReplaceAliasBlock   (vector<wstring> & rgLines, const SAliasBlock & block, const vector<wstring> & rgNewBlock);
@@ -55,6 +56,9 @@ public:
 private:
     HRESULT ParseProfileBytes   (const string & strRaw, vector<wstring> & rgLines, bool & fHasBom);
     void    SplitIntoLines      (const wstring & strWide, vector<wstring> & rgLines);
+
+    static void FindMarkedBlock     (const vector<wstring> & rgLines, LPCWSTR pszHeaderMarker, LPCWSTR pszFooterMarker, SAliasBlock & block);
+    static void ParseAliasFunctions (const vector<wstring> & rgLines, SAliasBlock & block);
 
     IProfileFileAccess & m_fileAccess;
 };

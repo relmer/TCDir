@@ -24,9 +24,15 @@ All notable changes to TCDir are documented in this file.
 - `--Verify`: with `--Info`, read every entry and check the checksums the archive stores; damaged entries fail the run
 - The date and time columns are blank for entries with no stored time (possible inside archives)
 - Redirected output wraps at the width in the `COLUMNS` environment variable when it is set (20 to 1000), and at 80 columns otherwise
-- `scripts\New-Screenshots.ps1` regenerates the README screenshots from a staged demo folder
+- PowerShell tab completion for switches and switch values, in PowerShell 7 and Windows PowerShell 5.1
+  - `--Enable-Completion` adds a completion block to the profile for `tcdir` and every alias; `--Disable-Completion` removes it
+  - `--set-aliases` offers to enable completion and regenerates the block when the aliases change; `--get-aliases` reports whether it is enabled
+  - `--whatif` with either switch prints the change without writing the profile
+  - Each Tab press runs the installed tcdir to get candidates (`tcdir --Complete`), so new switches complete without a new setup step
+  - Switches already on the command line, and switches that conflict with it, aren't offered
 
 ### Fixed
+- `-settings` now prints the "Did you mean --settings?" hint
 - Help descriptions longer than the console width wrap to the description column instead of the left edge, and every description starts at the same column
 - `Tree` and `Ellipsize` are added to the switch help in `--Env` and `--Config`, and to the decoded `TCDIR` settings in `--Env` when they appear in `TCDIR`
 

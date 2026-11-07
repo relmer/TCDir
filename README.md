@@ -27,7 +27,7 @@ Settings can be persisted in a config file (`~\.tcdirconfig`), overridden via th
 
 | Version | Highlights |
 | :---: | :--- |
-| **5.7** | Browse archives as folders (`--Archives`: `.zip`, `.iso`, `.7z`, `.rar`, `.tar.*`, ...) and print archive statistics with checksum verification (`--Info`, `--Verify`) |
+| **5.7** | Browse archives as folders (`--Archives`: `.zip`, `.iso`, `.7z`, `.rar`, `.tar.*`, ...) and print archive statistics with checksum verification (`--Info`, `--Verify`). PowerShell tab completion for switches and values (`--Enable-Completion`) |
 | **5.6** | Install/uninstall Nerd Fonts system-wide (`--install-nerdfonts`, `--uninstall-nerdfonts`) with Windows Terminal profile configuration |
 | **5.5** | Variable-width columns in wide mode (`/W`) — GNU ls-style per-column fitting; outlier truncation with `…` |
 | **5.4** | Symlink, junction, and AppExecLink target display (`→ target`); ellipsize long target paths (`…`) |
@@ -63,6 +63,7 @@ Hat tip to [Chris Kirmse](https://github.com/ckirmse) whose excellent [ZDir](htt
 | Browse inside archives (`.zip`, `.iso`, `.7z`, `.rar`, `.tar.*`, ...) | — | ✅ | — | — |
 | Archive statistics and checksum verification | — | ✅ | — | — |
 | Interactive PowerShell alias setup | — | ✅ | — | — |
+| PowerShell tab completion | — | ✅ | ✅ | ✅ |
 | Nerd Font installer | — | ✅ | — | — |
 
 ⚠️ eza and lsd read colors (`LS_COLORS`, `EZA_COLORS`) and, for eza, a few display settings from environment variables; TCDir reads switches and colors from `TCDIR`.
@@ -111,6 +112,21 @@ tcdir --set-aliases --whatif  # preview without writing
 ```
 
 Both PowerShell 7+ (`pwsh`) and Windows PowerShell 5.1 (`powershell`) are supported — the wizard auto-detects which version launched it.
+
+
+### Tab completion
+
+Run this from PowerShell to add tab completion for `tcdir` and your aliases to your profile:
+
+```powershell
+tcdir --Enable-Completion           # add or update the completion block
+tcdir --Enable-Completion --whatif  # preview the block without writing
+tcdir --Disable-Completion          # remove it; aliases stay
+```
+
+`--set-aliases` offers to enable completion as its last step, and regenerates the completion block when the aliases change. Completion works without aliases too.
+
+Press Tab after `tcdir --Tr` for `--Tree`, or Ctrl+Space after `tcdir --` for every switch with its description. Values complete too: `-O:`, `-A:`, `-T:`, `--Size=` and `--TreeIndent=`. Switches that are already on the command line, or that conflict with it, aren't offered, and words that aren't switches complete as paths. Candidates come from the installed tcdir each time Tab is pressed, so a newer tcdir offers its new switches without a new setup step. Windows PowerShell 5.1 doesn't pass words that start with a single `-` to completers, so in 5.1 use `/` (`/W`, `/Tree`) or `--` (`--Tree`).
 
 ## Requirements
 
@@ -179,9 +195,10 @@ Common switches:
 - `--TreeIndent=N`: tree indent width per level, 1–8, default 4 (requires `--Tree`)
 - `--Size=Auto|Bytes`: `Auto` shows abbreviated sizes (e.g., `8.90 KB`); `Bytes` shows exact comma-separated sizes. Tree mode defaults to `Auto`, non-tree defaults to `Bytes`
 - `--set-aliases`: interactive wizard to configure PowerShell aliases for tcdir
+- `--Enable-Completion` / `--Disable-Completion`: add or remove PowerShell tab completion for tcdir and its aliases
 - `--get-aliases`: display all configured tcdir aliases and their source profiles
 - `--remove-aliases`: interactive removal of tcdir aliases from profile files
-- `--whatif`: dry-run modifier for `--set-aliases` or `--remove-aliases` (preview only, no file changes)
+- `--whatif`: dry-run modifier for `--set-aliases`, `--remove-aliases`, `--Enable-Completion` or `--Disable-Completion` (preview only, no file changes)
 - `--install-nerdfonts`: download and install CaskaydiaCove Nerd Font system-wide, then optionally configure terminal profiles
 - `--uninstall-nerdfonts`: remove Nerd Font terminal configuration and optionally remove the installed font files
 

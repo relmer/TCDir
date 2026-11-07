@@ -97,6 +97,8 @@ public:
     bool               m_fWhatIf                                           = false;    // --whatif switch
     bool               m_fInstallNerdFonts                                 = false;    // --Install-NerdFonts switch
     bool               m_fUninstallNerdFonts                               = false;    // --Uninstall-NerdFonts switch
+    bool               m_fEnableCompletion                                 = false;    // --Enable-Completion switch
+    bool               m_fDisableCompletion                                = false;    // --Disable-Completion switch
 
 
     //
@@ -105,6 +107,8 @@ public:
     
     void    ApplyConfigDefaults (const class CConfig & config);
     wchar_t GetSwitchPrefix     (void) const { return m_chSwitchPrefix; }
+
+    static bool IsRecognizedLongSwitch (const wstring & strSwitch);
 
 
 protected: 
@@ -121,7 +125,6 @@ protected:
     
     HRESULT HandleSwitch                  (LPCWSTR pszArg, int & cArg, WCHAR ** & ppszArg);
     HRESULT HandleLongSwitch              (LPCWSTR pszArg, int & cArg, WCHAR ** & ppszArg);
-    static bool IsRecognizedLongSwitch    (const wstring & strSwitch);
     static bool IsListingSwitch           (LPCWSTR pszSwitchArg);
 
     static constexpr size_t s_kcchMinLongSwitch   = 3;    // Shortest long switch name

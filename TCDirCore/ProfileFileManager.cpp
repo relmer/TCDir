@@ -1,6 +1,8 @@
 #include "pch.h"
 #include "ProfileFileManager.h"
 
+#include "CompletionScript.h"
+
 
 
 
@@ -205,27 +207,67 @@ void CProfileFileManager::SplitIntoLines (const wstring & strWide, vector<wstrin
 //
 //  CProfileFileManager::FindAliasBlock
 //
-//  Scans lines for the opening/closing marker comments.
-//  Sets block.fFound = true if a complete block is detected.
+//  Finds the alias block and the alias functions in it.
 //
 ////////////////////////////////////////////////////////////////////////////////
 
 HRESULT CProfileFileManager::FindAliasBlock (const vector<wstring> & rgLines, SAliasBlock & block)
 {
-    HRESULT hr = S_OK;
+    FindMarkedBlock (rgLines, k_pszHeaderMarker, k_pszFooterMarker, block);
+    ParseAliasFunctions (rgLines, block);
+
+    return S_OK;
+}
 
 
 
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CProfileFileManager::FindCompletionBlock
+//
+//  Finds the tab completion block, which tcdir writes separately from the
+//  alias block.
+//
+////////////////////////////////////////////////////////////////////////////////
+
+HRESULT CProfileFileManager::FindCompletionBlock (const vector<wstring> & rgLines, SAliasBlock & block)
+{
+    FindMarkedBlock (rgLines, CCompletionScript::s_kpszHeaderMarker, CCompletionScript::s_kpszFooterMarker, block);
+
+    return S_OK;
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CProfileFileManager::FindMarkedBlock
+//
+//  Scans lines for the opening/closing marker comments.
+//  Sets block.fFound = true if a complete block is detected.
+//
+////////////////////////////////////////////////////////////////////////////////
+
+void CProfileFileManager::FindMarkedBlock (
+    const vector<wstring> & rgLines,
+    LPCWSTR                 pszHeaderMarker,
+    LPCWSTR                 pszFooterMarker,
+    SAliasBlock           & block)
+{
     block = {};
     block.fFound = false;
 
     //
-    // Find opening marker: line containing "#  TCDir Aliases"
+    // Find opening marker
     //
 
     for (size_t i = 0; i < rgLines.size(); ++i)
     {
-        if (rgLines[i].find (k_pszHeaderMarker) != wstring::npos)
+        if (rgLines[i].find (pszHeaderMarker) != wstring::npos)
         {
             block.iStartLine = i;
 
@@ -273,12 +315,12 @@ HRESULT CProfileFileManager::FindAliasBlock (const vector<wstring> & rgLines, SA
             }
 
             //
-            // Find closing marker: line containing "#  End TCDir Aliases"
+            // Find closing marker
             //
 
             for (size_t j = i + 1; j < rgLines.size(); ++j)
             {
-                if (rgLines[j].find (k_pszFooterMarker) != wstring::npos)
+                if (rgLines[j].find (pszFooterMarker) != wstring::npos)
                 {
                     block.iEndLine = j;
 
@@ -299,11 +341,22 @@ HRESULT CProfileFileManager::FindAliasBlock (const vector<wstring> & rgLines, SA
             break;
         }
     }
+}
 
-    //
-    // If found, parse function names from the block
-    //
 
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CProfileFileManager::ParseAliasFunctions
+//
+//  Collects the function lines and alias identifiers of a found alias block.
+//
+////////////////////////////////////////////////////////////////////////////////
+
+void CProfileFileManager::ParseAliasFunctions (const vector<wstring> & rgLines, SAliasBlock & block)
+{
     if (block.fFound)
     {
         for (size_t k = block.iStartLine; k <= block.iEndLine; ++k)
@@ -330,8 +383,6 @@ HRESULT CProfileFileManager::FindAliasBlock (const vector<wstring> & rgLines, SA
             }
         }
     }
-
-    return hr;
 }
 
 

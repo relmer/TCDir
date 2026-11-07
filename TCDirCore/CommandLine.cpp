@@ -409,6 +409,8 @@ HRESULT CCommandLine::ValidateAliasCombinations (void)
         &CCommandLine::m_fSetAliases,
         &CCommandLine::m_fGetAliases,
         &CCommandLine::m_fRemoveAliases,
+        &CCommandLine::m_fEnableCompletion,
+        &CCommandLine::m_fDisableCompletion,
     };
 
     static constexpr bool CCommandLine::* s_krgListingSwitches[] =
@@ -435,15 +437,15 @@ HRESULT CCommandLine::ValidateAliasCombinations (void)
     }
 
     CBRFEx (cAliasFlags <= 1, E_INVALIDARG,
-            m_strValidationError = L"--set-aliases, --get-aliases, and --remove-aliases are mutually exclusive.");
+            m_strValidationError = L"--set-aliases, --get-aliases, --remove-aliases, --enable-completion and --disable-completion are mutually exclusive.");
 
     fAliasWithListing = (cAliasFlags > 0) && AnyMemberFlagSet (s_krgListingSwitches);
 
     CBRFEx (!fAliasWithListing, E_INVALIDARG,
             m_strValidationError = L"Alias switches cannot be combined with listing switches.");
 
-    CBRFEx (!m_fWhatIf || m_fSetAliases || m_fRemoveAliases, E_INVALIDARG,
-            m_strValidationError = L"--whatif is only valid with --set-aliases or --remove-aliases.");
+    CBRFEx (!m_fWhatIf || m_fSetAliases || m_fRemoveAliases || m_fEnableCompletion || m_fDisableCompletion, E_INVALIDARG,
+            m_strValidationError = L"--whatif is only valid with --set-aliases, --remove-aliases, --enable-completion or --disable-completion.");
 
 Error:
     return hr;
@@ -481,6 +483,8 @@ HRESULT CCommandLine::ValidateNerdFontCombinations (void)
         &CCommandLine::m_fSetAliases,
         &CCommandLine::m_fGetAliases,
         &CCommandLine::m_fRemoveAliases,
+        &CCommandLine::m_fEnableCompletion,
+        &CCommandLine::m_fDisableCompletion,
     };
 
 
@@ -728,6 +732,8 @@ HRESULT CCommandLine::HandleLongSwitch (LPCWSTR pszArg, int & cArg, WCHAR ** & p
         {  L"whatif",               &CCommandLine::m_fWhatIf             },
         {  L"info",                 &CCommandLine::m_fInfo               },
         {  L"verify",               &CCommandLine::m_fVerify             },
+        {  L"enable-completion",    &CCommandLine::m_fEnableCompletion   },
+        {  L"disable-completion",   &CCommandLine::m_fDisableCompletion  },
         {  L"install-nerdfonts",    &CCommandLine::m_fInstallNerdFonts   },
         {  L"install-nerd-fonts",   &CCommandLine::m_fInstallNerdFonts   },
         {  L"uninstall-nerdfonts",  &CCommandLine::m_fUninstallNerdFonts },
@@ -933,6 +939,7 @@ bool CCommandLine::IsRecognizedLongSwitch (const wstring & strSwitch)
     {
         L"env",
         L"config",
+        L"settings",
         L"owner",
         L"streams",
         L"debug",
@@ -949,6 +956,8 @@ bool CCommandLine::IsRecognizedLongSwitch (const wstring & strSwitch)
         L"whatif",
         L"info",
         L"verify",
+        L"enable-completion",
+        L"disable-completion",
         L"install-nerdfonts",
         L"install-nerd-fonts",
         L"uninstall-nerdfonts",

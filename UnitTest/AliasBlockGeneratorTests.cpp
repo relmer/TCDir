@@ -284,6 +284,7 @@ namespace UnitTest
 
 
 
+
         TEST_METHOD(Generate_DashColonFlags_SingleQuoted)
         {
             SAliasConfig config;

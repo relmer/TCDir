@@ -204,6 +204,10 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="CompletionManager.h" />
+    <ClInclude Include="CompletionScript.h" />
+    <ClInclude Include="Completer.h" />
+    <ClInclude Include="SwitchCatalog.h" />
     <ClInclude Include="IsoDetails.h" />
     <ClInclude Include="ArchiveDetailLines.h" />
     <ClInclude Include="ArchiveInfoFinder.h" />
@@ -278,6 +282,10 @@
     <ClInclude Include="WorkQueue.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="CompletionManager.cpp" />
+    <ClCompile Include="CompletionScript.cpp" />
+    <ClCompile Include="Completer.cpp" />
+    <ClCompile Include="SwitchCatalog.cpp" />
     <ClCompile Include="IsoDetails.cpp" />
     <ClCompile Include="ArchiveDetailLines.cpp" />
     <ClCompile Include="ArchiveInfoFinder.cpp" />

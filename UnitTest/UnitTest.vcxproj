@@ -252,6 +252,10 @@
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="CompletionManagerTests.cpp" />
+    <ClCompile Include="CompletionScriptTests.cpp" />
+    <ClCompile Include="CompleterTests.cpp" />
+    <ClCompile Include="SwitchCatalogTests.cpp" />
     <ClCompile Include="IsoDetailsTests.cpp" />
     <ClCompile Include="ArchiveInfoFinderTests.cpp" />
     <ClCompile Include="ArchiveInfoDisplayerTests.cpp" />

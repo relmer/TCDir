@@ -7,6 +7,8 @@
 #include "ArchiveFileSystem.h"
 #include "ArchiveInfo.h"
 #include "CommandLine.h"
+#include "Completer.h"
+#include "CompletionManager.h"
 #include "Config.h"
 #include "Console.h"
 #include "DirectoryLister.h"
@@ -101,6 +103,13 @@ static HRESULT ProcessCommandLine (
     if (cmdline.m_fSetAliases || cmdline.m_fGetAliases || cmdline.m_fRemoveAliases)
     {
         hr = CAliasManager::Run (cmdline, console);
+        CHR (hr);
+        BAIL_OUT_IF (true, S_FALSE);
+    }
+
+    if (cmdline.m_fEnableCompletion || cmdline.m_fDisableCompletion)
+    {
+        hr = CCompletionManager::Run (cmdline, console);
         CHR (hr);
         BAIL_OUT_IF (true, S_FALSE);
     }
@@ -228,15 +237,15 @@ static void RunDirectoryListing (
 
 ////////////////////////////////////////////////////////////////////////////////
 //
-//  wmain
+//  RunTcDir
 //
-//  
+//  Runs a listing or one of the informational modes.
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-int wmain (int argc, WCHAR * argv[])
+static int RunTcDir (int argc, WCHAR * argv[])
 {
-    HRESULT                  hr           = S_OK;      
+    HRESULT                  hr           = S_OK;
     shared_ptr<CCommandLine> cmdlinePtr   = make_shared<CCommandLine>();
     unique_ptr<PerfTimer>    perfTimerPtr;
     shared_ptr<CConfig>      configPtr    = make_shared<CConfig>();
@@ -317,4 +326,22 @@ int wmain (int argc, WCHAR * argv[])
 Error:      
 
     return FAILED (hr) ? 1 : 0;
+}
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  wmain
+//
+//  A PowerShell completion request prints candidates only.  It runs before
+//  any console or configuration object exists, so it doesn't read TCDIR or
+//  the config file.
+//
+////////////////////////////////////////////////////////////////////////////////
+
+int wmain (int argc, WCHAR * argv[])
+{
+    return CCompleter::IsCompleteRequest (argc, argv) ? CCompleter::Run (argc, argv) : RunTcDir (argc, argv);
 }

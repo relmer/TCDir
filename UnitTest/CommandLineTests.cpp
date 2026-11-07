@@ -2118,5 +2118,52 @@ namespace UnitTest
             Assert::IsTrue (cl.m_fBareListing);
         }
 
+
+
+
+
+        //
+        //  --Enable-Completion and --Disable-Completion
+        //
+
+        TEST_METHOD(ParseCompletionSwitches)
+        {
+            CCommandLine enable;
+            CCommandLine disable;
+            CCommandLine whatif;
+
+
+
+            Assert::IsTrue (SUCCEEDED (ParseArgs (enable,  { L"--Enable-Completion" })));
+            Assert::IsTrue (SUCCEEDED (ParseArgs (disable, { L"/disable-completion" })));
+            Assert::IsTrue (SUCCEEDED (ParseArgs (whatif,  { L"--Enable-Completion", L"--whatif" })));
+            Assert::IsTrue (enable.m_fEnableCompletion);
+            Assert::IsTrue (disable.m_fDisableCompletion);
+            Assert::IsTrue (whatif.m_fWhatIf);
+        }
+
+
+
+
+
+        TEST_METHOD(ParseCompletionSwitches_Conflicts)
+        {
+            static const vector<vector<LPCWSTR>> s_krgConflicts =
+            {
+                { L"--Enable-Completion", L"--Disable-Completion" },
+                { L"--Enable-Completion", L"--set-aliases" },
+                { L"--Disable-Completion", L"-w" },
+            };
+
+
+
+            for (const vector<LPCWSTR> & args : s_krgConflicts)
+            {
+                CCommandLine cl;
+
+                Assert::IsTrue (FAILED (ParseArgs (cl, args)), args[1]);
+            }
+        }
+
     };
 }

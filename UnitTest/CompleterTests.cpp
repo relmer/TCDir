@@ -1,0 +1,376 @@
+#include "pch.h"
+#include "EhmTestHelper.h"
+#include "../TCDirCore/CommandLine.h"
+#include "../TCDirCore/Completer.h"
+
+
+
+
+
+using namespace Microsoft::VisualStudio::CppUnitTestFramework;
+
+
+
+
+
+namespace UnitTest
+{
+    TEST_CLASS(CompleterTests)
+    {
+    public:
+
+        TEST_CLASS_INITIALIZE(ClassInitialize)
+        {
+            SetupEhmForUnitTests();
+        }
+
+
+
+
+        static vector<SCompletionCandidate> Complete (const wstring & strWord, vector<wstring> vOther = {})
+        {
+            SCompletionRequest             request;
+            vector<SCompletionCandidate>   candidates;
+
+            request.m_strWord     = strWord;
+            request.m_vOtherWords = move (vOther);
+
+            CCompleter::Complete (request, candidates);
+            return candidates;
+        }
+
+        static vector<wstring> Texts (const vector<SCompletionCandidate> & candidates)
+        {
+            vector<wstring> texts;
+
+            for (const SCompletionCandidate & candidate : candidates)
+            {
+                texts.push_back (candidate.m_strCompletion);
+            }
+
+            return texts;
+        }
+
+        static bool Contains (const vector<wstring> & texts, LPCWSTR pszText)
+        {
+            return find (texts.begin(), texts.end(), pszText) != texts.end();
+        }
+
+
+
+
+        TEST_METHOD(LongPrefix_MatchesByName)
+        {
+            vector<wstring> texts = Texts (Complete (L"--Tr"));
+
+            Assert::AreEqual (size_t (1), texts.size());            // --TreeIndent requires --Tree
+            Assert::AreEqual (L"--Tree", texts[0].c_str());
+        }
+
+
+
+
+        TEST_METHOD(LongPrefix_IgnoresCase)
+        {
+            Assert::IsTrue (Contains (Texts (Complete (L"--str")), L"--Streams"));
+        }
+
+
+
+
+        TEST_METHOD(DoubleDash_ListsEveryLongSwitchInCatalogCasing)
+        {
+            vector<wstring> texts = Texts (Complete (L"--"));
+
+            for (const SSwitchDefinition & definition : CSwitchCatalog::All())
+            {
+                bool fRequiresOther = wstring_view (definition.m_pszName) == L"Depth" || wstring_view (definition.m_pszName) == L"TreeIndent" ||
+                                      wstring_view (definition.m_pszName) == L"WhatIf" || wstring_view (definition.m_pszName) == L"Verify";
+
+                if (definition.m_eForm == ESwitchForm::Long && CSwitchCatalog::IsAvailable (definition) && !fRequiresOther)
+                {
+                    Assert::IsTrue (Contains (texts, (wstring (L"--") + definition.m_pszName).c_str()), definition.m_pszName);
+                }
+            }
+
+            Assert::IsFalse (Contains (texts, L"-W"));
+        }
+
+
+
+
+        TEST_METHOD(SingleDash_ShortSwitchesThenLong)
+        {
+            vector<wstring> texts = Texts (Complete (L"-"));
+
+            Assert::AreEqual (L"-A", texts[0].c_str());
+            Assert::IsTrue   (Contains (texts, L"-W"));
+            Assert::IsTrue   (Contains (texts, L"--Tree"));
+            Assert::IsTrue   (find (texts.begin(), texts.end(), L"-W") < find (texts.begin(), texts.end(), L"--Tree"));
+        }
+
+
+
+
+        TEST_METHOD(Slash_UsesSlashForBothForms)
+        {
+            vector<wstring> texts = Texts (Complete (L"/"));
+
+            Assert::IsTrue  (Contains (texts, L"/W"));
+            Assert::IsTrue  (Contains (texts, L"/Tree"));
+            Assert::IsFalse (Contains (texts, L"--Tree"));
+            Assert::IsTrue  (Contains (Texts (Complete (L"/Str")), L"/Streams"));
+        }
+
+
+
+
+        TEST_METHOD(Tooltip_PlainTextWithMatchingPrefix)
+        {
+            vector<SCompletionCandidate> slash = Complete (L"/Owne");
+            vector<SCompletionCandidate> dash  = Complete (L"--Owne");
+
+            Assert::AreEqual (size_t (1), slash.size());
+            Assert::AreEqual (L"Displays the owner of each file and directory. Not allowed with /Tree.",  slash[0].m_strTooltip.c_str());
+            Assert::AreEqual (L"Displays the owner of each file and directory. Not allowed with --Tree.", dash[0].m_strTooltip.c_str());
+            Assert::AreEqual (L"/Owner", slash[0].m_strListText.c_str());
+        }
+
+
+
+
+        TEST_METHOD(ListText_IncludesValueSyntax)
+        {
+            vector<SCompletionCandidate> candidates = Complete (L"--Dep", { L"--Tree" });
+
+            Assert::AreEqual (size_t (1), candidates.size());
+            Assert::AreEqual (L"--Depth=N", candidates[0].m_strListText.c_str());
+            Assert::AreEqual (L"--Depth",   candidates[0].m_strCompletion.c_str());
+        }
+
+
+
+
+        TEST_METHOD(DebugSwitch_OnlyInDebugBuilds)
+        {
+#ifdef _DEBUG
+            Assert::IsTrue  (Contains (Texts (Complete (L"--Deb")), L"--Debug"));
+#else
+            Assert::IsFalse (Contains (Texts (Complete (L"--Deb")), L"--Debug"));
+#endif
+        }
+
+
+
+
+        TEST_METHOD(NonSwitchWords_NoCandidates)
+        {
+            for (LPCWSTR pszWord : { L"", L"C:\\Pro", L".\\-notes", L"foo", L"*.txt" })
+            {
+                Assert::IsTrue (Complete (pszWord).empty(), pszWord);
+            }
+
+            Assert::IsTrue (Complete (L"--Bogus").empty());
+        }
+
+
+
+
+        TEST_METHOD(FormatLine_ThreeTabSeparatedFields)
+        {
+            SCompletionCandidate candidate = { L"--Tree", L"--Tree", L"a\tb" };
+
+            Assert::AreEqual (L"--Tree\t--Tree\ta b", CCompleter::FormatLine (candidate).c_str());
+        }
+
+
+
+
+        TEST_METHOD(IsCompleteRequest_FirstArgumentOnly)
+        {
+            wchar_t * rgFirst[]  = { const_cast<wchar_t *> (L"tcdir"), const_cast<wchar_t *> (L"--complete"), const_cast<wchar_t *> (L"w:--T") };
+            wchar_t * rgSecond[] = { const_cast<wchar_t *> (L"tcdir"), const_cast<wchar_t *> (L"-w"),         const_cast<wchar_t *> (L"--Complete") };
+
+            Assert::IsTrue  (CCompleter::IsCompleteRequest (3, rgFirst));
+            Assert::IsFalse (CCompleter::IsCompleteRequest (3, rgSecond));
+            Assert::IsFalse (CCompleter::IsCompleteRequest (1, rgFirst));
+        }
+
+
+
+
+        //
+        //  Values
+        //
+
+        TEST_METHOD(Values_SortKeysWithAndWithoutReverse)
+        {
+            vector<SCompletionCandidate> candidates = Complete (L"-O:");
+            vector<wstring>              texts      = Texts (candidates);
+
+            Assert::AreEqual (size_t (8), texts.size());
+            Assert::IsTrue   (Contains (texts, L"-O:S"));
+            Assert::IsTrue   (Contains (texts, L"-O:-S"));
+            Assert::IsTrue   (Contains (Texts (Complete (L"-O:-")), L"-O:-D"));
+            Assert::AreEqual (L"By size (smallest first)", candidates[1].m_strTooltip.c_str());
+        }
+
+
+
+
+        TEST_METHOD(Values_AttributesExtendTypedLetters)
+        {
+            vector<wstring> texts = Texts (Complete (L"-A:H"));
+
+            Assert::IsTrue  (Contains (texts, L"-A:HD"));
+            Assert::IsTrue  (Contains (texts, L"-A:HS"));
+            Assert::IsTrue  (Contains (texts, L"-A:H-"));
+            Assert::IsFalse (Contains (texts, L"-A:HH"));
+            Assert::IsFalse (Contains (Texts (Complete (L"-A:H-")), L"-A:H--"));
+        }
+
+
+
+
+        TEST_METHOD(Values_TimeSizeAndTreeIndent)
+        {
+            Assert::AreEqual (size_t (3), Complete (L"-T:").size());
+            Assert::IsTrue   (Contains (Texts (Complete (L"--Size=")), L"--Size=Auto"));
+            Assert::IsTrue   (Contains (Texts (Complete (L"--size=b")), L"--Size=Bytes"));
+            Assert::AreEqual (size_t (8), Complete (L"--TreeIndent=").size());
+            Assert::IsTrue   (Contains (Texts (Complete (L"/A:")), L"/A:D"));
+        }
+
+
+
+
+        TEST_METHOD(Values_SwitchWithoutValuesHasNoCandidates)
+        {
+            Assert::IsTrue (Complete (L"-W:").empty());
+            Assert::IsTrue (Complete (L"--Depth=").empty());
+            Assert::IsTrue (Complete (L"--Bogus=").empty());
+        }
+
+
+
+
+        //
+        //  Context
+        //
+
+        TEST_METHOD(Context_PresentSwitchNotOffered)
+        {
+            Assert::IsFalse (Contains (Texts (Complete (L"-", { L"-W" })), L"-W"));
+            Assert::IsFalse (Contains (Texts (Complete (L"-", { L"/w" })), L"-W"));
+            Assert::IsTrue  (Contains (Texts (Complete (L"-", { L"-W" })), L"-B"));
+        }
+
+
+
+
+        TEST_METHOD(Context_TreeConflictsNotOffered)
+        {
+            vector<wstring> texts = Texts (Complete (L"-", { L"--Tree" }));
+
+            for (LPCWSTR pszConflict : { L"-W", L"-B", L"-S", L"--Owner", L"--Tree" })
+            {
+                Assert::IsFalse (Contains (texts, pszConflict), pszConflict);
+            }
+
+            Assert::IsTrue (Contains (texts, L"--Depth"));
+            Assert::IsTrue (Contains (texts, L"-A"));
+        }
+
+
+
+
+        TEST_METHOD(Context_InfoOffersVerifyAndNoListingSwitches)
+        {
+            vector<wstring> texts = Texts (Complete (L"-", { L"--Info" }));
+
+            for (LPCWSTR pszConflict : { L"-W", L"-B", L"-A", L"--Tree", L"--Owner", L"--Info" })
+            {
+                Assert::IsFalse (Contains (texts, pszConflict), pszConflict);
+            }
+
+            Assert::IsTrue  (Contains (texts, L"--Verify"));
+            Assert::IsTrue  (Contains (texts, L"-S"));
+            Assert::IsTrue  (Contains (texts, L"--Archives"));
+            Assert::IsFalse (Contains (Texts (Complete (L"--")), L"--Verify"));
+        }
+
+
+
+
+        TEST_METHOD(Context_RequirementsRespected)
+        {
+            Assert::IsFalse (Contains (Texts (Complete (L"--")), L"--Depth"));
+            Assert::IsFalse (Contains (Texts (Complete (L"--")), L"--WhatIf"));
+            Assert::IsTrue  (Contains (Texts (Complete (L"--", { L"--set-aliases" })), L"--WhatIf"));
+        }
+
+
+
+
+        TEST_METHOD(Context_RepeatableAndNegatable)
+        {
+            Assert::IsTrue  (Contains (Texts (Complete (L"-", { L"-A:H" })),    L"-A"));
+            Assert::IsFalse (Contains (Texts (Complete (L"--", { L"--Icons" })),  L"--Icons"));
+            Assert::IsFalse (Contains (Texts (Complete (L"--", { L"--Icons-" })), L"--Icons"));
+        }
+
+
+
+
+        TEST_METHOD(Context_AliasFlagsCountAsPresent)
+        {
+            Assert::IsFalse (Contains (Texts (Complete (L"--", { L"-w" })), L"--Tree"));
+        }
+
+
+
+
+        TEST_METHOD(Context_EveryCandidateParsesWithContext)
+        {
+            for (LPCWSTR pszContext : { L"--Tree", L"-W", L"--set-aliases", L"-S" })
+            {
+                for (const SCompletionCandidate & candidate : Complete (L"-", { pszContext }))
+                {
+                    const SSwitchDefinition * pDefinition = nullptr;
+
+                    for (const SSwitchDefinition & definition : CSwitchCatalog::All())
+                    {
+                        if (CSwitchCatalog::PrefixFor (definition, L"-", L"--") + definition.m_pszName == candidate.m_strCompletion)
+                        {
+                            pDefinition = &definition;
+                        }
+                    }
+
+                    Assert::IsNotNull (pDefinition, candidate.m_strCompletion.c_str());
+
+                    wstring          strProbe = candidate.m_strCompletion;
+                    CCommandLine     cl;
+
+                    if (pDefinition->m_chValueSeparator != 0)
+                    {
+                        strProbe += pDefinition->m_chValueSeparator;
+                        strProbe += pDefinition->m_values.empty() ? L"1" : pDefinition->m_values[0].m_pszValue;
+                    }
+
+                    wstring    strContext = pszContext;
+                    wchar_t  * argv[]     = { strContext.data(), strProbe.data() };
+
+                    Assert::IsTrue (SUCCEEDED (cl.Parse (2, argv)), (strContext + L" " + strProbe).c_str());
+                }
+            }
+        }
+
+
+
+
+        TEST_METHOD(Context_IncompleteContextSkipsParserCheck)
+        {
+            Assert::IsTrue (Contains (Texts (Complete (L"--", { L"--Depth=0" })), L"--Tree"));
+        }
+    };
+}
