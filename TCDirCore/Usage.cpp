@@ -121,6 +121,7 @@ static constexpr SSwitchInfo s_kSwitchInfos[] =
     { L"Icons",      L"Enable file-type icons"          },
     { L"Tree",       L"Display directory tree view"     },
     { L"Ellipsize",  L"Truncate long link target paths" },
+    { L"Archives",   L"Browse archive targets and recurse into archives" },
 };
 
 
@@ -332,13 +333,74 @@ static int GetMaxVisibleWidth (const vector<wstring> & values)
 
 ////////////////////////////////////////////////////////////////////////////////
 //
+//  AppendWrappedText
+//
+//  Appends words starting at column col.  A word that would pass cxConsole
+//  starts a new line indented to descCol.  Color markers stay attached to
+//  their words, so a color set before a break applies after it too.
+//
+////////////////////////////////////////////////////////////////////////////////
+
+static void AppendWrappedText (wstring    & text,
+                               int          col,
+                               int          descCol,
+                               int          cxConsole,
+                               wstring_view description)
+{
+    constexpr int s_kcchMinWrapWidth = 20;
+
+    bool   fWrap      = cxConsole - descCol >= s_kcchMinWrapWidth;
+    bool   fLineEmpty = true;
+    size_t ich        = 0;
+
+
+
+    while (ich < description.size())
+    {
+        size_t       ichEnd = description.find (L' ', ich);
+        wstring_view word   = description.substr (ich, ichEnd == wstring_view::npos ? wstring_view::npos : ichEnd - ich);
+        int          cxWord = MeasureVisibleWidth (word);
+
+        ich = (ichEnd == wstring_view::npos) ? description.size() : ichEnd + 1;
+
+        if (!fLineEmpty && fWrap && col + 1 + cxWord > cxConsole)
+        {
+            text.push_back (L'\n');
+            text.append (descCol, L' ');
+            col        = descCol;
+            fLineEmpty = true;
+        }
+
+        if (!fLineEmpty)
+        {
+            text.push_back (L' ');
+            ++col;
+        }
+
+        text.append (word);
+        col        += cxWord;
+        fLineEmpty  = false;
+    }
+
+    text.push_back (L'\n');
+}
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
 //  AppendAlignedRow
+//
+//  Appends a label and its description.  A description longer than the
+//  console width wraps, and each wrapped line starts at descCol.
 //
 ////////////////////////////////////////////////////////////////////////////////
 
 static void AppendAlignedRow (wstring    & text,
                               int          indent,
                               int          descCol,
+                              int          cxConsole,
                               wstring_view label,
                               wstring_view description)
 {
@@ -348,8 +410,8 @@ static void AppendAlignedRow (wstring    & text,
     text.append (indent, L' ');
     text.append (label);
     text.append (pad, L' ');
-    text.append (description);
-    text.push_back (L'\n');
+
+    AppendWrappedText (text, labelEnd + pad, descCol, cxConsole, description);
 }
 
 
@@ -641,10 +703,12 @@ void CUsage::DisplayUsage (CConsole & console, wchar_t chPrefix, optional<bool> 
 
     constexpr int  INDENT                     = 2;
     constexpr int  COLUMN_GAP                 = 1;
+    constexpr int  LABEL_GAP                  = 2;
     constexpr int  SUBLEVEL_DETAIL_OFFSET     = 2;
     constexpr int  SUBLEVEL_SECOND_COL_OFFSET = 30;
-    constexpr int  SIZE_CONTINUATION_OFFSET   = 2;
     constexpr int  CLOUD_ICON_DESC_GAP        = 2;
+
+    int cxConsole = static_cast<int> (console.GetWidth());
 
     vector<SUsageOptionRow> primaryRows = BuildOptionRows (ESwitchSection::Primary, szShort, pszLong);
     vector<SUsageOptionRow> aliasRows   = BuildOptionRows (ESwitchSection::Alias, szShort, pszLong);
@@ -667,20 +731,19 @@ void CUsage::DisplayUsage (CConsole & console, wchar_t chPrefix, optional<bool> 
         optionLabels.push_back (row.label);
     }
 
-    int optionDescCol      = INDENT + GetMaxVisibleWidth (optionLabels) + COLUMN_GAP;
-    int sectionDescCol     = optionDescCol - 1;
+    int optionDescCol      = INDENT + GetMaxVisibleWidth (optionLabels) + LABEL_GAP;
+    int sectionDescCol     = optionDescCol;
     int subLevelDetailCol  = sectionDescCol + SUBLEVEL_DETAIL_OFFSET;
-    int continuationCol    = optionDescCol + SIZE_CONTINUATION_OFFSET;
 
     wstring usageBody (L"{Information}\n");
 
-    AppendAlignedRow (usageBody, INDENT, optionDescCol,
+    AppendAlignedRow (usageBody, INDENT, optionDescCol, cxConsole,
                       L"[drive:][path][filename]",
                       L"Specifies drive, directory, and/or files to list.");
 
     usageBody.push_back (L'\n');
 
-    AppendAlignedRow (usageBody, INDENT, sectionDescCol,
+    AppendAlignedRow (usageBody, INDENT, sectionDescCol, cxConsole,
                       primaryRows[0].label,
                       primaryRows[0].description);
 
@@ -702,7 +765,7 @@ void CUsage::DisplayUsage (CConsole & console, wchar_t chPrefix, optional<bool> 
 
     usageBody.push_back (L'\n');
 
-    AppendAlignedRow (usageBody, INDENT, sectionDescCol,
+    AppendAlignedRow (usageBody, INDENT, sectionDescCol, cxConsole,
                       primaryRows[1].label,
                       primaryRows[1].description);
 
@@ -712,7 +775,7 @@ void CUsage::DisplayUsage (CConsole & console, wchar_t chPrefix, optional<bool> 
 
     usageBody.push_back (L'\n');
 
-    AppendAlignedRow (usageBody, INDENT, sectionDescCol,
+    AppendAlignedRow (usageBody, INDENT, sectionDescCol, cxConsole,
                       primaryRows[2].label,
                       primaryRows[2].description);
 
@@ -725,13 +788,12 @@ void CUsage::DisplayUsage (CConsole & console, wchar_t chPrefix, optional<bool> 
     for (size_t i = 3; i < primaryRows.size(); ++i)
     {
         const SUsageOptionRow & row = primaryRows[i];
-        AppendAlignedRow (usageBody, INDENT, optionDescCol, row.label, row.description);
+        AppendAlignedRow (usageBody, INDENT, optionDescCol, cxConsole, row.label, row.description);
 
         if (!row.continuation.empty())
         {
-            usageBody.append (continuationCol, L' ');
-            usageBody.append (row.continuation);
-            usageBody.push_back (L'\n');
+            usageBody.append (optionDescCol, L' ');
+            AppendWrappedText (usageBody, optionDescCol, optionDescCol, cxConsole, row.continuation);
         }
     }
 
@@ -739,13 +801,12 @@ void CUsage::DisplayUsage (CConsole & console, wchar_t chPrefix, optional<bool> 
 
     for (const SUsageOptionRow & row : aliasRows)
     {
-        AppendAlignedRow (usageBody, INDENT, optionDescCol, row.label, row.description);
+        AppendAlignedRow (usageBody, INDENT, optionDescCol, cxConsole, row.label, row.description);
 
         if (!row.continuation.empty())
         {
-            usageBody.append (continuationCol, L' ');
-            usageBody.append (row.continuation);
-            usageBody.push_back (L'\n');
+            usageBody.append (optionDescCol, L' ');
+            AppendWrappedText (usageBody, optionDescCol, optionDescCol, cxConsole, row.continuation);
         }
     }
 
@@ -910,6 +971,7 @@ void CUsage::DisplaySwitchConfiguration (CConsole & console, int columnWidthAttr
         &config.m_fIcons,
         &config.m_fTree,
         &config.m_fEllipsize,
+        &config.m_fArchives,
     };
 
     static_assert (_countof (switchValues) == _countof (s_kSwitchInfos), "Switch arrays must match");
@@ -1732,7 +1794,10 @@ static bool HasEnvVarSwitches (const CConfig & config)
            config.m_fBareListing.has_value()   ||
            config.m_fShowOwner.has_value()     ||
            config.m_fShowStreams.has_value()    ||
-           config.m_fIcons.has_value();
+           config.m_fIcons.has_value()          ||
+           config.m_fTree.has_value()           ||
+           config.m_fEllipsize.has_value()      ||
+           config.m_fArchives.has_value();
 }
 
 
@@ -1834,6 +1899,7 @@ static void DisplayEnvVarSwitchesSection (CConsole & console, const CConfig & co
         &config.m_fIcons,
         &config.m_fTree,
         &config.m_fEllipsize,
+        &config.m_fArchives,
     };
 
     static_assert (_countof (switchValues) == _countof (s_kSwitchInfos), "Switch arrays must match");
@@ -1846,7 +1912,7 @@ static void DisplayEnvVarSwitchesSection (CConsole & console, const CConfig & co
     {
         if (switchValues[i]->has_value())
         {
-            console.Printf (CConfig::EAttribute::Default, L"      %-8ls %ls\n", 
+            console.Printf (CConfig::EAttribute::Default, L"      %-9ls %ls\n", 
                             s_kSwitchInfos[i].name, s_kSwitchInfos[i].description);
         }
     }
@@ -2107,13 +2173,16 @@ void CUsage::DisplayEnvVarHelp (CConsole & console, wchar_t chPrefix)
         L"{1}\n"
         L"\n"
         L"  {{InformationHighlight}}<Switch>{{Information}}    A command-line switch:\n"
-        L"                  {{InformationHighlight}}W{{Information}}        Wide listing format\n"
-        L"                  {{InformationHighlight}}P{{Information}}        Display performance timing information\n"
-        L"                  {{InformationHighlight}}S{{Information}}        Recurse into subdirectories\n"
-        L"                  {{InformationHighlight}}M{{Information}}        Enables multi-threaded enumeration (default); use {{InformationHighlight}}M-{{Information}} to disable\n"
-        L"                  {{InformationHighlight}}Owner{{Information}}    Display file ownership\n"
-        L"                  {{InformationHighlight}}Streams{{Information}}  Display alternate data streams (NTFS)\n"
-        L"                  {{InformationHighlight}}Icons{{Information}}    Enable file-type icons; use {{InformationHighlight}}Icons-{{Information}} to disable\n"
+        L"                  {{InformationHighlight}}W{{Information}}         Wide listing format\n"
+        L"                  {{InformationHighlight}}P{{Information}}         Display performance timing information\n"
+        L"                  {{InformationHighlight}}S{{Information}}         Recurse into subdirectories\n"
+        L"                  {{InformationHighlight}}M{{Information}}         Enables multi-threaded enumeration (default); use {{InformationHighlight}}M-{{Information}} to disable\n"
+        L"                  {{InformationHighlight}}Owner{{Information}}     Display file ownership\n"
+        L"                  {{InformationHighlight}}Streams{{Information}}   Display alternate data streams (NTFS)\n"
+        L"                  {{InformationHighlight}}Icons{{Information}}     Enable file-type icons; use {{InformationHighlight}}Icons-{{Information}} to disable\n"
+        L"                  {{InformationHighlight}}Tree{{Information}}      Display directory tree view; use {{InformationHighlight}}Tree-{{Information}} to disable\n"
+        L"                  {{InformationHighlight}}Ellipsize{{Information}} Truncate long link target paths (default); use {{InformationHighlight}}Ellipsize-{{Information}} to disable\n"
+        L"                  {{InformationHighlight}}Archives{{Information}}  Browse archive targets and recurse into archives; use {{InformationHighlight}}Archives-{{Information}} to disable\n"
         L"\n"
         L"  {{InformationHighlight}}<Item>{{Information}}      A display item:\n"
         L"                  {{InformationHighlight}}D{{Information}}  Date                     {{InformationHighlight}}T{{Information}}  Time\n"
@@ -2305,13 +2374,16 @@ void CUsage::DisplayConfigFileHelp (CConsole & console, wchar_t chPrefix)
         L"[{{InformationHighlight}},<Icon>{{Information}}]\n"
         L"\n"
         L"  {{InformationHighlight}}<Switch>{{Information}}    A command-line switch:\n"
-        L"                  {{InformationHighlight}}W{{Information}}        Wide listing format\n"
-        L"                  {{InformationHighlight}}P{{Information}}        Display performance timing information\n"
-        L"                  {{InformationHighlight}}S{{Information}}        Recurse into subdirectories\n"
-        L"                  {{InformationHighlight}}M{{Information}}        Enables multi-threaded enumeration (default); use {{InformationHighlight}}M-{{Information}} to disable\n"
-        L"                  {{InformationHighlight}}Owner{{Information}}    Display file ownership\n"
-        L"                  {{InformationHighlight}}Streams{{Information}}  Display alternate data streams (NTFS)\n"
-        L"                  {{InformationHighlight}}Icons{{Information}}    Enable file-type icons; use {{InformationHighlight}}Icons-{{Information}} to disable\n"
+        L"                  {{InformationHighlight}}W{{Information}}         Wide listing format\n"
+        L"                  {{InformationHighlight}}P{{Information}}         Display performance timing information\n"
+        L"                  {{InformationHighlight}}S{{Information}}         Recurse into subdirectories\n"
+        L"                  {{InformationHighlight}}M{{Information}}         Enables multi-threaded enumeration (default); use {{InformationHighlight}}M-{{Information}} to disable\n"
+        L"                  {{InformationHighlight}}Owner{{Information}}     Display file ownership\n"
+        L"                  {{InformationHighlight}}Streams{{Information}}   Display alternate data streams (NTFS)\n"
+        L"                  {{InformationHighlight}}Icons{{Information}}     Enable file-type icons; use {{InformationHighlight}}Icons-{{Information}} to disable\n"
+        L"                  {{InformationHighlight}}Tree{{Information}}      Display directory tree view; use {{InformationHighlight}}Tree-{{Information}} to disable\n"
+        L"                  {{InformationHighlight}}Ellipsize{{Information}} Truncate long link target paths (default); use {{InformationHighlight}}Ellipsize-{{Information}} to disable\n"
+        L"                  {{InformationHighlight}}Archives{{Information}}  Browse archive targets and recurse into archives; use {{InformationHighlight}}Archives-{{Information}} to disable\n"
         L"\n"
         L"  {{InformationHighlight}}<Item>{{Information}}      A display item:\n"
         L"                  {{InformationHighlight}}D{{Information}}  Date                     {{InformationHighlight}}T{{Information}}  Time\n"

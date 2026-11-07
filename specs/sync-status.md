@@ -22,6 +22,7 @@ This document tracks which features have been ported and which are pending.
 |        | Per-file git status      | #7       | Open               |               |                    |               |                                                         |
 | 010    | Nerd Font Install        |          | Shipped            | v5.6.0        | Spec ready         |               | `--Install-NerdFonts` / `--Uninstall-NerdFonts` (spec added retroactively) |
 | 011    | Cross-platform PAL       | #8       | In progress        |               | n/a (TCDir-only)   |               | Linux + macOS; spec/plan on branch `011-cross-platform-pal`             |
+| 012    | Archive Browsing         |          | Implemented        |               | Not started        |               | `--Archives`: .zip/.iso native readers, other formats via archiveint.dll; branch `012-archive-browsing` |
 
 ## Workflow
 

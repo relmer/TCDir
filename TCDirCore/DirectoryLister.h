@@ -1,6 +1,7 @@
 #pragma once
 
 #include "DirectoryInfo.h"
+#include "FileEnumerator.h"
 #include "IResultsDisplayer.h"
 #include "ListingTotals.h"
 #include "MaskGrouper.h"
@@ -24,9 +25,11 @@ public:
     CDirectoryLister  (shared_ptr<CCommandLine> cmdLinePtr, shared_ptr<CConsole> consolePtr, shared_ptr<CConfig> configPtr, unique_ptr<IResultsDisplayer> displayer);
     ~CDirectoryLister (void); 
 
-    void List         (const MaskGroup & group);
+    void List                 (const MaskGroup & group);
+    void SetArchiveFileSystem (shared_ptr<CArchiveFileSystem> archiveFsPtr);
     
-    static bool IsDots (LPCWSTR pszFileName);
+    static bool IsDots            (LPCWSTR pszFileName);
+    static void PrintArchiveError (CConsole & console, const filesystem::path & archivePath, const wstring & strMessage);
 
 protected:
     CDirectoryLister  (shared_ptr<CCommandLine> cmdLinePtr, shared_ptr<CConsole> consolePtr, shared_ptr<CConfig> configPtr);
@@ -67,4 +70,5 @@ protected:
     shared_ptr<CConfig>                   m_configPtr;
     unique_ptr<IResultsDisplayer>         m_displayer;
     SListingTotals                        m_totals;
+    CFileEnumerator                       m_enumerator;
 };

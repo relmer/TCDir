@@ -256,6 +256,14 @@
     <ClCompile Include="CompletionScriptTests.cpp" />
     <ClCompile Include="CompleterTests.cpp" />
     <ClCompile Include="SwitchCatalogTests.cpp" />
+    <ClCompile Include="IsoDetailsTests.cpp" />
+    <ClCompile Include="ArchiveInfoFinderTests.cpp" />
+    <ClCompile Include="ArchiveInfoDisplayerTests.cpp" />
+    <ClCompile Include="ArchiveInfoBuilderTests.cpp" />
+    <ClCompile Include="ArchiveStatisticsTests.cpp" />
+    <ClCompile Include="LibArchiveReaderTests.cpp" />
+    <ClCompile Include="ArchiveListingScenarioTests.cpp" />
+    <ClCompile Include="ArchiveFileSystemTests.cpp" />
     <ClCompile Include="ConfigTests.cpp" />
     <ClCompile Include="ConfigFileReaderTests.cpp" />
     <ClCompile Include="ConfigFileTests.cpp" />
@@ -263,6 +271,8 @@
     <ClCompile Include="IatHook\IatPatch.cpp" />
     <ClCompile Include="MaskGroupingTests.cpp" />
     <ClCompile Include="Mocks\FileSystemMock.cpp" />
+    <ClCompile Include="Mocks\ZipBuilder.cpp" />
+    <ClCompile Include="Mocks\IsoImageBuilder.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
@@ -278,6 +288,7 @@
     <ClCompile Include="NerdFontInstallerTests.cpp" />
     <ClCompile Include="JsonParserTests.cpp" />
     <ClCompile Include="NerdFontDetectorTests.cpp" />
+    <ClCompile Include="IsoReaderTests.cpp" />
     <ClCompile Include="PathEllipsisTests.cpp" />
     <ClCompile Include="CommandLineTests.cpp" />
     <ClCompile Include="ConsoleTests.cpp" />
@@ -292,14 +303,21 @@
     <ClCompile Include="ProfilePathResolverTests.cpp" />
     <ClCompile Include="ReparsePointResolverTests.cpp" />
     <ClCompile Include="TuiWidgetsTests.cpp" />
+    <ClCompile Include="ArchiveFormatTests.cpp" />
+    <ClCompile Include="ArchiveTreeTests.cpp" />
+    <ClCompile Include="WildcardMatcherTests.cpp" />
+    <ClCompile Include="ZipReaderTests.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Mocks\MockArchiveFileAccess.h" />
     <ClInclude Include="EhmTestHelper.h" />
     <ClInclude Include="GitHubReleaseSnapshot.h" />
     <ClInclude Include="IatHook\IatPatch.h" />
     <ClInclude Include="IatHook\ScopedIatPatch.h" />
     <ClInclude Include="Mocks\FileSystemMock.h" />
+    <ClInclude Include="Mocks\IsoImageBuilder.h" />
     <ClInclude Include="Mocks\TestConsole.h" />
+    <ClInclude Include="Mocks\ZipBuilder.h" />
     <ClInclude Include="pch.h" />
   </ItemGroup>
   <ItemGroup>

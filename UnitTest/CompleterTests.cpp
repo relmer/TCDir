@@ -85,7 +85,7 @@ namespace UnitTest
             for (const SSwitchDefinition & definition : CSwitchCatalog::All())
             {
                 bool fRequiresOther = wstring_view (definition.m_pszName) == L"Depth" || wstring_view (definition.m_pszName) == L"TreeIndent" ||
-                                      wstring_view (definition.m_pszName) == L"WhatIf";
+                                      wstring_view (definition.m_pszName) == L"WhatIf" || wstring_view (definition.m_pszName) == L"Verify";
 
                 if (definition.m_eForm == ESwitchForm::Long && CSwitchCatalog::IsAvailable (definition) && !fRequiresOther)
                 {
@@ -279,6 +279,24 @@ namespace UnitTest
 
             Assert::IsTrue (Contains (texts, L"--Depth"));
             Assert::IsTrue (Contains (texts, L"-A"));
+        }
+
+
+
+
+        TEST_METHOD(Context_InfoOffersVerifyAndNoListingSwitches)
+        {
+            vector<wstring> texts = Texts (Complete (L"-", { L"--Info" }));
+
+            for (LPCWSTR pszConflict : { L"-W", L"-B", L"-A", L"--Tree", L"--Owner", L"--Info" })
+            {
+                Assert::IsFalse (Contains (texts, pszConflict), pszConflict);
+            }
+
+            Assert::IsTrue  (Contains (texts, L"--Verify"));
+            Assert::IsTrue  (Contains (texts, L"-S"));
+            Assert::IsTrue  (Contains (texts, L"--Archives"));
+            Assert::IsFalse (Contains (Texts (Complete (L"--")), L"--Verify"));
         }
 
 

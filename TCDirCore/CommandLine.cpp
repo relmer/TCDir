@@ -73,6 +73,7 @@ void CCommandLine::ApplyConfigDefaults (const CConfig & config)
     if (config.m_fIcons.has_value() && !m_fIcons.has_value())  m_fIcons         = config.m_fIcons.value();
     if (config.m_fTree.has_value())                            m_fTree          = config.m_fTree.value();
     if (config.m_fEllipsize.has_value() && !m_fEllipsize.has_value())  m_fEllipsize = config.m_fEllipsize.value();
+    if (config.m_fArchives.has_value())                        m_fArchives      = config.m_fArchives.value();
 
     //
     // Only apply tree-specific config when tree mode is active.
@@ -213,6 +214,12 @@ HRESULT CCommandLine::ParseSwitch (LPCWSTR pszArg, int & cArg, WCHAR ** & ppszAr
            RejectSingleDashLongSwitch (pszSwitchArg));
 
     hr = HandleSwitch (pszSwitchArg, cArg, ppszArg);
+    CHR (hr);
+
+    if (m_strInfoConflictSwitch.empty() && IsListingSwitch (pszSwitchArg))
+    {
+        m_strInfoConflictSwitch = pszArg;
+    }
 
 Error:
     return hr;
@@ -287,6 +294,9 @@ HRESULT CCommandLine::ValidateSwitchCombinations (void)
     HRESULT hr = S_OK;
 
 
+
+    hr = ValidateInfoCombinations();
+    CHR (hr);
 
     hr = ValidateTreeCombinations();
     CHR (hr);
@@ -506,6 +516,104 @@ Error:
 
 ////////////////////////////////////////////////////////////////////////////////
 //
+//  CCommandLine::ValidateInfoCombinations
+//
+//  --Verify requires --Info, and --Info rejects the listing switches typed on
+//  the command line.  Listing defaults from TCDIR or the config file don't
+//  apply to --Info, so they are reset here rather than reported.
+//
+////////////////////////////////////////////////////////////////////////////////
+
+HRESULT CCommandLine::ValidateInfoCombinations (void)
+{
+    HRESULT hr = S_OK;
+
+
+
+    CBRFEx (!m_fVerify || m_fInfo, E_INVALIDARG,
+            m_strValidationError = L"--Verify requires --Info.");
+
+    BAIL_OUT_IF (!m_fInfo, S_OK);
+
+    CBRFEx (m_strInfoConflictSwitch.empty(), E_INVALIDARG,
+            m_strValidationError = format (L"--Info and {} cannot be used together.", m_strInfoConflictSwitch));
+
+    m_fWideListing = false;
+    m_fBareListing = false;
+    m_fTree        = false;
+    m_fShowOwner   = false;
+    m_fShowStreams = false;
+    m_cMaxDepth    = 0;
+    m_cTreeIndent  = s_kcDefaultTreeIndent;
+
+Error:
+    return hr;
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CCommandLine::IsListingSwitch
+//
+//  Returns true for a switch (without its prefix) that only changes listing
+//  output: -W, -B, -O, -A, -T and the long listing switches.
+//
+////////////////////////////////////////////////////////////////////////////////
+
+bool CCommandLine::IsListingSwitch (LPCWSTR pszSwitchArg)
+{
+    static constexpr LPCWSTR s_krgLongListingSwitches[] =
+    {
+        L"tree",
+        L"depth",
+        L"treeindent",
+        L"owner",
+        L"streams",
+        L"icons",
+        L"ellipsize",
+        L"size",
+    };
+
+    static constexpr wstring_view s_kShortListingSwitches = L"wbota";
+
+    wstring_view   strArg  = pszSwitchArg;
+    bool           fLong   = strArg.size() >= s_kcchMinLongSwitch && strArg[1] != L':' && strArg[1] != L'-';
+    wstring        strName (strArg.substr (0, strArg.find (L'=')));
+    bool           fFound  = false;
+
+
+
+    if (!fLong)
+    {
+        return !strArg.empty() && s_kShortListingSwitches.find ((WCHAR) towlower (strArg[0])) != wstring_view::npos;
+    }
+
+    if (!strName.empty() && strName.back() == L'-')
+    {
+        strName.pop_back();
+    }
+
+    for (LPCWSTR pszName : s_krgLongListingSwitches)
+    {
+        if (_wcsicmp (strName.c_str(), pszName) == 0)
+        {
+            fFound = true;
+            break;
+        }
+    }
+
+    return fFound;
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
 //  CCommandLine::HandleSwitch
 //
 //  Handles both single-char switches (s, w, b, etc.) and long switches (env, config).
@@ -622,6 +730,8 @@ HRESULT CCommandLine::HandleLongSwitch (LPCWSTR pszArg, int & cArg, WCHAR ** & p
         {  L"get-aliases",          &CCommandLine::m_fGetAliases         },
         {  L"remove-aliases",       &CCommandLine::m_fRemoveAliases      },
         {  L"whatif",               &CCommandLine::m_fWhatIf             },
+        {  L"info",                 &CCommandLine::m_fInfo               },
+        {  L"verify",               &CCommandLine::m_fVerify             },
         {  L"enable-completion",    &CCommandLine::m_fEnableCompletion   },
         {  L"disable-completion",   &CCommandLine::m_fDisableCompletion  },
         {  L"install-nerdfonts",    &CCommandLine::m_fInstallNerdFonts   },
@@ -703,6 +813,19 @@ HRESULT CCommandLine::HandleLongSwitch (LPCWSTR pszArg, int & cArg, WCHAR ** & p
         if (_wcsicmp (strSwitch.c_str(), L"ellipsize") == 0)
         {
             m_fEllipsize = !fNegated;
+            hr = S_OK;
+        }
+    }
+
+    //
+    //  Archives switch: supports negation via --Archives-
+    //
+
+    if (hr != S_OK)
+    {
+        if (_wcsicmp (strSwitch.c_str(), L"archives") == 0)
+        {
+            m_fArchives = !fNegated;
             hr = S_OK;
         }
     }
@@ -823,6 +946,7 @@ bool CCommandLine::IsRecognizedLongSwitch (const wstring & strSwitch)
         L"icons",
         L"tree",
         L"ellipsize",
+        L"archives",
         L"depth",
         L"treeindent",
         L"size",
@@ -830,6 +954,8 @@ bool CCommandLine::IsRecognizedLongSwitch (const wstring & strSwitch)
         L"get-aliases",
         L"remove-aliases",
         L"whatif",
+        L"info",
+        L"verify",
         L"enable-completion",
         L"disable-completion",
         L"install-nerdfonts",

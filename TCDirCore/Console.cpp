@@ -137,7 +137,16 @@ HRESULT CConsole::InitializeConsoleWidth (void)
 
     
 
-    // Can't query the width if the console is redirected.
+    //
+    // Redirected output has no window to measure; COLUMNS can set the width,
+    // as it does for other console tools.
+    //
+
+    if (m_fIsRedirected)
+    {
+        m_cxConsoleWidth = WidthFromColumns (ReadColumnsVariable(), m_cxConsoleWidth);
+    }
+
     BAIL_OUT_IF (m_fIsRedirected, S_OK);
 
     fSuccess = GetConsoleScreenBufferInfo (m_hStdOut, &csbi);
@@ -147,6 +156,57 @@ HRESULT CConsole::InitializeConsoleWidth (void)
 
 Error:
     return hr;
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CConsole::WidthFromColumns
+//
+//  The width a COLUMNS value specifies, or cxDefault when the value isn't a
+//  whole number in the supported range.
+//
+////////////////////////////////////////////////////////////////////////////////
+
+UINT CConsole::WidthFromColumns (const wstring & strColumns, UINT cxDefault)
+{
+    UINT   cx     = 0;
+    bool   fValid = !strColumns.empty() && strColumns.size() <= s_kcchMaxColumnsValue;
+
+
+
+    for (wchar_t ch : strColumns)
+    {
+        fValid = fValid && iswdigit (ch);
+        cx     = fValid ? cx * s_kuDecimalBase + (ch - L'0') : cx;
+    }
+
+    fValid = fValid && cx >= s_kcxMinColumns && cx <= s_kcxMaxColumns;
+
+    return fValid ? cx : cxDefault;
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CConsole::ReadColumnsVariable
+//
+////////////////////////////////////////////////////////////////////////////////
+
+wstring CConsole::ReadColumnsVariable (void)
+{
+    WCHAR   szValue[s_kcchMaxColumnsValue + 2] = {};
+    DWORD   cch                                = GetEnvironmentVariableW (L"COLUMNS", szValue, ARRAYSIZE (szValue));
+
+
+
+    return (cch > 0 && cch < ARRAYSIZE (szValue)) ? wstring (szValue, cch) : wstring();
 }
 
 

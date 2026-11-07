@@ -39,6 +39,7 @@ namespace UnitTest
                 { L"Depth",      { L"--Tree" } },
                 { L"TreeIndent", { L"--Tree" } },
                 { L"WhatIf",     { L"--set-aliases" } },
+                { L"Verify",     { L"--Info" } },
             };
 
             auto it = s_kmapCompanions.find (definition.m_pszName);

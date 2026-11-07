@@ -98,7 +98,7 @@ void CResultsDisplayerTree::DisplayTreeRootHeader (const CDriveInfo & driveInfo,
 void CResultsDisplayerTree::BeginDirectory (const CDirectoryInfo & di)
 {
     m_cchStringLengthOfMaxFileSize = GetStringLengthOfMaxFileSize (di.m_uliLargestFileSize);
-    m_fInSyncRoot                  = IsUnderSyncRoot (di.m_dirPath.c_str());
+    m_fInSyncRoot                  = !di.m_fInArchive && IsUnderSyncRoot (di.m_dirPath.c_str());
     m_owners.clear();
     m_cchMaxOwnerLength            = 0;
 

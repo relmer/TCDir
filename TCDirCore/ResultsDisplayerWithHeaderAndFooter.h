@@ -37,6 +37,8 @@ public:
     // Pure virtual method - must be implemented by derived classes
     virtual void DisplayFileResults                (const CDirectoryInfo & di) = 0;
 
+    static wstring FormatNumberWithSeparators      (ULONGLONG n);
+
 
     
 protected:
@@ -49,7 +51,6 @@ protected:
     void    DisplayFooterQuotaInfo                 (const ULARGE_INTEGER & uliFreeBytesAvailable);
 
     UINT    GetStringLengthOfMaxFileSize           (const ULARGE_INTEGER & uli);
-    wstring FormatNumberWithSeparators              (ULONGLONG n);
 
     static bool         IsUnderSyncRoot            (LPCWSTR pszPath);
     static ECloudStatus GetCloudStatus             (const WIN32_FIND_DATA & wfd, bool fInSyncRoot);

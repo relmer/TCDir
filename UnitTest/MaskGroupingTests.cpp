@@ -1,7 +1,9 @@
 #include "pch.h"
 #include "EhmTestHelper.h"
+#include "../TCDirCore/ArchiveFileSystem.h"
 #include "../TCDirCore/MaskGrouper.h"
 #include "Mocks/FileSystemMock.h"
+#include "Mocks/MockArchiveFileAccess.h"
 
 
 
@@ -319,5 +321,99 @@ namespace UnitTest
                              L"Wildcard mask should remain as pattern, not become directory");
         }
 
+    };
+
+
+
+
+
+    ////////////////////////////////////////////////////////////////////////////
+    //
+    //  ArchiveMaskGroupingTests
+    //
+    //  Mask grouping for paths that go into an archive.  The archive and its
+    //  folders exist only in the mock archive access.
+    //
+    ////////////////////////////////////////////////////////////////////////////
+
+    TEST_CLASS(ArchiveMaskGroupingTests)
+    {
+    public:
+
+        TEST_CLASS_INITIALIZE(ClassInitialize)
+        {
+            SetupEhmForUnitTests();
+        }
+
+
+
+
+        static shared_ptr<CArchiveFileSystem> MakeFileSystem()
+        {
+            auto accessPtr = make_shared<CMockArchiveFileAccess>();
+
+            accessPtr->AddDirectory (L"C:\\MockArchiveRoot");
+            accessPtr->AddArchive   (L"C:\\MockArchiveRoot\\release.zip",
+                                     { CMockArchiveFileAccess::File (L"docs/guide.md", 4),
+                                       CMockArchiveFileAccess::File (L"docs/notes.txt", 5) });
+
+            return make_shared<CArchiveFileSystem> (accessPtr);
+        }
+
+
+
+
+        TEST_METHOD(ArchiveRoot_IsDirectoryGroup)
+        {
+            auto          fsPtr  = MakeFileSystem();
+            list<wstring> masks  = { L"C:\\MockArchiveRoot\\release.zip" };
+            auto          groups = CMaskGrouper::GroupMasksByDirectory (masks, fsPtr.get());
+
+            Assert::AreEqual (size_t (1), groups.size());
+            Assert::AreEqual (L"C:\\MockArchiveRoot\\release.zip", groups[0].first.c_str());
+            Assert::AreEqual (L"*", groups[0].second[0].c_str());
+        }
+
+
+
+
+        TEST_METHOD(InnerFolderWithoutSeparator_IsDirectoryGroup)
+        {
+            auto          fsPtr  = MakeFileSystem();
+            list<wstring> masks  = { L"C:\\MockArchiveRoot\\release.zip\\docs" };
+            auto          groups = CMaskGrouper::GroupMasksByDirectory (masks, fsPtr.get());
+
+            Assert::AreEqual (size_t (1), groups.size());
+            Assert::AreEqual (L"C:\\MockArchiveRoot\\release.zip\\docs", groups[0].first.c_str());
+            Assert::AreEqual (L"*", groups[0].second[0].c_str());
+        }
+
+
+
+
+        TEST_METHOD(InnerMasks_ShareOneGroup)
+        {
+            auto          fsPtr  = MakeFileSystem();
+            list<wstring> masks  = { L"C:\\MockArchiveRoot\\release.zip\\docs\\*.md",
+                                     L"C:\\MockArchiveRoot\\release.zip\\docs\\*.txt" };
+            auto          groups = CMaskGrouper::GroupMasksByDirectory (masks, fsPtr.get());
+
+            Assert::AreEqual (size_t (1), groups.size());
+            Assert::AreEqual (L"C:\\MockArchiveRoot\\release.zip\\docs", groups[0].first.c_str());
+            Assert::AreEqual (size_t (2), groups[0].second.size());
+        }
+
+
+
+
+        TEST_METHOD(WithoutArchiveFileSystem_LastComponentIsSpec)
+        {
+            list<wstring> masks  = { L"C:\\MockArchiveRoot\\release.zip\\docs" };
+            auto          groups = CMaskGrouper::GroupMasksByDirectory (masks);
+
+            Assert::AreEqual (size_t (1), groups.size());
+            Assert::AreEqual (L"C:\\MockArchiveRoot\\release.zip", groups[0].first.c_str());
+            Assert::AreEqual (L"docs", groups[0].second[0].c_str());
+        }
     };
 }

@@ -4,6 +4,8 @@
 #include "pch.h"
 
 #include "AliasManager.h"
+#include "ArchiveFileSystem.h"
+#include "ArchiveInfo.h"
 #include "CommandLine.h"
 #include "Completer.h"
 #include "CompletionManager.h"
@@ -207,10 +209,19 @@ static void RunDirectoryListing (
     shared_ptr<CConsole>       consolePtr,
     shared_ptr<CConfig>        configPtr)
 {
-    unique_ptr<IResultsDisplayer> displayer = CreateDisplayer (cmdlinePtr, consolePtr, configPtr);
-    CDirectoryLister              dirLister   (cmdlinePtr, consolePtr, configPtr, std::move (displayer));
+    unique_ptr<IResultsDisplayer>  displayer    = CreateDisplayer (cmdlinePtr, consolePtr, configPtr);
+    CDirectoryLister               dirLister      (cmdlinePtr, consolePtr, configPtr, std::move (displayer));
+    shared_ptr<CArchiveFileSystem> archiveFsPtr;
 
-    auto groups = CMaskGrouper::GroupMasksByDirectory (cmdlinePtr->m_listMask);
+
+
+    if (cmdlinePtr->m_fArchives)
+    {
+        archiveFsPtr = make_shared<CArchiveFileSystem> (make_shared<CArchiveFileAccess>());
+        dirLister.SetArchiveFileSystem (archiveFsPtr);
+    }
+
+    auto groups = CMaskGrouper::GroupMasksByDirectory (cmdlinePtr->m_listMask, archiveFsPtr.get());
 
 
 
@@ -240,6 +251,7 @@ static int RunTcDir (int argc, WCHAR * argv[])
     shared_ptr<CConfig>      configPtr    = make_shared<CConfig>();
     shared_ptr<CConsole>     consolePtr   = make_shared<CConsole>();
     bool                     fWorkerHandled = false;
+    HRESULT                  hrRun        = S_OK;
 
  
 
@@ -291,7 +303,14 @@ static int RunTcDir (int argc, WCHAR * argv[])
         perfTimerPtr = make_unique<PerfTimer> (L"TCDir time elapsed", PerfTimer::Automatic, PerfTimer::Msec, [] (const wchar_t * msg) { fputws (msg, stdout); });
     }
 
-    RunDirectoryListing (cmdlinePtr, consolePtr, configPtr);
+    if (cmdlinePtr->m_fInfo)
+    {
+        hrRun = CArchiveInfo::Run (*cmdlinePtr, *consolePtr, make_shared<CArchiveFileAccess>());
+    }
+    else
+    {
+        RunDirectoryListing (cmdlinePtr, consolePtr, configPtr);
+    }
 
     //
     // Display any config file or TCDIR environment variable issues at the end of the run
@@ -299,6 +318,8 @@ static int RunTcDir (int argc, WCHAR * argv[])
 
     CUsage::DisplayConfigFileIssues (*consolePtr, cmdlinePtr->GetSwitchPrefix());
     CUsage::DisplayEnvVarIssues (*consolePtr, cmdlinePtr->GetSwitchPrefix());
+
+    hr = hrRun;
 
     
 
