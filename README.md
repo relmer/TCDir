@@ -294,9 +294,6 @@ Examples:
 - Wide listing: `TCDir.exe -w`
 ![TCDir wide listing](Assets/TCDir%20Wide.png)
 
-- Wide listing of subdirectories: `TCDir.exe -s -w`
-![TCDir recursive wide listing](Assets/TCDir%20Subdirectories%20Wide.png)
-
 ## Configuration file (`.tcdirconfig`)
 
 TCDir reads an optional config file at startup for persistent settings that don't require an environment variable.

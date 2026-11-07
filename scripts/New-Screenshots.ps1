@@ -46,57 +46,169 @@ $script:SampleEnv = 'D=LightGreen;S=Yellow;.md=LightMagenta,U+F48A;.png=Black on
 
 
 
-function New-DemoTree {
-    param([string]$Path)
+#
+# Demo files are copies of real files from this repository, so sizes, icons
+# and compression ratios match real projects.  A value that starts with '*'
+# is generated text instead of a copy.
+#
 
-    $files = [ordered]@{
-        '.gitignore'                 = 120
-        'README.md'                  = 5240
-        'LICENSE'                    = 1071
-        'CHANGELOG.md'               = 8312
-        'build.ps1'                  = 2048
-        'app.config.json'            = 734
-        'notes.txt'                  = 389
-        'logo.png'                   = 48211
-        'screenshot.jpg'             = 231004
-        'setup.exe'                  = 1843200
-        'engine.dll'                 = 912384
-        'report.pdf'                 = 104857
-        'data.csv'                   = 15873
-        'docs\guide.md'              = 12034
-        'docs\api.md'                = 20480
-        'docs\diagram.svg'           = 6144
-        'src\main.cpp'               = 9216
-        'src\main.h'                 = 1536
-        'src\parser.cpp'             = 18432
-        'src\parser.h'               = 2304
-        'src\CMakeLists.txt'         = 812
-        'src\tests\parser_tests.cpp' = 11264
-        'assets\icon.ico'            = 4286
-        'assets\banner.png'          = 96512
-        '.vscode\settings.json'      = 412
-    }
+function Copy-DemoFiles {
+    param([string]$Path, [System.Collections.Specialized.OrderedDictionary]$Files)
 
     $offset = 0
-    foreach ($rel in $files.Keys) {
-        $full = Join-Path $Path $rel
+    foreach ($rel in $Files.Keys) {
+        $full   = Join-Path $Path $rel
+        $source = $Files[$rel]
         New-Item -ItemType Directory -Force (Split-Path $full -Parent) | Out-Null
 
-        $stream = [System.IO.File]::Create($full)
-        $stream.SetLength($files[$rel])
-        $stream.Dispose()
+        switch ($source) {
+            '*csv'   { Set-Content -Path $full -Value (Get-SampleCsv) -Encoding utf8 }
+            '*notes' { Set-Content -Path $full -Value (Get-SampleNotes) -Encoding utf8 }
+            default  {
+                $from = if ([System.IO.Path]::IsPathRooted($source)) { $source } else { Join-Path $script:RepoRoot $source }
+                Copy-Item $from $full
+            }
+        }
 
         (Get-Item $full -Force).LastWriteTime = $script:SampleTime.AddDays(-$offset).AddMinutes(-37 * $offset)
         $offset++
     }
 
-    Copy-Item (Join-Path $script:RepoRoot 'TestData\Archives\zip\level1.zip') (Join-Path $Path 'release.zip')
-    (Get-Item (Join-Path $Path 'release.zip')).LastWriteTime = $script:SampleTime
+    Get-ChildItem $Path -Recurse -Directory -Force | ForEach-Object { $_.LastWriteTime = $script:SampleTime }
+}
+
+
+
+
+
+function Get-SampleCsv {
+    $random = [System.Random]::new(42)
+    $lines  = [System.Collections.Generic.List[string]]::new()
+    $lines.Add('date,region,product,units,revenue')
+
+    foreach ($day in 0..119) {
+        foreach ($region in 'North', 'South', 'East', 'West') {
+            $units = $random.Next(5, 400)
+            $lines.Add(('{0:yyyy-MM-dd},{1},{2},{3},{4:F2}' -f $script:SampleTime.AddDays(-$day), $region,
+                        ('Widget', 'Gadget', 'Gizmo')[$random.Next(3)], $units, $units * 19.95))
+        }
+    }
+
+    return $lines
+}
+
+
+
+
+
+function Get-SampleNotes {
+    return @(
+        'Release checklist'
+        ''
+        '- Bump the version in TCDirCore\Version.h'
+        '- Update CHANGELOG.md and the README What''s New table'
+        '- Build x64 and ARM64 Release'
+        '- Run the unit tests'
+        '- Regenerate the README screenshots'
+        '- Sign the binaries and publish the release'
+    )
+}
+
+
+
+
+
+function New-DemoZip {
+    param([string]$ZipPath, [System.Collections.Specialized.OrderedDictionary]$Entries)
+
+    Add-Type -AssemblyName System.IO.Compression
+    Add-Type -AssemblyName System.IO.Compression.FileSystem
+
+    $zip = [System.IO.Compression.ZipFile]::Open($ZipPath, 'Create')
+
+    try {
+        $offset = 0
+        foreach ($entryName in $Entries.Keys) {
+            $entry               = $zip.CreateEntry($entryName, 'Optimal')
+            $entry.LastWriteTime = $script:SampleTime.AddDays(-1 - $offset).AddMinutes(-53 * $offset)
+            $output              = $entry.Open()
+            $input               = [System.IO.File]::OpenRead($Entries[$entryName])
+
+            try {
+                $input.CopyTo($output)
+            }
+            finally {
+                $input.Dispose()
+                $output.Dispose()
+            }
+
+            $offset++
+        }
+    }
+    finally {
+        $zip.Dispose()
+    }
+
+    (Get-Item $ZipPath).LastWriteTime = $script:SampleTime
+}
+
+
+
+
+
+function New-DemoTree {
+    param([string]$Path)
+
+    Copy-DemoFiles $Path ([ordered]@{
+        '.gitignore'                   = '.gitignore'
+        'README.md'                    = 'README.md'
+        'LICENSE'                      = 'LICENSE'
+        'CHANGELOG.md'                 = 'CHANGELOG.md'
+        'build.ps1'                    = 'scripts\Build.ps1'
+        'launch.json'                  = '.vscode\launch.json'
+        'notes.txt'                    = '*notes'
+        'data.csv'                     = '*csv'
+        'logo.png'                     = 'Assets\icon-mockups\tcdir-final.png'
+        'screenshot.png'               = 'Assets\TCDir Tree.png'
+        'tcdir.exe'                    = $TcDirPath
+        'docs\archive-info.md'         = 'specs\013-archive-info\spec.md'
+        'docs\build-version.md'        = 'BUILD_VERSION.md'
+        'docs\icon.svg'                = 'Assets\icon-mockups\tcdir-rcdir-shared.svg'
+        'src\Console.cpp'              = 'TCDirCore\Console.cpp'
+        'src\Console.h'                = 'TCDirCore\Console.h'
+        'src\ZipReader.cpp'            = 'TCDirCore\ZipReader.cpp'
+        'src\ZipReader.h'              = 'TCDirCore\ZipReader.h'
+        'src\tests\ZipReaderTests.cpp' = 'UnitTest\ZipReaderTests.cpp'
+        'assets\tcdir.ico'             = 'Assets\TCDir.ico'
+        'assets\banner.png'            = 'Assets\TCDir-social.png'
+        '.vscode\settings.json'        = '.vscode\settings.json'
+    })
+
+    #
+    # release.zip contains a nested source.zip, so the archive screenshots
+    # include an archive inside an archive
+    #
+
+    $sourceZip = Join-Path $script:StageRoot 'source.zip'
+    New-DemoZip $sourceZip ([ordered]@{
+        'Console.cpp'   = Join-Path $Path 'src\Console.cpp'
+        'Console.h'     = Join-Path $Path 'src\Console.h'
+        'ZipReader.cpp' = Join-Path $Path 'src\ZipReader.cpp'
+        'ZipReader.h'   = Join-Path $Path 'src\ZipReader.h'
+    })
+
+    New-DemoZip (Join-Path $Path 'release.zip') ([ordered]@{
+        'tcdir.exe'             = Join-Path $Path 'tcdir.exe'
+        'README.md'             = Join-Path $Path 'README.md'
+        'LICENSE'               = Join-Path $Path 'LICENSE'
+        'CHANGELOG.md'          = Join-Path $Path 'CHANGELOG.md'
+        'docs/archive-info.md'  = Join-Path $Path 'docs\archive-info.md'
+        'docs/build-version.md' = Join-Path $Path 'docs\build-version.md'
+        'source.zip'            = $sourceZip
+    })
 
     (Get-Item (Join-Path $Path '.gitignore') -Force).Attributes = 'Hidden, Archive'
     (Get-Item (Join-Path $Path 'LICENSE')).Attributes           = 'ReadOnly, Archive'
-
-    Get-ChildItem $Path -Recurse -Directory -Force | ForEach-Object { $_.LastWriteTime = $script:SampleTime }
 }
 
 
@@ -111,72 +223,26 @@ function New-DemoTree {
 function New-Showcase {
     param([string]$Path)
 
-    $files = [ordered]@{
-        '.gitignore'     = 96
-        'build.ps1'      = 2048
-        'LICENSE'        = 1071
-        'logo.png'       = 48211
-        'README.md'      = 5240
-        'src\main.cpp'   = 9216
-        'src\parser.cpp' = 18432
-        'src\parser.h'   = 2304
-    }
+    Copy-DemoFiles $Path ([ordered]@{
+        '.gitignore'        = '.gitignore'
+        'build.ps1'         = 'scripts\Build.ps1'
+        'LICENSE'           = 'LICENSE'
+        'logo.png'          = 'Assets\icon-mockups\tcdir-final.png'
+        'README.md'         = 'README.md'
+        'src\Console.cpp'   = 'TCDirCore\Console.cpp'
+        'src\Console.h'     = 'TCDirCore\Console.h'
+        'src\ZipReader.cpp' = 'TCDirCore\ZipReader.cpp'
+    })
 
-    $offset = 0
-    foreach ($rel in $files.Keys) {
-        $full = Join-Path $Path $rel
-        New-Item -ItemType Directory -Force (Split-Path $full -Parent) | Out-Null
+    New-DemoZip (Join-Path $Path 'release.zip') ([ordered]@{
+        'tcdir.exe'            = (Resolve-Path $TcDirPath).Path
+        'CHANGELOG.md'         = Join-Path $script:RepoRoot 'CHANGELOG.md'
+        'docs/archive-info.md' = Join-Path $script:RepoRoot 'specs\013-archive-info\spec.md'
+    })
 
-        $stream = [System.IO.File]::Create($full)
-        $stream.SetLength($files[$rel])
-        $stream.Dispose()
-
-        (Get-Item $full -Force).LastWriteTime = $script:SampleTime.AddDays(-$offset).AddMinutes(-37 * $offset)
-        $offset++
-    }
-
-    #
-    # Entries contain repetitive text, so they compress to a realistic ratio
-    #
-
-    $entries = [ordered]@{
-        'app.exe'          = 412672
-        'app.dll'          = 186368
-        'docs/manual.pdf'  = 96256
-    }
-
-    Add-Type -AssemblyName System.IO.Compression
-    $zipPath = Join-Path $Path 'release.zip'
-    $zip     = [System.IO.Compression.ZipFile]::Open($zipPath, 'Create')
-
-    try {
-        $offset = 0
-        foreach ($entryName in $entries.Keys) {
-            $entry               = $zip.CreateEntry($entryName, 'Optimal')
-            $entry.LastWriteTime = $script:SampleTime.AddDays(-2 - $offset)
-            $bytes               = [byte[]]::new($entries[$entryName])
-            $random              = [System.Random]::new($offset + 7)
-
-            for ($i = 0; $i -lt $bytes.Length; $i++) {
-                $bytes[$i] = if ($i % 5 -eq 0) { [byte]$random.Next(256) } else { [byte](65 + ($i % 23)) }
-            }
-
-            $stream = $entry.Open()
-            $stream.Write($bytes, 0, $bytes.Length)
-            $stream.Dispose()
-            $offset++
-        }
-    }
-    finally {
-        $zip.Dispose()
-    }
-
-    (Get-Item $zipPath).LastWriteTime                                = $script:SampleTime
-    (Get-Item (Join-Path $Path '.gitignore') -Force).Attributes      = 'Hidden, Archive'
-    (Get-Item (Join-Path $Path 'LICENSE')).Attributes                = 'ReadOnly, Archive'
-    Get-ChildItem $Path -Recurse -Directory -Force | ForEach-Object { $_.LastWriteTime = $script:SampleTime }
+    (Get-Item (Join-Path $Path '.gitignore') -Force).Attributes = 'Hidden, Archive'
+    (Get-Item (Join-Path $Path 'LICENSE')).Attributes           = 'ReadOnly, Archive'
 }
-
 
 
 
@@ -428,7 +494,6 @@ $shots = [ordered]@{
     'TCDir Tree'                    = @(New-Step 'tcdir --Tree' @('--Tree'))
     'TCDir Subdirectories'          = @(New-Step 'tcdir -s' @('-s'))
     'TCDir Wide'                    = @(New-Step 'tcdir -w' @('-w'))
-    'TCDir Subdirectories Wide'     = @(New-Step 'tcdir -s -w' @('-s', '-w'))
     'TCDir Env Variable'            = @(
                                         New-Step "`$env:TCDIR = `"$script:SampleEnv`"" $null
                                         New-Step 'tcdir' @() @{ TCDIR = $script:SampleEnv }
@@ -445,6 +510,7 @@ $demoRoot  = Join-Path $stageRoot 'Drive'
 $homeRoot  = Join-Path $demoRoot 'Users\Demo'
 $drive     = Get-FreeDriveLetter
 $script:Drive = $drive
+$script:StageRoot = $stageRoot
 
 New-Item -ItemType Directory -Force (Join-Path $demoRoot 'Demo') | Out-Null
 New-DemoTree   (Join-Path $demoRoot 'Demo')
