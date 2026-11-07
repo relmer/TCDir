@@ -256,6 +256,8 @@ With `--Archives`, a path to an archive file lists the archive's contents, and `
 - `tcdir --Archives -S src`: recurse through `src` and every archive in it
 - `tcdir --Archives --Tree src`: draw each archive's contents below the archive's file line
 
+![TCDir archive tree](Assets/TCDir%20Archives.png)
+
 | Format | Windows version |
 | :--- | :--- |
 | `.zip`, `.iso` (ISO 9660, Joliet, UDF) | All supported versions |
@@ -272,6 +274,8 @@ Archives are read-only: tcdir never changes them, never extracts them to disk, a
 - `tcdir --Info outer.zip\inner.7z`: report an archive stored inside another archive
 - `tcdir --Info -S builds\*.7z`: report matching archives in `builds`, its subfolders, and inside other archives at any depth
 - `tcdir --Info --Verify release.zip`: also read every entry and check the checksums the archive stores
+
+![TCDir --Info output](Assets/TCDir%20Info.png)
 
 Every block lists the size on disk, the file, folder and nested-archive counts, the uncompressed size and ratio, the largest file, the deepest path, the date range, encryption, and a breakdown by extension. The blocks add these values for each format:
 
@@ -290,6 +294,9 @@ Examples:
 
 - Wide listing: `TCDir.exe -w`
 ![TCDir wide listing](Assets/TCDir%20Wide.png)
+
+- Wide listing of subdirectories: `TCDir.exe -s -w`
+![TCDir recursive wide listing](Assets/TCDir%20Subdirectories%20Wide.png)
 
 ## Configuration file (`.tcdirconfig`)
 
@@ -401,7 +408,7 @@ File attribute colors (`Attr:<letter>`):
 
 - `H` (hidden), `S` (system), `R` (read-only), `D` (directory)
 
-- Here's an example of the default output, setting the TCDIR environment variable, then showing its effects:
+- Here's an example of setting the TCDIR environment variable, then showing its effects:
 ![TCDir with TCDIR environment variable](Assets/TCDir%20Env%20Variable.png)
 
 To see the full list of supported colors and a nicely formatted explanation, use `--Env`.  
@@ -420,7 +427,7 @@ To see your current resolved configuration (all sources merged), use `--Settings
 - All configuration settings are displayed along with the source of each setting (default, config file, or env var).
 - Config file parse errors are shown with file path and line number.
 - `TCDir.exe --Settings`:
-![TCDir --Settings output](Assets/TCDir%20Config.png)
+![TCDir --Settings output](Assets/TCDir%20Settings.png)
 
 ## Building
 

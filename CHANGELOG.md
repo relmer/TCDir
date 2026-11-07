@@ -23,6 +23,8 @@ All notable changes to TCDir are documented in this file.
   - Blocks for the other formats add the format and filters, stream totals, links, owners, groups and permissions
 - `--Verify`: with `--Info`, read every entry and check the checksums the archive stores; damaged entries fail the run
 - The date and time columns are blank for entries with no stored time (possible inside archives)
+- Redirected output wraps at the width in the `COLUMNS` environment variable when it is set (20 to 1000), and at 80 columns otherwise
+- `scripts\New-Screenshots.ps1` regenerates the README screenshots from a staged demo folder
 
 ### Fixed
 - `Tree` and `Ellipsize` are added to the switch help in `--Env` and `--Config`, and to the decoded `TCDIR` settings in `--Env` when they appear in `TCDIR`

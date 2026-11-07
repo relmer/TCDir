@@ -27,6 +27,8 @@ public:
 
     UINT    GetWidth                  (void)     { return m_cxConsoleWidth; }
 
+    static UINT WidthFromColumns      (const wstring & strColumns, UINT cxDefault);
+
     shared_ptr<CConfig> m_configPtr;
 
     
@@ -35,6 +37,7 @@ protected:
 
     HRESULT InitializeConsoleMode               (void);
     HRESULT InitializeConsoleWidth              (void);
+    static wstring ReadColumnsVariable          (void);
     void    SetColor                            (WORD attr);
     void    ColorPrint                          (LPCWSTR psz);
     void    ProcessMultiLineStringWithAttribute (wstring_view text, WORD attr);
@@ -42,6 +45,10 @@ protected:
     void    FlushIfAuto                         (void);
 
     static constexpr size_t s_kcchInitialBufferSize = 10 * 1024 * 1024;
+    static constexpr UINT   s_kcxMinColumns         = 20;
+    static constexpr UINT   s_kcxMaxColumns         = 1000;
+    static constexpr size_t s_kcchMaxColumnsValue   = 4;
+    static constexpr UINT   s_kuDecimalBase         = 10;
 
     HANDLE              m_hStdOut        = nullptr;
     bool                m_fIsRedirected  = true;    // True if redirected (e.g., in a unit test)

@@ -57,6 +57,12 @@ HRESULT CArchiveInfo::Run (const CCommandLine & cmdline, CConsole & console, sha
         targets.push_back (L"*");
     }
 
+    //
+    // A blank line separates the output from the command, as in a listing
+    //
+
+    console.Printf (CConfig::Information, L"\n");
+
     for (const wstring & strTarget : targets)
     {
         if (!finder.Find (strTarget))
