@@ -83,6 +83,10 @@ public:
     optional<bool>     m_fIcons;                                                        // /Icons (true), /Icons- (false), absent (nullopt)
     bool               m_fTree                                             = false;    // --Tree switch (tree view mode)
     optional<bool>     m_fEllipsize;                                                    // --Ellipsize (true), --Ellipsize- (false), absent (nullopt = on)
+    bool               m_fArchives                                         = false;    // --Archives switch (list archive contents as directories)
+    bool               m_fInfo                                             = false;    // --Info switch (report archive statistics)
+    bool               m_fVerify                                           = false;    // --Verify switch (check archive checksums)
+    wstring            m_strInfoConflictSwitch;                                         // First listing switch typed, as typed (conflicts with --Info)
     int                m_cMaxDepth                                         = 0;        // --Depth=N (0 = unlimited)
     int                m_cTreeIndent                                       = 4;        // --TreeIndent=N (1-8)
     ESizeFormat        m_eSizeFormat                                       = ESizeFormat::Default;  // --Size=Auto|Bytes
@@ -118,12 +122,18 @@ protected:
     HRESULT HandleSwitch                  (LPCWSTR pszArg, int & cArg, WCHAR ** & ppszArg);
     HRESULT HandleLongSwitch              (LPCWSTR pszArg, int & cArg, WCHAR ** & ppszArg);
     static bool IsRecognizedLongSwitch    (const wstring & strSwitch);
+    static bool IsListingSwitch           (LPCWSTR pszSwitchArg);
+
+    static constexpr size_t s_kcchMinLongSwitch   = 3;    // Shortest long switch name
+    static constexpr int    s_kcDefaultTreeIndent = 4;
+
     HRESULT ParseSwitch                   (LPCWSTR pszArg, int & cArg, WCHAR ** & ppszArg);
     HRESULT RejectSingleDashLongSwitch    (LPCWSTR pszSwitchArg);
     HRESULT ValidateSwitchCombinations    (void);
     HRESULT ValidateTreeCombinations      (void);
     HRESULT ValidateAliasCombinations     (void);
     HRESULT ValidateNerdFontCombinations  (void);
+    HRESULT ValidateInfoCombinations      (void);
 
     //
     // Returns true if any of the bool member flags in the array is set on this.

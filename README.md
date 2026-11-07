@@ -21,12 +21,13 @@ TCDir ("Technicolor Directory") is a fast, colorized directory listing tool for 
 It's designed as a practical `dir`-style command with useful defaults (color by extension/attributes, Nerd Font file/folder icons, sorting, recursion, wide output, and a multi-threaded enumerator).
 Settings can be persisted in a config file (`~\.tcdirconfig`), overridden via the `TCDIR` environment variable, or specified on the command line.
 
-![TCDir basic listing](Assets/TCDir.png)
+![TCDir tree listing that expands a .zip archive](Assets/TCDir.png)
 
 ## What's New
 
 | Version | Highlights |
 | :---: | :--- |
+| **5.7** | Browse archives as folders (`--Archives`: `.zip`, `.iso`, `.7z`, `.rar`, `.tar.*`, ...) and print archive statistics with checksum verification (`--Info`, `--Verify`) |
 | **5.6** | Install/uninstall Nerd Fonts system-wide (`--install-nerdfonts`, `--uninstall-nerdfonts`) with Windows Terminal profile configuration |
 | **5.5** | Variable-width columns in wide mode (`/W`) — GNU ls-style per-column fitting; outlier truncation with `…` |
 | **5.4** | Symlink, junction, and AppExecLink target display (`→ target`); ellipsize long target paths (`…`) |
@@ -53,13 +54,18 @@ Hat tip to [Chris Kirmse](https://github.com/ckirmse) whose excellent [ZDir](htt
 | Nerd Font file/folder icons | — | ✅ | ✅ | ✅ |
 | Tree view with full metadata | — | ✅ | ✅ | ✅ |
 | Multi-threaded enumeration | — | ✅ | — | — |
-| Native Windows (no WSL/MSYS) | ✅ | ✅ | ⚠️ | ⚠️ |
 | Familiar `dir` switch syntax | ✅ | ✅ | — | — |
 | ARM64 native binary | ✅ | ✅ | — | — |
 | NTFS alternate data streams | ✅ | ✅ | — | — |
 | Symlink/junction target display | — | ✅ | ✅ | ✅ |
-| Configurable via environment variable | — | ✅ | — | — |
+| Configurable via environment variable | — | ✅ | ⚠️ | ⚠️ |
 | Persistent config file | — | ✅ | ✅ | ✅ |
+| Browse inside archives (`.zip`, `.iso`, `.7z`, `.rar`, `.tar.*`, ...) | — | ✅ | — | — |
+| Archive statistics and checksum verification | — | ✅ | — | — |
+| Interactive PowerShell alias setup | — | ✅ | — | — |
+| Nerd Font installer | — | ✅ | — | — |
+
+⚠️ eza and lsd read colors (`LS_COLORS`, `EZA_COLORS`) and, for eza, a few display settings from environment variables; TCDir reads switches and colors from `TCDIR`.
 
 ## Manual installation
 
@@ -143,7 +149,7 @@ Show help:
 
 Basic syntax:
 
-- `TCDIR [drive:][path][filename] [-A[[:]attributes]] [-O[[:]sortorder]] [-T[[:]timefield]] [-S] [-W] [-B] [-P] [-M] [--Env] [--Config] [--Settings] [--Owner] [--Streams] [--Icons] [--Tree] [--Depth=N] [--TreeIndent=N] [--Size=Auto|Bytes]`
+- `TCDIR [drive:][path][filename] [-A[[:]attributes]] [-O[[:]sortorder]] [-T[[:]timefield]] [-S] [-W] [-B] [-P] [-M] [--Env] [--Config] [--Settings] [--Owner] [--Streams] [--Icons] [--Tree] [--Archives] [--Info] [--Verify] [--Depth=N] [--TreeIndent=N] [--Size=Auto|Bytes]`
 
 Common switches:
 
@@ -166,6 +172,9 @@ Common switches:
 - `--Streams`: display NTFS alternate data streams
 - `--Icons`: enable Nerd Font file/folder icons; use `--Icons-` to disable
 - `--Tree`: hierarchical directory tree view; use `--Tree-` to disable
+- `--Archives`: list the contents of an archive file (`.zip`, `.iso`, `.7z`, `.rar`, `.tar`, ...) given as a path, and recurse into archive files with `-S` and `--Tree`; use `--Archives-` to disable
+- `--Info`: print statistics for each archive that matches the targets instead of a listing; with `-S`, archives in subfolders and inside other archives are reported too
+- `--Verify`: with `--Info`, read every archive entry and check its stored checksum
 - `--Depth=N`: limit tree depth to N levels (requires `--Tree`)
 - `--TreeIndent=N`: tree indent width per level, 1–8, default 4 (requires `--Tree`)
 - `--Size=Auto|Bytes`: `Auto` shows abbreviated sizes (e.g., `8.90 KB`); `Bytes` shows exact comma-separated sizes. Tree mode defaults to `Auto`, non-tree defaults to `Bytes`
@@ -236,6 +245,46 @@ Incompatible with `-W` (wide), `-B` (bare), `-S` (recurse), `--Owner`, and `--Si
 
 - Tree listing: `TCDir.exe --Tree`
 ![TCDir tree listing](Assets/TCDir%20Tree.png)
+
+### Archive browsing (`--Archives`)
+
+With `--Archives`, a path to an archive file lists the archive's contents, and `-S` and `--Tree` recurse into archive files as if they were directories. Archive files in a listing appear as files, with their usual size, date, color and icon, so listing a directory without `-S` or `--Tree` prints the same output as without the switch.
+
+- `tcdir --Archives release.zip`: list the root of the archive
+- `tcdir --Archives release.zip\docs\*.md`: list matching entries in a folder inside the archive
+- `tcdir --Archives -S src`: recurse through `src` and every archive in it
+- `tcdir --Archives --Tree src`: draw each archive's contents below the archive's file line
+
+![TCDir archive tree](Assets/TCDir%20Archives.png)
+
+| Format | Windows version |
+| :--- | :--- |
+| `.zip`, `.iso` (ISO 9660, Joliet, UDF) | All supported versions |
+| `.7z`, `.rar`, `.tar`, `.tgz`/`.tar.gz`, `.tar.bz2`, `.tar.xz`, `.tar.zst`, `.cab`, `.cpio`, `.xar`, `.lzh` | Windows 11 23H2 and later (uses `archiveint.dll`, which ships with Windows) |
+
+Archives are read-only: tcdir never changes them, never extracts them to disk, and never mounts `.iso` images. Only the archive's file list is read, so listing a large `.zip` is fast. Compressed tarballs and solid `.7z`/`.rar` archives must be decompressed to find their entries, so they take longer. On Windows 11 23H2 and later, an archive stored inside another archive (`outer.zip\inner.zip`) is browsed too: tcdir decompresses it into memory to read its file list. Inner archives larger than 256 MB, and all inner archives on earlier Windows versions, are listed as files. In tree view with a file mask, an archive that does not match the mask appears only when it contains matching entries. Owner, stream and cloud columns are blank for archive entries. A corrupt or password-protected archive prints an error, and the rest of the listing continues.
+
+### Archive statistics (`--Info`)
+
+`--Info` prints a block of statistics for each archive instead of a listing. It works with or without `--Archives`.
+
+- `tcdir --Info release.zip`: report one archive
+- `tcdir --Info builds\*.zip`: report every matching archive, followed by a summary
+- `tcdir --Info outer.zip\inner.7z`: report an archive stored inside another archive
+- `tcdir --Info -S builds\*.7z`: report matching archives in `builds`, its subfolders, and inside other archives at any depth
+- `tcdir --Info --Verify release.zip`: also read every entry and check the checksums the archive stores
+
+![TCDir --Info output](Assets/TCDir%20Info.png)
+
+Every block lists the size on disk, the file, folder and nested-archive counts, the uncompressed size and ratio, the largest file, the deepest path, the date range, encryption, and a breakdown by extension. The blocks add these values for each format:
+
+| Format | Details |
+| :--- | :--- |
+| `.zip` | Compression methods with compressed and uncompressed sizes, encryption type (ZipCrypto, AES), the creating host and version, ZIP64, several disks, a self-extractor prefix, and the comment |
+| `.iso` | File systems (ISO 9660, Joliet, Rock Ridge, UDF revision), volume label and IDs, volume dates, sector count, and El Torito boot platforms |
+| Others | Format and compression filters, stream totals, links, owners, groups, permissions, and entries with extended attributes or ACLs |
+
+Listing switches (`-W`, `-B`, `--Tree`, `-O`, `-A`, `-T`, `--Owner`, `--Streams`, `--Icons`, `--Size` and the others that change listing output) can't be combined with `--Info`. Listing defaults in `TCDIR` or `.tcdirconfig` are ignored under `--Info`. `--Verify` requires Windows 11 23H2 or later. With `--Verify`, the run exits with a failure code when an entry is damaged.
 
 Examples:
 
@@ -318,6 +367,7 @@ Enable default switches by including the switch name (in the `TCDIR` env var or 
 - `Streams` - display NTFS alternate data streams by default
 - `Icons` - enable Nerd Font icons by default; `Icons-` to force off
 - `Tree` - enable tree view by default; `Tree-` to force off
+- `Archives` - browse archive targets and recurse into archives by default; `Archives-` to force off
 - `Depth=N` - set default tree depth limit
 - `TreeIndent=N` - set default tree indent width (1–8)
 - `Size=Auto` / `Size=Bytes` - set default size display format
@@ -354,7 +404,7 @@ File attribute colors (`Attr:<letter>`):
 
 - `H` (hidden), `S` (system), `R` (read-only), `D` (directory)
 
-- Here's an example of the default output, setting the TCDIR environment variable, then showing its effects:
+- Here's an example of setting the TCDIR environment variable, then showing its effects:
 ![TCDir with TCDIR environment variable](Assets/TCDir%20Env%20Variable.png)
 
 To see the full list of supported colors and a nicely formatted explanation, use `--Env`.  
@@ -373,7 +423,7 @@ To see your current resolved configuration (all sources merged), use `--Settings
 - All configuration settings are displayed along with the source of each setting (default, config file, or env var).
 - Config file parse errors are shown with file path and line number.
 - `TCDir.exe --Settings`:
-![TCDir --Settings output](Assets/TCDir%20Config.png)
+![TCDir --Settings output](Assets/TCDir%20Settings.png)
 
 ## Building
 

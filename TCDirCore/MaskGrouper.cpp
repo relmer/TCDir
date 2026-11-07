@@ -1,5 +1,6 @@
 #include "pch.h"
 #include "MaskGrouper.h"
+#include "ArchiveFileSystem.h"
 #include "Ehm.h"
 
 
@@ -60,16 +61,17 @@ bool CMaskGrouper::IsPureMask (const wstring & mask)
 void CMaskGrouper::SplitMaskIntoDirAndFileSpec (
     const wstring          & mask,
     const filesystem::path & cwd,
+    CArchiveFileSystem     * pArchiveFs,
     filesystem::path       & dirPath,
     filesystem::path       & fileSpec)
 {
     if (IsPureMask (mask))
     {
-        SplitPureMask (mask, cwd, dirPath, fileSpec);
+        SplitPureMask (mask, cwd, pArchiveFs, dirPath, fileSpec);
     }
     else
     {
-        SplitQualifiedMask (mask, dirPath, fileSpec);
+        SplitQualifiedMask (mask, pArchiveFs, dirPath, fileSpec);
     }
 
     return;
@@ -92,6 +94,7 @@ void CMaskGrouper::SplitMaskIntoDirAndFileSpec (
 void CMaskGrouper::SplitPureMask (
     const wstring          & mask,
     const filesystem::path & cwd,
+    CArchiveFileSystem     * pArchiveFs,
     filesystem::path       & dirPath,
     filesystem::path       & fileSpec)
 {
@@ -113,6 +116,11 @@ void CMaskGrouper::SplitPureMask (
         {
             fIsDir = (wfd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0;
             FindClose (hFind);
+        }
+
+        if (!fIsDir)
+        {
+            fIsDir = IsArchiveDirectory (pArchiveFs, purePath);
         }
     }
 
@@ -145,6 +153,7 @@ void CMaskGrouper::SplitPureMask (
 
 void CMaskGrouper::SplitQualifiedMask (
     const wstring          & mask,
+    CArchiveFileSystem     * pArchiveFs,
     filesystem::path       & dirPath,
     filesystem::path       & fileSpec)
 {
@@ -181,6 +190,11 @@ void CMaskGrouper::SplitQualifiedMask (
     else
     {
         fIsDir = filesystem::is_directory (absolutePath, ec);
+
+        if (!fIsDir)
+        {
+            fIsDir = IsArchiveDirectory (pArchiveFs, absolutePath);
+        }
     }
 
     if (fIsDir)
@@ -287,7 +301,7 @@ void CMaskGrouper::AddMaskToGroups (
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-vector<MaskGroup> CMaskGrouper::GroupMasksByDirectory (const list<wstring> & masks)
+vector<MaskGroup> CMaskGrouper::GroupMasksByDirectory (const list<wstring> & masks, CArchiveFileSystem * pArchiveFs)
 {
     vector<MaskGroup>                         groups;
     map<wstring, size_t, CaseInsensitiveLess> dirToIndex;
@@ -314,10 +328,32 @@ vector<MaskGroup> CMaskGrouper::GroupMasksByDirectory (const list<wstring> & mas
             filesystem::path dirPath;
             filesystem::path fileSpec;
 
-            SplitMaskIntoDirAndFileSpec (mask, cwd, dirPath, fileSpec);
+            SplitMaskIntoDirAndFileSpec (mask, cwd, pArchiveFs, dirPath, fileSpec);
             AddMaskToGroups (dirPath, fileSpec, groups, dirToIndex);
         }
     }
 
     return groups;
 }
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CMaskGrouper::IsArchiveDirectory
+//
+//  True when archive browsing is on and path is an archive or a folder
+//  inside one.
+//
+////////////////////////////////////////////////////////////////////////////////
+
+bool CMaskGrouper::IsArchiveDirectory (CArchiveFileSystem * pArchiveFs, const filesystem::path & path)
+{
+    return pArchiveFs != nullptr && pArchiveFs->IsDirectory (path);
+}
+
+
+
+

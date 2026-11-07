@@ -45,8 +45,9 @@ struct FileInfo : public WIN32_FIND_DATA
     {
     }
 
-    vector<SStreamInfo> m_vStreams;        // Alternate data streams (empty if none or not collected)
-    wstring             m_strReparseTarget;  // Resolved link target path (empty if not a supported reparse point)
+    vector<SStreamInfo> m_vStreams;                     // Alternate data streams (empty if none or not collected)
+    wstring             m_strReparseTarget;             // Resolved link target path (empty if not a supported reparse point)
+    bool                m_fArchiveContainer = false;    // Tree mode: archive file added for recursion only; it did not match a file spec
 };
 
 typedef vector<FileInfo>         FileInfoVector;
@@ -97,6 +98,15 @@ public:
     UINT                                    m_cStreams           = 0;
     ULARGE_INTEGER                          m_uliBytesUsed       = {};
     ULARGE_INTEGER                          m_uliStreamBytesUsed = {};
+
+    //
+    // Archive browsing: m_dirPath is a folder inside an archive, and the
+    // archive that failed to parse (printed by the display thread)
+    //
+
+    bool                                    m_fInArchive         = false;
+    filesystem::path                        m_archiveErrorPath;
+    wstring                                 m_strArchiveError;
 
     //
     // Multithreading support members (unused in single-threaded mode)

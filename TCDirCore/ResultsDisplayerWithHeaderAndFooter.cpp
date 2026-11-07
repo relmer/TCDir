@@ -371,12 +371,13 @@ void CResultsDisplayerWithHeaderAndFooter::DisplayVolumeFooter (const CDirectory
     HRESULT        hr                    = S_OK;
     BOOL           fSuccess              = {};              
     ULARGE_INTEGER uliFreeBytesAvailable = {}; 
-    ULARGE_INTEGER uliTotalBytes         = {};         
-    ULARGE_INTEGER uliTotalFreeBytes     = {};     
+    ULARGE_INTEGER uliTotalBytes         = {};
+    ULARGE_INTEGER uliTotalFreeBytes     = {};
+    wstring        strVolumePath         = di.m_fInArchive ? di.m_dirPath.root_path().wstring() : di.m_dirPath.wstring();
 
     
 
-    fSuccess = GetDiskFreeSpaceEx (di.m_dirPath.c_str(), &uliFreeBytesAvailable, &uliTotalBytes, &uliTotalFreeBytes);
+    fSuccess = GetDiskFreeSpaceEx (strVolumePath.c_str(), &uliFreeBytesAvailable, &uliTotalBytes, &uliTotalFreeBytes);
     CBRA (fSuccess);
 
     m_consolePtr->ColorPrintf (L"{InformationHighlight} %s{Information}%s\n",

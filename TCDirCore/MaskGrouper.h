@@ -6,6 +6,12 @@
 
 
 
+class CArchiveFileSystem;
+
+
+
+
+
 typedef pair<filesystem::path, vector<filesystem::path>> MaskGroup;
 
 
@@ -25,22 +31,28 @@ private:
 
 public:
     static bool              IsPureMask            (const wstring       & mask);
-    static vector<MaskGroup> GroupMasksByDirectory (const list<wstring> & masks);
+    static vector<MaskGroup> GroupMasksByDirectory (const list<wstring> & masks, CArchiveFileSystem * pArchiveFs = nullptr);
 
 private:
     static void SplitMaskIntoDirAndFileSpec        (const wstring           & mask,
                                                     const filesystem::path  & cwd,
+                                                    CArchiveFileSystem      * pArchiveFs,
                                                     filesystem::path        & dirPath,
                                                     filesystem::path        & fileSpec);
 
     static void SplitPureMask                       (const wstring          & mask,
                                                     const filesystem::path  & cwd,
+                                                    CArchiveFileSystem      * pArchiveFs,
                                                     filesystem::path        & dirPath,
                                                     filesystem::path        & fileSpec);
 
     static void SplitQualifiedMask                  (const wstring          & mask,
+                                                    CArchiveFileSystem      * pArchiveFs,
                                                     filesystem::path        & dirPath,
                                                     filesystem::path        & fileSpec);
+
+    static bool IsArchiveDirectory                  (CArchiveFileSystem      * pArchiveFs,
+                                                    const filesystem::path  & path);
 
     static void AddMaskToGroups                    (const filesystem::path                      & dirPath,
                                                     const filesystem::path                      & fileSpec,

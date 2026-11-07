@@ -1,6 +1,7 @@
 ﻿#include "pch.h"
 #include "DirectoryLister.h"
 
+#include "ArchiveFileSystem.h"
 #include "AutoHandle.h"
 #include "CommandLine.h"
 #include "Config.h"
@@ -72,6 +73,43 @@ CDirectoryLister::~CDirectoryLister (void)
 
 ////////////////////////////////////////////////////////////////////////////////
 //
+//  CDirectoryLister::SetArchiveFileSystem
+//
+//  Turns on archive browsing.  Without a call, archives list as files.
+//
+////////////////////////////////////////////////////////////////////////////////
+
+void CDirectoryLister::SetArchiveFileSystem (shared_ptr<CArchiveFileSystem> archiveFsPtr)
+{
+    m_enumerator.SetArchiveFileSystem (archiveFsPtr);
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//  CDirectoryLister::PrintArchiveError
+//
+//  Prints an archive read failure in the same style as the "does not exist"
+//  error.
+//
+////////////////////////////////////////////////////////////////////////////////
+
+void CDirectoryLister::PrintArchiveError (CConsole & console, const filesystem::path & archivePath, const wstring & strMessage)
+{
+    console.ColorPrintf (L"{Error}Error:   {InformationHighlight}%s{Error}%s\n",
+                         archivePath.c_str(),
+                         strMessage.c_str());
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
 //  CDirectoryLister::List
 //
 //  Entry point for listing a directory with file specs applied.
@@ -83,20 +121,30 @@ CDirectoryLister::~CDirectoryLister (void)
 
 void CDirectoryLister::List (const MaskGroup & group)
 {
-    HRESULT                          hr = S_OK;
+    HRESULT                          hr         = S_OK;
     std::error_code                  ec;
-    const filesystem::path         & dirPath   = group.first;
-    const vector<filesystem::path> & fileSpecs = group.second;
+    const filesystem::path         & dirPath    = group.first;
+    const vector<filesystem::path> & fileSpecs  = group.second;
+    CArchiveFileSystem             * pArchiveFs = m_enumerator.ArchiveFileSystem();
+    bool                             fExists    = false;
 
 
 
     CBRAEx (m_displayer != nullptr, E_UNEXPECTED);
 
     //
-    // Validate the directory exists
+    // Validate the directory exists (a real directory, or an archive or a
+    // folder inside one when archive browsing is on)
     //
 
-    if (!filesystem::exists (dirPath, ec) || !filesystem::is_directory (dirPath, ec)) 
+    fExists = filesystem::exists (dirPath, ec) && filesystem::is_directory (dirPath, ec);
+
+    if (!fExists && pArchiveFs != nullptr)
+    {
+        fExists = pArchiveFs->IsDirectory (dirPath);
+    }
+
+    if (!fExists)
     {
         m_consolePtr->ColorPrintf (L"{Error}Error:   {InformationHighlight}%s{Error} does not exist\n", 
                                    dirPath.c_str());
@@ -152,11 +200,19 @@ HRESULT CDirectoryLister::ProcessDirectory (
 
 
 
+    di.m_fInArchive = m_enumerator.IsArchiveLocation (dirPath);
+
     //
     // Search for matching files and directories
-    //     
-    
+    //
+
     CollectMatchingFilesAndDirectories (dirPath, fileSpec, di);
+
+    if (!di.m_strArchiveError.empty())
+    {
+        PrintArchiveError (*m_consolePtr, di.m_archiveErrorPath, di.m_strArchiveError);
+        BAIL_OUT_IF (TRUE, S_OK);
+    }
 
     //
     // Count directories whose names matched the mask
@@ -259,23 +315,17 @@ HRESULT CDirectoryLister::CollectMatchingFilesAndDirectories (
     const std::filesystem::path & fileSpec, 
     CDirectoryInfo              & di)
 {
-    HRESULT          hr              = S_OK;
-    filesystem::path pathAndFileSpec = dirPath / fileSpec;
-    BOOL             fSuccess        = FALSE;
-    AutoFindHandle   hFind;
-    WIN32_FIND_DATA  wfd             = { 0 };
+    HRESULT             hr    = S_OK;
+    SEnumerationError   error;
 
 
 
-    hFind = FindFirstFile (pathAndFileSpec.c_str(), &wfd);
-    CWR (hFind != INVALID_HANDLE_VALUE);
-
-    do
+    hr = m_enumerator.Enumerate (dirPath, fileSpec, [&] (const WIN32_FIND_DATA & wfd)
     {
         if (!IsDots (wfd.cFileName))
         {
             //
-            // If the required attributes are present and the excluded attributes are not 
+            // If the required attributes are present and the excluded attributes are not
             // then add the file to the list of matches for this directory
             //
 
@@ -286,9 +336,14 @@ HRESULT CDirectoryLister::CollectMatchingFilesAndDirectories (
             }
         }
 
-        fSuccess = FindNextFile (hFind, &wfd);
-    }
-    while (fSuccess);
+        return true;
+    },
+    error);
+
+    di.m_archiveErrorPath = error.m_archivePath;
+    di.m_strArchiveError  = error.m_strMessage;
+
+    CHR (hr);
 
 
 Error:
@@ -320,6 +375,8 @@ HRESULT CDirectoryLister::ProcessDirectoryMultiThreaded (
     CDirectoryInfo       summaryDirInfo   (dirPath, fileSpecs);
     
 
+
+    mtLister.SetArchiveFileSystem (m_enumerator.ArchiveFileSystemPtr());
 
     hr = mtLister.ProcessDirectoryMultiThreaded (driveInfo, 
                                                  dirPath, 
@@ -353,41 +410,38 @@ HRESULT CDirectoryLister::RecurseIntoSubdirectories (
     const filesystem::path & dirPath, 
     const filesystem::path & fileSpec)
 {
-    HRESULT          hr              = S_OK;
-    filesystem::path pathAndFileSpec = dirPath / L"*";    
-    BOOL             fSuccess        = FALSE;                    
-    AutoFindHandle   hFind;
-    WIN32_FIND_DATA  wfd             = { };                         
+    HRESULT             hr          = S_OK;
+    SEnumerationError   error;
+    bool                fInArchive  = m_enumerator.IsArchiveLocation (dirPath);
 
-    
+
 
     //
-    // Search for subdirectories to recurse into
+    // Search for subdirectories and archive files to recurse into
     // 
     
-    hFind = FindFirstFile (pathAndFileSpec.c_str(), &wfd);
-    CBR (hFind != INVALID_HANDLE_VALUE);
-
-    do 
+    hr = m_enumerator.Enumerate (dirPath, L"*", [&] (const WIN32_FIND_DATA & wfd)
     {
+        HRESULT hrChild    = S_OK;
+        bool    fDirectory = !IsDots (wfd.cFileName) && CFlag::IsSet (wfd.dwFileAttributes, FILE_ATTRIBUTE_DIRECTORY);
+
+
+
         //
-        // Add directories, except "." and "..", to a list
-        // of subdirectories we'll recurse into
+        // Recurse into directories, except "." and "..", and into archive
+        // files
         //
-                
-        if (!IsDots (wfd.cFileName))
+
+        if (fDirectory || m_enumerator.IsArchiveFile (fInArchive, wfd))
         {
-            if (CFlag::IsSet (wfd.dwFileAttributes, FILE_ATTRIBUTE_DIRECTORY))
-            {
-                filesystem::path subdirPath = dirPath / wfd.cFileName;            
-                hr = ProcessDirectory (driveInfo, subdirPath, fileSpec, IResultsDisplayer::EDirectoryLevel::Subdirectory);
-                IGNORE_RETURN_VALUE (hr, S_OK);
-            }
+            hrChild = ProcessDirectory (driveInfo, dirPath / wfd.cFileName, fileSpec, IResultsDisplayer::EDirectoryLevel::Subdirectory);
+            IGNORE_RETURN_VALUE (hrChild, S_OK);
         }
-            
-        fSuccess = FindNextFile (hFind, &wfd);
-    }
-    while (fSuccess);
+
+        return true;
+    },
+    error);
+    CHR (hr);
 
 
 
@@ -415,7 +469,10 @@ void CDirectoryLister::AddMatchToList (
     size_t   cchFileName = 0; 
     FileInfo fileEntry     (wfd);
 
-    fileEntry.m_strReparseTarget = ResolveReparseTarget (di.m_dirPath, wfd);
+    if (!di.m_fInArchive)
+    {
+        fileEntry.m_strReparseTarget = ResolveReparseTarget (di.m_dirPath, wfd);
+    }
 
     
 
@@ -515,7 +572,7 @@ void CDirectoryLister::HandleFileMatch (const WIN32_FIND_DATA & wfd, FileInfo & 
     // If showing streams, enumerate and collect alternate data streams
     //
 
-    if (m_cmdLinePtr->m_fShowStreams)
+    if (m_cmdLinePtr->m_fShowStreams && !di.m_fInArchive)
     {
         hr = HandleFileMatchStreams (wfd, fileEntry, di, pTotals);
         IGNORE_RETURN_VALUE (hr, S_OK);

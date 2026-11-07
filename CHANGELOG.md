@@ -2,6 +2,34 @@
 
 All notable changes to TCDir are documented in this file.
 
+## [5.7.0] - 2026-11-06
+
+### Added
+- `--Archives`: list the contents of an archive file given as a path, and recurse into archive files with `-S` and `--Tree`; use `--Archives-` to disable
+  - Archive files in a listing appear as files, so a listing without `-S` or `--Tree` matches the output without the switch
+  - Supports `.zip` and `.iso` (ISO 9660, Joliet and UDF) on every Windows version
+  - Supports `.7z`, `.rar`, `.tar`, `.tar.gz`/`.tgz`, `.tar.bz2`, `.tar.xz`, `.tar.zst`, `.cab`, `.cpio`, `.xar` and `.lzh` on Windows 11 23H2 and later, through the `archiveint.dll` reader that ships with Windows
+  - Paths can go inside an archive: `tcdir --Archives release.zip\docs\*.md`
+  - Archives inside archives (`outer.zip\inner.zip`) are browsed on Windows 11 23H2 and later; inner archives larger than 256 MB list as files
+  - `-S` and `--Tree` recurse into archives with the same rules as subdirectories
+  - Settable as a default with `Archives` in `TCDIR` or `.tcdirconfig`
+  - Read-only: archives are never modified or extracted to disk, and `.iso` images are never mounted
+- `--Info`: print statistics for each archive that matches the targets instead of a listing
+  - Targets can be an archive, a mask, a folder, or a path inside other archives (`outer.zip\inner.7z`)
+  - With `-S`, archives in subfolders and inside other archives are reported at any depth
+  - Every block lists counts, sizes, the largest file, the deepest path, the date range, encryption and an extension breakdown
+  - ZIP blocks add compression methods, encryption types, the creating host, ZIP64, disks, a self-extractor prefix and the comment
+  - Disc image blocks add file systems, the volume label and IDs, volume dates, sectors and El Torito boot platforms
+  - Blocks for the other formats add the format and filters, stream totals, links, owners, groups and permissions
+- `--Verify`: with `--Info`, read every entry and check the checksums the archive stores; damaged entries fail the run
+- The date and time columns are blank for entries with no stored time (possible inside archives)
+- Redirected output wraps at the width in the `COLUMNS` environment variable when it is set (20 to 1000), and at 80 columns otherwise
+- `scripts\New-Screenshots.ps1` regenerates the README screenshots from a staged demo folder
+
+### Fixed
+- Help descriptions longer than the console width wrap to the description column instead of the left edge, and every description starts at the same column
+- `Tree` and `Ellipsize` are added to the switch help in `--Env` and `--Config`, and to the decoded `TCDIR` settings in `--Env` when they appear in `TCDIR`
+
 ## [5.6.1] - 2026-07-28
 
 ### Fixed

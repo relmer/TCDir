@@ -632,5 +632,20 @@ namespace UnitTest
             Assert::IsTrue (contLine.substr (0, 6) == L"      ", L"Continuation line should start with 6-space indent");
             Assert::IsTrue (contLine[6] == L'[', L"First option on continuation line should start at column 6");
         }
+
+
+
+
+
+        TEST_METHOD(WidthFromColumns_ValidAndInvalidValues)
+        {
+            Assert::AreEqual (120u, CConsole::WidthFromColumns (L"120", 80));
+            Assert::AreEqual (80u,  CConsole::WidthFromColumns (L"",    80));
+            Assert::AreEqual (80u,  CConsole::WidthFromColumns (L"abc", 80));
+            Assert::AreEqual (80u,  CConsole::WidthFromColumns (L"12x", 80));
+            Assert::AreEqual (80u,  CConsole::WidthFromColumns (L"5",   80));
+            Assert::AreEqual (80u,  CConsole::WidthFromColumns (L"99999", 80));
+        }
+
     };
 }

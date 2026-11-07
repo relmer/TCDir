@@ -995,6 +995,106 @@ namespace UnitTest
 
 
 
+
+        //
+        //  --Archives switch parsing
+        //
+
+        TEST_METHOD(ParseArchivesSwitch_DefaultIsOff)
+        {
+            CCommandLine    cl;
+            const wchar_t * a1      = L"*.zip";
+            wchar_t       * argv1[] = { const_cast<wchar_t *>(a1) };
+            HRESULT         hr      = cl.Parse(1, argv1);
+
+
+
+            Assert::IsTrue  (SUCCEEDED(hr));
+            Assert::IsFalse (cl.m_fArchives);
+        }
+
+
+
+
+
+        TEST_METHOD(ParseArchivesSwitchDoubleDash)
+        {
+            CCommandLine    cl;
+            const wchar_t * a1      = L"--Archives";
+            wchar_t       * argv1[] = { const_cast<wchar_t *>(a1) };
+            HRESULT         hr      = cl.Parse(1, argv1);
+
+
+
+            Assert::IsTrue (SUCCEEDED(hr));
+            Assert::IsTrue (cl.m_fArchives);
+        }
+
+
+
+
+
+        TEST_METHOD(ParseArchivesSwitchSlashLowercase)
+        {
+            CCommandLine    cl;
+            const wchar_t * a1      = L"/archives";
+            wchar_t       * argv1[] = { const_cast<wchar_t *>(a1) };
+            HRESULT         hr      = cl.Parse(1, argv1);
+
+
+
+            Assert::IsTrue (SUCCEEDED(hr));
+            Assert::IsTrue (cl.m_fArchives);
+        }
+
+
+
+
+
+        TEST_METHOD(ParseArchivesDisableSwitch_OverridesConfigDefault)
+        {
+            CConfig         config;
+            CCommandLine    cl;
+            const wchar_t * a1      = L"--Archives-";
+            wchar_t       * argv1[] = { const_cast<wchar_t *>(a1) };
+            HRESULT         hr      = S_OK;
+
+
+
+            config.SetEnvironmentProvider (&s_noOpEnv);
+            config.Initialize (FC_LightGrey);
+            config.m_fArchives = true;
+
+            cl.ApplyConfigDefaults (config);
+            Assert::IsTrue (cl.m_fArchives);
+
+            hr = cl.Parse(1, argv1);
+
+            Assert::IsTrue  (SUCCEEDED(hr));
+            Assert::IsFalse (cl.m_fArchives);
+        }
+
+
+
+
+
+        TEST_METHOD(ApplyConfigDefaults_Archives_TransfersToCommandLine)
+        {
+            CConfig      config;
+            CCommandLine cl;
+
+            config.SetEnvironmentProvider (&s_noOpEnv);
+            config.Initialize (FC_LightGrey);
+            config.m_fArchives = true;
+
+            cl.ApplyConfigDefaults (config);
+
+            Assert::IsTrue (cl.m_fArchives);
+        }
+
+
+
+
         TEST_METHOD(ParseSetAliasesSwitch)
         {
             CCommandLine    cl;
@@ -1855,6 +1955,167 @@ namespace UnitTest
 
             Assert::IsTrue (SUCCEEDED(hr));
             Assert::IsTrue (cl.m_eSizeFormat == ESizeFormat::Bytes);
+        }
+
+
+
+
+        //
+        //  --Info and --Verify
+        //
+
+        TEST_METHOD(ParseInfoSwitch_Forms)
+        {
+            static constexpr LPCWSTR s_krgForms[] = { L"--Info", L"--info", L"/Info" };
+
+
+
+            for (LPCWSTR pszForm : s_krgForms)
+            {
+                CCommandLine cl;
+                HRESULT      hr = ParseArgs (cl, { pszForm, L"foo.zip" });
+
+                Assert::IsTrue  (SUCCEEDED (hr), pszForm);
+                Assert::IsTrue  (cl.m_fInfo, pszForm);
+                Assert::IsFalse (cl.m_fVerify, pszForm);
+            }
+        }
+
+
+
+
+
+        TEST_METHOD(ParseVerifySwitch_WithInfo)
+        {
+            CCommandLine cl;
+            HRESULT      hr = ParseArgs (cl, { L"--Info", L"--Verify" });
+
+
+
+            Assert::IsTrue (SUCCEEDED (hr));
+            Assert::IsTrue (cl.m_fInfo);
+            Assert::IsTrue (cl.m_fVerify);
+        }
+
+
+
+
+
+        TEST_METHOD(ParseVerifySwitch_WithoutInfoFails)
+        {
+            CCommandLine cl;
+            HRESULT      hr = ParseArgs (cl, { L"--Verify", L"foo.zip" });
+
+
+
+            Assert::IsTrue (FAILED (hr));
+            Assert::AreEqual (wstring (L"--Verify requires --Info."), cl.m_strValidationError);
+        }
+
+
+
+
+
+        TEST_METHOD(ParseInfo_ListingSwitchesConflict)
+        {
+            static constexpr LPCWSTR s_krgListing[] =
+            {
+                L"-w", L"-B", L"/W", L"-o:s", L"-a:h", L"-t:c", L"--Tree", L"--Depth=2", L"--TreeIndent=2",
+                L"--Owner", L"--Streams", L"--Icons", L"--Icons-", L"--Ellipsize-", L"--Size=Bytes",
+            };
+
+
+
+            for (LPCWSTR pszSwitch : s_krgListing)
+            {
+                CCommandLine cl;
+                HRESULT      hr       = ParseArgs (cl, { L"--Info", pszSwitch, L"foo.zip" });
+                wstring      strError = format (L"--Info and {} cannot be used together.", pszSwitch);
+
+                Assert::IsTrue   (FAILED (hr), pszSwitch);
+                Assert::AreEqual (strError, cl.m_strValidationError, pszSwitch);
+            }
+        }
+
+
+
+
+
+        TEST_METHOD(ParseInfo_ConflictReportsFirstListingSwitch)
+        {
+            CCommandLine cl;
+            HRESULT      hr = ParseArgs (cl, { L"-b", L"--Info", L"-w" });
+
+
+
+            Assert::IsTrue   (FAILED (hr));
+            Assert::AreEqual (wstring (L"--Info and -b cannot be used together."), cl.m_strValidationError);
+        }
+
+
+
+
+
+        TEST_METHOD(ParseInfo_AllowedSwitches)
+        {
+            CCommandLine cl;
+            HRESULT      hr = ParseArgs (cl, { L"--Info", L"-s", L"-p", L"-m-", L"--Archives", L"--Verify", L"foo\\*.zip" });
+
+
+
+            Assert::IsTrue  (SUCCEEDED (hr));
+            Assert::IsTrue  (cl.m_fInfo);
+            Assert::IsTrue  (cl.m_fRecurse);
+            Assert::IsTrue  (cl.m_fPerfTimer);
+            Assert::IsFalse (cl.m_fMultiThreaded);
+            Assert::IsTrue  (cl.m_fArchives);
+        }
+
+
+
+
+
+        TEST_METHOD(ParseInfo_ConfigListingDefaultsIgnored)
+        {
+            CConfig      config;
+            CCommandLine cl;
+            HRESULT      hr = S_OK;
+
+
+
+            config.SetEnvironmentProvider (&s_noOpEnv);
+            config.Initialize (FC_LightGrey);
+            config.m_fWideListing = true;
+            config.m_fBareListing = true;
+            config.m_fTree        = true;
+            config.m_fShowOwner   = true;
+            config.m_fRecurse     = true;
+
+            cl.ApplyConfigDefaults (config);
+            hr = ParseArgs (cl, { L"--Info", L"foo.zip" });
+
+            Assert::IsTrue  (SUCCEEDED (hr));
+            Assert::IsFalse (cl.m_fWideListing);
+            Assert::IsFalse (cl.m_fBareListing);
+            Assert::IsFalse (cl.m_fTree);
+            Assert::IsFalse (cl.m_fShowOwner);
+            Assert::IsTrue  (cl.m_fRecurse);
+        }
+
+
+
+
+
+        TEST_METHOD(ParseListing_WithoutInfoUnaffected)
+        {
+            CCommandLine cl;
+            HRESULT      hr = ParseArgs (cl, { L"-w", L"-b" });
+
+
+
+            Assert::IsTrue (SUCCEEDED (hr));
+            Assert::IsTrue (cl.m_fWideListing);
+            Assert::IsTrue (cl.m_fBareListing);
         }
 
     };

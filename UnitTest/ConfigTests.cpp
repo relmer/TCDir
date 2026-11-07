@@ -2284,6 +2284,72 @@ namespace UnitTest
             auto result = config.ValidateEnvironmentVariable();
             Assert::IsFalse (result.hasIssues());
         }
+
+
+
+        //
+        //  Env var: Archives / Archives-
+        //
+
+        TEST_METHOD(EnvVar_Archives_SetsArchivesTrue)
+        {
+            ConfigProbe config;
+            config.Initialize (FC_LightGrey);
+
+            config.SetEnvVar (TCDIR_ENV_VAR_NAME, L"Archives;Tree");
+            config.ApplyUserColorOverrides();
+
+
+
+            Assert::IsTrue (config.m_fArchives.has_value());
+            Assert::IsTrue (config.m_fArchives.value());
+            Assert::IsTrue (config.m_fTree.value_or (false));
+
+            auto result = config.ValidateEnvironmentVariable();
+            Assert::IsFalse (result.hasIssues());
+        }
+
+
+
+        TEST_METHOD(EnvVar_ArchivesDisable_SetsArchivesFalse)
+        {
+            ConfigProbe config;
+            config.Initialize (FC_LightGrey);
+
+            config.SetEnvVar (TCDIR_ENV_VAR_NAME, L"archives-");
+            config.ApplyUserColorOverrides();
+
+
+
+            Assert::IsTrue  (config.m_fArchives.has_value());
+            Assert::IsFalse (config.m_fArchives.value());
+        }
+
+
+
+        TEST_METHOD(EnvVar_Archives_SourceIsEnvironment)
+        {
+            ConfigProbe config;
+            size_t      iArchives = SIZE_MAX;
+
+            config.Initialize (FC_LightGrey);
+
+            config.SetEnvVar (TCDIR_ENV_VAR_NAME, L"Archives");
+            config.ApplyUserColorOverrides();
+
+            for (size_t i = 0; i < CConfig::SWITCH_COUNT; ++i)
+            {
+                if (CConfig::s_switchMemberOrder[i] == &CConfig::m_fArchives)
+                {
+                    iArchives = i;
+                }
+            }
+
+
+
+            Assert::AreNotEqual (SIZE_MAX, iArchives);
+            Assert::IsTrue (config.m_rgSwitchSources[iArchives] == CConfig::EAttributeSource::Environment);
+        }
     };
 
 

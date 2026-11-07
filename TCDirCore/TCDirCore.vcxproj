@@ -204,6 +204,28 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="IsoDetails.h" />
+    <ClInclude Include="ArchiveDetailLines.h" />
+    <ClInclude Include="ArchiveInfoFinder.h" />
+    <ClInclude Include="ArchiveInfo.h" />
+    <ClInclude Include="ArchiveInfoDisplayer.h" />
+    <ClInclude Include="ArchiveInfoBuilder.h" />
+    <ClInclude Include="ArchiveStatistics.h" />
+    <ClInclude Include="ArchiveReport.h" />
+    <ClInclude Include="ArchiveDetails.h" />
+    <ClInclude Include="LibArchiveReader.h" />
+    <ClInclude Include="ZipReader.h" />
+    <ClInclude Include="FileEnumerator.h" />
+    <ClInclude Include="ArchiveFileSystem.h" />
+    <ClInclude Include="ArchiveFileAccess.h" />
+    <ClInclude Include="ArchiveTree.h" />
+    <ClInclude Include="ArchiveFormat.h" />
+    <ClInclude Include="WildcardMatcher.h" />
+    <ClInclude Include="ByteSource.h" />
+    <ClInclude Include="ArchiveEntry.h" />
+    <ClInclude Include="DiscImage.h" />
+    <ClInclude Include="IsoReader.h" />
+    <ClInclude Include="UdfReader.h" />
     <ClInclude Include="AliasBlockGenerator.h" />
     <ClInclude Include="AliasManager.h" />
     <ClInclude Include="AnsiCodes.h" />
@@ -256,6 +278,25 @@
     <ClInclude Include="WorkQueue.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="IsoDetails.cpp" />
+    <ClCompile Include="ArchiveDetailLines.cpp" />
+    <ClCompile Include="ArchiveInfoFinder.cpp" />
+    <ClCompile Include="ArchiveInfo.cpp" />
+    <ClCompile Include="ArchiveInfoDisplayer.cpp" />
+    <ClCompile Include="ArchiveInfoBuilder.cpp" />
+    <ClCompile Include="ArchiveStatistics.cpp" />
+    <ClCompile Include="LibArchiveReader.cpp" />
+    <ClCompile Include="ZipReader.cpp" />
+    <ClCompile Include="FileEnumerator.cpp" />
+    <ClCompile Include="ArchiveFileSystem.cpp" />
+    <ClCompile Include="ArchiveFileAccess.cpp" />
+    <ClCompile Include="ArchiveTree.cpp" />
+    <ClCompile Include="ArchiveFormat.cpp" />
+    <ClCompile Include="WildcardMatcher.cpp" />
+    <ClCompile Include="ByteSource.cpp" />
+    <ClCompile Include="DiscImage.cpp" />
+    <ClCompile Include="IsoReader.cpp" />
+    <ClCompile Include="UdfReader.cpp" />
     <ClCompile Include="AliasBlockGenerator.cpp" />
     <ClCompile Include="AliasManager.cpp" />
     <ClCompile Include="CommandLine.cpp" />
