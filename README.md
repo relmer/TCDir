@@ -21,7 +21,7 @@ TCDir ("Technicolor Directory") is a fast, colorized directory listing tool for 
 It's designed as a practical `dir`-style command with useful defaults (color by extension/attributes, Nerd Font file/folder icons, sorting, recursion, wide output, and a multi-threaded enumerator).
 Settings can be persisted in a config file (`~\.tcdirconfig`), overridden via the `TCDIR` environment variable, or specified on the command line.
 
-![TCDir basic listing](Assets/TCDir.png)
+![TCDir tree listing that expands a .zip archive](Assets/TCDir.png)
 
 ## What's New
 
@@ -54,7 +54,6 @@ Hat tip to [Chris Kirmse](https://github.com/ckirmse) whose excellent [ZDir](htt
 | Nerd Font file/folder icons | — | ✅ | ✅ | ✅ |
 | Tree view with full metadata | — | ✅ | ✅ | ✅ |
 | Multi-threaded enumeration | — | ✅ | — | — |
-| Native Windows (no WSL/MSYS) | ✅ | ✅ | ✅ | ✅ |
 | Familiar `dir` switch syntax | ✅ | ✅ | — | — |
 | ARM64 native binary | ✅ | ✅ | — | — |
 | NTFS alternate data streams | ✅ | ✅ | — | — |

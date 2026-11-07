@@ -103,6 +103,84 @@ function New-DemoTree {
 
 
 
+#
+# A small project for the first README image: a folder and an archive with a
+# few files each, listed together in tree view
+#
+
+function New-Showcase {
+    param([string]$Path)
+
+    $files = [ordered]@{
+        '.gitignore'     = 96
+        'build.ps1'      = 2048
+        'LICENSE'        = 1071
+        'logo.png'       = 48211
+        'README.md'      = 5240
+        'src\main.cpp'   = 9216
+        'src\parser.cpp' = 18432
+        'src\parser.h'   = 2304
+    }
+
+    $offset = 0
+    foreach ($rel in $files.Keys) {
+        $full = Join-Path $Path $rel
+        New-Item -ItemType Directory -Force (Split-Path $full -Parent) | Out-Null
+
+        $stream = [System.IO.File]::Create($full)
+        $stream.SetLength($files[$rel])
+        $stream.Dispose()
+
+        (Get-Item $full -Force).LastWriteTime = $script:SampleTime.AddDays(-$offset).AddMinutes(-37 * $offset)
+        $offset++
+    }
+
+    #
+    # Entries contain repetitive text, so they compress to a realistic ratio
+    #
+
+    $entries = [ordered]@{
+        'app.exe'          = 412672
+        'app.dll'          = 186368
+        'docs/manual.pdf'  = 96256
+    }
+
+    Add-Type -AssemblyName System.IO.Compression
+    $zipPath = Join-Path $Path 'release.zip'
+    $zip     = [System.IO.Compression.ZipFile]::Open($zipPath, 'Create')
+
+    try {
+        $offset = 0
+        foreach ($entryName in $entries.Keys) {
+            $entry               = $zip.CreateEntry($entryName, 'Optimal')
+            $entry.LastWriteTime = $script:SampleTime.AddDays(-2 - $offset)
+            $bytes               = [byte[]]::new($entries[$entryName])
+            $random              = [System.Random]::new($offset + 7)
+
+            for ($i = 0; $i -lt $bytes.Length; $i++) {
+                $bytes[$i] = if ($i % 5 -eq 0) { [byte]$random.Next(256) } else { [byte](65 + ($i % 23)) }
+            }
+
+            $stream = $entry.Open()
+            $stream.Write($bytes, 0, $bytes.Length)
+            $stream.Dispose()
+            $offset++
+        }
+    }
+    finally {
+        $zip.Dispose()
+    }
+
+    (Get-Item $zipPath).LastWriteTime                                = $script:SampleTime
+    (Get-Item (Join-Path $Path '.gitignore') -Force).Attributes      = 'Hidden, Archive'
+    (Get-Item (Join-Path $Path 'LICENSE')).Attributes                = 'ReadOnly, Archive'
+    Get-ChildItem $Path -Recurse -Directory -Force | ForEach-Object { $_.LastWriteTime = $script:SampleTime }
+}
+
+
+
+
+
 function New-SampleHome {
     param([string]$Path)
 
@@ -210,10 +288,10 @@ function ConvertFrom-Ansi {
 
 
 function Get-PromptHtml {
-    param([string]$CommandLine)
+    param([string]$CommandLine, [string]$Folder)
 
     $first, $rest = $CommandLine -split ' ', 2
-    $prompt   = [System.Net.WebUtility]::HtmlEncode("PS $($script:Drive):\Demo> ")
+    $prompt   = [System.Net.WebUtility]::HtmlEncode("PS $($script:Drive):\$Folder> ")
     $command  = [System.Net.WebUtility]::HtmlEncode($first)
     $argsHtml = if ($rest) { ' ' + [System.Net.WebUtility]::HtmlEncode($rest) } else { '' }
     $cmdColor = if ($first.StartsWith('$')) { $script:Palette[92] } else { $script:Palette[93] }
@@ -264,7 +342,7 @@ function Save-Screenshot {
     $cMax    = 0
 
     foreach ($step in $Steps) {
-        [void]$body.Append((Get-PromptHtml $step.Display) + "`n")
+        [void]$body.Append((Get-PromptHtml $step.Display $step.Folder) + "`n")
         $cLines++
         $cMax = [Math]::Max($cMax, $step.Display.Length + 12)
 
@@ -322,9 +400,9 @@ pre { margin: 0; padding: $($script:Padding)px; font-family: $($script:FontFamil
 
 
 function New-Step {
-    param([string]$Display, [string[]]$Arguments, [hashtable]$Environment = @{})
+    param([string]$Display, [string[]]$Arguments, [hashtable]$Environment = @{}, [string]$Folder = 'Demo')
 
-    return [pscustomobject]@{ Display = $Display; Arguments = $Arguments; Environment = $Environment; Output = $null }
+    return [pscustomobject]@{ Display = $Display; Arguments = $Arguments; Environment = $Environment; Folder = $Folder; Output = $null }
 }
 
 
@@ -345,7 +423,7 @@ if (-not $script:EdgePath) {
 }
 
 $shots = [ordered]@{
-    'TCDir'                         = @(New-Step 'tcdir' @())
+    'TCDir'                         = @(New-Step 'tcdir --Tree --Archives' @('--Tree', '--Archives') @{} 'Project')
     'TCDir Help'                    = @(New-Step 'tcdir -?' @('-?'))
     'TCDir Tree'                    = @(New-Step 'tcdir --Tree' @('--Tree'))
     'TCDir Subdirectories'          = @(New-Step 'tcdir -s' @('-s'))
@@ -370,6 +448,7 @@ $script:Drive = $drive
 
 New-Item -ItemType Directory -Force (Join-Path $demoRoot 'Demo') | Out-Null
 New-DemoTree   (Join-Path $demoRoot 'Demo')
+New-Showcase   (Join-Path $demoRoot 'Project')
 New-SampleHome $homeRoot
 
 & subst.exe "${drive}:" $demoRoot
@@ -393,7 +472,7 @@ try {
                 $environment[$key] = $step.Environment[$key]
             }
 
-            $step.Output  = Invoke-TcDir "${drive}:\Demo" $step.Arguments $environment
+            $step.Output  = Invoke-TcDir "${drive}:\$($step.Folder)" $step.Arguments $environment
         }
 
         Save-Screenshot $name $shots[$name] $stageRoot
